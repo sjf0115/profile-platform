@@ -14,9 +14,8 @@
     <name>mybatis-generator</name>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
         <mybatis.generator.version>1.4.2</mybatis.generator.version>
+        <java.version>1.8</java.version>
     </properties>
 
     <dependencies>
