@@ -21,6 +21,7 @@
     <module>profile-service</module>
     <module>profile-common</module>
     <module>mybatis-generator</module>
+      <module>profile-dal</module>
   </modules>
 
   <name>profile-platform</name>
@@ -29,8 +30,49 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
+    <mysql.version>5.1.46</mysql.version>
+    <mybatis.spring.version>2.3.2</mybatis.spring.version>
+    <guava.version>23.0</guava.version>
+    <commons.lang3.version>3.12.0</commons.lang3.version>
   </properties>
 
+
+  <dependencyManagement>
+    <dependencies>
+        <!-- Spring Mybatis -->
+        <dependency>
+          <groupId>org.mybatis.spring.boot</groupId>
+          <artifactId>mybatis-spring-boot-starter</artifactId>
+          <version>${mybatis.spring.version}</version>
+        </dependency>
+
+        <!-- MySQL 驱动 -->
+        <dependency>
+          <groupId>mysql</groupId>
+          <artifactId>mysql-connector-java</artifactId>
+          <version>${mysql.version}</version>
+        </dependency>
+
+
+        <!-- 工具类 begin -->
+
+        <!-- Guava -->
+        <dependency>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+          <version>${guava.version}</version>
+        </dependency>
+
+        <dependency>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+          <version>${commons.lang3.version}</version>
+        </dependency>
+
+        <!-- 工具类 end -->
+
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>

@@ -2,9 +2,10 @@ package com.data.profile.common.domain;
 
 import com.data.profile.common.enums.ResponseCode;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 
 /**
- * 功能：
+ * 功能：返回信息
  * 作者：SmartSi
  * CSDN博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
@@ -24,6 +25,13 @@ public class Response<T> {
         response.setData(data);
         response.setCode(ResponseCode.SUCCESS.getCode());
         response.setMessage(ResponseCode.SUCCESS.getMessage());
+        return response;
+    }
+
+    public static <T> Response<T> error(String msg, ResponseCode responseCode) {
+        Response<T> response = new Response<>();
+        response.setCode(responseCode.getCode());
+        response.setMessage(StringUtils.isBlank(msg) ? responseCode.getMessage() : msg);
         return response;
     }
 }
