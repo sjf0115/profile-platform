@@ -26,6 +26,6 @@ public class ControllerExceptionAspect {
     public Response handleException(Exception e) {
         LOG.error(e.getMessage(), e);
         String message = e.getMessage();
-        return Response.error(StringUtils.isBlank(message) ? message :"操作失败", ResponseCode.ERROR);
+        return Response.error(StringUtils.isBlank(message) ? "操作失败" : message, ResponseCode.ERROR);
     }
 }

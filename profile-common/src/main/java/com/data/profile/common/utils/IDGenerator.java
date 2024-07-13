@@ -49,7 +49,7 @@ public class IDGenerator {
     }
 
     public static void main(String[] args) {
-        String name = IDGenerator.generate(ModelType.USER);
+        String name = IDGenerator.generate(ModelType.LABEL_CATEGORY);
         System.out.println(name);
     }
 }
