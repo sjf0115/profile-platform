@@ -3,6 +3,8 @@ package com.data.profile.common.enums;
 public enum ResponseCode {
     // 请求成功
     SUCCESS(0, "success"),
+    // 请求失败
+    ERROR(1, "error"),
 
     // 用户
     // 用户不存在异常

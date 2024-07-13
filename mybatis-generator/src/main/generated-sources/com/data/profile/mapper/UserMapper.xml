@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.data.profile.dao.UserMapper">
-
   <resultMap id="BaseResultMap" type="com.data.profile.model.User">
     <id column="id" jdbcType="BIGINT" property="id" />
     <result column="status" jdbcType="INTEGER" property="status" />
@@ -14,41 +13,30 @@
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
     <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
   </resultMap>
-
   <sql id="Base_Column_List">
-    id, status, user_id, user_name, source_type, creator, modifier, gmt_create, gmt_modified
+    id, status, user_id, user_name, password, source_type, creator, modifier, gmt_create, 
+    gmt_modified
   </sql>
-
-  <select id="selectByUserName" parameterType="java.lang.String" resultMap="BaseResultMap">
-    select
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select 
     <include refid="Base_Column_List" />
     from profile_meta_user
-    where user_name = #{userName,jdbcType=VARCHAR}
+    where id = #{id,jdbcType=BIGINT}
   </select>
-
-  <select id="selectByUserId" parameterType="java.lang.String" resultMap="BaseResultMap">
-    select
-    <include refid="Base_Column_List" />
-    from profile_meta_user
-    where user_id = #{userId,jdbcType=VARCHAR}
-  </select>
-
   <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
     delete from profile_meta_user
     where id = #{id,jdbcType=BIGINT}
   </delete>
-
   <insert id="insert" parameterType="com.data.profile.model.User">
-    insert into profile_meta_user (id, status, user_id,
-                                   user_name, source_type, creator,
-                                   modifier, gmt_create, gmt_modified
-    )
-    values (#{id,jdbcType=BIGINT}, #{status,jdbcType=BIGINT}, #{userId,jdbcType=VARCHAR},
-            #{userName,jdbcType=VARCHAR}, #{sourceType,jdbcType=BIGINT}, #{creator,jdbcType=VARCHAR},
-            #{modifier,jdbcType=VARCHAR}, #{gmtCreate,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP}
-           )
+    insert into profile_meta_user (id, status, user_id, 
+      user_name, password, source_type, 
+      creator, modifier, gmt_create, 
+      gmt_modified)
+    values (#{id,jdbcType=BIGINT}, #{status,jdbcType=INTEGER}, #{userId,jdbcType=VARCHAR}, 
+      #{userName,jdbcType=VARCHAR}, #{password,jdbcType=VARCHAR}, #{sourceType,jdbcType=INTEGER}, 
+      #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR}, #{gmtCreate,jdbcType=TIMESTAMP}, 
+      #{gmtModified,jdbcType=TIMESTAMP})
   </insert>
-
   <insert id="insertSelective" parameterType="com.data.profile.model.User">
     insert into profile_meta_user
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -63,6 +51,9 @@
       </if>
       <if test="userName != null">
         user_name,
+      </if>
+      <if test="password != null">
+        password,
       </if>
       <if test="sourceType != null">
         source_type,
@@ -85,7 +76,7 @@
         #{id,jdbcType=BIGINT},
       </if>
       <if test="status != null">
-        #{status,jdbcType=BIGINT},
+        #{status,jdbcType=INTEGER},
       </if>
       <if test="userId != null">
         #{userId,jdbcType=VARCHAR},
@@ -93,8 +84,11 @@
       <if test="userName != null">
         #{userName,jdbcType=VARCHAR},
       </if>
+      <if test="password != null">
+        #{password,jdbcType=VARCHAR},
+      </if>
       <if test="sourceType != null">
-        #{sourceType,jdbcType=BIGINT},
+        #{sourceType,jdbcType=INTEGER},
       </if>
       <if test="creator != null">
         #{creator,jdbcType=VARCHAR},
@@ -110,12 +104,11 @@
       </if>
     </trim>
   </insert>
-
   <update id="updateByPrimaryKeySelective" parameterType="com.data.profile.model.User">
     update profile_meta_user
     <set>
       <if test="status != null">
-        status = #{status,jdbcType=BIGINT},
+        status = #{status,jdbcType=INTEGER},
       </if>
       <if test="userId != null">
         user_id = #{userId,jdbcType=VARCHAR},
@@ -123,8 +116,11 @@
       <if test="userName != null">
         user_name = #{userName,jdbcType=VARCHAR},
       </if>
+      <if test="password != null">
+        password = #{password,jdbcType=VARCHAR},
+      </if>
       <if test="sourceType != null">
-        source_type = #{sourceType,jdbcType=BIGINT},
+        source_type = #{sourceType,jdbcType=INTEGER},
       </if>
       <if test="creator != null">
         creator = #{creator,jdbcType=VARCHAR},
@@ -141,17 +137,17 @@
     </set>
     where id = #{id,jdbcType=BIGINT}
   </update>
-
   <update id="updateByPrimaryKey" parameterType="com.data.profile.model.User">
     update profile_meta_user
-    set status = #{status,jdbcType=BIGINT},
-        user_id = #{userId,jdbcType=VARCHAR},
-        user_name = #{userName,jdbcType=VARCHAR},
-        source_type = #{sourceType,jdbcType=BIGINT},
-        creator = #{creator,jdbcType=VARCHAR},
-        modifier = #{modifier,jdbcType=VARCHAR},
-        gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
-        gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
+    set status = #{status,jdbcType=INTEGER},
+      user_id = #{userId,jdbcType=VARCHAR},
+      user_name = #{userName,jdbcType=VARCHAR},
+      password = #{password,jdbcType=VARCHAR},
+      source_type = #{sourceType,jdbcType=INTEGER},
+      creator = #{creator,jdbcType=VARCHAR},
+      modifier = #{modifier,jdbcType=VARCHAR},
+      gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+      gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
     where id = #{id,jdbcType=BIGINT}
   </update>
 </mapper>

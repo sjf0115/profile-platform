@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -55,5 +56,27 @@ public class UserService {
             return Optional.empty();
         }
         return Optional.of(user);
+    }
+
+    /**
+     * 注册
+     * @param userName
+     * @param password
+     * @return
+     */
+    public int register(String userName, String password) {
+        List<User> users = userMapper.selectByUserName(userName);
+        if (users.size() > 0) {
+            throw new RuntimeException("用户名已被占用");
+        }
+        User user = new User();
+        user.setPassword(password);
+        user.setUserName(userName);
+        user.setCreator(RequestContext.currentUserId());
+        user.setModifier(RequestContext.currentUserId());
+        user.setSourceType(SourceType.CUSTOM.getCode());
+        user.setStatus(UserStatus.ENABLE.getCode());
+        int result = userMapper.insert(user);
+        return result;
     }
 }

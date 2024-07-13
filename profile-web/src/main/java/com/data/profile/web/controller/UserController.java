@@ -75,4 +75,14 @@ public class UserController {
             return Response.error("登录用户不存在", ResponseCode.USER_NO_ERROR);
         }
     }
+
+    @PostMapping(value = "/register")
+    public Response register(@RequestParam String userName, String password) {
+        int result = userService.register(userName, password);
+        if (result > 0) {
+            return Response.success(true);
+        } else {
+            return Response.error("注册用户不存在", ResponseCode.USER_NO_ERROR);
+        }
+    }
 }

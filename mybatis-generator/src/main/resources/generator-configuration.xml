@@ -55,19 +55,5 @@
                enableSelectByExample="false"
                selectByExampleQueryId="false"></table>
 
-        <table tableName="profile_meta_entity" domainObjectName="Entity"
-               enableCountByExample="false"
-               enableUpdateByExample="false"
-               enableDeleteByExample="false"
-               enableSelectByExample="false"
-               selectByExampleQueryId="false"></table>
-
-        <table tableName="profile_meta_entity_type" domainObjectName="EntityType"
-               enableCountByExample="false"
-               enableUpdateByExample="false"
-               enableDeleteByExample="false"
-               enableSelectByExample="false"
-               selectByExampleQueryId="false"></table>
-
     </context>
 </generatorConfiguration>

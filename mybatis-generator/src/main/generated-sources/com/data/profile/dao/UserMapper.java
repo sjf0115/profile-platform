@@ -1,11 +1,7 @@
 package com.data.profile.dao;
 
 import com.data.profile.model.User;
-import org.apache.ibatis.annotations.Mapper;
 
-import java.util.List;
-
-@Mapper
 public interface UserMapper {
     int deleteByPrimaryKey(Long id);
 
@@ -13,9 +9,7 @@ public interface UserMapper {
 
     int insertSelective(User row);
 
-    User selectByUserId(String userId);
-
-    List<User> selectByUserName(String userName);
+    User selectByPrimaryKey(Long id);
 
     int updateByPrimaryKeySelective(User row);
 
