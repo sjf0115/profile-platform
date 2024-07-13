@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS `profile_meta_datasource`(
     PRIMARY KEY (`id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据源';
 
+INSERT INTO `profile_meta_datasource` VALUES (1, 1, '040EW35R0G', '数据平台报表MySQL', '数据平台报表MySQL数据源', '0559Y4C0OU', 2, '{\"host\":\"127.0.0.1\",\"port\":\"3306\",\"database\":\"reports\",\"user\":\"root\",\"password\":\"root\"}', '100000', '100000', '2024-07-11 07:43:13', '2024-07-11 07:43:13');
+
 -- 2. 数据源类型
 DROP Table `profile_meta_datasource_type`;
 CREATE TABLE IF NOT EXISTS `profile_meta_datasource_type`(
@@ -36,10 +38,8 @@ CREATE TABLE IF NOT EXISTS `profile_meta_datasource_type`(
     PRIMARY KEY (`id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据源类型';
 
-INSERT INTO profile_meta_datasource_type (status, datasource_type_id, datasource_type_name, source_type, config_template, creator, modifier)
-VALUES (1, '100001', 'MySQL', 1, '[{"show_name":"Host","key":"host","value":"请输入","required":"1","encrypt":"0","tip":""},{"show_name":"端口号","key":"port","value":"3306","required":"1","encrypt":"0","tip":"port"},{"show_name":"数据库","key":"database","value":"请输入","required":"1","encrypt":"0","tip":"此处填写的数据库是导入或者导出的数据库"},{"show_name":"用户名","key":"user","value":"请输入","required":"1","encrypt":"0","tip":""},{"show_name":"密码","key":"password","value":"请输入","required":"1","encrypt":"1","tip":""}]', 100000, 100000)
-     ,(1, '100002', 'ClickHouse', 1, '[{"show_name":"Host","key":"host","value":"请输入","required":"1","encrypt":"0","tip":""},{"show_name":"端口号","key":"port","value":"3306","required":"1","encrypt":"0","tip":"port"},{"show_name":"数据库","key":"database","value":"请输入","required":"1","encrypt":"0","tip":"此处填写的数据库是导入或者导出的数据库"},{"show_name":"用户名","key":"user","value":"请输入","required":"1","encrypt":"0","tip":""},{"show_name":"密码","key":"password","value":"请输入","required":"1","encrypt":"1","tip":""}]', 100000, 100000)
-;
+INSERT INTO `profile_meta_datasource_type` VALUES (1, 1, '0559Y4C0OU', 'MySQL', 1, '[{\"show_name\":\"Host\",\"key\":\"host\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"\"},{\"show_name\":\"端口号\",\"key\":\"port\",\"value\":\"3306\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"port\"},{\"show_name\":\"数据库\",\"key\":\"database\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"此处填写的数据库是导入或者导出的数据库\"},{\"show_name\":\"用户名\",\"key\":\"user\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"\"},{\"show_name\":\"密码\",\"key\":\"password\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"1\",\"tip\":\"\"}]', '100000', '100000', '2024-07-10 07:34:43', '2024-07-11 07:42:10');
+INSERT INTO `profile_meta_datasource_type` VALUES (2, 1, '05U08SU24N', 'ClickHouse', 1, '[{\"show_name\":\"Host\",\"key\":\"host\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"\"},{\"show_name\":\"端口号\",\"key\":\"port\",\"value\":\"3306\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"port\"},{\"show_name\":\"数据库\",\"key\":\"database\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"此处填写的数据库是导入或者导出的数据库\"},{\"show_name\":\"用户名\",\"key\":\"user\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"\"},{\"show_name\":\"密码\",\"key\":\"password\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"1\",\"tip\":\"\"}]', '100000', '100000', '2024-07-10 07:35:26', '2024-07-11 07:42:32');
 
 -- 3. 数据集
 DROP Table `profile_meta_dataset`;
@@ -126,6 +126,13 @@ CREATE TABLE IF NOT EXISTS `profile_meta_label_category`(
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-标签类目';
+
+
+INSERT INTO `profile_meta_label_category` VALUES (1, 1, 1, '100001', '未分类', 1, '0', 1, 1, '100000', '100000', '2024-07-09 07:34:16', '2024-07-09 07:34:32');
+INSERT INTO `profile_meta_label_category` VALUES (2, 1, 2, '100002', '社会属性', 1, '0', 2, 2, '100000', '100000', '2024-07-09 13:51:18', '2024-07-09 20:41:10');
+INSERT INTO `profile_meta_label_category` VALUES (4, 1, 2, '100003', '活跃属性', 1, '0', 3, 2, '100000', '100000', '2024-07-09 19:54:24', '2024-07-09 20:42:05');
+INSERT INTO `profile_meta_label_category` VALUES (5, 1, 2, '100004', '设备属性', 1, '0', 4, 2, '100000', '100000', '2024-07-09 20:42:50', '2024-07-09 20:43:42');
+INSERT INTO `profile_meta_label_category` VALUES (6, 1, 2, '100005', '内容消费', 1, '0', 5, 2, '100000', '100000', '2024-07-09 20:44:15', '2024-07-09 20:44:15');
 
 -- 8. 标签
 DROP Table `profile_meta_label`;
