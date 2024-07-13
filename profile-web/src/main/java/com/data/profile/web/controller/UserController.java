@@ -24,14 +24,14 @@ import java.util.Optional;
  */
 @Slf4j
 @RestController
-@RequestMapping(value = "/user")
+@RequestMapping(value = "/user", produces = MediaType.APPLICATION_JSON_VALUE)
 public class UserController {
     private static Logger LOG = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserService userService;
 
-    @RequestMapping(value = "/save", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/save")
     public Response save(@RequestBody User user) {
         int result = userService.save(user);
         if (result > 0) {
@@ -41,7 +41,7 @@ public class UserController {
         }
     }
 
-    @RequestMapping(value = "/detail", method = RequestMethod.GET, produces = "application/json;charset=UTF-8")
+    @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam String userId) {
         Optional<User> userOptional = userService.getDetail(userId);
         if (userOptional.isPresent()) {
@@ -51,7 +51,7 @@ public class UserController {
         }
     }
 
-    @RequestMapping(value = "/list", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/list")
     public Response getList(@RequestParam (value = "search", required = false) String name,
                             @RequestParam (value = "userId", required = false) String userId,
                             @RequestParam (defaultValue = "1") Integer currentPage,
@@ -59,7 +59,7 @@ public class UserController {
         return null;
     }
 
-    @RequestMapping(value = "/login", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/login")
     public Response login(@RequestParam User loginUser) {
         Optional<User> userOptional = userService.getDetail(loginUser.getUserId());
         if (userOptional.isPresent()) {
