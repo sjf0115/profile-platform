@@ -1,6 +1,7 @@
 package com.data.profile.common.domain;
 
 import com.data.profile.common.enums.ResponseCode;
+import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -12,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
  * 日期：2024/7/2 07:32
  */
 @Setter
+@Getter
 public class Response<T> {
     // 结果码
     private Integer code;

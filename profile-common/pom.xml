@@ -19,6 +19,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.data</groupId>
+            <artifactId>profile-dal</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
