@@ -17,7 +17,7 @@ public class IDGenerator {
     private static final String NUMBERS = "0123456789";
     private static final int STRING_LENGTH = 8; // 应为偶数
 
-    public static String generate(String code) {
+    public static String generate(ModelType code) {
         // 确保字符串长度为偶数以平均分配
         if (STRING_LENGTH % 2 != 0) {
             throw new IllegalArgumentException("String length must be even.");
@@ -45,11 +45,11 @@ public class IDGenerator {
             stringBuilder.append(c);
         }
 
-        return code + stringBuilder.toString().toUpperCase();
+        return code.getCode() + stringBuilder.toString().toUpperCase();
     }
 
     public static void main(String[] args) {
-        String name = IDGenerator.generate(ModelType.USER.getCode());
+        String name = IDGenerator.generate(ModelType.USER);
         System.out.println(name);
     }
 }

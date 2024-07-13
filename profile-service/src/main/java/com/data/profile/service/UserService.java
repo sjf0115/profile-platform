@@ -1,8 +1,12 @@
 package com.data.profile.service;
 
 import com.data.profile.common.domain.RequestContext;
+import com.data.profile.common.domain.Response;
+import com.data.profile.common.enums.ModelType;
+import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.UserStatus;
+import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.UserMapper;
 import com.data.profile.model.User;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -70,13 +75,34 @@ public class UserService {
             throw new RuntimeException("用户名已被占用");
         }
         User user = new User();
+        user.setUserId(IDGenerator.generate(ModelType.USER));
         user.setPassword(password);
         user.setUserName(userName);
         user.setCreator(RequestContext.currentUserId());
         user.setModifier(RequestContext.currentUserId());
         user.setSourceType(SourceType.CUSTOM.getCode());
         user.setStatus(UserStatus.ENABLE.getCode());
-        int result = userMapper.insert(user);
+        int result = userMapper.insertSelective(user);
         return result;
+    }
+
+    /**
+     * 登录
+     * @param userId
+     * @param password
+     * @return
+     */
+    public boolean login(String userId, String password) {
+        User user = userMapper.selectByUserId(userId);
+        if (Objects.equals(user, null)) {
+            throw new RuntimeException("账号不存在, 请先注册");
+        }
+        // 验证密码
+        if (Objects.equals(password, user.getPassword())) {
+            RequestContext.setUser(user);
+        } else {
+            throw new RuntimeException("密码错误");
+        }
+        return true;
     }
 }

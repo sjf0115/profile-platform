@@ -1,6 +1,5 @@
 package com.data.profile.web.controller;
 
-import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.model.User;
@@ -12,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -31,49 +29,13 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping(value = "/save")
-    public Response save(@RequestBody User user) {
-        int result = userService.save(user);
-        if (result > 0) {
-            return Response.success(result);
-        } else {
-            return Response.error("保存用户失败", ResponseCode.USER_NO_ERROR);
-        }
-    }
-
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam String userId) {
         Optional<User> userOptional = userService.getDetail(userId);
         if (userOptional.isPresent()) {
             return Response.success(userOptional.get());
-        } else {
-            return Response.error("请求用户不存在", ResponseCode.USER_NO_ERROR);
         }
-    }
-
-    @GetMapping(value = "/list")
-    public Response getList(@RequestParam (value = "search", required = false) String name,
-                            @RequestParam (value = "userId", required = false) String userId,
-                            @RequestParam (defaultValue = "1") Integer currentPage,
-                            @RequestParam (defaultValue = "10")Integer pageSize) {
-        return null;
-    }
-
-    @PostMapping(value = "/login")
-    public Response login(@RequestParam User loginUser) {
-        Optional<User> userOptional = userService.getDetail(loginUser.getUserId());
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            // 验证密码
-            if (Objects.equals(loginUser.getUserName(), user.getUserName())) {
-                RequestContext.setUser(loginUser);
-                return Response.success(true);
-            } else {
-                return Response.error("密码错误", ResponseCode.USER_NO_ERROR);
-            }
-        } else {
-            return Response.error("登录用户不存在", ResponseCode.USER_NO_ERROR);
-        }
+        return Response.error("用户不存在", ResponseCode.ERROR);
     }
 
     @PostMapping(value = "/register")
@@ -81,8 +43,25 @@ public class UserController {
         int result = userService.register(userName, password);
         if (result > 0) {
             return Response.success(true);
+        }
+        return Response.error("注册用户失败", ResponseCode.ERROR);
+    }
+
+    @PostMapping(value = "/login")
+    public Response login(@RequestParam String userId, String password) {
+        if (userService.login(userId, password)) {
+            return Response.success(true);
+        }
+        return Response.error("登录失败", ResponseCode.ERROR);
+    }
+
+    @PostMapping(value = "/save")
+    public Response save(@RequestBody User user) {
+        int result = userService.save(user);
+        if (result > 0) {
+            return Response.success(result);
         } else {
-            return Response.error("注册用户不存在", ResponseCode.USER_NO_ERROR);
+            return Response.error("保存用户失败", ResponseCode.ERROR);
         }
     }
 }
