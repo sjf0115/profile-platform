@@ -3,17 +3,26 @@ package com.data.profile.dao;
 import com.data.profile.model.Entity;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.List;
+
 @Mapper
 public interface EntityMapper {
-    int deleteByPrimaryKey(Long id);
 
-    int insert(Entity row);
+    Entity selectByEntityId(String entityId);
 
-    int insertSelective(Entity row);
+    List<Entity> selectByEntityName(String entityName);
 
-    Entity selectByPrimaryKey(Long id);
+    List<Entity> selectByParams(Entity entity);
 
-    int updateByPrimaryKeySelective(Entity row);
+    List<Entity> selectByKeyword(String entityName);
 
-    int updateByPrimaryKey(Entity row);
+    int insert(Entity entity);
+
+    int insertSelective(Entity entity);
+
+    int deleteByEntityId(String entityId);
+
+    int updateByEntityIdSelective(Entity row);
+
+    int updateByEntityId(Entity entity);
 }

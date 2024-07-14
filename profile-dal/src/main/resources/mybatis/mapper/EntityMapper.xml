@@ -3,38 +3,79 @@
 <mapper namespace="com.data.profile.dao.EntityMapper">
   <resultMap id="BaseResultMap" type="com.data.profile.model.Entity">
     <id column="id" jdbcType="BIGINT" property="id" />
-    <result column="status" jdbcType="TINYINT" property="status" />
+    <result column="status" jdbcType="INTEGER" property="status" />
     <result column="entity_id" jdbcType="VARCHAR" property="entityId" />
     <result column="entity_name" jdbcType="VARCHAR" property="entityName" />
-    <result column="source_type" jdbcType="VARCHAR" property="sourceType" />
+    <result column="source_type" jdbcType="INTEGER" property="sourceType" />
     <result column="creator" jdbcType="VARCHAR" property="creator" />
     <result column="modifier" jdbcType="VARCHAR" property="modifier" />
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
     <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
   </resultMap>
+
   <sql id="Base_Column_List">
     id, status, entity_id, entity_name, source_type, creator, modifier, gmt_create, gmt_modified
   </sql>
-  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+
+  <select id="selectByEntityId" parameterType="java.lang.String" resultMap="BaseResultMap">
     select 
     <include refid="Base_Column_List" />
     from profile_meta_entity
-    where id = #{id,jdbcType=BIGINT}
+    where entity_id = #{entityId,jdbcType=VARCHAR}
   </select>
-  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+
+  <select id="selectByEntityName" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_entity
+    where entity_name = #{entityName,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_entity
+    where entity_name LIKE CONCAT('%', #{entityName,jdbcType=VARCHAR}, '%')
+  </select>
+
+  <select id="selectByParams" parameterType="com.data.profile.model.Entity" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_entity
+    where 1 = 1
+    <if test="status != null">
+      and status = #{status,jdbcType=INTEGER}
+    </if>
+    <if test="entityName != null and entityName != ''">
+      and entity_name = #{entityName,jdbcType=VARCHAR}
+    </if>
+    <if test="sourceType != null">
+      and source_type = #{sourceType,jdbcType=INTEGER}
+    </if>
+    <if test="creator != null and creator != ''">
+      and creator = #{creator,jdbcType=VARCHAR}
+    </if>
+    <if test="modifier != null and modifier != ''">
+      and modifier = #{modifier,jdbcType=VARCHAR}
+    </if>
+  </select>
+
+  <delete id="deleteByEntityId" parameterType="java.lang.String">
     delete from profile_meta_entity
-    where id = #{id,jdbcType=BIGINT}
+    where entity_name = #{entityName,jdbcType=VARCHAR}
   </delete>
+
   <insert id="insert" parameterType="com.data.profile.model.Entity">
     insert into profile_meta_entity (id, status, entity_id, 
       entity_name, source_type, creator, 
       modifier, gmt_create, gmt_modified
       )
-    values (#{id,jdbcType=BIGINT}, #{status,jdbcType=TINYINT}, #{entityId,jdbcType=VARCHAR}, 
-      #{entityName,jdbcType=VARCHAR}, #{sourceType,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, 
+    values (#{id,jdbcType=BIGINT}, #{status,jdbcType=INTEGER}, #{entityId,jdbcType=VARCHAR},
+      #{entityName,jdbcType=VARCHAR}, #{sourceType,jdbcType=INTEGER}, #{creator,jdbcType=VARCHAR},
       #{modifier,jdbcType=VARCHAR}, #{gmtCreate,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP}
       )
   </insert>
+
   <insert id="insertSelective" parameterType="com.data.profile.model.Entity">
     insert into profile_meta_entity
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -71,7 +112,7 @@
         #{id,jdbcType=BIGINT},
       </if>
       <if test="status != null">
-        #{status,jdbcType=TINYINT},
+        #{status,jdbcType=INTEGER},
       </if>
       <if test="entityId != null">
         #{entityId,jdbcType=VARCHAR},
@@ -80,7 +121,7 @@
         #{entityName,jdbcType=VARCHAR},
       </if>
       <if test="sourceType != null">
-        #{sourceType,jdbcType=VARCHAR},
+        #{sourceType,jdbcType=INTEGER},
       </if>
       <if test="creator != null">
         #{creator,jdbcType=VARCHAR},
@@ -96,20 +137,18 @@
       </if>
     </trim>
   </insert>
-  <update id="updateByPrimaryKeySelective" parameterType="com.data.profile.model.Entity">
+
+  <update id="updateByEntityIdSelective" parameterType="com.data.profile.model.Entity">
     update profile_meta_entity
     <set>
       <if test="status != null">
         status = #{status,jdbcType=TINYINT},
       </if>
-      <if test="entityId != null">
-        entity_id = #{entityId,jdbcType=VARCHAR},
-      </if>
       <if test="entityName != null">
         entity_name = #{entityName,jdbcType=VARCHAR},
       </if>
       <if test="sourceType != null">
-        source_type = #{sourceType,jdbcType=VARCHAR},
+        source_type = #{sourceType,jdbcType=INTEGER},
       </if>
       <if test="creator != null">
         creator = #{creator,jdbcType=VARCHAR},
@@ -124,18 +163,18 @@
         gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
       </if>
     </set>
-    where id = #{id,jdbcType=BIGINT}
+    where entity_id = #{entityId,jdbcType=VARCHAR},
   </update>
-  <update id="updateByPrimaryKey" parameterType="com.data.profile.model.Entity">
+
+  <update id="updateByEntityId" parameterType="com.data.profile.model.Entity">
     update profile_meta_entity
     set status = #{status,jdbcType=TINYINT},
-      entity_id = #{entityId,jdbcType=VARCHAR},
       entity_name = #{entityName,jdbcType=VARCHAR},
       source_type = #{sourceType,jdbcType=VARCHAR},
       creator = #{creator,jdbcType=VARCHAR},
       modifier = #{modifier,jdbcType=VARCHAR},
       gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
       gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
-    where id = #{id,jdbcType=BIGINT}
+    where entity_id = #{entityId,jdbcType=VARCHAR}
   </update>
 </mapper>
