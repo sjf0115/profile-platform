@@ -48,26 +48,18 @@
         </javaClientGenerator>
 
         <!-- 要生成哪些表 -->
-        <table tableName="profile_meta_label_category" domainObjectName="LabelCategory"
+        <table tableName="profile_meta_entity" domainObjectName="Entity"
                enableCountByExample="false"
                enableUpdateByExample="false"
                enableDeleteByExample="false"
                enableSelectByExample="false"
                selectByExampleQueryId="false"></table>
 
-        <table tableName="profile_meta_datasource" domainObjectName="Datasource"
+        <table tableName="profile_meta_entity_type" domainObjectName="EntityType"
                enableCountByExample="false"
                enableUpdateByExample="false"
                enableDeleteByExample="false"
                enableSelectByExample="false"
                selectByExampleQueryId="false"></table>
-
-        <table tableName="profile_meta_datasource_type" domainObjectName="DatasourceType"
-               enableCountByExample="false"
-               enableUpdateByExample="false"
-               enableDeleteByExample="false"
-               enableSelectByExample="false"
-               selectByExampleQueryId="false"></table>
-
     </context>
 </generatorConfiguration>

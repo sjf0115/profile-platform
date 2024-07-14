@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.dao.LabelCategoryMapper">
+  <resultMap id="BaseResultMap" type="com.data.profile.model.LabelCategory">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+    <result column="is_default" jdbcType="INTEGER" property="isDefault" />
+    <result column="category_id" jdbcType="VARCHAR" property="categoryId" />
+    <result column="category_name" jdbcType="VARCHAR" property="categoryName" />
+    <result column="category_level" jdbcType="INTEGER" property="categoryLevel" />
+    <result column="parent_category_id" jdbcType="VARCHAR" property="parentCategoryId" />
+    <result column="category_seq" jdbcType="INTEGER" property="categorySeq" />
+    <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, status, is_default, category_id, category_name, category_level, parent_category_id, 
+    category_seq, source_type, creator, modifier, gmt_create, gmt_modified
+  </sql>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from profile_meta_label_category
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+    delete from profile_meta_label_category
+    where id = #{id,jdbcType=BIGINT}
+  </delete>
+  <insert id="insert" parameterType="com.data.profile.model.LabelCategory">
+    insert into profile_meta_label_category (id, status, is_default, 
+      category_id, category_name, category_level, 
+      parent_category_id, category_seq, source_type, 
+      creator, modifier, gmt_create, 
+      gmt_modified)
+    values (#{id,jdbcType=BIGINT}, #{status,jdbcType=INTEGER}, #{isDefault,jdbcType=INTEGER}, 
+      #{categoryId,jdbcType=VARCHAR}, #{categoryName,jdbcType=VARCHAR}, #{categoryLevel,jdbcType=INTEGER}, 
+      #{parentCategoryId,jdbcType=VARCHAR}, #{categorySeq,jdbcType=INTEGER}, #{sourceType,jdbcType=INTEGER}, 
+      #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR}, #{gmtCreate,jdbcType=TIMESTAMP}, 
+      #{gmtModified,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertSelective" parameterType="com.data.profile.model.LabelCategory">
+    insert into profile_meta_label_category
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="status != null">
+        status,
+      </if>
+      <if test="isDefault != null">
+        is_default,
+      </if>
+      <if test="categoryId != null">
+        category_id,
+      </if>
+      <if test="categoryName != null">
+        category_name,
+      </if>
+      <if test="categoryLevel != null">
+        category_level,
+      </if>
+      <if test="parentCategoryId != null">
+        parent_category_id,
+      </if>
+      <if test="categorySeq != null">
+        category_seq,
+      </if>
+      <if test="sourceType != null">
+        source_type,
+      </if>
+      <if test="creator != null">
+        creator,
+      </if>
+      <if test="modifier != null">
+        modifier,
+      </if>
+      <if test="gmtCreate != null">
+        gmt_create,
+      </if>
+      <if test="gmtModified != null">
+        gmt_modified,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=BIGINT},
+      </if>
+      <if test="status != null">
+        #{status,jdbcType=INTEGER},
+      </if>
+      <if test="isDefault != null">
+        #{isDefault,jdbcType=INTEGER},
+      </if>
+      <if test="categoryId != null">
+        #{categoryId,jdbcType=VARCHAR},
+      </if>
+      <if test="categoryName != null">
+        #{categoryName,jdbcType=VARCHAR},
+      </if>
+      <if test="categoryLevel != null">
+        #{categoryLevel,jdbcType=INTEGER},
+      </if>
+      <if test="parentCategoryId != null">
+        #{parentCategoryId,jdbcType=VARCHAR},
+      </if>
+      <if test="categorySeq != null">
+        #{categorySeq,jdbcType=INTEGER},
+      </if>
+      <if test="sourceType != null">
+        #{sourceType,jdbcType=INTEGER},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="modifier != null">
+        #{modifier,jdbcType=VARCHAR},
+      </if>
+      <if test="gmtCreate != null">
+        #{gmtCreate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="gmtModified != null">
+        #{gmtModified,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.data.profile.model.LabelCategory">
+    update profile_meta_label_category
+    <set>
+      <if test="status != null">
+        status = #{status,jdbcType=INTEGER},
+      </if>
+      <if test="isDefault != null">
+        is_default = #{isDefault,jdbcType=INTEGER},
+      </if>
+      <if test="categoryId != null">
+        category_id = #{categoryId,jdbcType=VARCHAR},
+      </if>
+      <if test="categoryName != null">
+        category_name = #{categoryName,jdbcType=VARCHAR},
+      </if>
+      <if test="categoryLevel != null">
+        category_level = #{categoryLevel,jdbcType=INTEGER},
+      </if>
+      <if test="parentCategoryId != null">
+        parent_category_id = #{parentCategoryId,jdbcType=VARCHAR},
+      </if>
+      <if test="categorySeq != null">
+        category_seq = #{categorySeq,jdbcType=INTEGER},
+      </if>
+      <if test="sourceType != null">
+        source_type = #{sourceType,jdbcType=INTEGER},
+      </if>
+      <if test="creator != null">
+        creator = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="modifier != null">
+        modifier = #{modifier,jdbcType=VARCHAR},
+      </if>
+      <if test="gmtCreate != null">
+        gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="gmtModified != null">
+        gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.data.profile.model.LabelCategory">
+    update profile_meta_label_category
+    set status = #{status,jdbcType=INTEGER},
+      is_default = #{isDefault,jdbcType=INTEGER},
+      category_id = #{categoryId,jdbcType=VARCHAR},
+      category_name = #{categoryName,jdbcType=VARCHAR},
+      category_level = #{categoryLevel,jdbcType=INTEGER},
+      parent_category_id = #{parentCategoryId,jdbcType=VARCHAR},
+      category_seq = #{categorySeq,jdbcType=INTEGER},
+      source_type = #{sourceType,jdbcType=INTEGER},
+      creator = #{creator,jdbcType=VARCHAR},
+      modifier = #{modifier,jdbcType=VARCHAR},
+      gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+      gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+</mapper>

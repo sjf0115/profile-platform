@@ -80,10 +80,10 @@ VALUES (1, '100000', 'admin', 'admin', 1, '100000', '100000');
 DROP Table `profile_meta_entity`;
 CREATE TABLE IF NOT EXISTS `profile_meta_entity`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:启用-1,停用-2',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
     `entity_id` VARCHAR(40) NOT NULL COMMENT '实体ID',
     `entity_name` VARCHAR(100) NOT NULL COMMENT '实体名称',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 系统内置-1,自定义-2',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -92,20 +92,32 @@ CREATE TABLE IF NOT EXISTS `profile_meta_entity`(
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-实体';
 
 
+INSERT INTO `profile_meta_entity` (`status`, `entity_id`, `entity_name`, `source_type`, `creator`, `modifier`)
+VALUES (1, '02P08QFV60', '用户', 1, '100000', '100000');
+
+
 -- 6. 实体类型
 DROP Table `profile_meta_entity_type`;
 CREATE TABLE IF NOT EXISTS `profile_meta_entity_type`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:启用-1,停用-2',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
     `entity_type_id` VARCHAR(40) NOT NULL COMMENT '实体类型ID',
     `entity_type_name` VARCHAR(100) NOT NULL COMMENT '实体类型名称',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 系统内置-1,自定义-2',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-实体类型';
+
+INSERT INTO `profile_meta_entity_type` (`status`, `entity_type_id`, `entity_type_name`, `source_type`, `creator`, `modifier`)
+VALUES (1, '03W199ZY5Z', 'uid', 1, '100000', '100000')
+;
+
+select version();
+
+select now();
 
 
 -- 7. 标签类目
