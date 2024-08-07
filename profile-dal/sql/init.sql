@@ -115,9 +115,6 @@ INSERT INTO `profile_meta_entity_type` (`status`, `entity_type_id`, `entity_type
 VALUES (1, '03W199ZY5Z', 'uid', 1, '100000', '100000')
 ;
 
-select version();
-
-select now();
 
 
 -- 7. 标签类目

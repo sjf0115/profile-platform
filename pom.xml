@@ -59,13 +59,6 @@
         <version>${aspectj.version}</version>
       </dependency>
 
-      <!-- Web 分页查询 -->
-      <dependency>
-        <groupId>com.github.pagehelper</groupId>
-        <artifactId>pagehelper</artifactId>
-        <version>${pagehelper.version}</version>
-      </dependency>
-
       <!-- 工具类 begin -->
 
       <!-- Guava -->

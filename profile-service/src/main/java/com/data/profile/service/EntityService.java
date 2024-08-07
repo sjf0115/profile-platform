@@ -3,6 +3,7 @@ package com.data.profile.service;
 import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
+import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.DatasourceMapper;
 import com.data.profile.dao.EntityMapper;
@@ -78,6 +79,7 @@ public class EntityService {
                 throw new RuntimeException("实体ID已经存在，不允许重复添加");
             }
             entity.setEntityId(entityId);
+            entity.setStatus(Status.ENABLE.getCode());
             entity.setSourceType(SourceType.CUSTOM.getCode());
             entity.setCreator(RequestContext.currentUserId());
             entity.setModifier(RequestContext.currentUserId());
