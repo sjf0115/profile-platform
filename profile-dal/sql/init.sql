@@ -48,6 +48,9 @@ CREATE TABLE IF NOT EXISTS `profile_meta_dataset`(
     `status` INT NOT NULL DEFAULT 1 COMMENT '状态:启用-1,停用-2',
     `dataset_id` VARCHAR(40) NOT NULL COMMENT '数据集ID',
     `dataset_name` VARCHAR(100) NOT NULL COMMENT '数据集名称',
+    `dataset_type` VARCHAR(100) NOT NULL COMMENT '数据集类型',
+    `dataset_desc` VARCHAR(100) NOT NULL COMMENT '数据集描述',
+
     `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 系统内置-1,自定义-2',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
@@ -77,6 +80,7 @@ VALUES (1, '100000', 'admin', 'admin', 1, '100000', '100000');
 
 
 -- 5. 实体
+-- 实体应该是 uid ，实体类型为 用户
 DROP Table `profile_meta_entity`;
 CREATE TABLE IF NOT EXISTS `profile_meta_entity`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
@@ -153,7 +157,7 @@ CREATE TABLE IF NOT EXISTS `profile_meta_label`(
     `label_category_id` VARCHAR(100) NOT NULL COMMENT '标签类目ID',
 
     `label_data_type` INT NOT NULL COMMENT '标签数据类型: 1-string,2-bigint,3-double,4-datetime',
-    `label_distribute_type` INT NOT NULL COMMENT '标签数据分布类型: 1-枚举,2-连续',
+    `label_dist_type` INT NOT NULL COMMENT '标签数据分布类型: 1-枚举,2-连续',
     `label_organize_type` INT NOT NULL COMMENT '标签组织类型',
     `label_stats_type` INT NOT NULL COMMENT '标签加工类型: 1-事实标签,2-统计标签,3-预测标签',
 
@@ -166,7 +170,7 @@ CREATE TABLE IF NOT EXISTS `profile_meta_label`(
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '标签创建时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '标签最后修改时间',
     PRIMARY KEY (`id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-标签类目';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-标签';
 
 
 -- 9. 任务
@@ -216,3 +220,62 @@ CREATE TABLE IF NOT EXISTS `profile_meta_user_login`(
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-用户登录';
+
+
+-- 12. 群组
+DROP Table `profile_meta_group`;
+CREATE TABLE IF NOT EXISTS `profile_meta_group`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `group_id` VARCHAR(40) NOT NULL COMMENT '群组ID',
+    `group_name` VARCHAR(100) NOT NULL COMMENT '群组名称',
+    `group_desc` VARCHAR(200) NOT NULL COMMENT '群组描述',
+
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 系统内置-1,自定义-2',
+
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-群组';
+
+
+-- 12. 事件
+DROP Table `profile_meta_event`;
+CREATE TABLE IF NOT EXISTS `profile_meta_event`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:启用-1,停用-2',
+    `event_id` VARCHAR(40) NOT NULL COMMENT '事件ID',
+    `event_name` VARCHAR(100) NOT NULL COMMENT '事件名称',
+    `event_desc` VARCHAR(200) NOT NULL COMMENT '事件描述',
+    `event_rules` VARCHAR(800) NOT NULL COMMENT '事件配置规则',
+    `dataset_id` VARCHAR(200) NOT NULL COMMENT '数据集ID',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 系统内置-1,自定义-2',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    INDEX idx_id(`event_id`),
+    INDEX idx_name(`event_name`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-事件';
+
+
+-- 12. 事件属性
+DROP Table `profile_meta_event_attr`;
+CREATE TABLE IF NOT EXISTS `profile_meta_event_attr`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:启用-1,停用-2',
+    `attr_id` VARCHAR(40) NOT NULL COMMENT '事件ID',
+    `attr_name` VARCHAR(100) NOT NULL COMMENT '事件名称',
+    `attr_desc` VARCHAR(200) NOT NULL COMMENT '事件描述',
+    `attr_type` INT NOT NULL DEFAULT 2 COMMENT '创建方式: 内置属性-1,事件属性-2,数据集公共属性-3',
+    `dataset_id` VARCHAR(200) DEFAULT NULL COMMENT '数据集ID',
+    `entity_id` VARCHAR(100) DEFAULT NULL COMMENT '实体ID',
+    `attr_field` VARCHAR(100) NOT NULL COMMENT '属性提取字段',
+    `attr_path` VARCHAR(100) DEFAULT NULL COMMENT '属性提取的字段路径',
+    `attr_data_type` INT NOT NULL COMMENT '属性数据类型',
+    `attr_dist_type` INT NOT NULL COMMENT '属性分布类型',
+    `attr_organize_type` INT NOT NULL COMMENT '属性组织类型',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    INDEX idx_id(`attr_id`),
+    INDEX idx_name(`attr_name`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-事件属性';
