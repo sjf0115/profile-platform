@@ -48,14 +48,7 @@
         </javaClientGenerator>
 
         <!-- 要生成哪些表 -->
-        <table tableName="profile_meta_entity" domainObjectName="Entity"
-               enableCountByExample="false"
-               enableUpdateByExample="false"
-               enableDeleteByExample="false"
-               enableSelectByExample="false"
-               selectByExampleQueryId="false"></table>
-
-        <table tableName="profile_meta_entity_type" domainObjectName="EntityType"
+        <table tableName="profile_meta_label" domainObjectName="Label"
                enableCountByExample="false"
                enableUpdateByExample="false"
                enableDeleteByExample="false"

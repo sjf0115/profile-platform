@@ -120,7 +120,6 @@ VALUES (1, '03W199ZY5Z', 'uid', 1, '100000', '100000')
 ;
 
 
-
 -- 7. 标签类目
 DROP Table `profile_meta_label_category`;
 CREATE TABLE IF NOT EXISTS `profile_meta_label_category`(
@@ -146,31 +145,34 @@ VALUES (1, 1, '08F631JOD5', '未分类', 1, '0', 1, 1, '100000', '100000');
 
 
 -- 8. 标签
-DROP Table `profile_meta_label`;
+DROP TABLE IF EXISTS `profile_meta_label`;
 CREATE TABLE IF NOT EXISTS `profile_meta_label`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `is_valid` INT NOT NULL DEFAULT 1 COMMENT '是否有效: 1-有效,0-无效',
     `label_id` VARCHAR(40) NOT NULL COMMENT '标签ID',
-    `label_name` VARCHAR(100) NOT NULL COMMENT '标签名称',
-    `label_status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态:1-待上架,2-上架中,3-已上架,4-已冻结,5-下架中,6-已下架',
+    `label_name` VARCHAR(150) NOT NULL COMMENT '标签名称',
+    `label_status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-已创建,2-已绑定,3-审核中,4-已上架,5-已冻结,6-下架中,7-已下架，8-删除',
     `label_type` VARCHAR(100) NOT NULL COMMENT '标签类型: 1-属性标签,2-行为标签',
-    `label_desc` VARCHAR(100) NOT NULL COMMENT '标签描述',
+    `label_desc` VARCHAR(200) NOT NULL COMMENT '标签描述',
     `label_category_id` VARCHAR(100) NOT NULL COMMENT '标签类目ID',
-
-    `label_data_type` INT NOT NULL COMMENT '标签数据类型: 1-string,2-bigint,3-double,4-datetime',
-    `label_dist_type` INT NOT NULL COMMENT '标签数据分布类型: 1-枚举,2-连续',
-    `label_organize_type` INT NOT NULL COMMENT '标签组织类型',
-    `label_stats_type` INT NOT NULL COMMENT '标签加工类型: 1-事实标签,2-统计标签,3-预测标签',
-
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 系统内置-1,自定义-2',
-    `is_office` INT NOT NULL COMMENT '是否是官方标签:是-1,否-2',
-
+    `label_data_type` INT NOT NULL DEFAULT 1 COMMENT '标签数据类型: 1-string,2-bigint,3-double,4-datetime',
+    `label_dist_type` INT NOT NULL DEFAULT 1 COMMENT '标签数据分布类型: 1-枚举,2-连续',
+    `label_organize_type` INT NOT NULL DEFAULT 1 COMMENT '标签组织类型: 1-单值,2-多值,3-KV,4-KKV',
+    `label_produce_type` INT NOT NULL DEFAULT 1 COMMENT '标签加工类型: 1-事实标签,2-统计标签,3-预测标签',
+    `label_time_type` INT NOT NULL DEFAULT 1 COMMENT '标签时效性类型: 1-离线标签,2-实时标签',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
+    `is_office` INT NOT NULL DEFAULT 1 COMMENT '是否官方认证:是-1,否-2',
     `owner` VARCHAR(100) NOT NULL COMMENT '标签负责人',
     `creator` VARCHAR(100) NOT NULL COMMENT '标签创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '标签最后修改者',
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '标签创建时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '标签最后修改时间',
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`id`),
+    UNIQUE(`label_id`), UNIQUE(`label_name`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-标签';
+
+
+
 
 
 -- 9. 任务
@@ -279,3 +281,19 @@ CREATE TABLE IF NOT EXISTS `profile_meta_event_attr`(
     INDEX idx_id(`attr_id`),
     INDEX idx_name(`attr_name`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-事件属性';
+
+
+-- 
+
+INSERT INTO `profile_meta_event_attr` (`status`, `attr_id`, `attr_name`, `attr_desc`, `attr_type`, `dataset_id`, `entity_id`, `attr_field`, `attr_path`, `attr_data_type`, `attr_dist_type`, `attr_organize_type`)
+VALUES
+    (1, '', '主体对象ID', '一般指用户ID', 1, null, '03W199ZY5Z', 'subject_id', null, 1, 1, 1)
+    ,(1, '', '主体对象类型', '一般指用户', 1, null, '03W199ZY5Z', 'subject_type', null, 1, 1, 1)
+    ,(1, '', '主体对象属性', '一般指用户属性', 1, null, '03W199ZY5Z', 'subject_attr', null, 1, 1, 1)
+    ,(1, '', '客体对象ID', '被操作对象的ID', 1, null, '03W199ZY5Z', 'object_id', null, 1, 1, 1)
+    ,(1, '', '客体对象类型', '一般指内容或者媒体号', 1, null, '03W199ZY5Z', 'object_type', null, 1, 1, 1)
+    ,(1, '', '客体对象属性', '被操作对象属性', 1, null, '03W199ZY5Z', 'object_attr', null, 1, 1, 1)
+    ,(1, '', '行为时间', '行为发生时间', 1, null, '03W199ZY5Z', 'behavior_time', null, 1, 1, 1)
+    ,(1, '', '行为类型', '行为类型', 1, null, '03W199ZY5Z', 'behavior_type', null, 1, 1, 1)
+    ,(1, '', '行为属性', '行为属性', 1, null, '03W199ZY5Z', 'behavior_args', null, 1, 1, 1)
+;
