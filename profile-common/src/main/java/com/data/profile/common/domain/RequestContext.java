@@ -36,7 +36,7 @@ public class RequestContext {
         if (user != null) {
             return user.getUserId();
         }
-        return "100000";
+        return "0100000";
     }
 
     // 当前登录用户名称

@@ -121,7 +121,7 @@ VALUES (1, '03W199ZY5Z', 'uid', 1, '100000', '100000')
 
 
 -- 7. 标签类目
-DROP Table `profile_meta_label_category`;
+DROP TABLE IF EXISTS `profile_meta_label_category`;
 CREATE TABLE IF NOT EXISTS `profile_meta_label_category`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
     `status` INT NOT NULL DEFAULT 1 COMMENT '状态:启用-1,删除-2',
@@ -131,18 +131,18 @@ CREATE TABLE IF NOT EXISTS `profile_meta_label_category`(
     `category_level` INT NOT NULL COMMENT '标签类目层级',
     `parent_category_id` VARCHAR(40) NOT NULL COMMENT '父标签类目ID',
     `category_seq` INT NOT NULL COMMENT '标签类目同级展示序列, 从1开始',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 系统内置-1,自定义-2',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`id`),
+    UNIQUE(`category_id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-标签类目';
 
 
 INSERT INTO `profile_meta_label_category` (`status`, `is_default`, `category_id`, `category_name`, `category_level`, `parent_category_id`, `category_seq`, `source_type`, `creator`, `modifier`)
-VALUES (1, 1, '08F631JOD5', '未分类', 1, '0', 1, 1, '100000', '100000');
-
+VALUES (1, 1, '08F631JOD1', '未分类', 1, '0', 1, 1, '0100000', '0100000');
 
 -- 8. 标签
 DROP TABLE IF EXISTS `profile_meta_label`;
@@ -172,7 +172,10 @@ CREATE TABLE IF NOT EXISTS `profile_meta_label`(
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-标签';
 
 
-
+INSERT INTO `profile_meta_label` (
+    `is_valid`, `label_id`, `label_name`, `label_status`, `label_type`, `label_desc`, `label_category_id`, `label_data_type`, `label_dist_type`,
+    `label_organize_type`,	`label_produce_type`, `label_time_type`, `source_type`, `is_office`, `owner`, `creator`, `modifier`)
+VALUES (1, '07H137JO1D', '下单次数', 4, 2, '下单次数', '082ENU08E8', 2, 1, 1, 2, 1, 2, 1, '0100000', '0100000', '0100000');
 
 
 -- 9. 任务

@@ -23,6 +23,7 @@
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
     <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
   </resultMap>
+
   <sql id="Base_Column_List">
     id, is_valid, label_id, label_name, label_status, label_type, label_desc, label_category_id, 
     label_data_type, label_dist_type, label_organize_type, label_produce_type, label_time_type, 
@@ -49,58 +50,58 @@
     from profile_meta_label
     where 1 = 1
     <if test="isValid != null">
-      is_valid = #{isValid,jdbcType=INTEGER},
+      AND is_valid = #{isValid,jdbcType=INTEGER}
     </if>
     <if test="labelId != null">
-      label_id = #{labelId,jdbcType=VARCHAR},
+      AND label_id = #{labelId,jdbcType=VARCHAR}
     </if>
     <if test="labelName != null">
-      label_name = #{labelName,jdbcType=VARCHAR},
+      AND label_name = #{labelName,jdbcType=VARCHAR}
     </if>
     <if test="labelStatus != null">
-      label_status = #{labelStatus,jdbcType=INTEGER},
+      AND label_status = #{labelStatus,jdbcType=INTEGER}
     </if>
     <if test="labelType != null">
-      label_type = #{labelType,jdbcType=VARCHAR},
+      AND label_type = #{labelType,jdbcType=VARCHAR}
     </if>
     <if test="labelCategoryId != null">
-      label_category_id = #{labelCategoryId,jdbcType=VARCHAR},
+      AND label_category_id = #{labelCategoryId,jdbcType=VARCHAR}
     </if>
     <if test="labelDataType != null">
-      label_data_type = #{labelDataType,jdbcType=INTEGER},
+      AND label_data_type = #{labelDataType,jdbcType=INTEGER}
     </if>
     <if test="labelDistType != null">
-      label_dist_type = #{labelDistType,jdbcType=INTEGER},
+      AND label_dist_type = #{labelDistType,jdbcType=INTEGER}
     </if>
     <if test="labelOrganizeType != null">
-      label_organize_type = #{labelOrganizeType,jdbcType=INTEGER},
+      AND label_organize_type = #{labelOrganizeType,jdbcType=INTEGER}
     </if>
     <if test="labelProduceType != null">
-      label_produce_type = #{labelProduceType,jdbcType=INTEGER},
+      AND label_produce_type = #{labelProduceType,jdbcType=INTEGER}
     </if>
     <if test="labelTimeType != null">
-      label_time_type = #{labelTimeType,jdbcType=INTEGER},
+      AND label_time_type = #{labelTimeType,jdbcType=INTEGER}
     </if>
     <if test="sourceType != null">
-      source_type = #{sourceType,jdbcType=INTEGER},
+      AND source_type = #{sourceType,jdbcType=INTEGER}
     </if>
     <if test="isOffice != null">
-      is_office = #{isOffice,jdbcType=INTEGER},
+      AND is_office = #{isOffice,jdbcType=INTEGER}
     </if>
     <if test="owner != null">
-      owner = #{owner,jdbcType=VARCHAR},
+      AND owner = #{owner,jdbcType=VARCHAR}
     </if>
     <if test="creator != null">
-      creator = #{creator,jdbcType=VARCHAR},
+      AND creator = #{creator,jdbcType=VARCHAR}
     </if>
     <if test="modifier != null">
-      modifier = #{modifier,jdbcType=VARCHAR},
+      AND modifier = #{modifier,jdbcType=VARCHAR}
     </if>
     <if test="gmtCreate != null">
-      gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+      AND gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}
     </if>
     <if test="gmtModified != null">
-      gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
+      AND gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
     </if>
   </select>
 

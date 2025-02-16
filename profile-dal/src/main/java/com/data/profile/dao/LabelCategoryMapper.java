@@ -7,13 +7,6 @@ import java.util.List;
 
 @Mapper
 public interface LabelCategoryMapper {
-    int deleteByCategoryId(String categoryId);
-
-    int insert(LabelCategory row);
-
-    int insertSelective(LabelCategory row);
-
-    LabelCategory selectByPrimaryKey(Long id);
 
     LabelCategory selectByCategoryId(String categoryId);
 
@@ -21,13 +14,24 @@ public interface LabelCategoryMapper {
 
     List<LabelCategory> selectByParams(LabelCategory category);
 
+    List<LabelCategory> selectByParentId(String parentCategoryId);
+
+    Integer selectMaxSeqByParentId(String parentCategoryId);
+
+    // 查询标签类目的层级
+    Integer selectLevelByCategoryId(String categoryId);
+
+    //LabelCategory selectDefaultByCategoryLevel(int categoryLevel);
+
+    int selectMaxCategoryId();
+
+    int insert(LabelCategory row);
+
+    int insertSelective(LabelCategory row);
+
     int updateByCategoryIdSelective(LabelCategory row);
 
     int updateByCategoryId(LabelCategory row);
 
-    Integer selectMaxSeqByParentId(String parentCategoryId);
-
-    Integer selectLevelByCategoryId(String categoryId);
-
-    int selectMaxCategoryId();
+    int deleteByCategoryId(String categoryId);
 }

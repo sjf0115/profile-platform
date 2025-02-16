@@ -2,6 +2,7 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.model.Entity;
 import com.data.profile.model.LabelCategory;
 import com.data.profile.service.LabelCategoryService;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -27,11 +29,17 @@ public class LabelCategoryController {
     private static Logger LOG = LoggerFactory.getLogger(LabelCategoryController.class);
 
     @Autowired
-    private LabelCategoryService labelCategoryService;
+    private LabelCategoryService categoryService;
+
+    @GetMapping(value = "/list")
+    public Response getList(@RequestBody LabelCategory category) {
+        List<LabelCategory> categories = categoryService.getList(category);
+        return Response.success(categories);
+    }
 
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam String categoryId) {
-        Optional<LabelCategory> optional = labelCategoryService.getDetail(categoryId);
+        Optional<LabelCategory> optional = categoryService.getDetail(categoryId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
         } else {
@@ -41,7 +49,7 @@ public class LabelCategoryController {
 
     @GetMapping(value = "/add")
     public Response add(@RequestParam String categoryName, @RequestParam String parentCategoryId) {
-        int result = labelCategoryService.add(categoryName, parentCategoryId);
+        int result = categoryService.add(categoryName, parentCategoryId);
         if (result > 0) {
             return Response.success(result);
         } else {
@@ -51,17 +59,17 @@ public class LabelCategoryController {
 
     @GetMapping(value = "/delete")
     public Response delete(@RequestParam String categoryId) {
-        int result = labelCategoryService.delete(categoryId);
+        int result = categoryService.delete(categoryId);
         if (result > 0) {
             return Response.success(result);
         } else {
-            return Response.error("添加标签类目失败", ResponseCode.ERROR);
+            return Response.error("删除标签类目失败", ResponseCode.ERROR);
         }
     }
 
     @GetMapping(value = "/rename")
     public Response rename(@RequestParam String categoryId, @RequestParam String categoryName) {
-        int result = labelCategoryService.rename(categoryId, categoryName);
+        int result = categoryService.rename(categoryId, categoryName);
         if (result > 0) {
             return Response.success(result);
         } else {
