@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.dao.DataSourceTypeMapper">
+  <resultMap id="BaseResultMap" type="com.data.profile.model.DataSourceType">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+    <result column="datasource_type_id" jdbcType="VARCHAR" property="dataSourceTypeId" />
+    <result column="datasource_type_name" jdbcType="VARCHAR" property="dataSourceTypeName" />
+    <result column="config_template" jdbcType="LONGVARCHAR" property="configTemplate" />
+    <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    id, status, datasource_type_id, datasource_type_name, source_type, config_template, creator, modifier,
+    gmt_create, gmt_modified
+  </sql>
+
+  <select id="selectByDataSourceTypeId" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_datasource_type
+    where datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectByDataSourceTypeName" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_datasource_type
+    where datasource_type_name = #{dataSourceTypeName,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectByParams" parameterType="com.data.profile.model.DataSourceType" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_datasource_type
+    where 1 = 1
+    <if test="status != null">
+      and status = #{status,jdbcType=INTEGER}
+    </if>
+    <if test="dataSourceTypeId != null">
+      and datasource_type_id = #{dataSourceTypeId,jdbcType=INTEGER}
+    </if>
+    <if test="dataSourceTypeName != null">
+      and datasource_type_name = #{dataSourceTypeName,jdbcType=VARCHAR}
+    </if>
+    <if test="sourceType != null">
+      and source_type = #{sourceType,jdbcType=INTEGER}
+    </if>
+    <if test="creator != null and creator != ''">
+      and creator = #{creator,jdbcType=VARCHAR}
+    </if>
+    <if test="modifier != null and modifier != ''">
+      and modifier = #{modifier,jdbcType=VARCHAR}
+    </if>
+  </select>
+
+  <insert id="insert" parameterType="com.data.profile.model.DataSourceType">
+    insert into profile_meta_datasource_type (status, datasource_type_id,
+      datasource_type_name, source_type, creator, 
+      modifier, config_template)
+    values (#{status,jdbcType=INTEGER}, #{dataSourceTypeId,jdbcType=VARCHAR},
+      #{dataSourceTypeName,jdbcType=VARCHAR}, #{sourceType,jdbcType=INTEGER}, #{creator,jdbcType=VARCHAR},
+      #{modifier,jdbcType=VARCHAR}, #{configTemplate,jdbcType=LONGVARCHAR})
+  </insert>
+
+  <insert id="insertSelective" parameterType="com.data.profile.model.DataSourceType">
+    insert into profile_meta_datasource_type
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="status != null">
+        status,
+      </if>
+      <if test="dataSourceTypeId != null">
+        datasource_type_id,
+      </if>
+      <if test="dataSourceTypeName != null">
+        datasource_type_name,
+      </if>
+      <if test="sourceType != null">
+        source_type,
+      </if>
+      <if test="creator != null">
+        creator,
+      </if>
+      <if test="modifier != null">
+        modifier,
+      </if>
+      <if test="configTemplate != null">
+        config_template,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="status != null">
+        #{status,jdbcType=INTEGER},
+      </if>
+      <if test="dataSourceTypeId != null">
+        #{dataSourceTypeId,jdbcType=VARCHAR},
+      </if>
+      <if test="dataSourceTypeName != null">
+        #{dataSourceTypeName,jdbcType=VARCHAR},
+      </if>
+      <if test="sourceType != null">
+        #{sourceType,jdbcType=INTEGER},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="modifier != null">
+        #{modifier,jdbcType=VARCHAR},
+      </if>
+      <if test="configTemplate != null">
+        #{configTemplate,jdbcType=LONGVARCHAR},
+      </if>
+    </trim>
+  </insert>
+
+  <update id="updateByDataSourceTypeId" parameterType="com.data.profile.model.DataSourceType">
+    update profile_meta_datasource_type
+    set status = #{status,jdbcType=INTEGER},
+        datasource_type_name = #{dataSourceTypeName,jdbcType=VARCHAR},
+        source_type = #{sourceType,jdbcType=INTEGER},
+        config_template = #{configTemplate,jdbcType=LONGVARCHAR},
+        creator = #{creator,jdbcType=VARCHAR},
+        modifier = #{modifier,jdbcType=VARCHAR}
+    where datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR}
+  </update>
+
+  <update id="updateByDataSourceTypeIdSelective" parameterType="com.data.profile.model.DataSourceType">
+    update profile_meta_datasource_type
+    <set>
+      <if test="status != null">
+        status = #{status,jdbcType=INTEGER},
+      </if>
+      <if test="dataSourceTypeId != null">
+        datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR},
+      </if>
+      <if test="dataSourceTypeName != null">
+        datasource_type_name = #{dataSourceTypeName,jdbcType=VARCHAR},
+      </if>
+      <if test="sourceType != null">
+        source_type = #{sourceType,jdbcType=INTEGER},
+      </if>
+      <if test="configTemplate != null">
+        config_template = #{configTemplate,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="creator != null">
+        creator = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="modifier != null">
+        modifier = #{modifier,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR}
+  </update>
+
+  <delete id="deleteByDataSourceTypeId" parameterType="java.lang.String">
+    delete from profile_meta_datasource_type
+    where datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR}
+  </delete>
+</mapper>
