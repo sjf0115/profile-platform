@@ -31,17 +31,21 @@ public class DataSourceService {
     private static Logger LOG = LoggerFactory.getLogger(DataSourceService.class);
 
     @Resource
-    private DataSourceMapper datasourceMapper;
+    private DataSourceMapper dataSourceMapper;
 
-    // 根据查询条件获取数据源列表
+    /**
+     * 根据查询条件获取数据源列表
+     * @param dataSource
+     * @return
+     */
     public List<DataSource> getList(DataSource dataSource) {
-        List<DataSource> datasources = datasourceMapper.selectByParams(dataSource);
-        return datasources;
+        List<DataSource> dataSources = dataSourceMapper.selectByParams(dataSource);
+        return dataSources;
     }
 
     // 根据数据源ID获取数据源详细信息
     public Optional<DataSource> getDetail(String dataSourceId) {
-        DataSource dataSource = datasourceMapper.selectByDatasourceId(dataSourceId);
+        DataSource dataSource = dataSourceMapper.selectByDatasourceId(dataSourceId);
         if (dataSource == null) {
             return Optional.empty();
         }
@@ -52,13 +56,13 @@ public class DataSourceService {
     public int save(DataSource datasource) throws RuntimeException {
         if (StringUtils.isBlank(datasource.getDataSourceId())) {
             // 新增
-            List<DataSource> datasources = datasourceMapper.selectSimpleByDatasourceName(datasource.getDataSourceName());
-            if (datasources.size() > 0) {
+            List<DataSource> dataSources = dataSourceMapper.selectSimpleByDatasourceName(datasource.getDataSourceName());
+            if (dataSources.size() > 0) {
                 throw new RuntimeException("数据源已经存在，不允许重复添加");
             }
             // ID 后续优化 保证唯一
             String datasourceId = IDGenerator.generate(ModelType.DATASOURCE);
-            DataSource source = datasourceMapper.selectSimpleByDatasourceId(datasourceId);
+            DataSource source = dataSourceMapper.selectSimpleByDatasourceId(datasourceId);
             if (!Objects.equals(source, null)) {
                 throw new RuntimeException("数据源ID已经存在，不允许重复添加");
             }
@@ -66,12 +70,12 @@ public class DataSourceService {
             datasource.setSourceType(SourceType.CUSTOM.getCode());
             datasource.setCreator(RequestContext.currentUserId());
             datasource.setModifier(RequestContext.currentUserId());
-            int result = datasourceMapper.insertSelective(datasource);
+            int result = dataSourceMapper.insertSelective(datasource);
             return result;
         } else {
             // 修改
             datasource.setModifier(RequestContext.currentUserId());
-            int result = datasourceMapper.updateByDataSourceIdSelective(datasource);
+            int result = dataSourceMapper.updateByDataSourceIdSelective(datasource);
             return result;
         }
     }

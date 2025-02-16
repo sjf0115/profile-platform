@@ -23,22 +23,22 @@ import java.util.Optional;
  */
 @Slf4j
 @RestController
-@RequestMapping(value = "/datasource", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/dataSource", produces = MediaType.APPLICATION_JSON_VALUE)
 public class DataSourceController {
     private static Logger LOG = LoggerFactory.getLogger(DataSourceController.class);
 
     @Autowired
-    private DataSourceService datasourceService;
+    private DataSourceService dataSourceService;
 
     @GetMapping(value = "/list")
-    public Response getList(@RequestBody DataSource datasource) {
-        List<DataSource> datasources = datasourceService.getList(datasource);
-        return Response.success(datasources);
+    public Response getList(@RequestBody DataSource dataSource) {
+        List<DataSource> dataSources = dataSourceService.getList(dataSource);
+        return Response.success(dataSources);
     }
 
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam String datasourceId) {
-        Optional<DataSource> optional = datasourceService.getDetail(datasourceId);
+        Optional<DataSource> optional = dataSourceService.getDetail(datasourceId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
         } else {
@@ -48,7 +48,7 @@ public class DataSourceController {
 
     @PostMapping(value = "/save")
     public Response save(@RequestBody DataSource datasource) {
-        int result = datasourceService.save(datasource);
+        int result = dataSourceService.save(datasource);
         if (result > 0) {
             return Response.success(result);
         } else {

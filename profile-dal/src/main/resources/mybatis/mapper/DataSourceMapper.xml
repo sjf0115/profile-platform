@@ -34,7 +34,7 @@
         select
         <include refid="Base_Column_List" />
         from profile_meta_datasource as t1
-        where datasource_id = #{datasourceId,jdbcType=VARCHAR}
+        where datasource_id = #{dataSourceId,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByDatasourceId" parameterType="java.lang.String" resultMap="ResultMapWithDataSourceType">
@@ -44,14 +44,14 @@
         from profile_meta_datasource as t1
         left outer join profile_meta_datasource_type as t2
         on t1.datasource_type_id = t2.datasource_type_id
-        where datasource_id = #{datasourceId,jdbcType=VARCHAR}
+        where datasource_id = #{dataSourceId,jdbcType=VARCHAR}
     </select>
 
     <select id="selectSimpleByDatasourceName" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List" />
         from profile_meta_datasource as t1
-        where datasource_name = #{datasourceName,jdbcType=VARCHAR}
+        where datasource_name = #{dataSourceName,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByDatasourceName" parameterType="java.lang.String" resultMap="ResultMapWithDataSourceType">
@@ -61,7 +61,7 @@
         from profile_meta_datasource as t1
         left outer join profile_meta_datasource_type as t2
         on t1.datasource_type_id = t2.datasource_type_id
-        where datasource_name = #{datasourceName,jdbcType=VARCHAR}
+        where datasource_name = #{dataSourceName,jdbcType=VARCHAR}
     </select>
 
     <select id="selectSimpleByParams" parameterType="com.data.profile.model.DataSource" resultMap="BaseResultMap">
@@ -72,25 +72,25 @@
         <if test="status != null">
             and status = #{status,jdbcType=INTEGER}
         </if>
-        <if test="datasourceName != null and datasourceName != ''">
-            and datasource_name = #{datasourceName,jdbcType=VARCHAR}
+        <if test="dataSourceName != null">
+            and datasource_name = #{dataSourceName,jdbcType=VARCHAR}
         </if>
-        <if test="datasourceDesc != null and datasourceDesc != ''">
-            and datasource_desc = #{datasourceDesc,jdbcType=VARCHAR}
+        <if test="dataSourceDesc != null">
+            and datasource_desc = #{dataSourceDesc,jdbcType=VARCHAR}
         </if>
-        <if test="datasourceTypeId != null and datasourceTypeId != ''">
-            and datasource_type_id = #{datasourceTypeId,jdbcType=VARCHAR}
+        <if test="dataSourceTypeId != null">
+            and datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR}
         </if>
         <if test="sourceType != null">
             and source_type = #{sourceType,jdbcType=INTEGER}
         </if>
-        <if test="config != null and config != ''">
+        <if test="config != null">
             and config = #{config,jdbcType=INTEGER}
         </if>
-        <if test="creator != null and creator != ''">
+        <if test="creator != null">
             and creator = #{creator,jdbcType=VARCHAR}
         </if>
-        <if test="modifier != null and modifier != ''">
+        <if test="modifier != null">
             and modifier = #{modifier,jdbcType=VARCHAR}
         </if>
     </select>
@@ -106,14 +106,14 @@
         <if test="status != null">
             and t1.status = #{status,jdbcType=INTEGER}
         </if>
-        <if test="datasourceName != null and datasourceName != ''">
-            and t1.datasource_name = #{datasourceName,jdbcType=VARCHAR}
+        <if test="dataSourceName != null">
+            and t1.datasource_name = #{dataSourceName,jdbcType=VARCHAR}
         </if>
-        <if test="datasourceDesc != null and datasourceDesc != ''">
-            and t1.datasource_desc = #{datasourceDesc,jdbcType=VARCHAR}
+        <if test="dataSourceDesc != null">
+            and t1.datasource_desc = #{dataSourceDesc,jdbcType=VARCHAR}
         </if>
-        <if test="datasourceTypeId != null and datasourceTypeId != ''">
-            and t1.datasource_type_id = #{datasourceTypeId,jdbcType=VARCHAR}
+        <if test="dataSourceTypeId != null">
+            and t1.datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR}
         </if>
         <if test="sourceType != null">
             and t1.source_type = #{sourceType,jdbcType=INTEGER}
@@ -127,23 +127,18 @@
         <if test="modifier != null and modifier != ''">
             and t1.modifier = #{modifier,jdbcType=VARCHAR}
         </if>
-        <if test="datasourceTypeName != null and datasourceTypeName != ''">
-            and t2.datasource_type_name = #{datasourceTypeName,jdbcType=VARCHAR}
+        <if test="dataSourceTypeName != null">
+            and t2.datasource_type_name = #{dataSourceTypeName,jdbcType=VARCHAR}
         </if>
     </select>
 
-    <delete id="deleteByDatasourceId" parameterType="java.lang.String">
-        delete from profile_meta_datasource
-        where datasource_id = #{datasourceId,jdbcType=VARCHAR}
-    </delete>
-
     <insert id="insert" parameterType="com.data.profile.model.DataSource">
         insert into profile_meta_datasource (status, datasource_id,
-                                             datasource_name, datasource_desc, datasource_type_id,
-                                             source_type, creator, modifier, config
+             datasource_name, datasource_desc, datasource_type_id,
+             source_type, creator, modifier, config
         )
-        values (#{status,jdbcType=INTEGER}, #{datasourceId,jdbcType=VARCHAR},
-                #{datasourceName,jdbcType=VARCHAR}, #{datasourceDesc,jdbcType=VARCHAR}, #{datasourceTypeId,jdbcType=VARCHAR},
+        values (#{status,jdbcType=INTEGER}, #{dataSourceId,jdbcType=VARCHAR},
+                #{dataSourceName,jdbcType=VARCHAR}, #{dataSourceDesc,jdbcType=VARCHAR}, #{dataSourceTypeId,jdbcType=VARCHAR},
                 #{sourceType,jdbcType=INTEGER}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR},
                 #{config,jdbcType=LONGVARCHAR}
                )
@@ -155,16 +150,16 @@
             <if test="status != null">
                 status,
             </if>
-            <if test="datasourceId != null">
+            <if test="dataSourceId != null">
                 datasource_id,
             </if>
-            <if test="datasourceName != null">
+            <if test="dataSourceName != null">
                 datasource_name,
             </if>
-            <if test="datasourceDesc != null">
+            <if test="dataSourceDesc != null">
                 datasource_desc,
             </if>
-            <if test="datasourceTypeId != null">
+            <if test="dataSourceTypeId != null">
                 datasource_type_id,
             </if>
             <if test="sourceType != null">
@@ -184,17 +179,17 @@
             <if test="status != null">
                 #{status,jdbcType=INTEGER},
             </if>
-            <if test="datasourceId != null">
-                #{datasourceId,jdbcType=VARCHAR},
+            <if test="dataSourceId != null">
+                #{dataSourceId,jdbcType=VARCHAR},
             </if>
-            <if test="datasourceName != null">
-                #{datasourceName,jdbcType=VARCHAR},
+            <if test="dataSourceName != null">
+                #{dataSourceName,jdbcType=VARCHAR},
             </if>
-            <if test="datasourceDesc != null">
-                #{datasourceDesc,jdbcType=VARCHAR},
+            <if test="dataSourceDesc != null">
+                #{dataSourceDesc,jdbcType=VARCHAR},
             </if>
-            <if test="datasourceTypeId != null">
-                #{datasourceTypeId,jdbcType=VARCHAR},
+            <if test="dataSourceTypeId != null">
+                #{dataSourceTypeId,jdbcType=VARCHAR},
             </if>
             <if test="sourceType != null">
                 #{sourceType,jdbcType=INTEGER},
@@ -217,14 +212,14 @@
             <if test="status != null">
                 status = #{status,jdbcType=INTEGER},
             </if>
-            <if test="datasourceName != null">
-                datasource_name = #{datasourceName,jdbcType=VARCHAR},
+            <if test="dataSourceName != null">
+                datasource_name = #{dataSourceName,jdbcType=VARCHAR},
             </if>
-            <if test="datasourceDesc != null">
-                datasource_desc = #{datasourceDesc,jdbcType=VARCHAR},
+            <if test="dataSourceDesc != null">
+                datasource_desc = #{dataSourceDesc,jdbcType=VARCHAR},
             </if>
-            <if test="datasourceTypeId != null">
-                datasource_type_id = #{datasourceTypeId,jdbcType=VARCHAR},
+            <if test="dataSourceTypeId != null">
+                datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR},
             </if>
             <if test="sourceType != null">
                 source_type = #{sourceType,jdbcType=INTEGER},
@@ -239,19 +234,24 @@
                 config = #{config,jdbcType=LONGVARCHAR},
             </if>
         </set>
-        where datasource_id = #{datasourceId,jdbcType=VARCHAR}
+        where datasource_id = #{dataSourceId,jdbcType=VARCHAR}
     </update>
 
     <update id="updateByDataSourceId" parameterType="com.data.profile.model.DataSource">
         update profile_meta_datasource
         set status = #{status,jdbcType=INTEGER},
-            datasource_name = #{datasourceName,jdbcType=VARCHAR},
-            datasource_desc = #{datasourceDesc,jdbcType=VARCHAR},
-            datasource_type_id = #{datasourceTypeId,jdbcType=VARCHAR},
+            datasource_name = #{dataSourceName,jdbcType=VARCHAR},
+            datasource_desc = #{dataSourceDesc,jdbcType=VARCHAR},
+            datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR},
             source_type = #{sourceType,jdbcType=INTEGER},
             creator = #{creator,jdbcType=VARCHAR},
             modifier = #{modifier,jdbcType=VARCHAR},
             config = #{config,jdbcType=LONGVARCHAR}
-        where datasource_id = #{datasourceId,jdbcType=VARCHAR}
+        where datasource_id = #{dataSourceId,jdbcType=VARCHAR}
     </update>
+
+    <delete id="deleteByDatasourceId" parameterType="java.lang.String">
+        delete from profile_meta_datasource
+        where datasource_id = #{dataSourceId,jdbcType=VARCHAR}
+    </delete>
 </mapper>
