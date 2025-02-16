@@ -5,20 +5,20 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-public class Datasource {
+public class DataSource {
     private Long id;
 
     private Integer status;
 
-    private String datasourceId;
+    private String dataSourceId;
 
-    private String datasourceName;
+    private String dataSourceName;
 
-    private String datasourceDesc;
+    private String dataSourceDesc;
 
-    private String datasourceTypeId;
+    private String dataSourceTypeId;
 
-    private String datasourceTypeName;
+    private String dataSourceTypeName;
 
     private Integer sourceType;
 

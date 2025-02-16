@@ -48,7 +48,7 @@
         </javaClientGenerator>
 
         <!-- 要生成哪些表 -->
-        <table tableName="profile_meta_label" domainObjectName="Label"
+        <table tableName="profile_meta_datasource_type" domainObjectName="DataSourceType"
                enableCountByExample="false"
                enableUpdateByExample="false"
                enableDeleteByExample="false"

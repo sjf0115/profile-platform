@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `profile_meta_datasource`(
 
 INSERT INTO `profile_meta_datasource` VALUES (1, 1, '040EW35R0G', '数据平台报表MySQL', '数据平台报表MySQL数据源', '0559Y4C0OU', 2, '{\"host\":\"127.0.0.1\",\"port\":\"3306\",\"database\":\"reports\",\"user\":\"root\",\"password\":\"root\"}', '100000', '100000', '2024-07-11 07:43:13', '2024-07-11 07:43:13');
 
--- 2. 数据源类型
+-- 2. 数据源类型-数据源模板
 DROP Table `profile_meta_datasource_type`;
 CREATE TABLE IF NOT EXISTS `profile_meta_datasource_type`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',

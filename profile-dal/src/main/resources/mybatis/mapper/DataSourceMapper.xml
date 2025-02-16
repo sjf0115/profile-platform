@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.data.profile.dao.DatasourceMapper">
-    <resultMap id="BaseResultMap" type="com.data.profile.model.Datasource">
+<mapper namespace="com.data.profile.dao.DataSourceMapper">
+    <resultMap id="BaseResultMap" type="com.data.profile.model.DataSource">
         <id column="id" jdbcType="BIGINT" property="id" />
         <result column="status" jdbcType="INTEGER" property="status" />
-        <result column="datasource_id" jdbcType="VARCHAR" property="datasourceId" />
-        <result column="datasource_name" jdbcType="VARCHAR" property="datasourceName" />
-        <result column="datasource_desc" jdbcType="VARCHAR" property="datasourceDesc" />
-        <result column="datasource_type_id" jdbcType="VARCHAR" property="datasourceTypeId" />
+        <result column="datasource_id" jdbcType="VARCHAR" property="dataSourceId" />
+        <result column="datasource_name" jdbcType="VARCHAR" property="dataSourceName" />
+        <result column="datasource_desc" jdbcType="VARCHAR" property="dataSourceDesc" />
+        <result column="datasource_type_id" jdbcType="VARCHAR" property="dataSourceTypeId" />
         <result column="source_type" jdbcType="INTEGER" property="sourceType" />
         <result column="creator" jdbcType="VARCHAR" property="creator" />
         <result column="modifier" jdbcType="VARCHAR" property="modifier" />
@@ -16,8 +16,8 @@
         <result column="config" jdbcType="LONGVARCHAR" property="config" />
     </resultMap>
 
-    <resultMap extends="BaseResultMap" id="ResultMapWithDataSourceType" type="com.data.profile.model.Datasource">
-        <result column="datasource_type_name" jdbcType="LONGVARCHAR" property="datasourceTypeName" />
+    <resultMap extends="BaseResultMap" id="ResultMapWithDataSourceType" type="com.data.profile.model.DataSource">
+        <result column="datasource_type_name" jdbcType="LONGVARCHAR" property="dataSourceTypeName" />
         <result column="config_template" jdbcType="LONGVARCHAR" property="configTemplate" />
     </resultMap>
 
@@ -64,7 +64,7 @@
         where datasource_name = #{datasourceName,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectSimpleByParams" parameterType="com.data.profile.model.Datasource" resultMap="BaseResultMap">
+    <select id="selectSimpleByParams" parameterType="com.data.profile.model.DataSource" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List" />
         from profile_meta_datasource as t1
@@ -95,7 +95,7 @@
         </if>
     </select>
 
-    <select id="selectByParams" parameterType="com.data.profile.model.Datasource" resultMap="ResultMapWithDataSourceType">
+    <select id="selectByParams" parameterType="com.data.profile.model.DataSource" resultMap="ResultMapWithDataSourceType">
         select
         <include refid="Base_Column_List" />,
         <include refid="DataSource_Type_Column_List" />
@@ -137,7 +137,7 @@
         where datasource_id = #{datasourceId,jdbcType=VARCHAR}
     </delete>
 
-    <insert id="insert" parameterType="com.data.profile.model.Datasource">
+    <insert id="insert" parameterType="com.data.profile.model.DataSource">
         insert into profile_meta_datasource (status, datasource_id,
                                              datasource_name, datasource_desc, datasource_type_id,
                                              source_type, creator, modifier, config
@@ -149,7 +149,7 @@
                )
     </insert>
 
-    <insert id="insertSelective" parameterType="com.data.profile.model.Datasource">
+    <insert id="insertSelective" parameterType="com.data.profile.model.DataSource">
         insert into profile_meta_datasource
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="status != null">
@@ -211,7 +211,7 @@
         </trim>
     </insert>
 
-    <update id="updateByDataSourceIdSelective" parameterType="com.data.profile.model.Datasource">
+    <update id="updateByDataSourceIdSelective" parameterType="com.data.profile.model.DataSource">
         update profile_meta_datasource
         <set>
             <if test="status != null">
@@ -242,7 +242,7 @@
         where datasource_id = #{datasourceId,jdbcType=VARCHAR}
     </update>
 
-    <update id="updateByDataSourceId" parameterType="com.data.profile.model.Datasource">
+    <update id="updateByDataSourceId" parameterType="com.data.profile.model.DataSource">
         update profile_meta_datasource
         set status = #{status,jdbcType=INTEGER},
             datasource_name = #{datasourceName,jdbcType=VARCHAR},

@@ -7,7 +7,6 @@ import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.LabelCategoryMapper;
 import com.data.profile.dao.LabelMapper;
-import com.data.profile.model.Entity;
 import com.data.profile.model.Label;
 import com.data.profile.model.LabelCategory;
 import lombok.extern.slf4j.Slf4j;

@@ -2,8 +2,8 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.model.Datasource;
-import com.data.profile.service.DatasourceService;
+import com.data.profile.model.DataSource;
+import com.data.profile.service.DataSourceService;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,21 +24,21 @@ import java.util.Optional;
 @Slf4j
 @RestController
 @RequestMapping(value = "/datasource", produces = MediaType.APPLICATION_JSON_VALUE)
-public class DatasourceController {
-    private static Logger LOG = LoggerFactory.getLogger(DatasourceController.class);
+public class DataSourceController {
+    private static Logger LOG = LoggerFactory.getLogger(DataSourceController.class);
 
     @Autowired
-    private DatasourceService datasourceService;
+    private DataSourceService datasourceService;
 
     @GetMapping(value = "/list")
-    public Response getList(@RequestBody Datasource datasource) {
-        List<Datasource> datasources = datasourceService.getList(datasource);
+    public Response getList(@RequestBody DataSource datasource) {
+        List<DataSource> datasources = datasourceService.getList(datasource);
         return Response.success(datasources);
     }
 
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam String datasourceId) {
-        Optional<Datasource> optional = datasourceService.getDetail(datasourceId);
+        Optional<DataSource> optional = datasourceService.getDetail(datasourceId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
         } else {
@@ -47,7 +47,7 @@ public class DatasourceController {
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody Datasource datasource) {
+    public Response save(@RequestBody DataSource datasource) {
         int result = datasourceService.save(datasource);
         if (result > 0) {
             return Response.success(result);
