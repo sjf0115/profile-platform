@@ -45,19 +45,57 @@ INSERT INTO `profile_meta_datasource_type` VALUES (2, 1, '05U08SU24N', 'ClickHou
 DROP Table `profile_meta_dataset`;
 CREATE TABLE IF NOT EXISTS `profile_meta_dataset`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:启用-1,停用-2',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
     `dataset_id` VARCHAR(40) NOT NULL COMMENT '数据集ID',
     `dataset_name` VARCHAR(100) NOT NULL COMMENT '数据集名称',
-    `dataset_type` VARCHAR(100) NOT NULL COMMENT '数据集类型',
-    `dataset_desc` VARCHAR(100) NOT NULL COMMENT '数据集描述',
+    `dataset_type` VARCHAR(100) NOT NULL COMMENT '数据集类型：1-标签数据集,2-行为数据集,3-统计数据集',
+    `dataset_format_type` VARCHAR(100) NOT NULL COMMENT '数据集存储类型：1-宽表,2-竖表,3-Bitmap,4-BSI',
+    `dataset_desc` VARCHAR(200) NOT NULL COMMENT '数据集描述',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
+    `datasource_id` VARCHAR(50) NOT NULL COMMENT '同步的数据源ID',
+    `source_table_name` VARCHAR(50) NOT NULL COMMENT '原始数据表名',
+    `source_partition_column` VARCHAR(50) NOT NULL COMMENT '同步的数据表分区列: 时间分区字段/分区值格式',
+    `sink_table_name` VARCHAR(50) NOT NULL COMMENT '同步到引擎的数据表名',
+    `entity_column_name` VARCHAR(100) NOT NULL COMMENT '主体(实体)标识列名',
+    `entity_id` VARCHAR(50) NOT NULL COMMENT '主体(实体)ID',
 
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 系统内置-1,自定义-2',
+    `sync_status` INT NOT NULL DEFAULT 1 COMMENT '同步状态:1-未执行,2-执行中,3-执行异常,4-执行成功',
+    `sync_start_time` DATETIME NOT NULL COMMENT '执行开始时间',
+    `sync_end_time` DATETIME NOT NULL COMMENT '执行结束时间',
+    `sync_time` INT NOT NULL COMMENT '执行耗时时间(分钟)',
+
+    `entity_id` VARCHAR(50) NOT NULL COMMENT '主体(实体)ID',
+
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`dataset_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集';
+
+-- 3. 数据集
+DROP Table `profile_meta_dataset`;
+CREATE TABLE IF NOT EXISTS `profile_meta_dataset`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+    `dataset_id` VARCHAR(40) NOT NULL COMMENT '数据集ID',
+    `dataset_name` VARCHAR(100) NOT NULL COMMENT '数据集名称',
+    `dataset_type` VARCHAR(100) NOT NULL COMMENT '数据集类型：1-标签数据集,2-行为数据集,3-统计数据集',
+    `dataset_format_type` VARCHAR(100) NOT NULL COMMENT '数据集存储类型：1-宽表,2-竖表,3-Bitmap,4-BSI',
+    `dataset_desc` VARCHAR(200) NOT NULL COMMENT '数据集描述',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
+    `datasource_id` VARCHAR(50) NOT NULL COMMENT '同步的数据源ID',
+    `source_table_name` VARCHAR(50) NOT NULL COMMENT '原始数据表名',
+    `source_partition_column` VARCHAR(50) NOT NULL COMMENT '同步的数据表分区列: 时间分区字段/分区值格式',
+    `sink_table_name` VARCHAR(50) NOT NULL COMMENT '同步到引擎的数据表名',
+    `entity_column_name` VARCHAR(100) NOT NULL COMMENT '主体(实体)标识列名',
+    `entity_id` VARCHAR(50) NOT NULL COMMENT '主体(实体)ID',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据源类型';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集';
 
 -- 4. 用户
 DROP Table `profile_meta_user`;
