@@ -22,21 +22,21 @@ CREATE TABLE IF NOT EXISTS `profile_meta_datasource`(
 
 INSERT INTO `profile_meta_datasource` VALUES (1, 1, '040EW35R0G', '数据平台报表MySQL', '数据平台报表MySQL数据源', '0559Y4C0OU', 2, '{\"host\":\"127.0.0.1\",\"port\":\"3306\",\"database\":\"reports\",\"user\":\"root\",\"password\":\"root\"}', '100000', '100000', '2024-07-11 07:43:13', '2024-07-11 07:43:13');
 
--- 2. 数据源类型-数据源模板
-DROP Table `profile_meta_datasource_type`;
-CREATE TABLE IF NOT EXISTS `profile_meta_datasource_type`(
+-- 2. 数据源Schema
+DROP Table `profile_meta_datasource_schema`;
+CREATE TABLE IF NOT EXISTS `profile_meta_datasource_schema`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:启用-1,停用-2',
-    `datasource_type_id` VARCHAR(40) NOT NULL COMMENT '数据源类型ID',
-    `datasource_type_name` VARCHAR(100) NOT NULL COMMENT '数据源类型名称',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 系统内置-1,自定义-2',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+    `schema_id` VARCHAR(40) NOT NULL COMMENT '数据源类型ID',
+    `schema_name` VARCHAR(100) NOT NULL COMMENT '数据源类型名称',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
     `config_template` text NOT NULL COMMENT '配置模板',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据源类型';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据源Schema';
 
 INSERT INTO `profile_meta_datasource_type` VALUES (1, 1, '0559Y4C0OU', 'MySQL', 1, '[{\"show_name\":\"Host\",\"key\":\"host\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"\"},{\"show_name\":\"端口号\",\"key\":\"port\",\"value\":\"3306\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"port\"},{\"show_name\":\"数据库\",\"key\":\"database\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"此处填写的数据库是导入或者导出的数据库\"},{\"show_name\":\"用户名\",\"key\":\"user\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"\"},{\"show_name\":\"密码\",\"key\":\"password\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"1\",\"tip\":\"\"}]', '100000', '100000', '2024-07-10 07:34:43', '2024-07-11 07:42:10');
 INSERT INTO `profile_meta_datasource_type` VALUES (2, 1, '05U08SU24N', 'ClickHouse', 1, '[{\"show_name\":\"Host\",\"key\":\"host\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"\"},{\"show_name\":\"端口号\",\"key\":\"port\",\"value\":\"3306\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"port\"},{\"show_name\":\"数据库\",\"key\":\"database\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"此处填写的数据库是导入或者导出的数据库\"},{\"show_name\":\"用户名\",\"key\":\"user\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"\"},{\"show_name\":\"密码\",\"key\":\"password\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"1\",\"tip\":\"\"}]', '100000', '100000', '2024-07-10 07:35:26', '2024-07-11 07:42:32');
