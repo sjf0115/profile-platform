@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.dao.DatasetMapper">
+  <resultMap id="BaseResultMap" type="com.data.profile.model.Dataset">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+    <result column="dataset_id" jdbcType="VARCHAR" property="datasetId" />
+    <result column="dataset_name" jdbcType="VARCHAR" property="datasetName" />
+    <result column="dataset_type" jdbcType="INTEGER" property="datasetType" />
+    <result column="dataset_desc" jdbcType="VARCHAR" property="datasetDesc" />
+    <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+    <result column="datasource_id" jdbcType="VARCHAR" property="datasourceId" />
+    <result column="source_table_name" jdbcType="VARCHAR" property="sourceTableName" />
+    <result column="source_partition_field" jdbcType="VARCHAR" property="sourcePartitionField" />
+    <result column="source_partition_format" jdbcType="VARCHAR" property="sourcePartitionFormat" />
+    <result column="sink_table_name" jdbcType="VARCHAR" property="sinkTableName" />
+    <result column="entity_id" jdbcType="VARCHAR" property="entityId" />
+    <result column="entity_field" jdbcType="VARCHAR" property="entityField" />
+    <result column="sync_status" jdbcType="INTEGER" property="syncStatus" />
+    <result column="sync_start_time" jdbcType="TIMESTAMP" property="syncStartTime" />
+    <result column="sync_end_time" jdbcType="TIMESTAMP" property="syncEndTime" />
+    <result column="sync_time" jdbcType="INTEGER" property="syncTime" />
+    <result column="owner" jdbcType="VARCHAR" property="owner" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    id, status, dataset_id, dataset_name, dataset_type, dataset_desc, source_type, datasource_id, 
+    source_table_name, source_partition_field, source_partition_format, sink_table_name, 
+    entity_id, entity_field, sync_status, sync_start_time, sync_end_time, sync_time, 
+    owner, creator, modifier, gmt_create, gmt_modified
+  </sql>
+
+  <select id="selectByDatasetId" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from profile_meta_dataset
+    where dataset_id = #{datasetId,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectByDatasetName" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_dataset
+    where dataset_name = #{datasetName,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectByParams" parameterType="com.data.profile.model.Dataset" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_dataset
+    where 1 = 1
+    <if test="status != null">
+      and status = #{status,jdbcType=INTEGER},
+    </if>
+    <if test="datasetId != null">
+      and dataset_id = #{datasetId,jdbcType=VARCHAR},
+    </if>
+    <if test="datasetName != null">
+      and dataset_name = #{datasetName,jdbcType=VARCHAR},
+    </if>
+    <if test="datasetType != null">
+      and dataset_type = #{datasetType,jdbcType=INTEGER},
+    </if>
+    <if test="datasetDesc != null">
+      and dataset_desc = #{datasetDesc,jdbcType=VARCHAR},
+    </if>
+    <if test="sourceType != null">
+      and source_type = #{sourceType,jdbcType=INTEGER},
+    </if>
+    <if test="datasourceId != null">
+      and datasource_id = #{datasourceId,jdbcType=VARCHAR},
+    </if>
+    <if test="sourceTableName != null">
+      and source_table_name = #{sourceTableName,jdbcType=VARCHAR},
+    </if>
+    <if test="sourcePartitionField != null">
+      and source_partition_field = #{sourcePartitionField,jdbcType=VARCHAR},
+    </if>
+    <if test="sourcePartitionFormat != null">
+      and source_partition_format = #{sourcePartitionFormat,jdbcType=VARCHAR},
+    </if>
+    <if test="sinkTableName != null">
+      and sink_table_name = #{sinkTableName,jdbcType=VARCHAR},
+    </if>
+    <if test="entityId != null">
+      and entity_id = #{entityId,jdbcType=VARCHAR},
+    </if>
+    <if test="entityField != null">
+      and entity_field = #{entityField,jdbcType=VARCHAR},
+    </if>
+    <if test="syncStatus != null">
+      and sync_status = #{syncStatus,jdbcType=INTEGER},
+    </if>
+    <if test="syncStartTime != null">
+      and sync_start_time = #{syncStartTime,jdbcType=TIMESTAMP},
+    </if>
+    <if test="syncEndTime != null">
+      and sync_end_time = #{syncEndTime,jdbcType=TIMESTAMP},
+    </if>
+    <if test="syncTime != null">
+      and sync_time = #{syncTime,jdbcType=INTEGER},
+    </if>
+    <if test="owner != null">
+      and owner = #{owner,jdbcType=VARCHAR},
+    </if>
+    <if test="creator != null">
+      and creator = #{creator,jdbcType=VARCHAR},
+    </if>
+    <if test="modifier != null">
+      and modifier = #{modifier,jdbcType=VARCHAR},
+    </if>
+    <if test="gmtCreate != null">
+      and gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+    </if>
+    <if test="gmtModified != null">
+      and gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
+    </if>
+  </select>
+
+  <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_dataset
+    where dataset_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+  </select>
+
+  <insert id="insert" parameterType="com.data.profile.model.Dataset">
+    insert into profile_meta_dataset (status, dataset_id,
+      dataset_name, dataset_type, dataset_desc, 
+      source_type, datasource_id, source_table_name, 
+      source_partition_field, source_partition_format, 
+      sink_table_name, entity_id, entity_field, 
+      sync_status, sync_start_time, sync_end_time, 
+      sync_time, owner, creator, 
+      modifier, gmt_create, gmt_modified
+      )
+    values (#{status,jdbcType=INTEGER}, #{datasetId,jdbcType=VARCHAR},
+      #{datasetName,jdbcType=VARCHAR}, #{datasetType,jdbcType=INTEGER}, #{datasetDesc,jdbcType=VARCHAR}, 
+      #{sourceType,jdbcType=INTEGER}, #{datasourceId,jdbcType=VARCHAR}, #{sourceTableName,jdbcType=VARCHAR}, 
+      #{sourcePartitionField,jdbcType=VARCHAR}, #{sourcePartitionFormat,jdbcType=VARCHAR}, 
+      #{sinkTableName,jdbcType=VARCHAR}, #{entityId,jdbcType=VARCHAR}, #{entityField,jdbcType=VARCHAR}, 
+      #{syncStatus,jdbcType=INTEGER}, #{syncStartTime,jdbcType=TIMESTAMP}, #{syncEndTime,jdbcType=TIMESTAMP}, 
+      #{syncTime,jdbcType=INTEGER}, #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, 
+      #{modifier,jdbcType=VARCHAR}, #{gmtCreate,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP}
+      )
+  </insert>
+
+  <insert id="insertSelective" parameterType="com.data.profile.model.Dataset">
+    insert into profile_meta_dataset
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="status != null">
+        status,
+      </if>
+      <if test="datasetId != null">
+        dataset_id,
+      </if>
+      <if test="datasetName != null">
+        dataset_name,
+      </if>
+      <if test="datasetType != null">
+        dataset_type,
+      </if>
+      <if test="datasetDesc != null">
+        dataset_desc,
+      </if>
+      <if test="sourceType != null">
+        source_type,
+      </if>
+      <if test="datasourceId != null">
+        datasource_id,
+      </if>
+      <if test="sourceTableName != null">
+        source_table_name,
+      </if>
+      <if test="sourcePartitionField != null">
+        source_partition_field,
+      </if>
+      <if test="sourcePartitionFormat != null">
+        source_partition_format,
+      </if>
+      <if test="sinkTableName != null">
+        sink_table_name,
+      </if>
+      <if test="entityId != null">
+        entity_id,
+      </if>
+      <if test="entityField != null">
+        entity_field,
+      </if>
+      <if test="syncStatus != null">
+        sync_status,
+      </if>
+      <if test="syncStartTime != null">
+        sync_start_time,
+      </if>
+      <if test="syncEndTime != null">
+        sync_end_time,
+      </if>
+      <if test="syncTime != null">
+        sync_time,
+      </if>
+      <if test="owner != null">
+        owner,
+      </if>
+      <if test="creator != null">
+        creator,
+      </if>
+      <if test="modifier != null">
+        modifier,
+      </if>
+      <if test="gmtCreate != null">
+        gmt_create,
+      </if>
+      <if test="gmtModified != null">
+        gmt_modified,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="status != null">
+        #{status,jdbcType=INTEGER},
+      </if>
+      <if test="datasetId != null">
+        #{datasetId,jdbcType=VARCHAR},
+      </if>
+      <if test="datasetName != null">
+        #{datasetName,jdbcType=VARCHAR},
+      </if>
+      <if test="datasetType != null">
+        #{datasetType,jdbcType=INTEGER},
+      </if>
+      <if test="datasetDesc != null">
+        #{datasetDesc,jdbcType=VARCHAR},
+      </if>
+      <if test="sourceType != null">
+        #{sourceType,jdbcType=INTEGER},
+      </if>
+      <if test="datasourceId != null">
+        #{datasourceId,jdbcType=VARCHAR},
+      </if>
+      <if test="sourceTableName != null">
+        #{sourceTableName,jdbcType=VARCHAR},
+      </if>
+      <if test="sourcePartitionField != null">
+        #{sourcePartitionField,jdbcType=VARCHAR},
+      </if>
+      <if test="sourcePartitionFormat != null">
+        #{sourcePartitionFormat,jdbcType=VARCHAR},
+      </if>
+      <if test="sinkTableName != null">
+        #{sinkTableName,jdbcType=VARCHAR},
+      </if>
+      <if test="entityId != null">
+        #{entityId,jdbcType=VARCHAR},
+      </if>
+      <if test="entityField != null">
+        #{entityField,jdbcType=VARCHAR},
+      </if>
+      <if test="syncStatus != null">
+        #{syncStatus,jdbcType=INTEGER},
+      </if>
+      <if test="syncStartTime != null">
+        #{syncStartTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="syncEndTime != null">
+        #{syncEndTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="syncTime != null">
+        #{syncTime,jdbcType=INTEGER},
+      </if>
+      <if test="owner != null">
+        #{owner,jdbcType=VARCHAR},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="modifier != null">
+        #{modifier,jdbcType=VARCHAR},
+      </if>
+      <if test="gmtCreate != null">
+        #{gmtCreate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="gmtModified != null">
+        #{gmtModified,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+
+  <update id="updateByDatasetIdSelective" parameterType="com.data.profile.model.Dataset">
+    update profile_meta_dataset
+    <set>
+      <if test="status != null">
+        status = #{status,jdbcType=INTEGER},
+      </if>
+      <if test="datasetId != null">
+        dataset_id = #{datasetId,jdbcType=VARCHAR},
+      </if>
+      <if test="datasetName != null">
+        dataset_name = #{datasetName,jdbcType=VARCHAR},
+      </if>
+      <if test="datasetType != null">
+        dataset_type = #{datasetType,jdbcType=INTEGER},
+      </if>
+      <if test="datasetDesc != null">
+        dataset_desc = #{datasetDesc,jdbcType=VARCHAR},
+      </if>
+      <if test="sourceType != null">
+        source_type = #{sourceType,jdbcType=INTEGER},
+      </if>
+      <if test="datasourceId != null">
+        datasource_id = #{datasourceId,jdbcType=VARCHAR},
+      </if>
+      <if test="sourceTableName != null">
+        source_table_name = #{sourceTableName,jdbcType=VARCHAR},
+      </if>
+      <if test="sourcePartitionField != null">
+        source_partition_field = #{sourcePartitionField,jdbcType=VARCHAR},
+      </if>
+      <if test="sourcePartitionFormat != null">
+        source_partition_format = #{sourcePartitionFormat,jdbcType=VARCHAR},
+      </if>
+      <if test="sinkTableName != null">
+        sink_table_name = #{sinkTableName,jdbcType=VARCHAR},
+      </if>
+      <if test="entityId != null">
+        entity_id = #{entityId,jdbcType=VARCHAR},
+      </if>
+      <if test="entityField != null">
+        entity_field = #{entityField,jdbcType=VARCHAR},
+      </if>
+      <if test="syncStatus != null">
+        sync_status = #{syncStatus,jdbcType=INTEGER},
+      </if>
+      <if test="syncStartTime != null">
+        sync_start_time = #{syncStartTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="syncEndTime != null">
+        sync_end_time = #{syncEndTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="syncTime != null">
+        sync_time = #{syncTime,jdbcType=INTEGER},
+      </if>
+      <if test="owner != null">
+        owner = #{owner,jdbcType=VARCHAR},
+      </if>
+      <if test="creator != null">
+        creator = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="modifier != null">
+        modifier = #{modifier,jdbcType=VARCHAR},
+      </if>
+      <if test="gmtCreate != null">
+        gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="gmtModified != null">
+        gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
+      </if>
+    </set>
+    where dataset_id = #{datasetId,jdbcType=BIGINT}
+  </update>
+
+  <update id="updateByDatasetId" parameterType="com.data.profile.model.Dataset">
+    update profile_meta_dataset
+    set status = #{status,jdbcType=INTEGER},
+      dataset_id = #{datasetId,jdbcType=VARCHAR},
+      dataset_name = #{datasetName,jdbcType=VARCHAR},
+      dataset_type = #{datasetType,jdbcType=INTEGER},
+      dataset_desc = #{datasetDesc,jdbcType=VARCHAR},
+      source_type = #{sourceType,jdbcType=INTEGER},
+      datasource_id = #{datasourceId,jdbcType=VARCHAR},
+      source_table_name = #{sourceTableName,jdbcType=VARCHAR},
+      source_partition_field = #{sourcePartitionField,jdbcType=VARCHAR},
+      source_partition_format = #{sourcePartitionFormat,jdbcType=VARCHAR},
+      sink_table_name = #{sinkTableName,jdbcType=VARCHAR},
+      entity_id = #{entityId,jdbcType=VARCHAR},
+      entity_field = #{entityField,jdbcType=VARCHAR},
+      sync_status = #{syncStatus,jdbcType=INTEGER},
+      sync_start_time = #{syncStartTime,jdbcType=TIMESTAMP},
+      sync_end_time = #{syncEndTime,jdbcType=TIMESTAMP},
+      sync_time = #{syncTime,jdbcType=INTEGER},
+      owner = #{owner,jdbcType=VARCHAR},
+      creator = #{creator,jdbcType=VARCHAR},
+      modifier = #{modifier,jdbcType=VARCHAR},
+      gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+      gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
+    where dataset_id = #{datasetId,jdbcType=VARCHAR}
+  </update>
+
+  <delete id="deleteByDatasetId" parameterType="java.lang.String">
+    delete from profile_meta_dataset
+    where dataset_id = #{datasetId,jdbcType=VARCHAR}
+  </delete>
+</mapper>

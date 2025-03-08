@@ -4,42 +4,42 @@ CREATE DATABASE profile;
 
 -- 1. 数据源
 DROP Table `profile_meta_datasource`;
-CREATE TABLE IF NOT EXISTS `profile_meta_datasource`(
-    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:启用-1,停用-2',
-    `datasource_id` VARCHAR(40) NOT NULL COMMENT '数据源ID',
-    `datasource_name` VARCHAR(100) NOT NULL COMMENT '数据源名称',
-    `datasource_desc` VARCHAR(100) NOT NULL COMMENT '数据源描述',
-    `datasource_type_id` VARCHAR(100) NOT NULL COMMENT '数据源类型ID',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 系统内置-1,自定义-2',
+CREATE TABLE `profile_meta_datasource` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+    `status` int NOT NULL DEFAULT '1' COMMENT '状态:1-启用,2-停用',
+    `datasource_id` varchar(40) NOT NULL COMMENT '数据源ID',
+    `datasource_name` varchar(100) NOT NULL COMMENT '数据源名称',
+    `datasource_desc` varchar(100) NOT NULL COMMENT '数据源描述',
+    `datasource_type_id` varchar(100) NOT NULL COMMENT '数据源类型ID',
+    `source_type` int NOT NULL DEFAULT '1' COMMENT '创建方式: 1-系统内置,2-自定义',
     `config` text NOT NULL COMMENT '数据源配置',
-    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
-    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
-    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    `creator` varchar(100) NOT NULL COMMENT '创建者',
+    `modifier` varchar(100) NOT NULL COMMENT '修改者',
+    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据源';
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='画像-数据源';
 
 INSERT INTO `profile_meta_datasource` VALUES (1, 1, '040EW35R0G', '数据平台报表MySQL', '数据平台报表MySQL数据源', '0559Y4C0OU', 2, '{\"host\":\"127.0.0.1\",\"port\":\"3306\",\"database\":\"reports\",\"user\":\"root\",\"password\":\"root\"}', '100000', '100000', '2024-07-11 07:43:13', '2024-07-11 07:43:13');
 
--- 2. 数据源Schema
-DROP Table `profile_meta_datasource_schema`;
-CREATE TABLE IF NOT EXISTS `profile_meta_datasource_schema`(
-    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+-- 2. 数据源类型
+CREATE TABLE `profile_meta_datasource_type` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
     `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
-    `schema_id` VARCHAR(40) NOT NULL COMMENT '数据源类型ID',
-    `schema_name` VARCHAR(100) NOT NULL COMMENT '数据源类型名称',
+    `datasource_type_id` varchar(40) NOT NULL COMMENT '数据源类型ID',
+    `datasource_type_name` varchar(100) NOT NULL COMMENT '数据源类型名称',
     `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
     `config_template` text NOT NULL COMMENT '配置模板',
-    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
-    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
-    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    `creator` varchar(100) NOT NULL COMMENT '创建者',
+    `modifier` varchar(100) NOT NULL COMMENT '修改者',
+    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据源Schema';
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='画像-数据源类型';
 
 INSERT INTO `profile_meta_datasource_type` VALUES (1, 1, '0559Y4C0OU', 'MySQL', 1, '[{\"show_name\":\"Host\",\"key\":\"host\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"\"},{\"show_name\":\"端口号\",\"key\":\"port\",\"value\":\"3306\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"port\"},{\"show_name\":\"数据库\",\"key\":\"database\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"此处填写的数据库是导入或者导出的数据库\"},{\"show_name\":\"用户名\",\"key\":\"user\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"\"},{\"show_name\":\"密码\",\"key\":\"password\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"1\",\"tip\":\"\"}]', '100000', '100000', '2024-07-10 07:34:43', '2024-07-11 07:42:10');
 INSERT INTO `profile_meta_datasource_type` VALUES (2, 1, '05U08SU24N', 'ClickHouse', 1, '[{\"show_name\":\"Host\",\"key\":\"host\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"\"},{\"show_name\":\"端口号\",\"key\":\"port\",\"value\":\"3306\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"port\"},{\"show_name\":\"数据库\",\"key\":\"database\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"此处填写的数据库是导入或者导出的数据库\"},{\"show_name\":\"用户名\",\"key\":\"user\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"0\",\"tip\":\"\"},{\"show_name\":\"密码\",\"key\":\"password\",\"value\":\"请输入\",\"required\":\"1\",\"encrypt\":\"1\",\"tip\":\"\"}]', '100000', '100000', '2024-07-10 07:35:26', '2024-07-11 07:42:32');
+INSERT INTO `profile_meta_datasource_type` VALUES (4, 1, '05U1HSU3JF', 'Hive', 1, '[{"id":"database","label":"数据库名","tip":"您要访问的Hive数据库名，可通过Hive客户端执行 SHOW DATABASES 命令查看已经建立的数据库","componentName":"Input"},{"id":"auth_enable","label":"HIVE登录方式","tip":"访问HIVE是否需要用户名密码","componentName":"Radio","defaultOtion":"disable","options":[{"key":"disable","value":"匿名登录"},{"key":"enable","value":"用户名密码登录（LDAP)"}]},{"id":"user_name","label":"HIVE用户名","componentName":"Input"},{"id":"user_password","label":"HIVE密码","componentName":"Input"},{"id":"meta_type","label":"元数据类型","componentName":"Radio","defaultOtion":"metastore","options":[{"key":"metastore","value":"Hive MetaStore"}]},{"id":"hive_version","label":"HIVE版本","tooltip":"Hive 版本","componentName":"Select"},{"id":"default_fS","label":"defaultFS","tooltip":"Hadoop HDFS 文件系统处于action状态的namenode节点地址 hdfs://ip:port","componentName":"Input"}]', '100000', '100000', '2024-07-10 07:35:26', '2024-07-11 07:42:32');
 
 -- 3. 数据集
 DROP Table `profile_meta_dataset`;
@@ -48,54 +48,44 @@ CREATE TABLE IF NOT EXISTS `profile_meta_dataset`(
     `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
     `dataset_id` VARCHAR(40) NOT NULL COMMENT '数据集ID',
     `dataset_name` VARCHAR(100) NOT NULL COMMENT '数据集名称',
-    `dataset_type` VARCHAR(100) NOT NULL COMMENT '数据集类型：1-标签数据集,2-行为数据集,3-统计数据集',
-    `dataset_format_type` VARCHAR(100) NOT NULL COMMENT '数据集存储类型：1-宽表,2-竖表,3-Bitmap,4-BSI',
-    `dataset_desc` VARCHAR(200) NOT NULL COMMENT '数据集描述',
+    `dataset_type` INT NOT NULL DEFAULT 1 COMMENT '数据集类型：1-标签数据集,2-行为数据集,3-统计数据集',
+    `dataset_desc` VARCHAR(200) COMMENT '数据集描述',
     `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
     `datasource_id` VARCHAR(50) NOT NULL COMMENT '同步的数据源ID',
     `source_table_name` VARCHAR(50) NOT NULL COMMENT '原始数据表名',
-    `source_partition_column` VARCHAR(50) NOT NULL COMMENT '同步的数据表分区列: 时间分区字段/分区值格式',
+    `source_partition_field` VARCHAR(50) NOT NULL COMMENT '同步的数据表的时间分区字段',
+    `source_partition_format` VARCHAR(50) NOT NULL COMMENT '同步的数据表分区值格式',
     `sink_table_name` VARCHAR(50) NOT NULL COMMENT '同步到引擎的数据表名',
-    `entity_column_name` VARCHAR(100) NOT NULL COMMENT '主体(实体)标识列名',
     `entity_id` VARCHAR(50) NOT NULL COMMENT '主体(实体)ID',
-
+    `entity_field` VARCHAR(100) NOT NULL COMMENT '主体(实体)标识字段',
     `sync_status` INT NOT NULL DEFAULT 1 COMMENT '同步状态:1-未执行,2-执行中,3-执行异常,4-执行成功',
-    `sync_start_time` DATETIME NOT NULL COMMENT '执行开始时间',
-    `sync_end_time` DATETIME NOT NULL COMMENT '执行结束时间',
-    `sync_time` INT NOT NULL COMMENT '执行耗时时间(分钟)',
-
-    `entity_id` VARCHAR(50) NOT NULL COMMENT '主体(实体)ID',
-
+    `sync_start_time` DATETIME COMMENT '执行开始时间',
+    `sync_end_time` DATETIME COMMENT '执行结束时间',
+    `sync_time` INT COMMENT '执行耗时时间(分钟)',
+    `owner` VARCHAR(100) NOT NULL COMMENT '负责人',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`dataset_id`)
+    PRIMARY KEY (`id`),
+    UNIQUE(`dataset_id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集';
 
--- 3. 数据集
-DROP Table `profile_meta_dataset`;
-CREATE TABLE IF NOT EXISTS `profile_meta_dataset`(
+-- 3. 数据集字段
+DROP Table `profile_meta_dataset_field`;
+CREATE TABLE IF NOT EXISTS `profile_meta_dataset_field`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
     `dataset_id` VARCHAR(40) NOT NULL COMMENT '数据集ID',
-    `dataset_name` VARCHAR(100) NOT NULL COMMENT '数据集名称',
-    `dataset_type` VARCHAR(100) NOT NULL COMMENT '数据集类型：1-标签数据集,2-行为数据集,3-统计数据集',
-    `dataset_format_type` VARCHAR(100) NOT NULL COMMENT '数据集存储类型：1-宽表,2-竖表,3-Bitmap,4-BSI',
-    `dataset_desc` VARCHAR(200) NOT NULL COMMENT '数据集描述',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
-    `datasource_id` VARCHAR(50) NOT NULL COMMENT '同步的数据源ID',
-    `source_table_name` VARCHAR(50) NOT NULL COMMENT '原始数据表名',
-    `source_partition_column` VARCHAR(50) NOT NULL COMMENT '同步的数据表分区列: 时间分区字段/分区值格式',
-    `sink_table_name` VARCHAR(50) NOT NULL COMMENT '同步到引擎的数据表名',
-    `entity_column_name` VARCHAR(100) NOT NULL COMMENT '主体(实体)标识列名',
-    `entity_id` VARCHAR(50) NOT NULL COMMENT '主体(实体)ID',
+    `field_name` VARCHAR(40) NOT NULL COMMENT '字段名称',
+    `label_id` VARCHAR(100) COMMENT '字段绑定的标签ID: 无绑定则为空',
+    `import_status` INT NOT NULL COMMENT '导入状态: 1-导入,2-不导入',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集';
+    PRIMARY KEY (`id`),
+    UNIQUE(`dataset_id`, `field_name`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集标签字段';
 
 -- 4. 用户
 DROP Table `profile_meta_user`;
@@ -118,7 +108,7 @@ VALUES (1, '100000', 'admin', 'admin', 1, '100000', '100000');
 
 
 -- 5. 实体
--- 实体应该是 uid ，实体类型为 用户
+-- 实体 uid ，实体类型为 用户
 DROP Table `profile_meta_entity`;
 CREATE TABLE IF NOT EXISTS `profile_meta_entity`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',

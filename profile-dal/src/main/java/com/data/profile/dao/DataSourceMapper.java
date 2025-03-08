@@ -22,16 +22,16 @@ public interface DataSourceMapper {
 
     List<DataSource> selectByParams(DataSource datasource);
 
-    // 根据ID删除
-    int deleteByDatasourceId(String datasourceId);
-
     // 插入
-    int insert(DataSource row);
+    int insert(DataSource dataSource);
 
-    int insertSelective(DataSource row);
+    int insertSelective(DataSource dataSource);
 
     // 根据ID更新
-    int updateByDataSourceIdSelective(DataSource row);
+    int updateByDataSourceIdSelective(DataSource dataSource);
 
-    int updateByDataSourceId(DataSource row);
+    int updateByDataSourceId(DataSource dataSource);
+
+    // 根据ID删除
+    int deleteByDatasourceId(String datasourceId);
 }

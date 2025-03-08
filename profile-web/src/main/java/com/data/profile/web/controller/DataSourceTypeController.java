@@ -23,7 +23,7 @@ import java.util.Optional;
  */
 @Slf4j
 @RestController
-@RequestMapping(value = "/dataSourceType", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/datasource/type", produces = MediaType.APPLICATION_JSON_VALUE)
 public class DataSourceTypeController {
     private static Logger LOG = LoggerFactory.getLogger(DataSourceTypeController.class);
 

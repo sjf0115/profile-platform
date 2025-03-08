@@ -22,6 +22,7 @@
     <module>profile-common</module>
     <module>mybatis-generator</module>
     <module>profile-dal</module>
+      <module>profile-manager</module>
   </modules>
 
   <name>profile-platform</name>

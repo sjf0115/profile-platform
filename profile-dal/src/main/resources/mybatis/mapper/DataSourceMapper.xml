@@ -9,6 +9,7 @@
         <result column="datasource_desc" jdbcType="VARCHAR" property="dataSourceDesc" />
         <result column="datasource_type_id" jdbcType="VARCHAR" property="dataSourceTypeId" />
         <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+        <result column="owner" jdbcType="VARCHAR" property="owner" />
         <result column="creator" jdbcType="VARCHAR" property="creator" />
         <result column="modifier" jdbcType="VARCHAR" property="modifier" />
         <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
@@ -121,6 +122,9 @@
         <if test="config != null and config != ''">
             and t1.config = #{config,jdbcType=INTEGER}
         </if>
+        <if test="owner != null and owner != ''">
+            and t1.owner = #{owner,jdbcType=VARCHAR}
+        </if>
         <if test="creator != null and creator != ''">
             and t1.creator = #{creator,jdbcType=VARCHAR}
         </if>
@@ -135,12 +139,12 @@
     <insert id="insert" parameterType="com.data.profile.model.DataSource">
         insert into profile_meta_datasource (status, datasource_id,
              datasource_name, datasource_desc, datasource_type_id,
-             source_type, creator, modifier, config
+             source_type, owner, creator, modifier, config
         )
         values (#{status,jdbcType=INTEGER}, #{dataSourceId,jdbcType=VARCHAR},
                 #{dataSourceName,jdbcType=VARCHAR}, #{dataSourceDesc,jdbcType=VARCHAR}, #{dataSourceTypeId,jdbcType=VARCHAR},
-                #{sourceType,jdbcType=INTEGER}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR},
-                #{config,jdbcType=LONGVARCHAR}
+                #{sourceType,jdbcType=INTEGER}, #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR},
+                #{modifier,jdbcType=VARCHAR}, #{config,jdbcType=LONGVARCHAR}
                )
     </insert>
 
@@ -164,6 +168,9 @@
             </if>
             <if test="sourceType != null">
                 source_type,
+            </if>
+            <if test="owner != null">
+                `owner`,
             </if>
             <if test="creator != null">
                 creator,
@@ -193,6 +200,9 @@
             </if>
             <if test="sourceType != null">
                 #{sourceType,jdbcType=INTEGER},
+            </if>
+            <if test="owner != null">
+                #{owner,jdbcType=VARCHAR},
             </if>
             <if test="creator != null">
                 #{creator,jdbcType=VARCHAR},
@@ -224,6 +234,9 @@
             <if test="sourceType != null">
                 source_type = #{sourceType,jdbcType=INTEGER},
             </if>
+            <if test="owner != null">
+                owner = #{owner,jdbcType=VARCHAR},
+            </if>
             <if test="creator != null">
                 creator = #{creator,jdbcType=VARCHAR},
             </if>
@@ -244,6 +257,7 @@
             datasource_desc = #{dataSourceDesc,jdbcType=VARCHAR},
             datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR},
             source_type = #{sourceType,jdbcType=INTEGER},
+            owner = #{owner,jdbcType=VARCHAR},
             creator = #{creator,jdbcType=VARCHAR},
             modifier = #{modifier,jdbcType=VARCHAR},
             config = #{config,jdbcType=LONGVARCHAR}

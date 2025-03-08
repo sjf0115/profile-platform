@@ -22,6 +22,8 @@ public class DataSource {
 
     private Integer sourceType;
 
+    private String owner;
+
     private String creator;
 
     private String modifier;

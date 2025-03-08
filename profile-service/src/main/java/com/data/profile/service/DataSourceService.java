@@ -3,9 +3,12 @@ package com.data.profile.service;
 import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
+import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.DataSourceMapper;
 import com.data.profile.model.DataSource;
+import com.data.profile.model.DataSourceType;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -32,6 +35,8 @@ public class DataSourceService {
 
     @Resource
     private DataSourceMapper dataSourceMapper;
+    @Resource
+    private DataSourceTypeService dataSourceTypeService;
 
     /**
      * 根据查询条件获取数据源列表
@@ -43,7 +48,11 @@ public class DataSourceService {
         return dataSources;
     }
 
-    // 根据数据源ID获取数据源详细信息
+    /**
+     * 根据数据源ID获取数据源详细信息
+     * @param dataSourceId
+     * @return
+     */
     public Optional<DataSource> getDetail(String dataSourceId) {
         DataSource dataSource = dataSourceMapper.selectByDatasourceId(dataSourceId);
         if (dataSource == null) {
@@ -52,7 +61,12 @@ public class DataSourceService {
         return Optional.of(dataSource);
     }
 
-    // 保存数据源 新增/修改
+    /**
+     * 保存数据源 新增/修改
+     * @param datasource
+     * @return
+     * @throws RuntimeException
+     */
     public int save(DataSource datasource) throws RuntimeException {
         if (StringUtils.isBlank(datasource.getDataSourceId())) {
             // 新增
@@ -66,8 +80,16 @@ public class DataSourceService {
             if (!Objects.equals(source, null)) {
                 throw new RuntimeException("数据源ID已经存在，不允许重复添加");
             }
+            // 数据源类型
+            String dataSourceTypeId = datasource.getDataSourceTypeId();
+            Optional<DataSourceType> dataSourceType = dataSourceTypeService.getDetail(dataSourceTypeId);
+            if (!dataSourceType.isPresent()) {
+                throw new RuntimeException("指定的数据源类型不存在");
+            }
+            datasource.setStatus(Status.ENABLE.getCode());
             datasource.setDataSourceId(datasourceId);
             datasource.setSourceType(SourceType.CUSTOM.getCode());
+            datasource.setOwner(RequestContext.currentUserId());
             datasource.setCreator(RequestContext.currentUserId());
             datasource.setModifier(RequestContext.currentUserId());
             int result = dataSourceMapper.insertSelective(datasource);
@@ -79,4 +101,18 @@ public class DataSourceService {
             return result;
         }
     }
+
+    /**
+     * 根据数据源ID获取数据表
+     * @param dataSourceId 只有 source 数据源支持
+     * @return
+     */
+    public List<String> getTables(String dataSourceId) {
+        List<String> tables = Lists.newArrayList();
+
+        DataSource dataSource = dataSourceMapper.selectByDatasourceId(dataSourceId);
+
+        return tables;
+    }
+
 }
