@@ -5,17 +5,25 @@ import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
+import com.data.profile.common.utils.JdbcUtil;
 import com.data.profile.dao.DataSourceMapper;
+import com.data.profile.manager.jdbc.JdbcService;
 import com.data.profile.model.DataSource;
 import com.data.profile.model.DataSourceType;
+import com.data.profile.model.JdbcParam;
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.net.URISyntaxException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,11 +40,14 @@ import java.util.Optional;
 @Service
 public class DataSourceService {
     private static Logger LOG = LoggerFactory.getLogger(DataSourceService.class);
+    private static Gson gson = new GsonBuilder().create();
 
     @Resource
     private DataSourceMapper dataSourceMapper;
     @Resource
     private DataSourceTypeService dataSourceTypeService;
+    @Resource
+    private JdbcService jdbcService;
 
     /**
      * 根据查询条件获取数据源列表
@@ -111,6 +122,27 @@ public class DataSourceService {
         List<String> tables = Lists.newArrayList();
 
         DataSource dataSource = dataSourceMapper.selectByDatasourceId(dataSourceId);
+        String dataSourceTypeName = dataSource.getDataSourceTypeName();
+        String config = dataSource.getConfig();
+
+        if (!Objects.equals(dataSourceTypeName, "Hive")) {
+            throw new RuntimeException("接入数据的数据源类型只支持 Hive，暂不支持[" + dataSourceTypeName + "]");
+        }
+
+        JdbcParam jdbcParam = gson.fromJson(config, JdbcParam.class);
+
+        try {
+            String url = JdbcUtil.buildUrl(dataSourceTypeName, jdbcParam);
+            jdbcParam.setUrl(url);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("接入数据的数据源类型只支持 Hive，暂不支持[" + dataSourceTypeName + "]");
+        }
+
+        try {
+            tables = jdbcService.getTables(jdbcParam);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据表失败");
+        }
 
         return tables;
     }
