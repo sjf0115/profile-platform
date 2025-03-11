@@ -206,42 +206,52 @@ INSERT INTO `profile_meta_label` (
 VALUES (1, '07H137JO1D', '下单次数', 4, 2, '下单次数', '082ENU08E8', 2, 1, 1, 2, 1, 2, 1, '0100000', '0100000', '0100000');
 
 
--- 9. 任务
+-- 9. 任务 调度任务配置
 DROP Table `profile_meta_task`;
 CREATE TABLE IF NOT EXISTS `profile_meta_task`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:启用-1,停用-2',
-    `category_id` VARCHAR(40) NOT NULL COMMENT '标签类目ID',
-    `category_name` VARCHAR(100) NOT NULL COMMENT '标签类目名称',
-    `category_level` INT NOT NULL COMMENT '标签类目层级',
-    `parent_category_id` VARCHAR(40) NOT NULL COMMENT '父标签类目ID',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 系统内置-1,自定义-2',
+    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态:启用-1,停用-2',
+    `task_id` VARCHAR(40) NOT NULL COMMENT '任务ID',
+    `task_name` VARCHAR(100) NOT NULL COMMENT '任务名称',
+    `task_desc` VARCHAR(100) COMMENT '任务描述',
+    `task_type` INT NOT NULL COMMENT '任务类型:1-数据集接入,2-群组圈选',
+    `task_related_id` VARCHAR(100) COMMENT '任务关联ID',
+    `trigger_target_id` VARCHAR(100) COMMENT '调度对象ID',
+    `trigger_type` INT NOT NULL COMMENT '调度类型:1-手动触发调度,2-API触发调度,3-日周期调度,4-小时周期调度',
+    `trigger_cron` VARCHAR(20) COMMENT '调度 cron 表达式:只有周期自动触发更新才有',
+    `trigger_url` VARCHAR(20) COMMENT '调度触发URL:只有API触发调度才有',
+    `trigger_start_time` VARCHAR(20) COMMENT '触发调度有效开始时间:只有周期自动触发更新才有',
+    `trigger_end_time` VARCHAR(20) COMMENT '触发调度有效结束时间:只有周期自动触发更新才有',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
+    `owner` VARCHAR(100) NOT NULL COMMENT '任务负责人',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-任务';
+    PRIMARY KEY (`id`),
+    UNIQUE (`task_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-调度任务';
 
-
--- 10. 任务实例
-DROP Table `profile_meta_instance`;
-CREATE TABLE IF NOT EXISTS `profile_meta_instance`(
+-- 任务实例 调度任务运行实例
+DROP Table `profile_meta_task_instance`;
+CREATE TABLE IF NOT EXISTS `profile_meta_task_instance`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:未运行-1,运行中-2,运行失败-3,运行成功-4',
+    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态:1-未运行,2-运行中,3-运行失败,4-运行成功',
     `instance_id` VARCHAR(40) NOT NULL COMMENT '实例ID',
     `instance_name` VARCHAR(100) NOT NULL COMMENT '实例名称',
     `task_id` VARCHAR(100) NOT NULL COMMENT '任务ID',
-    `begin_time` BIGINT NOT NULL COMMENT '实例运行的开始时间:毫秒时间戳',
-    `finish_time` BIGINT NOT NULL COMMENT '实例运行的结束时间:毫秒时间戳',
+    `instance_related_id` VARCHAR(100) COMMENT '实例关联ID',
+    `start_time` BIGINT NOT NULL COMMENT '实例运行的开始时间:毫秒时间戳',
+    `end_time` BIGINT NOT NULL COMMENT '实例运行的结束时间:毫秒时间戳',
     `duration` BIGINT NOT NULL COMMENT '实例运行时长:毫秒',
     `message` VARCHAR(200) NOT NULL COMMENT '实例运行信息',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-任务';
+    PRIMARY KEY (`id`),
+    UNIQUE (`instance_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-任务实例';
 
 
 -- 11. 登录表

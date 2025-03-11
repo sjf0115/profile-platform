@@ -48,7 +48,7 @@
         </javaClientGenerator>
 
         <!-- 要生成哪些表 -->
-        <table tableName="profile_meta_dataset" domainObjectName="Dataset"
+        <table tableName="profile_meta_task_instance" domainObjectName="TaskInstance"
                enableCountByExample="false"
                enableUpdateByExample="false"
                enableDeleteByExample="false"

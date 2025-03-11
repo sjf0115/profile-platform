@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.dao.TaskInstanceMapper">
+  <resultMap id="BaseResultMap" type="com.data.profile.model.TaskInstance">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="status" jdbcType="TINYINT" property="status" />
+    <result column="instance_id" jdbcType="VARCHAR" property="instanceId" />
+    <result column="instance_name" jdbcType="VARCHAR" property="instanceName" />
+    <result column="task_id" jdbcType="VARCHAR" property="taskId" />
+    <result column="instance_related_id" jdbcType="VARCHAR" property="instanceRelatedId" />
+    <result column="start_time" jdbcType="BIGINT" property="startTime" />
+    <result column="end_time" jdbcType="BIGINT" property="endTime" />
+    <result column="duration" jdbcType="BIGINT" property="duration" />
+    <result column="message" jdbcType="VARCHAR" property="message" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, status, instance_id, instance_name, task_id, instance_related_id, start_time, 
+    end_time, duration, message, creator, modifier, gmt_create, gmt_modified
+  </sql>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from profile_meta_task_instance
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+    delete from profile_meta_task_instance
+    where id = #{id,jdbcType=BIGINT}
+  </delete>
+  <insert id="insert" parameterType="com.data.profile.model.TaskInstance">
+    insert into profile_meta_task_instance (id, status, instance_id, 
+      instance_name, task_id, instance_related_id, 
+      start_time, end_time, duration, 
+      message, creator, modifier, 
+      gmt_create, gmt_modified)
+    values (#{id,jdbcType=BIGINT}, #{status,jdbcType=TINYINT}, #{instanceId,jdbcType=VARCHAR}, 
+      #{instanceName,jdbcType=VARCHAR}, #{taskId,jdbcType=VARCHAR}, #{instanceRelatedId,jdbcType=VARCHAR}, 
+      #{startTime,jdbcType=BIGINT}, #{endTime,jdbcType=BIGINT}, #{duration,jdbcType=BIGINT}, 
+      #{message,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR}, 
+      #{gmtCreate,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertSelective" parameterType="com.data.profile.model.TaskInstance">
+    insert into profile_meta_task_instance
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="status != null">
+        status,
+      </if>
+      <if test="instanceId != null">
+        instance_id,
+      </if>
+      <if test="instanceName != null">
+        instance_name,
+      </if>
+      <if test="taskId != null">
+        task_id,
+      </if>
+      <if test="instanceRelatedId != null">
+        instance_related_id,
+      </if>
+      <if test="startTime != null">
+        start_time,
+      </if>
+      <if test="endTime != null">
+        end_time,
+      </if>
+      <if test="duration != null">
+        duration,
+      </if>
+      <if test="message != null">
+        message,
+      </if>
+      <if test="creator != null">
+        creator,
+      </if>
+      <if test="modifier != null">
+        modifier,
+      </if>
+      <if test="gmtCreate != null">
+        gmt_create,
+      </if>
+      <if test="gmtModified != null">
+        gmt_modified,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=BIGINT},
+      </if>
+      <if test="status != null">
+        #{status,jdbcType=TINYINT},
+      </if>
+      <if test="instanceId != null">
+        #{instanceId,jdbcType=VARCHAR},
+      </if>
+      <if test="instanceName != null">
+        #{instanceName,jdbcType=VARCHAR},
+      </if>
+      <if test="taskId != null">
+        #{taskId,jdbcType=VARCHAR},
+      </if>
+      <if test="instanceRelatedId != null">
+        #{instanceRelatedId,jdbcType=VARCHAR},
+      </if>
+      <if test="startTime != null">
+        #{startTime,jdbcType=BIGINT},
+      </if>
+      <if test="endTime != null">
+        #{endTime,jdbcType=BIGINT},
+      </if>
+      <if test="duration != null">
+        #{duration,jdbcType=BIGINT},
+      </if>
+      <if test="message != null">
+        #{message,jdbcType=VARCHAR},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="modifier != null">
+        #{modifier,jdbcType=VARCHAR},
+      </if>
+      <if test="gmtCreate != null">
+        #{gmtCreate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="gmtModified != null">
+        #{gmtModified,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.data.profile.model.TaskInstance">
+    update profile_meta_task_instance
+    <set>
+      <if test="status != null">
+        status = #{status,jdbcType=TINYINT},
+      </if>
+      <if test="instanceId != null">
+        instance_id = #{instanceId,jdbcType=VARCHAR},
+      </if>
+      <if test="instanceName != null">
+        instance_name = #{instanceName,jdbcType=VARCHAR},
+      </if>
+      <if test="taskId != null">
+        task_id = #{taskId,jdbcType=VARCHAR},
+      </if>
+      <if test="instanceRelatedId != null">
+        instance_related_id = #{instanceRelatedId,jdbcType=VARCHAR},
+      </if>
+      <if test="startTime != null">
+        start_time = #{startTime,jdbcType=BIGINT},
+      </if>
+      <if test="endTime != null">
+        end_time = #{endTime,jdbcType=BIGINT},
+      </if>
+      <if test="duration != null">
+        duration = #{duration,jdbcType=BIGINT},
+      </if>
+      <if test="message != null">
+        message = #{message,jdbcType=VARCHAR},
+      </if>
+      <if test="creator != null">
+        creator = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="modifier != null">
+        modifier = #{modifier,jdbcType=VARCHAR},
+      </if>
+      <if test="gmtCreate != null">
+        gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="gmtModified != null">
+        gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.data.profile.model.TaskInstance">
+    update profile_meta_task_instance
+    set status = #{status,jdbcType=TINYINT},
+      instance_id = #{instanceId,jdbcType=VARCHAR},
+      instance_name = #{instanceName,jdbcType=VARCHAR},
+      task_id = #{taskId,jdbcType=VARCHAR},
+      instance_related_id = #{instanceRelatedId,jdbcType=VARCHAR},
+      start_time = #{startTime,jdbcType=BIGINT},
+      end_time = #{endTime,jdbcType=BIGINT},
+      duration = #{duration,jdbcType=BIGINT},
+      message = #{message,jdbcType=VARCHAR},
+      creator = #{creator,jdbcType=VARCHAR},
+      modifier = #{modifier,jdbcType=VARCHAR},
+      gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+      gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+</mapper>
