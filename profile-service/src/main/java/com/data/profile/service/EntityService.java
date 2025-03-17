@@ -4,7 +4,7 @@ import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
-import com.data.profile.common.utils.IDGenerator;
+import com.data.profile.common.utils.DefaultIDGenerator;
 import com.data.profile.dao.EntityMapper;
 import com.data.profile.model.Entity;
 import lombok.extern.slf4j.Slf4j;
@@ -71,7 +71,7 @@ public class EntityService {
                 throw new RuntimeException("实体已经存在，不允许重复添加");
             }
             // ID 后续优化 保证唯一
-            String entityId = IDGenerator.generate(ModelType.ENTITY);
+            String entityId = DefaultIDGenerator.generate(ModelType.ENTITY);
             Entity target = entityMapper.selectByEntityId(entityId);
             if (!Objects.equals(target, null)) {
                 throw new RuntimeException("实体ID已经存在，不允许重复添加");

@@ -4,10 +4,8 @@ import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
-import com.data.profile.common.utils.IDGenerator;
-import com.data.profile.dao.DataSourceMapper;
+import com.data.profile.common.utils.DefaultIDGenerator;
 import com.data.profile.dao.DataSourceTypeMapper;
-import com.data.profile.model.DataSource;
 import com.data.profile.model.DataSourceType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -73,7 +71,7 @@ public class DataSourceTypeService {
                 throw new RuntimeException("该数据源类型已经存在，不允许重复添加");
             }
             // ID 后续优化 保证唯一
-            String datasourceTypeId = IDGenerator.generate(ModelType.DATASOURCE_TYPE);
+            String datasourceTypeId = DefaultIDGenerator.generate(ModelType.DATASOURCE_TYPE);
             DataSourceType sourceType = dataSourceTypeMapper.selectByDataSourceTypeId(datasourceTypeId);
             if (!Objects.equals(sourceType, null)) {
                 throw new RuntimeException("数据源类型ID已经存在，不允许重复添加");

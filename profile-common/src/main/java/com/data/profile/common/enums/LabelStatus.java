@@ -2,10 +2,10 @@ package com.data.profile.common.enums;
 
 // 标签状态
 public enum LabelStatus {
-    // 启用
-    ENABLE(1, "enable"),
-    // 禁用
-    DISABLE(2, "disable");
+    // 已创建
+    CREATED(1, "created"),
+    // 已绑定
+    BOUNDED(2, "bounded");
 
     private Integer code;
     private String message;

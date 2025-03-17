@@ -1,12 +1,10 @@
 package com.data.profile.service;
 
 import com.data.profile.common.domain.RequestContext;
-import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ModelType;
-import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.UserStatus;
-import com.data.profile.common.utils.IDGenerator;
+import com.data.profile.common.utils.DefaultIDGenerator;
 import com.data.profile.dao.UserMapper;
 import com.data.profile.model.User;
 import lombok.extern.slf4j.Slf4j;
@@ -75,7 +73,7 @@ public class UserService {
             throw new RuntimeException("用户名已被占用");
         }
         User user = new User();
-        user.setUserId(IDGenerator.generate(ModelType.USER));
+        user.setUserId(DefaultIDGenerator.generate(ModelType.USER));
         user.setPassword(password);
         user.setUserName(userName);
         user.setCreator(RequestContext.currentUserId());

@@ -4,7 +4,7 @@ import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
-import com.data.profile.common.utils.IDGenerator;
+import com.data.profile.common.utils.DefaultIDGenerator;
 import com.data.profile.dao.LabelCategoryMapper;
 import com.data.profile.dao.LabelMapper;
 import com.data.profile.model.Label;
@@ -80,7 +80,7 @@ public class LabelCategoryService {
         Integer categoryLevel = categoryMapper.selectLevelByCategoryId(parentCategoryId);
         LabelCategory labelCategory = new LabelCategory();
         labelCategory.setStatus(Status.ENABLE.getCode());
-        labelCategory.setCategoryId(IDGenerator.generate(ModelType.LABEL_CATEGORY));
+        labelCategory.setCategoryId(DefaultIDGenerator.generate(ModelType.LABEL_CATEGORY));
         labelCategory.setCategoryName(categoryName);
         labelCategory.setCategoryLevel(Objects.equals(categoryLevel, null) ? 1 : categoryLevel + 1);
         labelCategory.setParentCategoryId(parentCategoryId);

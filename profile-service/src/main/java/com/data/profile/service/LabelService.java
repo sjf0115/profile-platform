@@ -4,6 +4,7 @@ import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.enums.LabelStatus;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
+import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.LabelMapper;
 import com.data.profile.model.Label;
@@ -70,15 +71,16 @@ public class LabelService {
             if (labels.size() > 0) {
                 throw new RuntimeException("标签已经存在，不允许重复添加");
             }
-            // ID 后续优化 保证唯一
-            String labelId = IDGenerator.generate(ModelType.LABEL);
+            String labelId = IDGenerator.getInstance().generate(ModelType.LABEL);
             Label target = labelMapper.selectByLabelId(labelId);
             if (!Objects.equals(target, null)) {
                 throw new RuntimeException("标签ID已经存在，不允许重复添加");
             }
             label.setLabelId(labelId);
-            label.setLabelStatus(LabelStatus.ENABLE.getCode());
+            label.setIsValid(Status.ENABLE.getCode());
+            label.setLabelStatus(LabelStatus.CREATED.getCode());
             label.setSourceType(SourceType.CUSTOM.getCode());
+            label.setOwner(RequestContext.currentUserId());
             label.setCreator(RequestContext.currentUserId());
             label.setModifier(RequestContext.currentUserId());
             int result = labelMapper.insertSelective(label);

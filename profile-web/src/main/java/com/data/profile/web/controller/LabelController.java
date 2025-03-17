@@ -2,8 +2,8 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.model.Entity;
-import com.data.profile.service.EntityService;
+import com.data.profile.model.Label;
+import com.data.profile.service.LabelService;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,31 +28,31 @@ public class LabelController {
     private static Logger LOG = LoggerFactory.getLogger(LabelController.class);
 
     @Autowired
-    private EntityService entityService;
+    private LabelService labelService;
 
     @GetMapping(value = "/list")
-    public Response getList(@RequestBody Entity entity) {
-        List<Entity> entities = entityService.getList(entity);
-        return Response.success(entities);
+    public Response getList(@RequestBody Label label) {
+        List<Label> labels = labelService.getList(label);
+        return Response.success(labels);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam String entityId) {
-        Optional<Entity> optional = entityService.getDetail(entityId);
+    public Response getDetail(@RequestParam String labelId) {
+        Optional<Label> optional = labelService.getDetail(labelId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
         } else {
-            return Response.error("请求的实体不存在", ResponseCode.ERROR);
+            return Response.error("请求的标签不存在", ResponseCode.ERROR);
         }
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody Entity entity) {
-        int result = entityService.save(entity);
+    public Response save(@RequestBody Label label) {
+        int result = labelService.save(label);
         if (result > 0) {
             return Response.success(result);
         } else {
-            return Response.error("添加实体失败", ResponseCode.ERROR);
+            return Response.error("添加标签失败", ResponseCode.ERROR);
         }
     }
 }

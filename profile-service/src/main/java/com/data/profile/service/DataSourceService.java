@@ -4,7 +4,7 @@ import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
-import com.data.profile.common.utils.IDGenerator;
+import com.data.profile.common.utils.DefaultIDGenerator;
 import com.data.profile.common.utils.JdbcUtil;
 import com.data.profile.dao.DataSourceMapper;
 import com.data.profile.manager.jdbc.JdbcService;
@@ -18,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -86,7 +85,7 @@ public class DataSourceService {
                 throw new RuntimeException("数据源已经存在，不允许重复添加");
             }
             // ID 后续优化 保证唯一
-            String datasourceId = IDGenerator.generate(ModelType.DATASOURCE);
+            String datasourceId = DefaultIDGenerator.generate(ModelType.DATASOURCE);
             DataSource source = dataSourceMapper.selectSimpleByDatasourceId(datasourceId);
             if (!Objects.equals(source, null)) {
                 throw new RuntimeException("数据源ID已经存在，不允许重复添加");
