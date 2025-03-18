@@ -1,16 +1,17 @@
 package com.data.profile.common.enums;
 
-// 标签状态
-public enum LabelStatus {
-    // 已创建
-    CREATED(1, "已创建"),
-    // 已绑定
-    BOUNDED(2, "已绑定");
+// 标签时效性类型
+public enum LabelTimeType {
+    // 离线标签
+    OFFLINE(1, "离线标签"),
+    // 实时标签
+    REALTIME(2, "实时标签")
+    ;
 
     private Integer code;
     private String message;
 
-    LabelStatus(Integer code, String message) {
+    LabelTimeType(Integer code, String message) {
         this.code = code;
         this.message = message;
     }

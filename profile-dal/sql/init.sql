@@ -183,8 +183,8 @@ CREATE TABLE IF NOT EXISTS `profile_meta_label`(
     `label_type` VARCHAR(100) NOT NULL COMMENT '标签类型: 1-属性标签,2-行为标签',
     `label_desc` VARCHAR(200) NOT NULL COMMENT '标签描述',
     `label_category_id` VARCHAR(100) NOT NULL COMMENT '标签类目ID',
-    `label_data_type` INT NOT NULL DEFAULT 1 COMMENT '标签数据类型: 1-string,2-bigint,3-double,4-datetime',
-    `label_dist_type` INT NOT NULL DEFAULT 1 COMMENT '标签数据分布类型: 1-枚举,2-连续',
+    `label_data_type` INT NOT NULL DEFAULT 1 COMMENT '标签数据类型: 1-文本型,2-数值型,3-时间型',
+    `label_dist_type` INT NOT NULL DEFAULT 1 COMMENT '标签数据分布类型: 1-枚举,2-非枚举',
     `label_organize_type` INT NOT NULL DEFAULT 1 COMMENT '标签组织类型: 1-单值,2-多值,3-KV,4-KKV',
     `label_produce_type` INT NOT NULL DEFAULT 1 COMMENT '标签加工类型: 1-事实标签,2-统计标签,3-预测标签',
     `label_time_type` INT NOT NULL DEFAULT 1 COMMENT '标签时效性类型: 1-离线标签,2-实时标签',
@@ -270,14 +270,19 @@ DROP Table `profile_meta_group`;
 CREATE TABLE IF NOT EXISTS `profile_meta_group`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
     `group_id` VARCHAR(40) NOT NULL COMMENT '群组ID',
+    `group_status` INT NOT NULL COMMENT '群组状态: 0-未创建,1-创建中,2-创建成功,3-创建失败',
     `group_name` VARCHAR(100) NOT NULL COMMENT '群组名称',
+    `group_type` VARCHAR(200) NOT NULL COMMENT '群组类型: 1-标签筛选,2-群组交并,3-行为圈选,4-行为序列圈选,5-组合人群,6-文件上传',
     `group_desc` VARCHAR(200) NOT NULL COMMENT '群组描述',
-
+    `group_rule` VARCHAR(500) NOT NULL COMMENT '群组规则',
+    `group_count` VARCHAR(500) NOT NULL COMMENT '群组覆盖规模',
+    `entity_id` VARCHAR(50) NOT NULL COMMENT '群组主体ID',
     `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 系统内置-1,自定义-2',
-
-    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
+    `owner` VARCHAR(100) NOT NULL COMMENT '群组负责人',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`id`),
+    UNIQUE (`group_id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-群组';
 
 

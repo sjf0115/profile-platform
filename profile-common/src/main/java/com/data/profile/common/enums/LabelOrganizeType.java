@@ -1,16 +1,21 @@
 package com.data.profile.common.enums;
 
-// 标签状态
-public enum LabelStatus {
-    // 已创建
-    CREATED(1, "已创建"),
-    // 已绑定
-    BOUNDED(2, "已绑定");
+// 标签组织类型
+public enum LabelOrganizeType {
+    // 单值
+    SINGLE_VALUE(1, "单值"),
+    // 多值
+    MULTI_VALUE(2, "多值"),
+    // KV
+    KV(3, "KV"),
+    // KKV
+    KKV(4, "KKV")
+    ;
 
     private Integer code;
     private String message;
 
-    LabelStatus(Integer code, String message) {
+    LabelOrganizeType(Integer code, String message) {
         this.code = code;
         this.message = message;
     }

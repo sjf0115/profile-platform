@@ -2,43 +2,43 @@ package com.data.profile.common.enums;
 
 public enum ModelType {
     // 用户
-    USER("01", "user"),
+    USER("01", "用户"),
     // 实体
-    ENTITY("02", "entity"),
+    ENTITY("02", "实体"),
     // 实体类型
-    ENTITY_TYPE("03", "entity_type"),
+    ENTITY_TYPE("03", "实体类型"),
     // 数据源
-    DATASOURCE("04", "datasource"),
+    DATASOURCE("04", "数据源"),
     // 数据源类型
-    DATASOURCE_TYPE("05", "datasource_type"),
+    DATASOURCE_TYPE("05", "数据源类型"),
     // 数据集
-    DATASET("06", "dataset"),
+    DATASET("06", "数据集"),
     // 标签
-    LABEL("07", "label"),
+    LABEL("07", "标签"),
     // 标签类目
-    LABEL_CATEGORY("08", "label_category"),
+    LABEL_CATEGORY("08", "标签类目"),
     // 群组
-    GROUP("09", "group"),
+    GROUP("09", "群组"),
     // 属性
-    ATTRIBUTE("10", "attribute"),
+    ATTRIBUTE("10", "属性"),
     // 事件
-    EVENT("11", "event"),
+    EVENT("11", "事件"),
     // 分析
-    ANALYSIS("12", "analysis"),
+    ANALYSIS("12", "分析"),
     // 投递
-    EXPORT("13", "export"),
+    EXPORT("13", "投递"),
     // 质量
-    QUALITY("14", "quality"),
-    // 调度
-    SCHEDULE("15", "schedule"),
+    QUALITY("14", "质量"),
     // 任务
-    TASK("16", "task"),
+    TASK("15", "任务"),
+    // 任务实例
+    INSTANCE("16", "任务实例"),
     // 工作流
-    WORKFLOW("17", "workflow"),
+    WORKFLOW("17", "工作流"),
     // 角色
-    ROLE("18", "role"),
+    ROLE("18", "角色"),
     // 权限
-    PERMISSION("19", "permission")
+    PERMISSION("19", "权限")
     ;
 
     private String code;

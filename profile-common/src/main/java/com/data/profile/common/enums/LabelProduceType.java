@@ -1,16 +1,19 @@
 package com.data.profile.common.enums;
 
-// 标签状态
-public enum LabelStatus {
-    // 已创建
-    CREATED(1, "已创建"),
-    // 已绑定
-    BOUNDED(2, "已绑定");
+// 标签生产类型
+public enum LabelProduceType {
+    // 事实标签
+    FACT(1, "事实标签"),
+    // 统计标签
+    STATS(2, "统计标签"),
+    // 预测标签
+    PREDICT(3, "算法标签")
+    ;
 
     private Integer code;
     private String message;
 
-    LabelStatus(Integer code, String message) {
+    LabelProduceType(Integer code, String message) {
         this.code = code;
         this.message = message;
     }

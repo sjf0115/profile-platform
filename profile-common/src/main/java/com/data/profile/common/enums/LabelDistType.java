@@ -1,16 +1,16 @@
 package com.data.profile.common.enums;
 
-// 标签状态
-public enum LabelStatus {
-    // 已创建
-    CREATED(1, "已创建"),
-    // 已绑定
-    BOUNDED(2, "已绑定");
+// 标签分布类型
+public enum LabelDistType {
+    // 枚举
+    ENUM(1, "枚举"),
+    // 非枚举
+    NON_ENUM(2, "非枚举");
 
     private Integer code;
     private String message;
 
-    LabelStatus(Integer code, String message) {
+    LabelDistType(Integer code, String message) {
         this.code = code;
         this.message = message;
     }
