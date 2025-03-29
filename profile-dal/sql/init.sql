@@ -260,6 +260,8 @@ DROP Table `profile_meta_user_login`;
 CREATE TABLE IF NOT EXISTS `profile_meta_user_login`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
     `user_id` VARCHAR(40) NOT NULL COMMENT '用户ID',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`)
@@ -285,6 +287,8 @@ CREATE TABLE IF NOT EXISTS `profile_meta_group`(
     `instance_end_time` DATETIME COMMENT '最新执行结束时间',
     `instance_msg` VARCHAR(500) COMMENT '最新执行信息，只有运行失败时才有',
     `owner` VARCHAR(100) NOT NULL COMMENT '群组负责人',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`),
@@ -292,50 +296,53 @@ CREATE TABLE IF NOT EXISTS `profile_meta_group`(
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-群组';
 
 
--- 12. 事件
+-- 13. 事件
 DROP Table `profile_meta_event`;
 CREATE TABLE IF NOT EXISTS `profile_meta_event`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:启用-1,停用-2',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
     `event_id` VARCHAR(40) NOT NULL COMMENT '事件ID',
     `event_name` VARCHAR(100) NOT NULL COMMENT '事件名称',
-    `event_desc` VARCHAR(200) NOT NULL COMMENT '事件描述',
-    `event_rules` VARCHAR(800) NOT NULL COMMENT '事件配置规则',
-    `dataset_id` VARCHAR(200) NOT NULL COMMENT '数据集ID',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 系统内置-1,自定义-2',
-    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
+    `event_desc` VARCHAR(200) DEFAULT NULL COMMENT '事件描述',
+    `event_rules` VARCHAR(800) NOT NULL COMMENT '事件规则',
+    `dataset_id` VARCHAR(200) NOT NULL COMMENT '数据集ID: 配置事件必须配置一个对应的行为数据集',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
+    `owner` VARCHAR(100) NOT NULL COMMENT '负责人',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`),
     INDEX idx_id(`event_id`),
     INDEX idx_name(`event_name`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-事件';
 
-
--- 12. 事件属性
+-- 14. 事件属性
 DROP Table `profile_meta_event_attr`;
 CREATE TABLE IF NOT EXISTS `profile_meta_event_attr`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:启用-1,停用-2',
-    `attr_id` VARCHAR(40) NOT NULL COMMENT '事件ID',
-    `attr_name` VARCHAR(100) NOT NULL COMMENT '事件名称',
-    `attr_desc` VARCHAR(200) NOT NULL COMMENT '事件描述',
-    `attr_type` INT NOT NULL DEFAULT 2 COMMENT '创建方式: 内置属性-1,事件属性-2,数据集公共属性-3',
-    `dataset_id` VARCHAR(200) DEFAULT NULL COMMENT '数据集ID',
-    `entity_id` VARCHAR(100) DEFAULT NULL COMMENT '实体ID',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+    `attr_id` VARCHAR(40) NOT NULL COMMENT '事件属性ID',
+    `attr_name` VARCHAR(100) NOT NULL COMMENT '事件属性名称',
+    `attr_desc` VARCHAR(200) COMMENT '事件属性描述',
+    `attr_type` INT NOT NULL DEFAULT 2 COMMENT '事件属性类型: 1-内置属性,2-公共属性(数据集),3-事件属性',
+    `dataset_id` VARCHAR(40) DEFAULT NULL COMMENT '数据集ID: 内置属性不需要',
+    `event_id` VARCHAR(40) DEFAULT NULL COMMENT '事件ID: 只有事件属性需要',
+    `entity_id` VARCHAR(40) DEFAULT NULL COMMENT '实体ID: 该属性对应实体时配置',
     `attr_field` VARCHAR(100) NOT NULL COMMENT '属性提取字段',
-    `attr_path` VARCHAR(100) DEFAULT NULL COMMENT '属性提取的字段路径',
-    `attr_data_type` INT NOT NULL COMMENT '属性数据类型',
-    `attr_dist_type` INT NOT NULL COMMENT '属性分布类型',
-    `attr_organize_type` INT NOT NULL COMMENT '属性组织类型',
+    `attr_path` VARCHAR(100)  NOT NULL COMMENT '属性提取的字段路径',
+    `attr_data_type` INT NOT NULL DEFAULT 1 COMMENT '属性数据类型: 1-文本型,2-数值型,3-时间型',
+    `attr_dist_type` INT NOT NULL DEFAULT 1 COMMENT '属性分布类型: 1-枚举,2-非枚举',
+    `attr_organize_type` INT NOT NULL DEFAULT 1 COMMENT '属性组织类型: 1-单值,2-多值',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`),
-    INDEX idx_id(`attr_id`),
+    UNIQUE (`attr_id`),
     INDEX idx_name(`attr_name`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-事件属性';
 
-
--- 
 
 INSERT INTO `profile_meta_event_attr` (`status`, `attr_id`, `attr_name`, `attr_desc`, `attr_type`, `dataset_id`, `entity_id`, `attr_field`, `attr_path`, `attr_data_type`, `attr_dist_type`, `attr_organize_type`)
 VALUES
