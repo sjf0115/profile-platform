@@ -77,9 +77,14 @@ DROP Table `profile_meta_dataset_field`;
 CREATE TABLE IF NOT EXISTS `profile_meta_dataset_field`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
     `dataset_id` VARCHAR(40) NOT NULL COMMENT '数据集ID',
+    `field_status` INT NOT NULL COMMENT '字段状态: 1-导入,2-不导入',
     `field_name` VARCHAR(40) NOT NULL COMMENT '字段名称',
-    `label_id` VARCHAR(100) COMMENT '字段绑定的标签ID: 无绑定则为空',
-    `import_status` INT NOT NULL COMMENT '导入状态: 1-导入,2-不导入',
+    `field_alias` VARCHAR(40) COMMENT '字段别名',
+    `field_category` INT COMMENT '字段分类:1-实体ID、2-标签、3-行为类型、4-行为时间、5-行为属性、6-行为指标、7-自定义',
+    `field_organize_type` INT NOT NULL DEFAULT 1 COMMENT '字段组织类型: 1-单值,2-多值,3-KV,4-KKV',
+    `field_data_type` INT DEFAULT 1 COMMENT '字段类型: 1-文本型、2-数值型、3-时间型',
+    `field_dist_type` INT NOT NULL DEFAULT 1 COMMENT '字段数据分布类型: 1-枚举,2-非枚举',
+    `relation_id` VARCHAR(100) COMMENT '字段绑定的对象ID: 无绑定则为空',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -87,6 +92,8 @@ CREATE TABLE IF NOT EXISTS `profile_meta_dataset_field`(
     PRIMARY KEY (`id`),
     UNIQUE(`dataset_id`, `field_name`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集标签字段';
+
+
 
 -- 4. 用户
 DROP Table `profile_meta_user`;
