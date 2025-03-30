@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.data.profile.dao.EventAttrMapper">
-  <resultMap id="BaseResultMap" type="com.data.profile.model.EventAttr">
+<mapper namespace="com.data.profile.dao.AttributeMapper">
+  <resultMap id="BaseResultMap" type="com.data.profile.model.Attribute">
     <id column="id" jdbcType="BIGINT" property="id" />
     <result column="status" jdbcType="INTEGER" property="status" />
     <result column="attr_id" jdbcType="VARCHAR" property="attrId" />
@@ -21,43 +21,109 @@
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
     <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
   </resultMap>
+
   <sql id="Base_Column_List">
     id, status, attr_id, attr_name, attr_desc, attr_type, dataset_id, event_id, entity_id, 
     attr_field, attr_path, attr_data_type, attr_dist_type, attr_organize_type, creator, 
     modifier, gmt_create, gmt_modified
   </sql>
-  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+
+  <select id="selectByAttrId" parameterType="java.lang.String" resultMap="BaseResultMap">
     select 
     <include refid="Base_Column_List" />
-    from profile_meta_event_attr
-    where id = #{id,jdbcType=BIGINT}
+    from profile_meta_attribute
+    where attr_id = #{attrId,jdbcType=VARCHAR}
   </select>
-  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
-    delete from profile_meta_event_attr
-    where id = #{id,jdbcType=BIGINT}
-  </delete>
-  <insert id="insert" parameterType="com.data.profile.model.EventAttr">
-    insert into profile_meta_event_attr (id, status, attr_id, 
+
+  <select id="selectByAttrName" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_attribute
+    where attr_name = #{attrName,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectByParams" parameterType="com.data.profile.model.Event" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_attribute
+    where 1 = 1
+    <if test="status != null">
+      AND status = #{status,jdbcType=INTEGER},
+    </if>
+    <if test="attrName != null">
+      AND attr_name = #{attrName,jdbcType=VARCHAR},
+    </if>
+    <if test="attrDesc != null">
+      AND attr_desc = #{attrDesc,jdbcType=VARCHAR},
+    </if>
+    <if test="attrType != null">
+      AND attr_type = #{attrType,jdbcType=INTEGER},
+    </if>
+    <if test="datasetId != null">
+      AND dataset_id = #{datasetId,jdbcType=VARCHAR},
+    </if>
+    <if test="eventId != null">
+      AND event_id = #{eventId,jdbcType=VARCHAR},
+    </if>
+    <if test="entityId != null">
+      AND entity_id = #{entityId,jdbcType=VARCHAR},
+    </if>
+    <if test="attrField != null">
+      AND attr_field = #{attrField,jdbcType=VARCHAR},
+    </if>
+    <if test="attrPath != null">
+      AND attr_path = #{attrPath,jdbcType=VARCHAR},
+    </if>
+    <if test="attrDataType != null">
+      AND attr_data_type = #{attrDataType,jdbcType=INTEGER},
+    </if>
+    <if test="attrDistType != null">
+      AND attr_dist_type = #{attrDistType,jdbcType=INTEGER},
+    </if>
+    <if test="attrOrganizeType != null">
+      AND attr_organize_type = #{attrOrganizeType,jdbcType=INTEGER},
+    </if>
+    <if test="creator != null">
+      AND creator = #{creator,jdbcType=VARCHAR},
+    </if>
+    <if test="modifier != null">
+      AND modifier = #{modifier,jdbcType=VARCHAR},
+    </if>
+    <if test="gmtCreate != null">
+      AND gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}
+    </if>
+    <if test="gmtModified != null">
+      AND gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
+    </if>
+  </select>
+
+  <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_attribute
+    where attr_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+  </select>
+
+  <insert id="insert" parameterType="com.data.profile.model.Attribute">
+    insert into profile_meta_attribute (status, attr_id,
       attr_name, attr_desc, attr_type, 
       dataset_id, event_id, entity_id, 
       attr_field, attr_path, attr_data_type, 
       attr_dist_type, attr_organize_type, creator, 
-      modifier, gmt_create, gmt_modified
+      modifier
       )
-    values (#{id,jdbcType=BIGINT}, #{status,jdbcType=INTEGER}, #{attrId,jdbcType=VARCHAR}, 
+    values (#{status,jdbcType=INTEGER}, #{attrId,jdbcType=VARCHAR},
       #{attrName,jdbcType=VARCHAR}, #{attrDesc,jdbcType=VARCHAR}, #{attrType,jdbcType=INTEGER}, 
       #{datasetId,jdbcType=VARCHAR}, #{eventId,jdbcType=VARCHAR}, #{entityId,jdbcType=VARCHAR}, 
       #{attrField,jdbcType=VARCHAR}, #{attrPath,jdbcType=VARCHAR}, #{attrDataType,jdbcType=INTEGER}, 
       #{attrDistType,jdbcType=INTEGER}, #{attrOrganizeType,jdbcType=INTEGER}, #{creator,jdbcType=VARCHAR}, 
-      #{modifier,jdbcType=VARCHAR}, #{gmtCreate,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP}
+      #{modifier,jdbcType=VARCHAR}
       )
   </insert>
-  <insert id="insertSelective" parameterType="com.data.profile.model.EventAttr">
-    insert into profile_meta_event_attr
+
+  <insert id="insertSelective" parameterType="com.data.profile.model.Attribute">
+    insert into profile_meta_attribute
     <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        id,
-      </if>
       <if test="status != null">
         status,
       </if>
@@ -103,17 +169,8 @@
       <if test="modifier != null">
         modifier,
       </if>
-      <if test="gmtCreate != null">
-        gmt_create,
-      </if>
-      <if test="gmtModified != null">
-        gmt_modified,
-      </if>
     </trim>
     <trim prefix="values (" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        #{id,jdbcType=BIGINT},
-      </if>
       <if test="status != null">
         #{status,jdbcType=INTEGER},
       </if>
@@ -159,22 +216,38 @@
       <if test="modifier != null">
         #{modifier,jdbcType=VARCHAR},
       </if>
-      <if test="gmtCreate != null">
-        #{gmtCreate,jdbcType=TIMESTAMP},
-      </if>
-      <if test="gmtModified != null">
-        #{gmtModified,jdbcType=TIMESTAMP},
-      </if>
     </trim>
   </insert>
-  <update id="updateByPrimaryKeySelective" parameterType="com.data.profile.model.EventAttr">
-    update profile_meta_event_attr
+
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    delete from profile_meta_attribute
+    where attr_id = #{attrId,jdbcType=VARCHAR}
+  </delete>
+
+  <update id="updateByAttrId" parameterType="com.data.profile.model.Attribute">
+    update profile_meta_attribute
+    set status = #{status,jdbcType=INTEGER},
+        attr_name = #{attrName,jdbcType=VARCHAR},
+        attr_desc = #{attrDesc,jdbcType=VARCHAR},
+        attr_type = #{attrType,jdbcType=INTEGER},
+        dataset_id = #{datasetId,jdbcType=VARCHAR},
+        event_id = #{eventId,jdbcType=VARCHAR},
+        entity_id = #{entityId,jdbcType=VARCHAR},
+        attr_field = #{attrField,jdbcType=VARCHAR},
+        attr_path = #{attrPath,jdbcType=VARCHAR},
+        attr_data_type = #{attrDataType,jdbcType=INTEGER},
+        attr_dist_type = #{attrDistType,jdbcType=INTEGER},
+        attr_organize_type = #{attrOrganizeType,jdbcType=INTEGER},
+        creator = #{creator,jdbcType=VARCHAR},
+        modifier = #{modifier,jdbcType=VARCHAR}
+    where attr_id = #{attrId,jdbcType=VARCHAR}
+  </update>
+
+  <update id="updateByAttrIdSelective" parameterType="com.data.profile.model.Attribute">
+    update profile_meta_attribute
     <set>
       <if test="status != null">
         status = #{status,jdbcType=INTEGER},
-      </if>
-      <if test="attrId != null">
-        attr_id = #{attrId,jdbcType=VARCHAR},
       </if>
       <if test="attrName != null">
         attr_name = #{attrName,jdbcType=VARCHAR},
@@ -215,34 +288,8 @@
       <if test="modifier != null">
         modifier = #{modifier,jdbcType=VARCHAR},
       </if>
-      <if test="gmtCreate != null">
-        gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
-      </if>
-      <if test="gmtModified != null">
-        gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
-      </if>
     </set>
-    where id = #{id,jdbcType=BIGINT}
+    where attr_id = #{attrId,jdbcType=VARCHAR}
   </update>
-  <update id="updateByPrimaryKey" parameterType="com.data.profile.model.EventAttr">
-    update profile_meta_event_attr
-    set status = #{status,jdbcType=INTEGER},
-      attr_id = #{attrId,jdbcType=VARCHAR},
-      attr_name = #{attrName,jdbcType=VARCHAR},
-      attr_desc = #{attrDesc,jdbcType=VARCHAR},
-      attr_type = #{attrType,jdbcType=INTEGER},
-      dataset_id = #{datasetId,jdbcType=VARCHAR},
-      event_id = #{eventId,jdbcType=VARCHAR},
-      entity_id = #{entityId,jdbcType=VARCHAR},
-      attr_field = #{attrField,jdbcType=VARCHAR},
-      attr_path = #{attrPath,jdbcType=VARCHAR},
-      attr_data_type = #{attrDataType,jdbcType=INTEGER},
-      attr_dist_type = #{attrDistType,jdbcType=INTEGER},
-      attr_organize_type = #{attrOrganizeType,jdbcType=INTEGER},
-      creator = #{creator,jdbcType=VARCHAR},
-      modifier = #{modifier,jdbcType=VARCHAR},
-      gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
-      gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
-    where id = #{id,jdbcType=BIGINT}
-  </update>
+
 </mapper>

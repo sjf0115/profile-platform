@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-public class EventAttr {
+public class Attribute {
     private Long id;
 
     private Integer status;

@@ -2,8 +2,8 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.model.Entity;
-import com.data.profile.service.EventAttrService;
+import com.data.profile.model.Attribute;
+import com.data.profile.service.AttributeService;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,35 +24,35 @@ import java.util.Optional;
 @Slf4j
 @RestController
 @RequestMapping(value = "/attr", produces = MediaType.APPLICATION_JSON_VALUE)
-public class EventAttrController {
-    private static Logger LOG = LoggerFactory.getLogger(EventAttrController.class);
+public class AttributeController {
+    private static Logger LOG = LoggerFactory.getLogger(AttributeController.class);
 
     @Autowired
-    private EventAttrService attrService;
+    private AttributeService attrService;
 
     @GetMapping(value = "/list")
-    public Response getList(@RequestBody Entity entity) {
-        List<Entity> entities = attrService.getList(entity);
-        return Response.success(entities);
+    public Response getList(@RequestBody Attribute attr) {
+        List<Attribute> attrs = attrService.getList(attr);
+        return Response.success(attrs);
     }
 
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam String entityId) {
-        Optional<Entity> optional = attrService.getDetail(entityId);
+        Optional<Attribute> optional = attrService.getDetail(entityId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
         } else {
-            return Response.error("请求的实体不存在", ResponseCode.ERROR);
+            return Response.error("请求的事件属性不存在", ResponseCode.ERROR);
         }
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody Entity entity) {
-        int result = attrService.save(entity);
+    public Response save(@RequestBody Attribute attr) {
+        int result = attrService.save(attr);
         if (result > 0) {
             return Response.success(result);
         } else {
-            return Response.error("添加实体失败", ResponseCode.ERROR);
+            return Response.error("添加事件属性失败", ResponseCode.ERROR);
         }
     }
 }
