@@ -65,29 +65,50 @@ public class EventService {
      */
     public int save(Event event) throws RuntimeException {
         if (StringUtils.isBlank(event.getEventId())) {
-            // 新增
-            List<Event> events = eventMapper.selectByEventName(event.getEventName());
-            if (events.size() > 0) {
-                throw new RuntimeException("事件已经存在，不允许重复添加");
-            }
-            String eventId = IDGenerator.getInstance().generate(ModelType.EVENT);
-            Event target = eventMapper.selectByEventId(eventId);
-            if (!Objects.equals(target, null)) {
-                throw new RuntimeException("事件ID已经存在，不允许重复添加");
-            }
-            event.setEventId(eventId);
-            event.setStatus(Status.ENABLE.getCode());
-            event.setSourceType(SourceType.CUSTOM.getCode());
-            event.setOwner(RequestContext.currentUserId());
-            event.setCreator(RequestContext.currentUserId());
-            event.setModifier(RequestContext.currentUserId());
-            int result = eventMapper.insertSelective(event);
-            return result;
+            // 创建事件
+            return createEvent(event);
         } else {
-            // 修改
-            event.setModifier(RequestContext.currentUserId());
-            int result = eventMapper.updateByEventIdSelective(event);
-            return result;
+            // 修改事件
+            return updateEvent(event);
         }
+    }
+
+    /**
+     * 创建事件
+     * @param event
+     * @return
+     */
+    private int createEvent(Event event) {
+        // 事件名称是否唯一
+        List<Event> events = eventMapper.selectByEventName(event.getEventName());
+        if (events.size() > 0) {
+            throw new RuntimeException("事件已经存在，不允许重复添加");
+        }
+        // 事件ID是否唯一
+        String eventId = IDGenerator.getInstance().generate(ModelType.EVENT);
+        Event target = eventMapper.selectByEventId(eventId);
+        if (!Objects.equals(target, null)) {
+            throw new RuntimeException("事件ID已经存在，不允许重复添加");
+        }
+
+        event.setEventId(eventId);
+        event.setStatus(Status.ENABLE.getCode());
+        event.setSourceType(SourceType.CUSTOM.getCode());
+        event.setOwner(RequestContext.currentUserId());
+        event.setCreator(RequestContext.currentUserId());
+        event.setModifier(RequestContext.currentUserId());
+        int result = eventMapper.insertSelective(event);
+        return result;
+    }
+
+    /**
+     * 修改事件
+     * @param event
+     * @return
+     */
+    private int updateEvent(Event event) {
+        event.setModifier(RequestContext.currentUserId());
+        int result = eventMapper.updateByEventIdSelective(event);
+        return result;
     }
 }

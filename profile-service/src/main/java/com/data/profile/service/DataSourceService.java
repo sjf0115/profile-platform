@@ -4,12 +4,12 @@ import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
-import com.data.profile.common.utils.DefaultIDGenerator;
+import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.common.utils.JdbcUtil;
 import com.data.profile.dao.DataSourceMapper;
 import com.data.profile.manager.jdbc.JdbcService;
 import com.data.profile.model.DataSource;
-import com.data.profile.model.DataSourceType;
+import com.data.profile.model.DataSourceSchema;
 import com.data.profile.model.JdbcParam;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -44,7 +44,7 @@ public class DataSourceService {
     @Resource
     private DataSourceMapper dataSourceMapper;
     @Resource
-    private DataSourceTypeService dataSourceTypeService;
+    private DataSourceSchemaService dataSourceTypeService;
     @Resource
     private JdbcService jdbcService;
 
@@ -84,15 +84,14 @@ public class DataSourceService {
             if (dataSources.size() > 0) {
                 throw new RuntimeException("数据源已经存在，不允许重复添加");
             }
-            // ID 后续优化 保证唯一
-            String datasourceId = DefaultIDGenerator.generate(ModelType.DATASOURCE);
+            String datasourceId = IDGenerator.getInstance().generate(ModelType.DATASOURCE);
             DataSource source = dataSourceMapper.selectSimpleByDatasourceId(datasourceId);
             if (!Objects.equals(source, null)) {
                 throw new RuntimeException("数据源ID已经存在，不允许重复添加");
             }
             // 数据源类型
             String dataSourceTypeId = datasource.getDataSourceTypeId();
-            Optional<DataSourceType> dataSourceType = dataSourceTypeService.getDetail(dataSourceTypeId);
+            Optional<DataSourceSchema> dataSourceType = dataSourceTypeService.getDetail(dataSourceTypeId);
             if (!dataSourceType.isPresent()) {
                 throw new RuntimeException("指定的数据源类型不存在");
             }

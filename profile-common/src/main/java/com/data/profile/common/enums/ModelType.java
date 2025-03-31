@@ -9,8 +9,8 @@ public enum ModelType {
     ENTITY_TYPE("03", "实体类型"),
     // 数据源
     DATASOURCE("04", "数据源"),
-    // 数据源类型
-    DATASOURCE_TYPE("05", "数据源类型"),
+    // 数据源Schema
+    DATASOURCE_SCHEMA("05", "数据源Schema"),
     // 数据集
     DATASET("06", "数据集"),
     // 标签

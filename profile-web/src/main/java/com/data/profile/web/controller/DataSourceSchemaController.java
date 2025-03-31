@@ -2,8 +2,8 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.model.DataSourceType;
-import com.data.profile.service.DataSourceTypeService;
+import com.data.profile.model.DataSourceSchema;
+import com.data.profile.service.DataSourceSchemaService;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 功能：数据源类型
+ * 功能：数据源类型Schema
  * 作者：SmartSi
  * CSDN博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
@@ -24,35 +24,35 @@ import java.util.Optional;
 @Slf4j
 @RestController
 @RequestMapping(value = "/datasource/type", produces = MediaType.APPLICATION_JSON_VALUE)
-public class DataSourceTypeController {
-    private static Logger LOG = LoggerFactory.getLogger(DataSourceTypeController.class);
+public class DataSourceSchemaController {
+    private static Logger LOG = LoggerFactory.getLogger(DataSourceSchemaController.class);
 
     @Autowired
-    private DataSourceTypeService dataSourceTypeService;
+    private DataSourceSchemaService dataSourceSchemaService;
 
     @GetMapping(value = "/list")
-    public Response getList(@RequestBody DataSourceType dataSourceType) {
-        List<DataSourceType> dataSources = dataSourceTypeService.getList(dataSourceType);
-        return Response.success(dataSources);
+    public Response getList(@RequestBody DataSourceSchema schema) {
+        List<DataSourceSchema> schemas = dataSourceSchemaService.getList(schema);
+        return Response.success(schemas);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam String dataSourceTypeId) {
-        Optional<DataSourceType> optional = dataSourceTypeService.getDetail(dataSourceTypeId);
+    public Response getDetail(@RequestParam String schemaId) {
+        Optional<DataSourceSchema> optional = dataSourceSchemaService.getDetail(schemaId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
         } else {
-            return Response.error("请求的数据源类型不存在", ResponseCode.ERROR);
+            return Response.error("请求的数据源Schema不存在", ResponseCode.ERROR);
         }
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody DataSourceType dataSourceType) {
-        int result = dataSourceTypeService.save(dataSourceType);
+    public Response save(@RequestBody DataSourceSchema schema) {
+        int result = dataSourceSchemaService.save(schema);
         if (result > 0) {
             return Response.success(result);
         } else {
-            return Response.error("添加数据源类型失败", ResponseCode.ERROR);
+            return Response.error("添加数据源Schema失败", ResponseCode.ERROR);
         }
     }
 }
