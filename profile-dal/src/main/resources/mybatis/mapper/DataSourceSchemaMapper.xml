@@ -4,8 +4,9 @@
   <resultMap id="BaseResultMap" type="com.data.profile.model.DataSourceSchema">
     <id column="id" jdbcType="BIGINT" property="id" />
     <result column="status" jdbcType="INTEGER" property="status" />
-    <result column="datasource_type_id" jdbcType="VARCHAR" property="schemaId" />
-    <result column="datasource_type_name" jdbcType="VARCHAR" property="schemaName" />
+    <result column="schema_id" jdbcType="VARCHAR" property="schemaId" />
+    <result column="schema_name" jdbcType="VARCHAR" property="schemaName" />
+    <result column="schema_type" jdbcType="VARCHAR" property="schemaType" />
     <result column="config_template" jdbcType="LONGVARCHAR" property="configTemplate" />
     <result column="source_type" jdbcType="INTEGER" property="sourceType" />
     <result column="creator" jdbcType="VARCHAR" property="creator" />
@@ -15,37 +16,40 @@
   </resultMap>
 
   <sql id="Base_Column_List">
-    id, status, datasource_type_id, datasource_type_name, source_type, config_template, creator, modifier,
+    id, status, schema_id, schema_name, schema_type, source_type, config_template, creator, modifier,
     gmt_create, gmt_modified
   </sql>
 
   <select id="selectByDataSourceSchemaId" parameterType="java.lang.String" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List" />
-    from profile_meta_datasource_type
-    where datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR}
+    from profile_meta_datasource_schema
+    where schema_id = #{schemaId,jdbcType=VARCHAR}
   </select>
 
   <select id="selectByDataSourceSchemaName" parameterType="java.lang.String" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List" />
-    from profile_meta_datasource_type
-    where datasource_type_name = #{dataSourceTypeName,jdbcType=VARCHAR}
+    from profile_meta_datasource_schema
+    where schema_name = #{schemaName,jdbcType=VARCHAR}
   </select>
 
   <select id="selectByParams" parameterType="com.data.profile.model.DataSourceSchema" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List" />
-    from profile_meta_datasource_type
+    from profile_meta_datasource_schema
     where 1 = 1
     <if test="status != null">
       and status = #{status,jdbcType=INTEGER}
     </if>
-    <if test="dataSourceTypeId != null">
-      and datasource_type_id = #{dataSourceTypeId,jdbcType=INTEGER}
+    <if test="schemaId != null">
+      and schema_id = #{schemaId,jdbcType=INTEGER}
     </if>
-    <if test="dataSourceTypeName != null">
-      and datasource_type_name = #{dataSourceTypeName,jdbcType=VARCHAR}
+    <if test="schemaName != null">
+      and schema_name = #{schemaName,jdbcType=VARCHAR}
+    </if>
+    <if test="schemaType != null">
+      and schema_type = #{schemaType,jdbcType=VARCHAR}
     </if>
     <if test="sourceType != null">
       and source_type = #{sourceType,jdbcType=INTEGER}
@@ -59,8 +63,8 @@
   </select>
 
   <insert id="insert" parameterType="com.data.profile.model.DataSourceSchema">
-    insert into profile_meta_datasource_type (status, datasource_type_id,
-      datasource_type_name, source_type, creator, 
+    insert into profile_meta_datasource_schema (status, schema_id,
+        schema_name, source_type, creator,
       modifier, config_template)
     values (#{status,jdbcType=INTEGER}, #{dataSourceTypeId,jdbcType=VARCHAR},
       #{dataSourceTypeName,jdbcType=VARCHAR}, #{sourceType,jdbcType=INTEGER}, #{creator,jdbcType=VARCHAR},
@@ -68,7 +72,7 @@
   </insert>
 
   <insert id="insertSelective" parameterType="com.data.profile.model.DataSourceSchema">
-    insert into profile_meta_datasource_type
+    insert into profile_meta_datasource_schema
     <trim prefix="(" suffix=")" suffixOverrides=",">
       <if test="status != null">
         status,
@@ -77,7 +81,7 @@
         datasource_type_id,
       </if>
       <if test="dataSourceTypeName != null">
-        datasource_type_name,
+        schema_name,
       </if>
       <if test="sourceType != null">
         source_type,
@@ -118,9 +122,9 @@
   </insert>
 
   <update id="updateByDataSourceSchemaId" parameterType="com.data.profile.model.DataSourceSchema">
-    update profile_meta_datasource_type
+    update profile_meta_datasource_schema
     set status = #{status,jdbcType=INTEGER},
-        datasource_type_name = #{dataSourceTypeName,jdbcType=VARCHAR},
+        schema_name = #{dataSourceTypeName,jdbcType=VARCHAR},
         source_type = #{sourceType,jdbcType=INTEGER},
         config_template = #{configTemplate,jdbcType=LONGVARCHAR},
         creator = #{creator,jdbcType=VARCHAR},
@@ -129,7 +133,7 @@
   </update>
 
   <update id="updateByDataSourceSchemaIdSelective" parameterType="com.data.profile.model.DataSourceSchema">
-    update profile_meta_datasource_type
+    update profile_meta_datasource_schema
     <set>
       <if test="status != null">
         status = #{status,jdbcType=INTEGER},
@@ -157,7 +161,7 @@
   </update>
 
   <delete id="deleteByDataSourceSchemaId" parameterType="java.lang.String">
-    delete from profile_meta_datasource_type
-    where datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR}
+    delete from profile_meta_datasource_schema
+    where schema_id = #{schemaId,jdbcType=VARCHAR}
   </delete>
 </mapper>
