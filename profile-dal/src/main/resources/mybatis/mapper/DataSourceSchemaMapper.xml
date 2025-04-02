@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.data.profile.dao.DataSourceSchemaMapper">
+
   <resultMap id="BaseResultMap" type="com.data.profile.model.DataSourceSchema">
     <id column="id" jdbcType="BIGINT" property="id" />
     <result column="status" jdbcType="INTEGER" property="status" />
     <result column="schema_id" jdbcType="VARCHAR" property="schemaId" />
     <result column="schema_name" jdbcType="VARCHAR" property="schemaName" />
     <result column="schema_type" jdbcType="VARCHAR" property="schemaType" />
-    <result column="config_template" jdbcType="LONGVARCHAR" property="configTemplate" />
     <result column="source_type" jdbcType="INTEGER" property="sourceType" />
     <result column="creator" jdbcType="VARCHAR" property="creator" />
     <result column="modifier" jdbcType="VARCHAR" property="modifier" />
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
     <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+    <result column="config_template" property="configTemplate" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.handler.SchemaConfigItemHandler"/>
   </resultMap>
 
   <sql id="Base_Column_List">
@@ -64,10 +65,10 @@
 
   <insert id="insert" parameterType="com.data.profile.model.DataSourceSchema">
     insert into profile_meta_datasource_schema (status, schema_id,
-        schema_name, source_type, creator,
-      modifier, config_template)
-    values (#{status,jdbcType=INTEGER}, #{dataSourceTypeId,jdbcType=VARCHAR},
-      #{dataSourceTypeName,jdbcType=VARCHAR}, #{sourceType,jdbcType=INTEGER}, #{creator,jdbcType=VARCHAR},
+        schema_name, schema_type, source_type, creator, modifier, config_template)
+    values (#{status,jdbcType=INTEGER}, #{schemaId,jdbcType=VARCHAR},
+      #{schemaName,jdbcType=VARCHAR}, #{schemaType,jdbcType=VARCHAR},
+      #{sourceType,jdbcType=INTEGER}, #{creator,jdbcType=VARCHAR},
       #{modifier,jdbcType=VARCHAR}, #{configTemplate,jdbcType=LONGVARCHAR})
   </insert>
 
@@ -77,11 +78,14 @@
       <if test="status != null">
         status,
       </if>
-      <if test="dataSourceTypeId != null">
-        datasource_type_id,
+      <if test="schemaId != null">
+        schemaId,
       </if>
-      <if test="dataSourceTypeName != null">
+      <if test="schemaName != null">
         schema_name,
+      </if>
+      <if test="schemaType != null">
+        schema_type,
       </if>
       <if test="sourceType != null">
         source_type,
@@ -100,11 +104,14 @@
       <if test="status != null">
         #{status,jdbcType=INTEGER},
       </if>
-      <if test="dataSourceTypeId != null">
-        #{dataSourceTypeId,jdbcType=VARCHAR},
+      <if test="schemaId != null">
+        #{schemaId,jdbcType=VARCHAR},
       </if>
-      <if test="dataSourceTypeName != null">
-        #{dataSourceTypeName,jdbcType=VARCHAR},
+      <if test="schemaName != null">
+        #{schemaName,jdbcType=VARCHAR},
+      </if>
+      <if test="schemaType != null">
+        #{schemaType,jdbcType=VARCHAR},
       </if>
       <if test="sourceType != null">
         #{sourceType,jdbcType=INTEGER},
@@ -124,12 +131,13 @@
   <update id="updateByDataSourceSchemaId" parameterType="com.data.profile.model.DataSourceSchema">
     update profile_meta_datasource_schema
     set status = #{status,jdbcType=INTEGER},
-        schema_name = #{dataSourceTypeName,jdbcType=VARCHAR},
+        schema_name = #{schmeName,jdbcType=VARCHAR},
+        schema_type = #{schmeType,jdbcType=VARCHAR},
         source_type = #{sourceType,jdbcType=INTEGER},
         config_template = #{configTemplate,jdbcType=LONGVARCHAR},
         creator = #{creator,jdbcType=VARCHAR},
         modifier = #{modifier,jdbcType=VARCHAR}
-    where datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR}
+    where schema_id = #{schemaId,jdbcType=VARCHAR}
   </update>
 
   <update id="updateByDataSourceSchemaIdSelective" parameterType="com.data.profile.model.DataSourceSchema">
@@ -138,11 +146,14 @@
       <if test="status != null">
         status = #{status,jdbcType=INTEGER},
       </if>
-      <if test="dataSourceTypeId != null">
-        datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR},
+      <if test="schemaId != null">
+        schema_id = #{schemaId,jdbcType=VARCHAR},
       </if>
-      <if test="dataSourceTypeName != null">
-        datasource_type_name = #{dataSourceTypeName,jdbcType=VARCHAR},
+      <if test="schemaName != null">
+        schema_name = #{schemaName,jdbcType=VARCHAR},
+      </if>
+      <if test="schemaType != null">
+        schema_type = #{schemaType,jdbcType=VARCHAR},
       </if>
       <if test="sourceType != null">
         source_type = #{sourceType,jdbcType=INTEGER},
@@ -157,7 +168,7 @@
         modifier = #{modifier,jdbcType=VARCHAR},
       </if>
     </set>
-    where datasource_type_id = #{dataSourceTypeId,jdbcType=VARCHAR}
+    where schema_id = #{schemaId,jdbcType=VARCHAR}
   </update>
 
   <delete id="deleteByDataSourceSchemaId" parameterType="java.lang.String">
