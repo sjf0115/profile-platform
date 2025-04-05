@@ -28,17 +28,17 @@ public class DataSourceSchemaController {
     private static Logger LOG = LoggerFactory.getLogger(DataSourceSchemaController.class);
 
     @Autowired
-    private DataSourceSchemaService dataSourceSchemaService;
+    private DataSourceSchemaService schemaService;
 
     @GetMapping(value = "/list")
     public Response getList(@RequestBody DataSourceSchema schema) {
-        List<DataSourceSchema> schemas = dataSourceSchemaService.getList(schema);
+        List<DataSourceSchema> schemas = schemaService.getList(schema);
         return Response.success(schemas);
     }
 
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam String schemaId) {
-        Optional<DataSourceSchema> optional = dataSourceSchemaService.getDetail(schemaId);
+        Optional<DataSourceSchema> optional = schemaService.getDetail(schemaId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
         } else {
@@ -48,11 +48,21 @@ public class DataSourceSchemaController {
 
     @PostMapping(value = "/save")
     public Response save(@RequestBody DataSourceSchema schema) {
-        int result = dataSourceSchemaService.save(schema);
+        int result = schemaService.save(schema);
         if (result > 0) {
             return Response.success(result);
         } else {
             return Response.error("添加数据源Schema失败", ResponseCode.ERROR);
+        }
+    }
+
+    @DeleteMapping(value = "/delete")
+    public Response delete(@RequestParam String schemaId) {
+        int result = schemaService.delete(schemaId);
+        if (result > 0) {
+            return Response.success(result);
+        } else {
+            return Response.error("删除数据源Schema失败", ResponseCode.ERROR);
         }
     }
 }

@@ -7,7 +7,7 @@
     <result column="status" jdbcType="INTEGER" property="status" />
     <result column="schema_id" jdbcType="VARCHAR" property="schemaId" />
     <result column="schema_name" jdbcType="VARCHAR" property="schemaName" />
-    <result column="schema_type" jdbcType="VARCHAR" property="schemaType" />
+    <result column="schema_type" jdbcType="INTEGER" property="schemaType" />
     <result column="source_type" jdbcType="INTEGER" property="sourceType" />
     <result column="creator" jdbcType="VARCHAR" property="creator" />
     <result column="modifier" jdbcType="VARCHAR" property="modifier" />
@@ -50,7 +50,7 @@
       and schema_name = #{schemaName,jdbcType=VARCHAR}
     </if>
     <if test="schemaType != null">
-      and schema_type = #{schemaType,jdbcType=VARCHAR}
+      and schema_type = #{schemaType,jdbcType=INTEGER}
     </if>
     <if test="sourceType != null">
       and source_type = #{sourceType,jdbcType=INTEGER}
@@ -67,7 +67,7 @@
     insert into profile_meta_datasource_schema (status, schema_id,
         schema_name, schema_type, source_type, creator, modifier, config_template)
     values (#{status,jdbcType=INTEGER}, #{schemaId,jdbcType=VARCHAR},
-      #{schemaName,jdbcType=VARCHAR}, #{schemaType,jdbcType=VARCHAR},
+      #{schemaName,jdbcType=VARCHAR}, #{schemaType,jdbcType=INTEGER},
       #{sourceType,jdbcType=INTEGER}, #{creator,jdbcType=VARCHAR},
       #{modifier,jdbcType=VARCHAR}, #{configTemplate,jdbcType=LONGVARCHAR})
   </insert>
@@ -79,7 +79,7 @@
         status,
       </if>
       <if test="schemaId != null">
-        schemaId,
+        schema_id,
       </if>
       <if test="schemaName != null">
         schema_name,
@@ -111,7 +111,7 @@
         #{schemaName,jdbcType=VARCHAR},
       </if>
       <if test="schemaType != null">
-        #{schemaType,jdbcType=VARCHAR},
+        #{schemaType,jdbcType=INTEGER},
       </if>
       <if test="sourceType != null">
         #{sourceType,jdbcType=INTEGER},
@@ -132,7 +132,7 @@
     update profile_meta_datasource_schema
     set status = #{status,jdbcType=INTEGER},
         schema_name = #{schmeName,jdbcType=VARCHAR},
-        schema_type = #{schmeType,jdbcType=VARCHAR},
+        schema_type = #{schmeType,jdbcType=INTEGER},
         source_type = #{sourceType,jdbcType=INTEGER},
         config_template = #{configTemplate,jdbcType=LONGVARCHAR},
         creator = #{creator,jdbcType=VARCHAR},
@@ -153,7 +153,7 @@
         schema_name = #{schemaName,jdbcType=VARCHAR},
       </if>
       <if test="schemaType != null">
-        schema_type = #{schemaType,jdbcType=VARCHAR},
+        schema_type = #{schemaType,jdbcType=INTEGER},
       </if>
       <if test="sourceType != null">
         source_type = #{sourceType,jdbcType=INTEGER},

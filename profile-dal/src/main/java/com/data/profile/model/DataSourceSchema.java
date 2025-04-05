@@ -15,7 +15,7 @@ public class DataSourceSchema {
 
     private String schemaName;
 
-    private String schemaType;
+    private Integer schemaType;
 
     private Integer sourceType;
 

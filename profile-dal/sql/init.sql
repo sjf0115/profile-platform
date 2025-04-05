@@ -28,7 +28,7 @@ CREATE TABLE `profile_meta_datasource_schema` (
     `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
     `schema_id` varchar(40) NOT NULL COMMENT '数据源 Schema ID',
     `schema_name` varchar(100) NOT NULL COMMENT '数据源 Schema 名称',
-    `schema_type` varchar(100) NOT NULL COMMENT '数据源 Schema 类型:1-Source,2-Sink',
+    `schema_type` varchar(100) NOT NULL COMMENT '数据源 Schema 类型:1-source,2-sink,3-source/sink',
     `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
     `config_template` text NOT NULL COMMENT '配置模板',
     `creator` varchar(100) NOT NULL COMMENT '创建者',

@@ -1,6 +1,7 @@
 package com.data.profile.service;
 
 import com.data.profile.common.domain.RequestContext;
+import com.data.profile.common.enums.DatasourceSchemaType;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
@@ -32,7 +33,7 @@ public class DataSourceSchemaService {
     private static Logger LOG = LoggerFactory.getLogger(DataSourceSchemaService.class);
 
     @Resource
-    private DataSourceSchemaMapper dataSourceSchemaMapper;
+    private DataSourceSchemaMapper schemaMapper;
 
     /**
      * 根据查询条件获取数据源Schema列表
@@ -40,7 +41,16 @@ public class DataSourceSchemaService {
      * @return
      */
     public List<DataSourceSchema> getList(DataSourceSchema schema) {
-        List<DataSourceSchema> schemas = dataSourceSchemaMapper.selectByParams(schema);
+
+        List<DataSourceSchema> schemas = schemaMapper.selectByParams(schema);
+
+        // 根据SchemeType查询时需要特殊处理
+        Integer schemaType = schema.getSchemaType();
+        if (!Objects.equals(schemaType, null)) {
+            schema.setSchemaType(DatasourceSchemaType.BOTH.getCode());
+            schemas.addAll(schemaMapper.selectByParams(schema));
+        }
+
         return schemas;
     }
 
@@ -50,7 +60,7 @@ public class DataSourceSchemaService {
      * @return
      */
     public Optional<DataSourceSchema> getDetail(String schemaId) {
-        DataSourceSchema schema = dataSourceSchemaMapper.selectByDataSourceSchemaId(schemaId);
+        DataSourceSchema schema = schemaMapper.selectByDataSourceSchemaId(schemaId);
         if (schema == null) {
             return Optional.empty();
         }
@@ -65,12 +75,12 @@ public class DataSourceSchemaService {
     public int save(DataSourceSchema schema) {
         if (StringUtils.isBlank(schema.getSchemaId())) {
             // 新增
-            List<DataSourceSchema> schemas = dataSourceSchemaMapper.selectByDataSourceSchemaName(schema.getSchemaName());
+            List<DataSourceSchema> schemas = schemaMapper.selectByDataSourceSchemaName(schema.getSchemaName());
             if (schemas.size() > 0) {
                 throw new RuntimeException("该数据源Schema已经存在，不允许重复添加");
             }
             String schemaId = IDGenerator.getInstance().generate(ModelType.DATASOURCE_SCHEMA);
-            DataSourceSchema target = dataSourceSchemaMapper.selectByDataSourceSchemaId(schemaId);
+            DataSourceSchema target = schemaMapper.selectByDataSourceSchemaId(schemaId);
             if (!Objects.equals(target, null)) {
                 throw new RuntimeException("数据源SchemaID已经存在，不允许重复添加");
             }
@@ -79,13 +89,23 @@ public class DataSourceSchemaService {
             schema.setSourceType(SourceType.CUSTOM.getCode());
             schema.setCreator(RequestContext.currentUserId());
             schema.setModifier(RequestContext.currentUserId());
-            int result = dataSourceSchemaMapper.insertSelective(schema);
+            int result = schemaMapper.insertSelective(schema);
             return result;
         } else {
             // 修改
             schema.setModifier(RequestContext.currentUserId());
-            int result = dataSourceSchemaMapper.updateByDataSourceSchemaIdSelective(schema);
+            int result = schemaMapper.updateByDataSourceSchemaIdSelective(schema);
             return result;
         }
+    }
+
+    /**
+     * 删除数据源Schema
+     * @param schemaId
+     * @return
+     */
+    public int delete(String schemaId) {
+        int result = schemaMapper.deleteByDataSourceSchemaId(schemaId);
+        return result;
     }
 }
