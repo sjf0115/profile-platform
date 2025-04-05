@@ -25,7 +25,7 @@ import java.util.Optional;
  */
 @Slf4j
 @RestController
-@RequestMapping(value = "/entityType", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/entity/type", produces = MediaType.APPLICATION_JSON_VALUE)
 public class EntityTypeController {
     private static Logger LOG = LoggerFactory.getLogger(EntityTypeController.class);
 
@@ -55,6 +55,16 @@ public class EntityTypeController {
             return Response.success(result);
         } else {
             return Response.error("添加实体类型失败", ResponseCode.ERROR);
+        }
+    }
+
+    @DeleteMapping(value = "/delete")
+    public Response delete(@RequestParam String entityTypeId) {
+        int result = entityTypeService.delete(entityTypeId);
+        if (result > 0) {
+            return Response.success(result);
+        } else {
+            return Response.error("删除实体类型失败", ResponseCode.ERROR);
         }
     }
 }

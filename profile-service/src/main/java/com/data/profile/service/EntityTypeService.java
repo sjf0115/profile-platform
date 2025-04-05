@@ -5,7 +5,9 @@ import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.DefaultIDGenerator;
+import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.EntityTypeMapper;
+import com.data.profile.model.DataSourceSchema;
 import com.data.profile.model.EntityType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -70,8 +72,7 @@ public class EntityTypeService {
             if (entityTypes.size() > 0) {
                 throw new RuntimeException("实体类型已经存在，不允许重复添加");
             }
-            // ID 后续优化 保证唯一
-            String entityTypeId = DefaultIDGenerator.generate(ModelType.ENTITY_TYPE);
+            String entityTypeId = IDGenerator.getInstance().generate(ModelType.ENTITY_TYPE);
             EntityType target = entityTypeMapper.selectByEntityTypeId(entityTypeId);
             if (!Objects.equals(target, null)) {
                 throw new RuntimeException("实体类型ID已经存在，不允许重复添加");
@@ -89,5 +90,20 @@ public class EntityTypeService {
             int result = entityTypeMapper.updateByEntityTypeIdSelective(entityType);
             return result;
         }
+    }
+
+    /**
+     * 删除实体类型
+     * @param entityTypeId
+     * @return
+     */
+    public int delete(String entityTypeId) {
+        EntityType entityType = entityTypeMapper.selectByEntityTypeId(entityTypeId);
+        if (Objects.equals(entityType.getSourceType(), SourceType.BUILT_IN.getCode())) {
+            throw new RuntimeException("内置实体类型不允许删除");
+        }
+        // TODO 检查依赖确保无下游使用
+        int result = entityTypeMapper.deleteByEntityTypeId(entityTypeId);
+        return result;
     }
 }

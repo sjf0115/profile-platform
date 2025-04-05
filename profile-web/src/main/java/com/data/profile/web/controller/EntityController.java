@@ -55,4 +55,14 @@ public class EntityController {
             return Response.error("添加实体失败", ResponseCode.ERROR);
         }
     }
+
+    @DeleteMapping(value = "/delete")
+    public Response delete(@RequestParam String entityId) {
+        int result = entityService.delete(entityId);
+        if (result > 0) {
+            return Response.success(result);
+        } else {
+            return Response.error("删除实体失败", ResponseCode.ERROR);
+        }
+    }
 }

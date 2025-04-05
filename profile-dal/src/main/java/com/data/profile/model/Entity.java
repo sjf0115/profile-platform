@@ -6,13 +6,17 @@ import java.util.Date;
 
 @Data
 public class Entity {
-    private Long id;
+    private Integer id;
 
     private Integer status;
 
     private String entityId;
 
     private String entityName;
+
+    private String entityTypeId;
+
+    private String entityTypeName;
 
     private Integer sourceType;
 

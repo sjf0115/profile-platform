@@ -5,8 +5,10 @@ import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.DefaultIDGenerator;
+import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.EntityMapper;
 import com.data.profile.model.Entity;
+import com.data.profile.model.EntityType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -66,13 +68,12 @@ public class EntityService {
     public int save(Entity entity) throws RuntimeException {
         if (StringUtils.isBlank(entity.getEntityId())) {
             // 新增
-            List<Entity> entities = entityMapper.selectByEntityName(entity.getEntityName());
+            List<Entity> entities = entityMapper.selectSimpleByEntityName(entity.getEntityName());
             if (entities.size() > 0) {
                 throw new RuntimeException("实体已经存在，不允许重复添加");
             }
-            // ID 后续优化 保证唯一
-            String entityId = DefaultIDGenerator.generate(ModelType.ENTITY);
-            Entity target = entityMapper.selectByEntityId(entityId);
+            String entityId = IDGenerator.getInstance().generate(ModelType.ENTITY);
+            Entity target = entityMapper.selectSimpleByEntityId(entityId);
             if (!Objects.equals(target, null)) {
                 throw new RuntimeException("实体ID已经存在，不允许重复添加");
             }
@@ -89,5 +90,20 @@ public class EntityService {
             int result = entityMapper.updateByEntityIdSelective(entity);
             return result;
         }
+    }
+
+    /**
+     * 删除实体
+     * @param entityId
+     * @return
+     */
+    public int delete(String entityId) {
+        Entity entity = entityMapper.selectSimpleByEntityId(entityId);
+        if (Objects.equals(entity.getSourceType(), SourceType.BUILT_IN.getCode())) {
+            throw new RuntimeException("内置实体不允许删除");
+        }
+        // TODO 检查依赖确保无下游使用
+        int result = entityMapper.deleteByEntityId(entityId);
+        return result;
     }
 }
