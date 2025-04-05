@@ -6,21 +6,23 @@ CREATE DATABASE profile;
 DROP Table `profile_meta_datasource`;
 CREATE TABLE `profile_meta_datasource` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
-    `status` int NOT NULL DEFAULT '1' COMMENT '状态:1-启用,2-停用',
+    `status` int NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
     `datasource_id` varchar(40) NOT NULL COMMENT '数据源ID',
     `datasource_name` varchar(100) NOT NULL COMMENT '数据源名称',
     `datasource_desc` varchar(100) NOT NULL COMMENT '数据源描述',
-    `datasource_type_id` varchar(100) NOT NULL COMMENT '数据源类型ID',
-    `source_type` int NOT NULL DEFAULT '1' COMMENT '创建方式: 1-系统内置,2-自定义',
+    `schema_id` varchar(100) NOT NULL COMMENT '数据源SchemaID',
+    `source_type` int NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
     `config` text NOT NULL COMMENT '数据源配置',
+    `owner` varchar(100) NOT NULL COMMENT '负责人',
     `creator` varchar(100) NOT NULL COMMENT '创建者',
     `modifier` varchar(100) NOT NULL COMMENT '修改者',
     `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='画像-数据源';
+    PRIMARY KEY (`id`),
+    UNIQUE(`datasource_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-数据源';
 
-INSERT INTO `profile_meta_datasource` VALUES (1, 1, '040EW35R0G', '数据平台报表MySQL', '数据平台报表MySQL数据源', '0559Y4C0OU', 2, '{\"host\":\"127.0.0.1\",\"port\":\"3306\",\"database\":\"reports\",\"user\":\"root\",\"password\":\"root\"}', '100000', '100000', '2024-07-11 07:43:13', '2024-07-11 07:43:13');
+
 
 -- 2. 数据源Schema
 CREATE TABLE `profile_meta_datasource_schema` (

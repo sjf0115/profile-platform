@@ -1,7 +1,7 @@
 package com.data.profile.common.enums;
 
 // 数据源Schema类型
-public enum DatasourceSchemaType {
+public enum DataSourceSchemaType {
     // source
     SOURCE(1, "source"),
     // sink
@@ -13,7 +13,7 @@ public enum DatasourceSchemaType {
     private Integer code;
     private String message;
 
-    DatasourceSchemaType(Integer code, String message) {
+    DataSourceSchemaType(Integer code, String message) {
         this.code = code;
         this.message = message;
     }

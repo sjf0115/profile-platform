@@ -5,7 +5,6 @@ import com.data.profile.model.DataSourceSchema;
 import java.util.List;
 
 public interface DataSourceSchemaMapper {
-
     // 查询
     DataSourceSchema selectByDataSourceSchemaId(String schemaId); // 根据ID查询
 

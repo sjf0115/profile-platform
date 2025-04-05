@@ -2,6 +2,7 @@ package com.data.profile.model;
 
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -27,5 +28,5 @@ public class DataSourceSchema {
 
     private Date gmtModified;
 
-    private List<SchemaConfigItem> configTemplate;
+    private List<SchemaConfigItem> configTemplate = new ArrayList<>();
 }

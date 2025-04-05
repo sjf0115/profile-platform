@@ -44,7 +44,7 @@ public class DataSourceService {
     @Resource
     private DataSourceMapper dataSourceMapper;
     @Resource
-    private DataSourceSchemaService dataSourceTypeService;
+    private DataSourceSchemaService schemaService;
     @Resource
     private JdbcService jdbcService;
 
@@ -78,9 +78,9 @@ public class DataSourceService {
      * @throws RuntimeException
      */
     public int save(DataSource datasource) throws RuntimeException {
-        if (StringUtils.isBlank(datasource.getDataSourceId())) {
+        if (StringUtils.isBlank(datasource.getDatasourceId())) {
             // 新增
-            List<DataSource> dataSources = dataSourceMapper.selectSimpleByDatasourceName(datasource.getDataSourceName());
+            List<DataSource> dataSources = dataSourceMapper.selectSimpleByDatasourceName(datasource.getDatasourceName());
             if (dataSources.size() > 0) {
                 throw new RuntimeException("数据源已经存在，不允许重复添加");
             }
@@ -90,13 +90,13 @@ public class DataSourceService {
                 throw new RuntimeException("数据源ID已经存在，不允许重复添加");
             }
             // 数据源类型
-            String dataSourceTypeId = datasource.getDataSourceTypeId();
-            Optional<DataSourceSchema> dataSourceType = dataSourceTypeService.getDetail(dataSourceTypeId);
-            if (!dataSourceType.isPresent()) {
+            String schemaId = datasource.getSchemaId();
+            Optional<DataSourceSchema> schema = schemaService.getDetail(schemaId);
+            if (!schema.isPresent()) {
                 throw new RuntimeException("指定的数据源类型不存在");
             }
             datasource.setStatus(Status.ENABLE.getCode());
-            datasource.setDataSourceId(datasourceId);
+            datasource.setDatasourceId(datasourceId);
             datasource.setSourceType(SourceType.CUSTOM.getCode());
             datasource.setOwner(RequestContext.currentUserId());
             datasource.setCreator(RequestContext.currentUserId());
@@ -112,6 +112,20 @@ public class DataSourceService {
     }
 
     /**
+     * 删除数据源
+     * @param dataSourceId
+     * @return
+     */
+    public int delete(String dataSourceId) {
+        DataSource dataSource = dataSourceMapper.selectByDatasourceId(dataSourceId);
+        if (Objects.equals(dataSource.getSourceType(), SourceType.BUILT_IN.getCode())) {
+            throw new RuntimeException("内置数据源不允许删除");
+        }
+        int result = dataSourceMapper.deleteByDatasourceId(dataSourceId);
+        return result;
+    }
+
+    /**
      * 根据数据源ID获取数据表
      * @param dataSourceId 只有 source 数据源支持
      * @return
@@ -120,20 +134,20 @@ public class DataSourceService {
         List<String> tables = Lists.newArrayList();
 
         DataSource dataSource = dataSourceMapper.selectByDatasourceId(dataSourceId);
-        String dataSourceTypeName = dataSource.getDataSourceTypeName();
+        String schemaName = dataSource.getSchemaName();
         String config = dataSource.getConfig();
 
-        if (!Objects.equals(dataSourceTypeName, "Hive")) {
-            throw new RuntimeException("接入数据的数据源类型只支持 Hive，暂不支持[" + dataSourceTypeName + "]");
+        if (!Objects.equals(schemaName, "Hive")) {
+            throw new RuntimeException("接入数据的数据源类型只支持 Hive，暂不支持[" + schemaName + "]");
         }
 
         JdbcParam jdbcParam = gson.fromJson(config, JdbcParam.class);
 
         try {
-            String url = JdbcUtil.buildUrl(dataSourceTypeName, jdbcParam);
+            String url = JdbcUtil.buildUrl(schemaName, jdbcParam);
             jdbcParam.setUrl(url);
         } catch (URISyntaxException e) {
-            throw new RuntimeException("接入数据的数据源类型只支持 Hive，暂不支持[" + dataSourceTypeName + "]");
+            throw new RuntimeException("接入数据的数据源类型只支持 Hive，暂不支持[" + schemaName + "]");
         }
 
         try {

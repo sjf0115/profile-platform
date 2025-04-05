@@ -1,6 +1,7 @@
 package com.data.profile.handler;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.type.BaseTypeHandler;
@@ -22,7 +23,7 @@ import java.util.List;
  * 日期：2025/4/2 22:53
  */
 public class ListTypeHandler<T> extends BaseTypeHandler<List<T>> {
-    private final Gson gson = new Gson();
+    private final Gson gson = new GsonBuilder().serializeNulls().create();
     private final Type type;
 
     // 无参构造函数（MyBatis 反射创建需要）

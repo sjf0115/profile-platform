@@ -3,6 +3,7 @@ package com.data.profile.model;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class DataSource {
@@ -10,15 +11,17 @@ public class DataSource {
 
     private Integer status;
 
-    private String dataSourceId;
+    private String datasourceId;
 
-    private String dataSourceName;
+    private String datasourceName;
 
-    private String dataSourceDesc;
+    private String datasourceDesc;
 
-    private String dataSourceTypeId;
+    private String schemaId;
 
-    private String dataSourceTypeName;
+    private String schemaName;
+
+    private String schemaType;
 
     private Integer sourceType;
 
@@ -34,5 +37,5 @@ public class DataSource {
 
     private String config;
 
-    private String configTemplate;
+    private List<SchemaConfigItem> configTemplate;
 }

@@ -55,4 +55,14 @@ public class DataSourceController {
             return Response.error("添加数据源失败", ResponseCode.DATASOURCE_NO_ERROR);
         }
     }
+
+    @DeleteMapping(value = "/delete")
+    public Response delete(@RequestParam String datasourceId) {
+        int result = dataSourceService.delete(datasourceId);
+        if (result > 0) {
+            return Response.success(result);
+        } else {
+            return Response.error("删除数据源失败", ResponseCode.ERROR);
+        }
+    }
 }

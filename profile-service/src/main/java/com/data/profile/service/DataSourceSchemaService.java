@@ -1,7 +1,7 @@
 package com.data.profile.service;
 
 import com.data.profile.common.domain.RequestContext;
-import com.data.profile.common.enums.DatasourceSchemaType;
+import com.data.profile.common.enums.DataSourceSchemaType;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
@@ -47,7 +47,7 @@ public class DataSourceSchemaService {
         // 根据SchemeType查询时需要特殊处理
         Integer schemaType = schema.getSchemaType();
         if (!Objects.equals(schemaType, null)) {
-            schema.setSchemaType(DatasourceSchemaType.BOTH.getCode());
+            schema.setSchemaType(DataSourceSchemaType.BOTH.getCode());
             schemas.addAll(schemaMapper.selectByParams(schema));
         }
 
@@ -105,6 +105,10 @@ public class DataSourceSchemaService {
      * @return
      */
     public int delete(String schemaId) {
+        DataSourceSchema schema = schemaMapper.selectByDataSourceSchemaId(schemaId);
+        if (Objects.equals(schema.getSourceType(), SourceType.BUILT_IN.getCode())) {
+            throw new RuntimeException("内置数据源Schema不允许删除");
+        }
         int result = schemaMapper.deleteByDataSourceSchemaId(schemaId);
         return result;
     }
