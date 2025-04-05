@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -29,6 +30,12 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @GetMapping(value = "/list")
+    public Response getList(@RequestBody User user) {
+        List<User> users = userService.getList(user);
+        return Response.success(users);
+    }
+
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam String userId) {
         Optional<User> userOptional = userService.getDetail(userId);
@@ -36,15 +43,6 @@ public class UserController {
             return Response.success(userOptional.get());
         }
         return Response.error("用户不存在", ResponseCode.ERROR);
-    }
-
-    @PostMapping(value = "/register")
-    public Response register(@RequestParam String userName, String password) {
-        int result = userService.register(userName, password);
-        if (result > 0) {
-            return Response.success(true);
-        }
-        return Response.error("注册用户失败", ResponseCode.ERROR);
     }
 
     @PostMapping(value = "/login")
@@ -62,6 +60,16 @@ public class UserController {
             return Response.success(result);
         } else {
             return Response.error("保存用户失败", ResponseCode.ERROR);
+        }
+    }
+
+    @DeleteMapping(value = "/delete")
+    public Response delete(@RequestParam String userId) {
+        int result = userService.delete(userId);
+        if (result > 0) {
+            return Response.success(result);
+        } else {
+            return Response.error("删除用户失败", ResponseCode.ERROR);
         }
     }
 }

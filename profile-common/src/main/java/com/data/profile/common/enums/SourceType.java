@@ -3,9 +3,9 @@ package com.data.profile.common.enums;
 // 创建方式
 public enum SourceType {
     // 系统内置
-    BUILT_IN(1, "built-in"),
+    BUILT_IN(1, "系统用户"),
     // 自定义
-    CUSTOM(2, "custom");
+    CUSTOM(2, "自定义用户");
 
     private Integer code;
     private String message;

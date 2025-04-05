@@ -3,8 +3,7 @@ package com.data.profile.service;
 import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
-import com.data.profile.common.enums.UserStatus;
-import com.data.profile.common.utils.DefaultIDGenerator;
+import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.UserMapper;
 import com.data.profile.model.User;
@@ -34,55 +33,40 @@ public class UserService {
     @Resource
     private UserMapper userMapper;
 
-    // 保存用户
+    /**
+     * 根据查询条件获取用户列表
+     * @param user
+     * @return
+     */
+    public List<User> getList(User user) {
+        List<User> users = userMapper.selectByParams(user);
+        return users;
+    }
+
+    /**
+     * 保存用户
+     * @param user
+     * @return
+     */
     public int save(User user) {
-        User targetUser = userMapper.selectByUserId(user.getUserId());
-        if (StringUtils.isBlank(targetUser.getUserId())) {
-            // 新增用户
-            user.setCreator(RequestContext.currentUserId());
-            user.setModifier(RequestContext.currentUserId());
-            user.setSourceType(SourceType.BUILT_IN.getCode());
-            user.setStatus(UserStatus.ENABLE.getCode());
-            int result = userMapper.insert(user);
-            return result;
+        if (StringUtils.isBlank(user.getUserId())) {
+            return registerUser(user);
         } else {
-            // 修改用户
-            user.setModifier(RequestContext.currentUserId());
-            int result = userMapper.updateByPrimaryKey(user);
-            return result;
+            return updateUser(user);
         }
     }
 
-    // 根据用户ID获取用户详细信息
+    /**
+     * 根据用户ID获取用户详细信息
+     * @param userId
+     * @return
+     */
     public Optional<User> getDetail(String userId) {
         User user = userMapper.selectByUserId(userId);
         if (user == null) {
             return Optional.empty();
         }
         return Optional.of(user);
-    }
-
-    /**
-     * 注册
-     * @param userName
-     * @param password
-     * @return
-     */
-    public int register(String userName, String password) {
-        List<User> users = userMapper.selectByUserName(userName);
-        if (users.size() > 0) {
-            throw new RuntimeException("用户名已被占用");
-        }
-        User user = new User();
-        user.setUserId(IDGenerator.getInstance().generate(ModelType.USER));
-        user.setPassword(password);
-        user.setUserName(userName);
-        user.setCreator(RequestContext.currentUserId());
-        user.setModifier(RequestContext.currentUserId());
-        user.setSourceType(SourceType.CUSTOM.getCode());
-        user.setStatus(UserStatus.ENABLE.getCode());
-        int result = userMapper.insertSelective(user);
-        return result;
     }
 
     /**
@@ -100,8 +84,63 @@ public class UserService {
         if (Objects.equals(password, user.getPassword())) {
             RequestContext.setUser(user);
         } else {
-            throw new RuntimeException("密码错误");
+            throw new RuntimeException("密码错误，请重新输入");
         }
         return true;
+    }
+
+    /**
+     * 删除用户
+     * @param userId
+     * @return
+     */
+    public int delete(String userId) {
+        User user = userMapper.selectByUserId(userId);
+        if (Objects.equals(user, null)) {
+            throw new RuntimeException("账号不存在, 无法删除");
+        }
+        if(Objects.equals(user.getSourceType(), SourceType.BUILT_IN.getCode())) {
+            throw new RuntimeException("系统账号不能删除");
+        }
+
+        int result = userMapper.deleteByUserId(userId);
+        return result;
+    }
+
+
+    /**
+     * 注册用户
+     * @param user
+     * @return
+     */
+    private int registerUser(User user) {
+        List<User> users = userMapper.selectByUserName(user.getUserName());
+        if (users.size() > 0) {
+            throw new RuntimeException("用户名已被占用");
+        }
+        String userId = IDGenerator.getInstance().generate(ModelType.USER);
+        User target = userMapper.selectByUserId(userId);
+        if (!Objects.equals(target, null)) {
+            throw new RuntimeException("用户ID已经存在，不允许重复添加");
+        }
+        user.setUserId(userId);
+        user.setCreator(RequestContext.currentUserId());
+        user.setModifier(RequestContext.currentUserId());
+        user.setSourceType(SourceType.CUSTOM.getCode());
+        user.setStatus(Status.ENABLE.getCode());
+        int result = userMapper.insertSelective(user);
+        return result;
+    }
+
+    /**
+     * 修改用户
+     * @param user
+     * @return
+     */
+    private int updateUser(User user) {
+        // 修改用户
+        user.setModifier(RequestContext.currentUserId());
+        int result = userMapper.updateByUserIdSelective(user);
+        return result;
     }
 }
