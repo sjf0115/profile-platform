@@ -1,6 +1,7 @@
-package com.data.profile.common.utils;
+package com.data.profile.manager.utils;
 
-import com.data.profile.model.JdbcParam;
+import com.data.profile.manager.domain.ConnectionParam;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.net.URIBuilder;
 
@@ -10,30 +11,31 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * 功能：
+ * 功能：JDBC 工具类
  * 作者：SmartSi
  * CSDN博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
  * 日期：2025/3/8 23:58
  */
 public class JdbcUtil {
-    public static String buildUrl(String dataSourceTypeName, JdbcParam jdbcParam) throws URISyntaxException {
-        String url = jdbcParam.getUrl();
+    public static String buildUrl(ConnectionParam param) throws URISyntaxException {
+        String url = param.getUrl();
         if (StringUtils.isNotBlank(url)) {
             return url;
         }
-        String host = jdbcParam.getHost();
-        int port = jdbcParam.getPort();
-        String databaseName = jdbcParam.getDatabaseName();
-        Map<String, String> params = jdbcParam.getParams();
-
-        if (Objects.equals(dataSourceTypeName, "hive")) {
-            dataSourceTypeName = "hive2";
+        String protocol = param.getProtocol();
+        String host = param.getHost();
+        int port = param.getPort();
+        String databaseName = param.getDatabase();
+        Map<String, String> params = param.getParams();
+        if (Objects.equals(params, null)) {
+            params = Maps.newHashMap();
         }
 
         // JDBC URL
         URIBuilder uriBuilder =  new URIBuilder();
-        uriBuilder.setScheme("jdbc")
+        uriBuilder.setScheme(protocol)
+                .setSchemeSpecificPart(protocol)
                 .setHost(host)
                 .setPort(port)
                 .setPath(databaseName);

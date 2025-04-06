@@ -31,6 +31,7 @@ CREATE TABLE `profile_meta_datasource_schema` (
     `schema_id` varchar(40) NOT NULL COMMENT '数据源 Schema ID',
     `schema_name` varchar(100) NOT NULL COMMENT '数据源 Schema 名称',
     `schema_type` varchar(100) NOT NULL COMMENT '数据源 Schema 类型:1-source,2-sink,3-source/sink',
+    `jdbc_protocol` varchar(50) NOT NULL COMMENT '数据源 Schema JDBC 协议 例如jdbc://mysql',
     `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
     `config_template` text NOT NULL COMMENT '配置模板',
     `creator` varchar(100) NOT NULL COMMENT '创建者',

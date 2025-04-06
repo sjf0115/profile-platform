@@ -1,5 +1,6 @@
 package com.data.profile.model;
 
+import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 
 /**
@@ -12,6 +13,7 @@ import lombok.Data;
 @Data
 public class SchemaConfigItem {
     // 展示名称
+    @SerializedName("show_name")
     private String showName;
     // 配置Key
     private String key;

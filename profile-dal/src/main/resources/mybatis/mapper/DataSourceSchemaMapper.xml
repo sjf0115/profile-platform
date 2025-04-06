@@ -8,6 +8,7 @@
     <result column="schema_id" jdbcType="VARCHAR" property="schemaId" />
     <result column="schema_name" jdbcType="VARCHAR" property="schemaName" />
     <result column="schema_type" jdbcType="INTEGER" property="schemaType" />
+    <result column="jdbc_protocol" jdbcType="VARCHAR" property="jdbcProtocol" />
     <result column="source_type" jdbcType="INTEGER" property="sourceType" />
     <result column="creator" jdbcType="VARCHAR" property="creator" />
     <result column="modifier" jdbcType="VARCHAR" property="modifier" />
@@ -17,7 +18,7 @@
   </resultMap>
 
   <sql id="Base_Column_List">
-    id, status, schema_id, schema_name, schema_type, source_type, config_template, creator, modifier,
+    id, status, schema_id, schema_name, schema_type, jdbc_protocol, source_type, config_template, creator, modifier,
     gmt_create, gmt_modified
   </sql>
 
@@ -65,9 +66,9 @@
 
   <insert id="insert" parameterType="com.data.profile.model.DataSourceSchema">
     insert into profile_meta_datasource_schema (status, schema_id,
-        schema_name, schema_type, source_type, creator, modifier, config_template)
+        schema_name, schema_type, jdbc_protocol, source_type, creator, modifier, config_template)
     values (#{status,jdbcType=INTEGER}, #{schemaId,jdbcType=VARCHAR},
-      #{schemaName,jdbcType=VARCHAR}, #{schemaType,jdbcType=INTEGER},
+      #{schemaName,jdbcType=VARCHAR}, #{schemaType,jdbcType=INTEGER}, #{jdbcProtocol,jdbcType=VARCHAR},
       #{sourceType,jdbcType=INTEGER}, #{creator,jdbcType=VARCHAR},
       #{modifier,jdbcType=VARCHAR}, #{configTemplate,jdbcType=LONGVARCHAR})
   </insert>
@@ -86,6 +87,9 @@
       </if>
       <if test="schemaType != null">
         schema_type,
+      </if>
+      <if test="jdbcProtocol != null">
+        jdbc_protocol,
       </if>
       <if test="sourceType != null">
         source_type,
@@ -133,6 +137,7 @@
     set status = #{status,jdbcType=INTEGER},
         schema_name = #{schmeName,jdbcType=VARCHAR},
         schema_type = #{schmeType,jdbcType=INTEGER},
+        jdbc_protocol = #{jdbcProtocol,jdbcType=VARCHAR},
         source_type = #{sourceType,jdbcType=INTEGER},
         config_template = #{configTemplate,jdbcType=LONGVARCHAR},
         creator = #{creator,jdbcType=VARCHAR},
@@ -154,6 +159,9 @@
       </if>
       <if test="schemaType != null">
         schema_type = #{schemaType,jdbcType=INTEGER},
+      </if>
+      <if test="jdbcProtocol != null">
+        jdbc_protocol = #{jdbcProtocol,jdbcType=VARCHAR},
       </if>
       <if test="sourceType != null">
         source_type = #{sourceType,jdbcType=INTEGER},

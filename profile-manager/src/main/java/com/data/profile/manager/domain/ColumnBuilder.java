@@ -1,4 +1,4 @@
-package com.data.profile.model;
+package com.data.profile.manager.domain;
 
 /**
  * 功能：列构造器

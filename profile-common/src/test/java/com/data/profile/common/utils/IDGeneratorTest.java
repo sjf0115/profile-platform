@@ -19,7 +19,7 @@ public class IDGeneratorTest {
 
     @Test
     public void generateTest() {
-        String code = IDGenerator.getInstance().generate(ModelType.LABEL);
+        String code = IDGenerator.getInstance().generate(ModelType.USER);
         System.out.println(code);
     }
 }

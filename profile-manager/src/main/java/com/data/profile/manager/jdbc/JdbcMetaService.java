@@ -1,8 +1,10 @@
 package com.data.profile.manager.jdbc;
 
-import com.data.profile.model.Column;
-import com.data.profile.model.ColumnBuilder;
-import com.data.profile.model.JdbcParam;
+import com.data.profile.manager.core.MetaService;
+import com.data.profile.manager.domain.Column;
+import com.data.profile.manager.domain.ColumnBuilder;
+import com.data.profile.manager.domain.ConnectionParam;
+import com.data.profile.manager.domain.Table;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -14,7 +16,7 @@ import java.sql.*;
 import java.util.List;
 
 /**
- * 功能：Jdbc 服务
+ * 功能：元数据 Jdbc 服务
  * 作者：SmartSi
  * CSDN博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
@@ -22,20 +24,16 @@ import java.util.List;
  */
 @Slf4j
 @Service
-public class JdbcService {
-    private static final Logger LOG = LoggerFactory.getLogger(JdbcService.class);
-    private static String driverName ="org.apache.hive.jdbc.HiveDriver";
-    private static String url="jdbc:hive2://localhost:10000/default";
-    private static String user = "";
-    private static String passwd = "";
-
+public class JdbcMetaService implements MetaService {
+    private static final Logger LOG = LoggerFactory.getLogger(JdbcMetaService.class);
     /**
      * 获取所有列
      * @param dbName
      * @return
      * @throws SQLException
      */
-    public List<Column> getColumns(JdbcParam params, String dbName, String tableName) throws SQLException {
+    @Override
+    public List<Column> getColumns(ConnectionParam params, String dbName, String tableName) throws SQLException {
         List<Column> columns = Lists.newArrayList();
         if (StringUtils.isBlank(dbName) || StringUtils.isBlank(tableName)) {
             return columns;
@@ -47,7 +45,7 @@ public class JdbcService {
             e.printStackTrace();
         }
 
-        try (Connection conn = DriverManager.getConnection(params.getUrl(), params.getUsername(), params.getPassword())) {
+        try (Connection conn = DriverManager.getConnection(params.getUrl(), params.getUserName(), params.getPassword())) {
             DatabaseMetaData meta = conn.getMetaData();
             ResultSet rs = meta.getColumns(
                     null,    // catalog (Hive 中通常为 null)
@@ -78,25 +76,29 @@ public class JdbcService {
      * @return
      * @throws SQLException
      */
-    public List<String> getTables(JdbcParam params) throws SQLException {
-        String databaseName = params.getDatabaseName();
-        List<String> tables = Lists.newArrayList();
+    @Override
+    public List<Table> getTables(ConnectionParam params) throws SQLException {
+        String databaseName = params.getDatabase();
+        List<Table> tables = Lists.newArrayList();
         if (StringUtils.isBlank(databaseName)) {
             return tables;
         }
 
+        // TODO 驱动
         try {
             Class.forName(params.getDriver());
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
 
-        try (Connection conn = DriverManager.getConnection(params.getUrl(), params.getUsername(), params.getPassword())) {
+        try (Connection conn = DriverManager.getConnection(params.getUrl(), params.getUserName(), params.getPassword())) {
             DatabaseMetaData meta = conn.getMetaData();
             ResultSet rs = meta.getTables(null, databaseName, "%", new String[]{"TABLE"});
             while (rs.next()) {
                 String tableName = rs.getString("TABLE_NAME");
-                tables.add(tableName);
+                Table table = new Table();
+                table.setName(tableName);
+                tables.add(table);
             }
             return tables;
         }

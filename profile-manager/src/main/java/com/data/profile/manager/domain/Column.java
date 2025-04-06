@@ -1,4 +1,4 @@
-package com.data.profile.model;
+package com.data.profile.manager.domain;
 
 /**
  * 功能：数据库列信息

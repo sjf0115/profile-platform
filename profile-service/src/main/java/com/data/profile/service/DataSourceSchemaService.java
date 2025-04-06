@@ -41,16 +41,13 @@ public class DataSourceSchemaService {
      * @return
      */
     public List<DataSourceSchema> getList(DataSourceSchema schema) {
-
         List<DataSourceSchema> schemas = schemaMapper.selectByParams(schema);
-
         // 根据SchemeType查询时需要特殊处理
         Integer schemaType = schema.getSchemaType();
         if (!Objects.equals(schemaType, null)) {
             schema.setSchemaType(DataSourceSchemaType.BOTH.getCode());
             schemas.addAll(schemaMapper.selectByParams(schema));
         }
-
         return schemas;
     }
 

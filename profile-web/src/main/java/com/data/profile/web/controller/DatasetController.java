@@ -1,10 +1,14 @@
 package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
+import com.data.profile.common.enums.DataSourceSchemaType;
 import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.manager.domain.Table;
 import com.data.profile.model.Dataset;
+import com.data.profile.model.DatasetField;
 import com.data.profile.service.DatasetService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -48,11 +53,24 @@ public class DatasetController {
 
     @PostMapping(value = "/save")
     public Response save(@RequestBody Dataset dataset) {
+        // TODO 输入验证
         int result = datasetService.save(dataset);
         if (result > 0) {
             return Response.success(result);
         } else {
             return Response.error("添加数据集失败", ResponseCode.ERROR);
         }
+    }
+
+    @GetMapping(value = "/tables")
+    public Response getTables(@RequestParam String datasourceId) {
+        List<Table> tables = datasetService.getTables(datasourceId);
+        return Response.success(tables);
+    }
+
+    @GetMapping(value = "/fields")
+    public Response getFields(@RequestParam String datasourceId,@RequestParam String tableName, @RequestParam String datasetId) {
+        List<DatasetField> fields = datasetService.getDatasetField(datasourceId, tableName, datasetId);
+        return Response.success(fields);
     }
 }
