@@ -48,7 +48,7 @@ public class DatasetController {
 
     @PostMapping(value = "/save")
     public Response save(@RequestBody Dataset dataset) {
-        int result = 0;
+        int result = datasetService.save(dataset);
         if (result > 0) {
             return Response.success(result);
         } else {

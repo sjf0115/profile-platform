@@ -3,6 +3,7 @@ package com.data.profile.model;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class Dataset {
@@ -22,25 +23,27 @@ public class Dataset {
 
     private String datasourceId;
 
-    private String sourceTableName;
+    private String tableName;
 
-    private String sourcePartitionField;
+    private String partitionField;
 
-    private String sourcePartitionFormat;
-
-    private String sinkTableName;
+    private String partitionFormat;
 
     private String entityId;
 
     private String entityField;
 
-    private Integer syncStatus;
+    private List<DatasetField> fields;
 
-    private Date syncStartTime;
+    private String instanceId;
 
-    private Date syncEndTime;
+    private Integer instanceStatus;
 
-    private Integer syncTime;
+    private Date instanceStartTime;
+
+    private Date instanceEndTime;
+
+    private Integer instanceMsg;
 
     private String owner;
 

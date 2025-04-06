@@ -48,16 +48,16 @@ CREATE TABLE IF NOT EXISTS `profile_meta_dataset`(
     `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
     `dataset_id` VARCHAR(40) NOT NULL COMMENT '数据集ID',
     `dataset_name` VARCHAR(100) NOT NULL COMMENT '数据集名称',
-    `dataset_type` INT NOT NULL DEFAULT 1 COMMENT '数据集类型：1-标签数据集,2-行为数据集,3-统计数据集',
+    `dataset_type` INT NOT NULL DEFAULT 1 COMMENT '数据集类型: 1-标签数据集,2-行为数据集,3-统计数据集',
     `dataset_desc` VARCHAR(200) COMMENT '数据集描述',
     `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
     `datasource_id` VARCHAR(50) NOT NULL COMMENT '同步的数据源ID',
-    `source_table_name` VARCHAR(50) NOT NULL COMMENT '原始数据表名',
-    `source_partition_field` VARCHAR(50) NOT NULL COMMENT '同步的数据表的时间分区字段',
-    `source_partition_format` VARCHAR(50) NOT NULL COMMENT '同步的数据表分区值格式',
-    `sink_table_name` VARCHAR(50) NOT NULL COMMENT '同步到引擎的数据表名',
+    `table_name` VARCHAR(50) NOT NULL COMMENT '原始数据表名',
+    `partition_field` VARCHAR(50) COMMENT '同步的数据表的时间分区字段',
+    `partition_format` VARCHAR(50) COMMENT '同步的数据表分区值格式',
     `entity_id` VARCHAR(50) NOT NULL COMMENT '主体(实体)ID',
     `entity_field` VARCHAR(100) NOT NULL COMMENT '主体(实体)标识字段',
+    `fields` TEXT NOT NULL COMMENT '数据集字段',
     `instance_id` INT COMMENT '最新执行任务实例ID',
     `instance_status` INT COMMENT '最新执行状态: 1-未运行,2-运行中,3-运行成功,4-运行失败',
     `instance_start_time` DATETIME COMMENT '最新执行开始时间',
@@ -73,25 +73,25 @@ CREATE TABLE IF NOT EXISTS `profile_meta_dataset`(
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集';
 
 -- 3. 数据集字段
-DROP Table `profile_meta_dataset_field`;
-CREATE TABLE IF NOT EXISTS `profile_meta_dataset_field`(
-    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `dataset_id` VARCHAR(40) NOT NULL COMMENT '数据集ID',
-    `field_status` INT NOT NULL COMMENT '字段状态: 1-导入,2-不导入',
-    `field_name` VARCHAR(40) NOT NULL COMMENT '字段名称',
-    `field_alias` VARCHAR(40) COMMENT '字段别名',
-    `field_category` INT COMMENT '字段分类:1-实体ID、2-标签、3-行为类型、4-行为时间、5-行为属性、6-行为指标、7-自定义',
-    `field_organize_type` INT NOT NULL DEFAULT 1 COMMENT '字段组织类型: 1-单值,2-多值,3-KV,4-KKV',
-    `field_data_type` INT DEFAULT 1 COMMENT '字段类型: 1-文本型、2-数值型、3-时间型',
-    `field_dist_type` INT NOT NULL DEFAULT 1 COMMENT '字段数据分布类型: 1-枚举,2-非枚举',
-    `relation_id` VARCHAR(100) COMMENT '字段绑定的对象ID: 无绑定则为空',
-    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
-    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
-    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`),
-    UNIQUE(`dataset_id`, `field_name`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集标签字段';
+# DROP Table `profile_meta_dataset_field`;
+# CREATE TABLE IF NOT EXISTS `profile_meta_dataset_field`(
+#     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+#     `dataset_id` VARCHAR(40) NOT NULL COMMENT '数据集ID',
+#     `field_status` INT NOT NULL COMMENT '字段状态: 1-导入,2-不导入',
+#     `field_name` VARCHAR(40) NOT NULL COMMENT '字段名称',
+#     `field_alias` VARCHAR(40) COMMENT '字段别名',
+#     `field_category` INT COMMENT '字段分类:1-实体ID、2-标签、3-行为类型、4-行为时间、5-行为属性、6-行为指标、7-自定义',
+#     `field_organize_type` INT NOT NULL DEFAULT 1 COMMENT '字段组织类型: 1-单值,2-多值,3-KV,4-KKV',
+#     `field_data_type` INT DEFAULT 1 COMMENT '字段类型: 1-文本型、2-数值型、3-时间型',
+#     `field_dist_type` INT NOT NULL DEFAULT 1 COMMENT '字段数据分布类型: 1-枚举,2-非枚举',
+#     `relation_id` VARCHAR(100) COMMENT '字段绑定的对象ID: 无绑定则为空',
+#     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+#     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+#     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+#     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+#     PRIMARY KEY (`id`),
+#     UNIQUE(`dataset_id`, `field_name`)
+# )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集标签字段';
 
 
 
@@ -123,6 +123,7 @@ CREATE TABLE IF NOT EXISTS `profile_meta_entity`(
     `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
     `entity_id` VARCHAR(40) NOT NULL COMMENT '实体ID',
     `entity_name` VARCHAR(100) NOT NULL COMMENT '实体名称',
+    `entity_type_id` VARCHAR(100) NOT NULL COMMENT '实体类型ID',
     `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
@@ -130,11 +131,6 @@ CREATE TABLE IF NOT EXISTS `profile_meta_entity`(
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-实体';
-
-
-INSERT INTO `profile_meta_entity` (`status`, `entity_id`, `entity_name`, `source_type`, `creator`, `modifier`)
-VALUES (1, '02P08QFV60', '用户', 1, '100000', '100000');
-
 
 -- 6. 实体类型
 DROP Table `profile_meta_entity_type`;

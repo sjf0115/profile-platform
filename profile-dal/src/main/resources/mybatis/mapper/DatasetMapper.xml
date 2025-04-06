@@ -10,27 +10,27 @@
     <result column="dataset_desc" jdbcType="VARCHAR" property="datasetDesc" />
     <result column="source_type" jdbcType="INTEGER" property="sourceType" />
     <result column="datasource_id" jdbcType="VARCHAR" property="datasourceId" />
-    <result column="source_table_name" jdbcType="VARCHAR" property="sourceTableName" />
-    <result column="source_partition_field" jdbcType="VARCHAR" property="sourcePartitionField" />
-    <result column="source_partition_format" jdbcType="VARCHAR" property="sourcePartitionFormat" />
-    <result column="sink_table_name" jdbcType="VARCHAR" property="sinkTableName" />
+    <result column="table_name" jdbcType="VARCHAR" property="tableName" />
+    <result column="partition_field" jdbcType="VARCHAR" property="partitionField" />
+    <result column="partition_format" jdbcType="VARCHAR" property="partitionFormat" />
     <result column="entity_id" jdbcType="VARCHAR" property="entityId" />
     <result column="entity_field" jdbcType="VARCHAR" property="entityField" />
-    <result column="sync_status" jdbcType="INTEGER" property="syncStatus" />
-    <result column="sync_start_time" jdbcType="TIMESTAMP" property="syncStartTime" />
-    <result column="sync_end_time" jdbcType="TIMESTAMP" property="syncEndTime" />
-    <result column="sync_time" jdbcType="INTEGER" property="syncTime" />
+    <result column="instance_status" jdbcType="INTEGER" property="instanceStatus" />
+    <result column="instance_start_time" jdbcType="TIMESTAMP" property="instanceStartTime" />
+    <result column="instance_end_time" jdbcType="TIMESTAMP" property="instanceEndTime" />
+    <result column="instance_msg" jdbcType="INTEGER" property="instanceMsg" />
     <result column="owner" jdbcType="VARCHAR" property="owner" />
     <result column="creator" jdbcType="VARCHAR" property="creator" />
     <result column="modifier" jdbcType="VARCHAR" property="modifier" />
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
     <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+    <result column="fields" property="fields" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.handler.DatasetFieldHandler"/>
   </resultMap>
 
   <sql id="Base_Column_List">
     id, status, dataset_id, dataset_name, dataset_type, dataset_desc, source_type, datasource_id, 
-    source_table_name, source_partition_field, source_partition_format, sink_table_name, 
-    entity_id, entity_field, sync_status, sync_start_time, sync_end_time, sync_time, 
+    table_name, partition_field, partition_format, fields,
+    entity_id, entity_field, instance_status, instance_start_time, instance_end_time, instance_msg,
     owner, creator, modifier, gmt_create, gmt_modified
   </sql>
 
@@ -74,17 +74,14 @@
     <if test="datasourceId != null">
       and datasource_id = #{datasourceId,jdbcType=VARCHAR},
     </if>
-    <if test="sourceTableName != null">
-      and source_table_name = #{sourceTableName,jdbcType=VARCHAR},
+    <if test="tableName != null">
+      and table_name = #{tableName,jdbcType=VARCHAR},
     </if>
-    <if test="sourcePartitionField != null">
-      and source_partition_field = #{sourcePartitionField,jdbcType=VARCHAR},
+    <if test="partitionField != null">
+      and partition_field = #{partitionField,jdbcType=VARCHAR},
     </if>
-    <if test="sourcePartitionFormat != null">
-      and source_partition_format = #{sourcePartitionFormat,jdbcType=VARCHAR},
-    </if>
-    <if test="sinkTableName != null">
-      and sink_table_name = #{sinkTableName,jdbcType=VARCHAR},
+    <if test="partitionFormat != null">
+      and partition_format = #{partitionFormat,jdbcType=VARCHAR},
     </if>
     <if test="entityId != null">
       and entity_id = #{entityId,jdbcType=VARCHAR},
@@ -92,17 +89,17 @@
     <if test="entityField != null">
       and entity_field = #{entityField,jdbcType=VARCHAR},
     </if>
-    <if test="syncStatus != null">
-      and sync_status = #{syncStatus,jdbcType=INTEGER},
+    <if test="instanceStatus != null">
+      and instance_status = #{instanceStatus,jdbcType=INTEGER},
     </if>
-    <if test="syncStartTime != null">
-      and sync_start_time = #{syncStartTime,jdbcType=TIMESTAMP},
+    <if test="instanceStartTime != null">
+      and instance_start_time = #{instanceStartTime,jdbcType=TIMESTAMP},
     </if>
-    <if test="syncEndTime != null">
-      and sync_end_time = #{syncEndTime,jdbcType=TIMESTAMP},
+    <if test="instanceEndTime != null">
+      and instance_end_time = #{instanceEndTime,jdbcType=TIMESTAMP},
     </if>
-    <if test="syncTime != null">
-      and sync_time = #{syncTime,jdbcType=INTEGER},
+    <if test="instanceMsg != null">
+      and instance_msg = #{instanceMsg,jdbcType=INTEGER},
     </if>
     <if test="owner != null">
       and owner = #{owner,jdbcType=VARCHAR},
@@ -131,21 +128,20 @@
   <insert id="insert" parameterType="com.data.profile.model.Dataset">
     insert into profile_meta_dataset (status, dataset_id,
       dataset_name, dataset_type, dataset_desc, 
-      source_type, datasource_id, source_table_name, 
-      source_partition_field, source_partition_format, 
-      sink_table_name, entity_id, entity_field, 
-      sync_status, sync_start_time, sync_end_time, 
-      sync_time, owner, creator, 
-      modifier, gmt_create, gmt_modified
+      source_type, datasource_id, table_name,
+      partition_field, partition_format,
+      entity_id, entity_field, fields,
+      instance_status, instance_start_time, instance_end_time,
+      instance_msg, owner, creator, modifier
       )
     values (#{status,jdbcType=INTEGER}, #{datasetId,jdbcType=VARCHAR},
       #{datasetName,jdbcType=VARCHAR}, #{datasetType,jdbcType=INTEGER}, #{datasetDesc,jdbcType=VARCHAR}, 
-      #{sourceType,jdbcType=INTEGER}, #{datasourceId,jdbcType=VARCHAR}, #{sourceTableName,jdbcType=VARCHAR}, 
-      #{sourcePartitionField,jdbcType=VARCHAR}, #{sourcePartitionFormat,jdbcType=VARCHAR}, 
-      #{sinkTableName,jdbcType=VARCHAR}, #{entityId,jdbcType=VARCHAR}, #{entityField,jdbcType=VARCHAR}, 
-      #{syncStatus,jdbcType=INTEGER}, #{syncStartTime,jdbcType=TIMESTAMP}, #{syncEndTime,jdbcType=TIMESTAMP}, 
-      #{syncTime,jdbcType=INTEGER}, #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, 
-      #{modifier,jdbcType=VARCHAR}, #{gmtCreate,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP}
+      #{sourceType,jdbcType=INTEGER}, #{datasourceId,jdbcType=VARCHAR}, #{tableName,jdbcType=VARCHAR},
+      #{partitionField,jdbcType=VARCHAR}, #{partitionFormat,jdbcType=VARCHAR},
+      #{entityId,jdbcType=VARCHAR}, #{entityField,jdbcType=VARCHAR}, #{fields,jdbcType=LONGVARCHAR},
+      #{instanceStatus,jdbcType=INTEGER}, #{instanceStartTime,jdbcType=TIMESTAMP},
+      #{instanceEndTime,jdbcType=TIMESTAMP}, #{instanceMsg,jdbcType=VARCHAR},
+      #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR}
       )
   </insert>
 
@@ -173,17 +169,14 @@
       <if test="datasourceId != null">
         datasource_id,
       </if>
-      <if test="sourceTableName != null">
-        source_table_name,
+      <if test="tableName != null">
+        table_name,
       </if>
-      <if test="sourcePartitionField != null">
-        source_partition_field,
+      <if test="partitionField != null">
+        partition_field,
       </if>
-      <if test="sourcePartitionFormat != null">
-        source_partition_format,
-      </if>
-      <if test="sinkTableName != null">
-        sink_table_name,
+      <if test="partitionFormat != null">
+        partition_format,
       </if>
       <if test="entityId != null">
         entity_id,
@@ -191,17 +184,20 @@
       <if test="entityField != null">
         entity_field,
       </if>
-      <if test="syncStatus != null">
-        sync_status,
+      <if test="fields != null">
+        fields,
       </if>
-      <if test="syncStartTime != null">
-        sync_start_time,
+      <if test="instanceStatus != null">
+        instance_status,
       </if>
-      <if test="syncEndTime != null">
-        sync_end_time,
+      <if test="instanceStartTime != null">
+        instance_start_time,
       </if>
-      <if test="syncTime != null">
-        sync_time,
+      <if test="instanceEndTime != null">
+        instance_end_time,
+      </if>
+      <if test="instanceMsg != null">
+        instanceMsg,
       </if>
       <if test="owner != null">
         owner,
@@ -211,12 +207,6 @@
       </if>
       <if test="modifier != null">
         modifier,
-      </if>
-      <if test="gmtCreate != null">
-        gmt_create,
-      </if>
-      <if test="gmtModified != null">
-        gmt_modified,
       </if>
     </trim>
     <trim prefix="values (" suffix=")" suffixOverrides=",">
@@ -241,17 +231,14 @@
       <if test="datasourceId != null">
         #{datasourceId,jdbcType=VARCHAR},
       </if>
-      <if test="sourceTableName != null">
-        #{sourceTableName,jdbcType=VARCHAR},
+      <if test="tableName != null">
+        #{tableName,jdbcType=VARCHAR},
       </if>
-      <if test="sourcePartitionField != null">
-        #{sourcePartitionField,jdbcType=VARCHAR},
+      <if test="partitionField != null">
+        #{partitionField,jdbcType=VARCHAR},
       </if>
-      <if test="sourcePartitionFormat != null">
-        #{sourcePartitionFormat,jdbcType=VARCHAR},
-      </if>
-      <if test="sinkTableName != null">
-        #{sinkTableName,jdbcType=VARCHAR},
+      <if test="partitionFormat != null">
+        #{partitionFormat,jdbcType=VARCHAR},
       </if>
       <if test="entityId != null">
         #{entityId,jdbcType=VARCHAR},
@@ -259,17 +246,20 @@
       <if test="entityField != null">
         #{entityField,jdbcType=VARCHAR},
       </if>
-      <if test="syncStatus != null">
-        #{syncStatus,jdbcType=INTEGER},
+      <if test="fields != null">
+        #{fields,jdbcType=LONGVARCHAR},
       </if>
-      <if test="syncStartTime != null">
-        #{syncStartTime,jdbcType=TIMESTAMP},
+      <if test="instanceStatus != null">
+        #{instanceStatus,jdbcType=INTEGER},
       </if>
-      <if test="syncEndTime != null">
-        #{syncEndTime,jdbcType=TIMESTAMP},
+      <if test="instanceStartTime != null">
+        #{instanceStartTime,jdbcType=TIMESTAMP},
       </if>
-      <if test="syncTime != null">
-        #{syncTime,jdbcType=INTEGER},
+      <if test="instanceEndTime != null">
+        #{instanceEndTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="instanceMsg != null">
+        #{instanceMsg,jdbcType=VARCHAR},
       </if>
       <if test="owner != null">
         #{owner,jdbcType=VARCHAR},
@@ -279,12 +269,6 @@
       </if>
       <if test="modifier != null">
         #{modifier,jdbcType=VARCHAR},
-      </if>
-      <if test="gmtCreate != null">
-        #{gmtCreate,jdbcType=TIMESTAMP},
-      </if>
-      <if test="gmtModified != null">
-        #{gmtModified,jdbcType=TIMESTAMP},
       </if>
     </trim>
   </insert>
@@ -313,17 +297,14 @@
       <if test="datasourceId != null">
         datasource_id = #{datasourceId,jdbcType=VARCHAR},
       </if>
-      <if test="sourceTableName != null">
-        source_table_name = #{sourceTableName,jdbcType=VARCHAR},
+      <if test="tableName != null">
+        table_name = #{tableName,jdbcType=VARCHAR},
       </if>
-      <if test="sourcePartitionField != null">
-        source_partition_field = #{sourcePartitionField,jdbcType=VARCHAR},
+      <if test="partitionField != null">
+        partition_field = #{partitionField,jdbcType=VARCHAR},
       </if>
-      <if test="sourcePartitionFormat != null">
-        source_partition_format = #{sourcePartitionFormat,jdbcType=VARCHAR},
-      </if>
-      <if test="sinkTableName != null">
-        sink_table_name = #{sinkTableName,jdbcType=VARCHAR},
+      <if test="partitionFormat != null">
+        partition_format = #{partitionFormat,jdbcType=VARCHAR},
       </if>
       <if test="entityId != null">
         entity_id = #{entityId,jdbcType=VARCHAR},
@@ -331,17 +312,20 @@
       <if test="entityField != null">
         entity_field = #{entityField,jdbcType=VARCHAR},
       </if>
-      <if test="syncStatus != null">
-        sync_status = #{syncStatus,jdbcType=INTEGER},
+      <if test="fields != null">
+        fields = #{fields,jdbcType=INTEGER},
       </if>
-      <if test="syncStartTime != null">
-        sync_start_time = #{syncStartTime,jdbcType=TIMESTAMP},
+      <if test="instanceStatus != null">
+        instance_status = #{instanceStatus,jdbcType=INTEGER},
       </if>
-      <if test="syncEndTime != null">
-        sync_end_time = #{syncEndTime,jdbcType=TIMESTAMP},
+      <if test="instanceStartTime != null">
+        instance_start_time = #{instanceStartTime,jdbcType=TIMESTAMP},
       </if>
-      <if test="syncTime != null">
-        sync_time = #{syncTime,jdbcType=INTEGER},
+      <if test="instanceEndTime != null">
+        instance_end_time = #{instanceEndTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="instanceMsg != null">
+        instance_msg = #{instanceMsg,jdbcType=INTEGER},
       </if>
       <if test="owner != null">
         owner = #{owner,jdbcType=VARCHAR},
@@ -351,12 +335,6 @@
       </if>
       <if test="modifier != null">
         modifier = #{modifier,jdbcType=VARCHAR},
-      </if>
-      <if test="gmtCreate != null">
-        gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
-      </if>
-      <if test="gmtModified != null">
-        gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
       </if>
     </set>
     where dataset_id = #{datasetId,jdbcType=BIGINT}
@@ -371,21 +349,19 @@
       dataset_desc = #{datasetDesc,jdbcType=VARCHAR},
       source_type = #{sourceType,jdbcType=INTEGER},
       datasource_id = #{datasourceId,jdbcType=VARCHAR},
-      source_table_name = #{sourceTableName,jdbcType=VARCHAR},
-      source_partition_field = #{sourcePartitionField,jdbcType=VARCHAR},
-      source_partition_format = #{sourcePartitionFormat,jdbcType=VARCHAR},
-      sink_table_name = #{sinkTableName,jdbcType=VARCHAR},
+      table_name = #{tableName,jdbcType=VARCHAR},
+      partition_field = #{partitionField,jdbcType=VARCHAR},
+      partition_format = #{partitionFormat,jdbcType=VARCHAR},
       entity_id = #{entityId,jdbcType=VARCHAR},
       entity_field = #{entityField,jdbcType=VARCHAR},
-      sync_status = #{syncStatus,jdbcType=INTEGER},
-      sync_start_time = #{syncStartTime,jdbcType=TIMESTAMP},
-      sync_end_time = #{syncEndTime,jdbcType=TIMESTAMP},
-      sync_time = #{syncTime,jdbcType=INTEGER},
+      fields = #{fields,jdbcType=VARCHAR},
+      instance_status = #{syncStatus,jdbcType=INTEGER},
+      instance_start_time = #{syncStartTime,jdbcType=TIMESTAMP},
+      instance_end_time = #{syncEndTime,jdbcType=TIMESTAMP},
+      instance_msg = #{syncTime,jdbcType=VARCHAR},
       owner = #{owner,jdbcType=VARCHAR},
       creator = #{creator,jdbcType=VARCHAR},
-      modifier = #{modifier,jdbcType=VARCHAR},
-      gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
-      gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
+      modifier = #{modifier,jdbcType=VARCHAR}
     where dataset_id = #{datasetId,jdbcType=VARCHAR}
   </update>
 

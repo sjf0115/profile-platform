@@ -8,7 +8,7 @@ import java.util.Date;
 public class TaskInstance {
     private Long id;
 
-    private Byte status;
+    private int status;
 
     private String instanceId;
 
