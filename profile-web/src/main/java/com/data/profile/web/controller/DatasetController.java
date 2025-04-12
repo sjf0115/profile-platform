@@ -69,7 +69,7 @@ public class DatasetController {
     }
 
     @GetMapping(value = "/fields")
-    public Response getFields(@RequestParam String datasourceId,@RequestParam String tableName, @RequestParam String datasetId) {
+    public Response getFields(@RequestParam String datasourceId, @RequestParam String tableName, @RequestParam String datasetId) {
         List<DatasetField> fields = datasetService.getDatasetField(datasourceId, tableName, datasetId);
         return Response.success(fields);
     }

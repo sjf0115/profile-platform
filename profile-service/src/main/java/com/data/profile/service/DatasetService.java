@@ -84,7 +84,14 @@ public class DatasetService {
      * @return
      */
     public int save(Dataset dataset) {
-
+        // 数据集字段判断
+        List<DatasetField> fields = dataset.getFields();
+        for (DatasetField field : fields) {
+            int status = field.getStatus();
+            if (Objects.equals(status, FieldStatus.DELETE_FIELD.getCode())) {
+                throw new RuntimeException("数据集字段[" + field.getName() + "]在原始表中已经被删除，请尽快联系原始表Owner处理");
+            }
+        }
         if (StringUtils.isBlank(dataset.getDatasetId())) {
             // 创建数据集
             return createDataset(dataset);
