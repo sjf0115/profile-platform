@@ -11,6 +11,7 @@ import lombok.Data;
  */
 @Data
 public class DatasetField {
+    // 1-新增字段:数据集字段没有但原始表列有(标记新增的标识)、2-修改字段:数据集字段和原始表列均有、3-删除字段:数据集字段有但原始表列已经删除(标记删除标识)
     private int status;
     private String name;
     private String alias;

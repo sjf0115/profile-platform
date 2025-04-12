@@ -1,11 +1,9 @@
 package com.data.profile.service;
 
 import com.data.profile.common.domain.RequestContext;
-import com.data.profile.common.enums.DataSourceSchemaType;
-import com.data.profile.common.enums.ModelType;
-import com.data.profile.common.enums.SourceType;
-import com.data.profile.common.enums.Status;
+import com.data.profile.common.enums.*;
 import com.data.profile.common.utils.IDGenerator;
+import com.data.profile.manager.domain.Column;
 import com.data.profile.manager.jdbc.JdbcMetaService;
 import com.data.profile.manager.utils.JdbcUtil;
 import com.data.profile.dao.DatasetMapper;
@@ -16,6 +14,7 @@ import com.data.profile.model.DataSourceSchema;
 import com.data.profile.model.Dataset;
 import com.data.profile.model.DatasetField;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +26,8 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 功能：数据集服务
@@ -102,50 +100,17 @@ public class DatasetService {
      * @return
      */
     public List<Table> getTables(String datasourceId) {
-        List<Table> tables;
-        // 数据源
-        Optional<DataSource> dataSourceOptional = dataSourceService.getDetail(datasourceId);
-        if (!dataSourceOptional.isPresent()) {
-            throw new RuntimeException("数据源[" + datasourceId + "]不存在，请联系管理员");
+        List<Table> tables = Lists.newArrayList();
+        if (StringUtils.isBlank(datasourceId)) {
+            return tables;
         }
-        DataSource dataSource = dataSourceOptional.get();
-
-        // 只支持 Source 类型数据源
-
-        String schemaName = dataSource.getSchemaName();
-        Integer schemaType = dataSource.getSchemaType();
-        if (Objects.equals(schemaType, DataSourceSchemaType.SINK)) {
-            throw new RuntimeException("不支持数据源类型[" + schemaName + "]，请重新选择");
-        }
-
-        // 获取表
-        String schemaId = dataSource.getSchemaId();
-        Optional<DataSourceSchema> schemaOptional = schemaService.getDetail(schemaId);
-        if (!schemaOptional.isPresent()) {
-            throw new RuntimeException("数据源Schema[" + schemaId + "]不存在，请联系管理员");
-        }
-        DataSourceSchema schema = schemaOptional.get();
-        String jdbcProtocol = schema.getJdbcProtocol();
-
-        String config = dataSource.getConfig();
-        // Todo 不同类型解析不一样
-        ConnectionParam connectionParam = gson.fromJson(config, ConnectionParam.class);
-        connectionParam.setProtocol(jdbcProtocol);
-
-        String url;
-        try {
-            url = JdbcUtil.buildUrl(connectionParam);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("获取数据表构建连接失败: [" + e.getMessage() + "]");
-        }
-        connectionParam.setUrl(url);
 
         try {
+            ConnectionParam connectionParam = getConnectionParam(datasourceId);
             tables = metaService.getTables(connectionParam);
         } catch (SQLException e) {
             throw new RuntimeException("获取数据表失败: [" + e.getMessage() + "]");
         }
-
         return tables;
     }
 
@@ -157,16 +122,40 @@ public class DatasetService {
      * @return
      */
     public List<DatasetField> getDatasetField(String datasourceId, String tableName, String datasetId) {
-        // 表列信息
-        List<DatasetField> columns = getTableColumns(datasourceId, tableName);
+        // 原始表列
+        List<Column> columns = getTableColumns(datasourceId, tableName);
+        Set<String> columnNames = columns.stream().map(c -> c.getColumnName()).collect(Collectors.toSet()); // 原始列名称集合
         // 数据集字段
         List<DatasetField> fields = Lists.newArrayList();
         if (StringUtils.isNotBlank(datasetId)) {
             Dataset dataset = datasetMapper.selectByDatasetId(datasetId);
             fields = dataset.getFields();
         }
-        // 表列删除字段无删除
-        //
+
+        // 修改字段、删除字段
+        for (DatasetField field : fields) {
+            if (columnNames.contains(field.getName())) {
+                // 修改字段(数据集字段在原始表中还存在)
+                field.setStatus(FieldStatus.UPDATE_FIELD.getCode());
+                // 移除数据集字段(最后剩下是原始表新增字段)
+                columnNames.remove(field.getName());
+            } else {
+                // 删除字段(数据集字段在原始表中已经删除)
+                field.setStatus(FieldStatus.DELETE_FIELD.getCode());
+            }
+        }
+
+        // 新增字段
+        for (Column column : columns) {
+            if (columnNames.contains(column.getColumnName())) {
+                // 新增字段 Column -> DatasetField 均是默认值
+                DatasetField datasetField = new DatasetField();
+                datasetField.setName(column.getColumnName());
+                datasetField.setAlias(column.getColumnComment());
+                datasetField.setStatus(FieldStatus.ADD_FIELD.getCode());
+                fields.add(datasetField);
+            }
+        }
         return fields;
     }
 
@@ -194,6 +183,8 @@ public class DatasetService {
         dataset.setCreator(RequestContext.currentUserId());
         dataset.setModifier(RequestContext.currentUserId());
         int result = datasetMapper.insertSelective(dataset);
+
+        // 创建数据集表
         return result;
     }
 
@@ -214,7 +205,26 @@ public class DatasetService {
      * @param tableName
      * @return
      */
-    private List<DatasetField> getTableColumns(String datasourceId, String tableName) {
+    private List<Column> getTableColumns(String datasourceId, String tableName) {
+        List<Column> columns = Lists.newArrayList();
+        if (StringUtils.isBlank(tableName)) {
+            return columns;
+        }
+        try {
+            ConnectionParam connectionParam = getConnectionParam(datasourceId);
+            columns = metaService.getColumns(connectionParam, tableName);
+        } catch (SQLException e) {
+            throw new RuntimeException("获取数据表失败: [" + e.getMessage() + "]");
+        }
+        return columns;
+    }
+
+    /**
+     * 获取数据源链接信息
+     * @param datasourceId
+     * @return
+     */
+    private ConnectionParam getConnectionParam(String datasourceId) {
         // 数据源
         Optional<DataSource> dataSourceOptional = dataSourceService.getDetail(datasourceId);
         if (!dataSourceOptional.isPresent()) {
@@ -222,6 +232,37 @@ public class DatasetService {
         }
         DataSource dataSource = dataSourceOptional.get();
 
-        return null;
+        // 只支持 Source 类型数据源
+        String schemaName = dataSource.getSchemaName();
+        Integer schemaType = dataSource.getSchemaType();
+        if (Objects.equals(schemaType, DataSourceSchemaType.SINK)) {
+            throw new RuntimeException("不支持数据源类型[" + schemaName + "]，请重新选择");
+        }
+
+        // 获取 JDBC 协议
+        String schemaId = dataSource.getSchemaId();
+        Optional<DataSourceSchema> schemaOptional = schemaService.getDetail(schemaId);
+        if (!schemaOptional.isPresent()) {
+            throw new RuntimeException("数据源Schema[" + schemaId + "]不存在，请联系管理员");
+        }
+        DataSourceSchema schema = schemaOptional.get();
+        String jdbcProtocol = schema.getJdbcProtocol();
+
+        // 生成 ConnectionParam
+        // Todo 不同类型解析不一样
+        String config = dataSource.getConfig();
+        ConnectionParam connectionParam = gson.fromJson(config, ConnectionParam.class);
+        connectionParam.setProtocol(jdbcProtocol);
+
+        // JDBC URL
+        String url;
+        try {
+            url = JdbcUtil.buildUrl(connectionParam);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("获取数据表构建连接失败: [" + e.getMessage() + "]");
+        }
+        connectionParam.setUrl(url);
+
+        return connectionParam;
     }
 }

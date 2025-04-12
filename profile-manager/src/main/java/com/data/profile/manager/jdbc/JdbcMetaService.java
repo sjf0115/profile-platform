@@ -28,24 +28,27 @@ public class JdbcMetaService implements MetaService {
     private static final Logger LOG = LoggerFactory.getLogger(JdbcMetaService.class);
     /**
      * 获取所有列
-     * @param dbName
+     * @param param
      * @return
      * @throws SQLException
      */
     @Override
-    public List<Column> getColumns(ConnectionParam params, String dbName, String tableName) throws SQLException {
+    public List<Column> getColumns(ConnectionParam param, String tableName) throws SQLException {
+        String dbName = param.getDatabase();
+
         List<Column> columns = Lists.newArrayList();
         if (StringUtils.isBlank(dbName) || StringUtils.isBlank(tableName)) {
             return columns;
         }
 
+        // TODO
         try {
-            Class.forName(params.getDriver());
+            Class.forName(param.getDriver());
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
 
-        try (Connection conn = DriverManager.getConnection(params.getUrl(), params.getUserName(), params.getPassword())) {
+        try (Connection conn = DriverManager.getConnection(param.getUrl(), param.getUserName(), param.getPassword())) {
             DatabaseMetaData meta = conn.getMetaData();
             ResultSet rs = meta.getColumns(
                     null,    // catalog (Hive 中通常为 null)
@@ -77,8 +80,8 @@ public class JdbcMetaService implements MetaService {
      * @throws SQLException
      */
     @Override
-    public List<Table> getTables(ConnectionParam params) throws SQLException {
-        String databaseName = params.getDatabase();
+    public List<Table> getTables(ConnectionParam param) throws SQLException {
+        String databaseName = param.getDatabase();
         List<Table> tables = Lists.newArrayList();
         if (StringUtils.isBlank(databaseName)) {
             return tables;
@@ -86,12 +89,12 @@ public class JdbcMetaService implements MetaService {
 
         // TODO 驱动
         try {
-            Class.forName(params.getDriver());
+            Class.forName(param.getDriver());
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
 
-        try (Connection conn = DriverManager.getConnection(params.getUrl(), params.getUserName(), params.getPassword())) {
+        try (Connection conn = DriverManager.getConnection(param.getUrl(), param.getUserName(), param.getPassword())) {
             DatabaseMetaData meta = conn.getMetaData();
             ResultSet rs = meta.getTables(null, databaseName, "%", new String[]{"TABLE"});
             while (rs.next()) {
