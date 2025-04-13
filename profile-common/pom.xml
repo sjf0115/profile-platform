@@ -53,6 +53,12 @@
             <artifactId>httpclient5</artifactId>
         </dependency>
 
+        <!-- 模板引擎 FreeMarker -->
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

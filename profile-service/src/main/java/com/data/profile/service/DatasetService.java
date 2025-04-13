@@ -4,7 +4,9 @@ import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.enums.*;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.manager.domain.Column;
+import com.data.profile.manager.domain.ColumnBuilder;
 import com.data.profile.manager.jdbc.JdbcMetaService;
+import com.data.profile.manager.template.TemplateBuilder;
 import com.data.profile.manager.utils.JdbcUtil;
 import com.data.profile.dao.DatasetMapper;
 import com.data.profile.manager.domain.ConnectionParam;
@@ -190,8 +192,9 @@ public class DatasetService {
         dataset.setCreator(RequestContext.currentUserId());
         dataset.setModifier(RequestContext.currentUserId());
         int result = datasetMapper.insertSelective(dataset);
-
-        // 创建数据集表
+        // TODO 创建数据集表 在引擎中创建数据集表
+        String datasetTable = createDatasetTable(dataset);
+        LOG.info("创建表语句: " + datasetTable);
         return result;
     }
 
@@ -271,5 +274,35 @@ public class DatasetService {
         connectionParam.setUrl(url);
 
         return connectionParam;
+    }
+
+    /**
+     * 创建数据集对应的引擎表
+     * @param dataset
+     * @return
+     */
+    private String createDatasetTable(Dataset dataset) {
+        String tableName = dataset.getDatasetId();
+        String tableComment = dataset.getDatasetName();
+        List<DatasetField> fields = dataset.getFields();
+
+        List<Column> columns = fields.stream().map(field -> new ColumnBuilder()
+                .setColumnName(field.getName())
+                .setColumnType(field.getColumnType())
+                .setColumnComment(field.getAlias())
+                .build()
+        ).collect(Collectors.toList());
+
+        Map<String, Object> params = Maps.newHashMap();
+        params.put("tableName", tableName);
+        params.put("columns", columns);
+        params.put("orderBy", "dt");
+
+        String createTableSQL = new TemplateBuilder()
+                .setName("create_table.ftl")
+                .setPath("clickhouse")
+                .setParams(params)
+                .build();
+        return createTableSQL;
     }
 }

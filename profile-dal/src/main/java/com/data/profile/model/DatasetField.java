@@ -23,6 +23,8 @@ public class DatasetField {
     private int organizeType = 1;
     // 1-文本型、2-数值型、3-时间型
     private int dataType = 1;
+    // 原始列类型
+    private String columnType;
     // 1-枚举,2-非枚举
     private int distType = 1;
     // 绑定的对象ID
