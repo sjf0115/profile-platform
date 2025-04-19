@@ -34,6 +34,8 @@ public class Label {
 
     private Integer sourceType;
 
+    private String config;
+
     private Integer isOffice;
 
     private String owner;

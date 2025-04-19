@@ -7,7 +7,10 @@ import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.LabelMapper;
+import com.data.profile.model.FileImportLabelConfig;
 import com.data.profile.model.Label;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -30,6 +33,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class LabelService {
+    private static final Gson gson = new GsonBuilder().create();
     private static Logger LOG = LoggerFactory.getLogger(LabelService.class);
 
     @Resource
@@ -91,5 +95,19 @@ public class LabelService {
             int result = labelMapper.updateByLabelIdSelective(label);
             return result;
         }
+    }
+
+    /**
+     * 文件上传创建标签
+     * @param config
+     */
+    private void fileUpload(String labelId, String config) {
+        FileImportLabelConfig labelConfig = gson.fromJson(config, FileImportLabelConfig.class);
+        String filePath = labelConfig.getFilePath();
+        String fileName = labelConfig.getFileName();
+        if (StringUtils.isBlank(filePath) || StringUtils.isBlank(fileName)) {
+            throw new RuntimeException("上传文件路径不能为空");
+        }
+
     }
 }

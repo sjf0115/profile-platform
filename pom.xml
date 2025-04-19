@@ -42,6 +42,7 @@
     <httpclient.version>5.4.2</httpclient.version>
     <seatunnel.version>2.3.8</seatunnel.version>
     <freemarker.version>2.3.31</freemarker.version>
+    <csv.version>3.8</csv.version>
   </properties>
 
   <dependencyManagement>
@@ -113,6 +114,13 @@
         <groupId>org.apache.httpcomponents.client5</groupId>
         <artifactId>httpclient5</artifactId>
         <version>${httpclient.version}</version>
+      </dependency>
+
+      <!-- OpenCsv -->
+      <dependency>
+        <groupId>com.opencsv</groupId>
+        <artifactId>opencsv</artifactId>
+        <version>${csv.version}</version>
       </dependency>
 
       <!-- 工具类 end -->

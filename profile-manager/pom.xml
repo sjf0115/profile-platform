@@ -42,6 +42,12 @@
             <artifactId>mysql-connector-j</artifactId>
         </dependency>
 
+        <!-- OpenCsv -->
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

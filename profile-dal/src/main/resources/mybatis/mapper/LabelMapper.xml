@@ -16,6 +16,7 @@
     <result column="label_produce_type" jdbcType="INTEGER" property="labelProduceType" />
     <result column="label_time_type" jdbcType="INTEGER" property="labelTimeType" />
     <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+    <result column="config" jdbcType="VARCHAR" property="config" />
     <result column="is_office" jdbcType="INTEGER" property="isOffice" />
     <result column="owner" jdbcType="VARCHAR" property="owner" />
     <result column="creator" jdbcType="VARCHAR" property="creator" />
@@ -27,7 +28,7 @@
   <sql id="Base_Column_List">
     id, is_valid, label_id, label_name, label_status, label_type, label_desc, label_category_id, 
     label_data_type, label_dist_type, label_organize_type, label_produce_type, label_time_type, 
-    source_type, is_office, owner, creator, modifier, gmt_create, gmt_modified
+    source_type, config, is_office, owner, creator, modifier, gmt_create, gmt_modified
   </sql>
 
   <select id="selectByLabelId" parameterType="java.lang.String" resultMap="BaseResultMap">
@@ -117,14 +118,14 @@
       label_name, label_status, label_type, 
       label_desc, label_category_id, label_data_type, 
       label_dist_type, label_organize_type, label_produce_type, 
-      label_time_type, source_type, is_office, 
+      label_time_type, source_type, config, is_office,
       owner, creator, modifier)
     values (#{isValid,jdbcType=INTEGER}, #{labelId,jdbcType=VARCHAR},
       #{labelName,jdbcType=VARCHAR}, #{labelStatus,jdbcType=INTEGER}, #{labelType,jdbcType=VARCHAR},
       #{labelDesc,jdbcType=VARCHAR}, #{labelCategoryId,jdbcType=VARCHAR}, #{labelDataType,jdbcType=INTEGER}, 
       #{labelDistType,jdbcType=INTEGER}, #{labelOrganizeType,jdbcType=INTEGER}, #{labelProduceType,jdbcType=INTEGER}, 
-      #{labelTimeType,jdbcType=INTEGER}, #{sourceType,jdbcType=INTEGER}, #{isOffice,jdbcType=INTEGER}, 
-      #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR})
+      #{labelTimeType,jdbcType=INTEGER}, #{sourceType,jdbcType=INTEGER}, #{config,jdbcType=VARCHAR},
+      #{isOffice,jdbcType=INTEGER}, #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR})
   </insert>
 
   <insert id="insertSelective" parameterType="com.data.profile.model.Label">
@@ -168,6 +169,9 @@
       </if>
       <if test="sourceType != null">
         source_type,
+      </if>
+      <if test="config != null">
+        config,
       </if>
       <if test="isOffice != null">
         is_office,
@@ -222,6 +226,9 @@
       <if test="sourceType != null">
         #{sourceType,jdbcType=INTEGER},
       </if>
+      <if test="config != null">
+        #{config,jdbcType=VARCHAR},
+      </if>
       <if test="isOffice != null">
         #{isOffice,jdbcType=INTEGER},
       </if>
@@ -256,6 +263,7 @@
         label_produce_type = #{labelProduceType,jdbcType=INTEGER},
         label_time_type = #{labelTimeType,jdbcType=INTEGER},
         source_type = #{sourceType,jdbcType=INTEGER},
+        config = #{config,jdbcType=VARCHAR},
         is_office = #{isOffice,jdbcType=INTEGER},
         owner = #{owner,jdbcType=VARCHAR},
         creator = #{creator,jdbcType=VARCHAR},
@@ -301,6 +309,9 @@
       </if>
       <if test="sourceType != null">
         source_type = #{sourceType,jdbcType=INTEGER},
+      </if>
+      <if test="config != null">
+        config = #{config,jdbcType=VARCHAR},
       </if>
       <if test="isOffice != null">
         is_office = #{isOffice,jdbcType=INTEGER},
