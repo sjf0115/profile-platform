@@ -36,7 +36,7 @@ public class RequestContext {
         if (user != null) {
             return user.getUserId();
         }
-        return "admin";
+        return "100000";
     }
 
     // 当前登录用户名称
@@ -45,7 +45,7 @@ public class RequestContext {
         if (user != null) {
             return user.getUserName();
         }
-        return "admin";
+        return "100000";
     }
 
     public static void setUser(User user) {

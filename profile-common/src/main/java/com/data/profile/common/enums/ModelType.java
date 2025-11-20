@@ -7,10 +7,10 @@ public enum ModelType {
     ENTITY("02", "实体"),
     // 实体类型
     ENTITY_TYPE("03", "实体类型"),
-    // 数据源
-    DATASOURCE("04", "数据源"),
     // 数据源Schema
-    DATASOURCE_SCHEMA("05", "数据源Schema"),
+    DATASOURCE_SCHEMA("04", "数据源Schema"),
+    // 数据源
+    DATASOURCE("05", "数据源"),
     // 数据集
     DATASET("06", "数据集"),
     // 标签

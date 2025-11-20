@@ -2,7 +2,87 @@
 DROP DATABASE profile;
 CREATE DATABASE profile;
 
--- 1. 数据源
+-- 1. 用户
+DROP Table `profile_meta_user`;
+CREATE TABLE IF NOT EXISTS `profile_meta_user`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+    `user_id` VARCHAR(40) NOT NULL COMMENT '用户ID',
+    `user_name` VARCHAR(100) NOT NULL COMMENT '用户名称',
+    `password` VARCHAR(100) NOT NULL COMMENT '密码',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`user_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-用户';
+
+INSERT INTO `profile_meta_user` (`status`, `user_id`, `user_name`, `password`, `source_type`, `creator`, `modifier`)
+VALUES (1, '100000', 'admin', 'admin', 1, '100000', '100000');
+
+-- 2. 实体
+-- 实体 uid ，实体类型为 用户
+DROP Table `profile_meta_entity`;
+CREATE TABLE IF NOT EXISTS `profile_meta_entity`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+    `entity_id` VARCHAR(40) NOT NULL COMMENT '实体ID',
+    `entity_name` VARCHAR(100) NOT NULL COMMENT '实体名称',
+    `entity_type_id` VARCHAR(100) NOT NULL COMMENT '实体类型ID',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`entity_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-实体';
+
+INSERT INTO `profile_meta_entity` (`status`, `entity_id`, `entity_name`, `entity_type_id`, `source_type`, `creator`, `modifier`)
+VALUES (1, '0219740078368128', 'uid', '0319740109099392', 1, '100000', '100000')
+;
+
+-- 3. 实体类型
+DROP Table `profile_meta_entity_type`;
+CREATE TABLE IF NOT EXISTS `profile_meta_entity_type`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+    `entity_type_id` VARCHAR(40) NOT NULL COMMENT '实体类型ID',
+    `entity_type_name` VARCHAR(100) NOT NULL COMMENT '实体类型名称',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`entity_type_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-实体类型';
+
+INSERT INTO `profile_meta_entity_type` (`status`, `entity_type_id`, `entity_type_name`, `source_type`, `creator`, `modifier`)
+VALUES (1, '0319740109099392', '用户', 1, '100000', '100000')
+;
+
+-- 4. 数据源Schema
+CREATE TABLE `profile_meta_datasource_schema` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+    `schema_id` varchar(40) NOT NULL COMMENT '数据源 Schema ID',
+    `schema_name` varchar(100) NOT NULL COMMENT '数据源 Schema 名称',
+    `schema_type` varchar(100) NOT NULL COMMENT '数据源 Schema 类型:1-source,2-sink,3-source/sink',
+    `jdbc_protocol` varchar(50) NOT NULL COMMENT '数据源 Schema JDBC 协议 例如 jdbc://mysql',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
+    `config_template` text NOT NULL COMMENT '配置模板',
+    `creator` varchar(100) NOT NULL COMMENT '创建者',
+    `modifier` varchar(100) NOT NULL COMMENT '修改者',
+    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`schema_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='画像-数据源Schema';
+
+-- 5. 数据源
 DROP Table `profile_meta_datasource`;
 CREATE TABLE `profile_meta_datasource` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
@@ -22,27 +102,7 @@ CREATE TABLE `profile_meta_datasource` (
     UNIQUE(`datasource_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-数据源';
 
-
-
--- 2. 数据源Schema
-CREATE TABLE `profile_meta_datasource_schema` (
-    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
-    `schema_id` varchar(40) NOT NULL COMMENT '数据源 Schema ID',
-    `schema_name` varchar(100) NOT NULL COMMENT '数据源 Schema 名称',
-    `schema_type` varchar(100) NOT NULL COMMENT '数据源 Schema 类型:1-source,2-sink,3-source/sink',
-    `jdbc_protocol` varchar(50) NOT NULL COMMENT '数据源 Schema JDBC 协议 例如jdbc://mysql',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
-    `config_template` text NOT NULL COMMENT '配置模板',
-    `creator` varchar(100) NOT NULL COMMENT '创建者',
-    `modifier` varchar(100) NOT NULL COMMENT '修改者',
-    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`),
-    UNIQUE(`schema_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='画像-数据源Schema';
-
--- 3. 数据集
+-- 6. 数据集
 DROP Table `profile_meta_dataset`;
 CREATE TABLE IF NOT EXISTS `profile_meta_dataset`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
@@ -72,85 +132,6 @@ CREATE TABLE IF NOT EXISTS `profile_meta_dataset`(
     PRIMARY KEY (`id`),
     UNIQUE(`dataset_id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集';
-
--- 3. 数据集字段
-# DROP Table `profile_meta_dataset_field`;
-# CREATE TABLE IF NOT EXISTS `profile_meta_dataset_field`(
-#     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-#     `dataset_id` VARCHAR(40) NOT NULL COMMENT '数据集ID',
-#     `field_status` INT NOT NULL COMMENT '字段状态: 1-导入,2-不导入',
-#     `field_name` VARCHAR(40) NOT NULL COMMENT '字段名称',
-#     `field_alias` VARCHAR(40) COMMENT '字段别名',
-#     `field_category` INT COMMENT '字段分类:1-实体ID、2-标签、3-行为类型、4-行为时间、5-行为属性、6-行为指标、7-自定义',
-#     `field_organize_type` INT NOT NULL DEFAULT 1 COMMENT '字段组织类型: 1-单值,2-多值,3-KV,4-KKV',
-#     `field_data_type` INT DEFAULT 1 COMMENT '字段类型: 1-文本型、2-数值型、3-时间型',
-#     `field_dist_type` INT NOT NULL DEFAULT 1 COMMENT '字段数据分布类型: 1-枚举,2-非枚举',
-#     `relation_id` VARCHAR(100) COMMENT '字段绑定的对象ID: 无绑定则为空',
-#     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
-#     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
-#     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-#     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-#     PRIMARY KEY (`id`),
-#     UNIQUE(`dataset_id`, `field_name`)
-# )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集标签字段';
-
-
-
--- 4. 用户
-DROP Table `profile_meta_user`;
-CREATE TABLE IF NOT EXISTS `profile_meta_user`(
-    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
-    `user_id` VARCHAR(40) NOT NULL COMMENT '用户ID',
-    `user_name` VARCHAR(100) NOT NULL COMMENT '用户名称',
-    `password` VARCHAR(100) NOT NULL COMMENT '密码',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
-    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
-    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
-    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-用户';
-
-INSERT INTO `profile_meta_user` (`status`, `user_id`, `user_name`, `password`, `source_type`, `creator`, `modifier`)
-VALUES (1, '100000', 'admin', 'admin', 1, '100000', '100000');
-
-
--- 5. 实体
--- 实体 uid ，实体类型为 用户
-DROP Table `profile_meta_entity`;
-CREATE TABLE IF NOT EXISTS `profile_meta_entity`(
-    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
-    `entity_id` VARCHAR(40) NOT NULL COMMENT '实体ID',
-    `entity_name` VARCHAR(100) NOT NULL COMMENT '实体名称',
-    `entity_type_id` VARCHAR(100) NOT NULL COMMENT '实体类型ID',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
-    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
-    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
-    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-实体';
-
--- 6. 实体类型
-DROP Table `profile_meta_entity_type`;
-CREATE TABLE IF NOT EXISTS `profile_meta_entity_type`(
-    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
-    `entity_type_id` VARCHAR(40) NOT NULL COMMENT '实体类型ID',
-    `entity_type_name` VARCHAR(100) NOT NULL COMMENT '实体类型名称',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
-    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
-    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
-    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-实体类型';
-
-INSERT INTO `profile_meta_entity_type` (`status`, `entity_type_id`, `entity_type_name`, `source_type`, `creator`, `modifier`)
-VALUES (1, '03W199ZY5Z', 'uid', 1, '100000', '100000')
-;
 
 
 -- 7. 标签类目
@@ -208,8 +189,8 @@ CREATE TABLE IF NOT EXISTS `profile_meta_label`(
 
 INSERT INTO `profile_meta_label` (
     `is_valid`, `label_id`, `label_name`, `label_status`, `label_type`, `label_desc`, `label_category_id`, `label_data_type`, `label_dist_type`,
-    `label_organize_type`,	`label_produce_type`, `label_time_type`, `source_type`, `is_office`, `owner`, `creator`, `modifier`)
-VALUES (1, '07H137JO1D', '下单次数', 4, 2, '下单次数', '082ENU08E8', 2, 1, 1, 2, 1, 2, 1, '0100000', '0100000', '0100000');
+    `label_organize_type`,	`label_produce_type`, `label_time_type`, `source_type`, `config`, `is_office`, `owner`, `creator`, `modifier`)
+VALUES (1, '07H137JO1D', '下单次数', 4, 2, '下单次数', '082ENU08E8', 2, 1, 1, 2, 1, 2, '', 1, '0100000', '0100000', '0100000');
 
 
 -- 9. 任务 调度任务配置
@@ -349,15 +330,15 @@ CREATE TABLE IF NOT EXISTS `profile_meta_event_attr`(
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-事件属性';
 
 
-INSERT INTO `profile_meta_event_attr` (`status`, `attr_id`, `attr_name`, `attr_desc`, `attr_type`, `dataset_id`, `entity_id`, `attr_field`, `attr_path`, `attr_data_type`, `attr_dist_type`, `attr_organize_type`)
-VALUES
-    (1, '', '主体对象ID', '一般指用户ID', 1, null, '03W199ZY5Z', 'subject_id', null, 1, 1, 1)
-    ,(1, '', '主体对象类型', '一般指用户', 1, null, '03W199ZY5Z', 'subject_type', null, 1, 1, 1)
-    ,(1, '', '主体对象属性', '一般指用户属性', 1, null, '03W199ZY5Z', 'subject_attr', null, 1, 1, 1)
-    ,(1, '', '客体对象ID', '被操作对象的ID', 1, null, '03W199ZY5Z', 'object_id', null, 1, 1, 1)
-    ,(1, '', '客体对象类型', '一般指内容或者媒体号', 1, null, '03W199ZY5Z', 'object_type', null, 1, 1, 1)
-    ,(1, '', '客体对象属性', '被操作对象属性', 1, null, '03W199ZY5Z', 'object_attr', null, 1, 1, 1)
-    ,(1, '', '行为时间', '行为发生时间', 1, null, '03W199ZY5Z', 'behavior_time', null, 1, 1, 1)
-    ,(1, '', '行为类型', '行为类型', 1, null, '03W199ZY5Z', 'behavior_type', null, 1, 1, 1)
-    ,(1, '', '行为属性', '行为属性', 1, null, '03W199ZY5Z', 'behavior_args', null, 1, 1, 1)
-;
+--INSERT INTO `profile_meta_event_attr` (`status`, `attr_id`, `attr_name`, `attr_desc`, `attr_type`, `dataset_id`, `entity_id`, `attr_field`, `attr_path`, `attr_data_type`, `attr_dist_type`, `attr_organize_type`)
+--VALUES
+--    (1, '', '主体对象ID', '一般指用户ID', 1, null, '03W199ZY5Z', 'subject_id', null, 1, 1, 1)
+--    ,(1, '', '主体对象类型', '一般指用户', 1, null, '03W199ZY5Z', 'subject_type', null, 1, 1, 1)
+--    ,(1, '', '主体对象属性', '一般指用户属性', 1, null, '03W199ZY5Z', 'subject_attr', null, 1, 1, 1)
+--    ,(1, '', '客体对象ID', '被操作对象的ID', 1, null, '03W199ZY5Z', 'object_id', null, 1, 1, 1)
+--    ,(1, '', '客体对象类型', '一般指内容或者媒体号', 1, null, '03W199ZY5Z', 'object_type', null, 1, 1, 1)
+--    ,(1, '', '客体对象属性', '被操作对象属性', 1, null, '03W199ZY5Z', 'object_attr', null, 1, 1, 1)
+--    ,(1, '', '行为时间', '行为发生时间', 1, null, '03W199ZY5Z', 'behavior_time', null, 1, 1, 1)
+--    ,(1, '', '行为类型', '行为类型', 1, null, '03W199ZY5Z', 'behavior_type', null, 1, 1, 1)
+--    ,(1, '', '行为属性', '行为属性', 1, null, '03W199ZY5Z', 'behavior_args', null, 1, 1, 1)
+--;
