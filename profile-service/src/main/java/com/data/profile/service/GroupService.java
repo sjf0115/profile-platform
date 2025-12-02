@@ -1,15 +1,11 @@
 package com.data.profile.service;
 
-import com.data.profile.dao.DatasetMapper;
-import com.data.profile.model.Dataset;
+import com.data.profile.common.domain.Response;
+import com.data.profile.common.enums.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.Resource;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * 功能：群组服务
@@ -23,4 +19,11 @@ import java.util.Optional;
 @Service
 public class GroupService {
     private static Logger LOG = LoggerFactory.getLogger(GroupService.class);
+
+    /*public Response upload(MultipartFile file) {
+        if (file.isEmpty()) {
+            return Response.error("请选择一个文件上传", ResponseCode.ERROR);
+        }
+        return Response.success(null);
+    }*/
 }

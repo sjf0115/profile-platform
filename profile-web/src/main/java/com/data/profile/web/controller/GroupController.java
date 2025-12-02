@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +29,7 @@ import java.util.Optional;
 public class GroupController {
     private static Logger LOG = LoggerFactory.getLogger(GroupController.class);
 
-    @Autowired
+    /*@Autowired
     private LabelService labelService;
 
     @GetMapping(value = "/list")
@@ -55,15 +56,13 @@ public class GroupController {
         } else {
             return Response.error("添加标签失败", ResponseCode.ERROR);
         }
-    }
-
-    /*@PostMapping(value = "/upload")
-    public Response upload(@RequestParam Mutip labelId) {
-        int result = labelService.save(label);
-        if (result > 0) {
-            return Response.success(result);
-        } else {
-            return Response.error("添加标签失败", ResponseCode.ERROR);
-        }
     }*/
+
+    @PostMapping(value = "/upload")
+    public Response upload(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return Response.error("请选择一个文件上传", ResponseCode.ERROR);
+        }
+        return Response.success(null);
+    }
 }
