@@ -13,10 +13,13 @@ public enum ModelType {
     DATASOURCE("05", "数据源"),
     // 数据集
     DATASET("06", "数据集"),
-    // 标签
-    LABEL("07", "标签"),
     // 标签类目
-    LABEL_CATEGORY("08", "标签类目"),
+    LABEL_CATEGORY("07", "标签类目"),
+    // 标签
+    LABEL("08", "标签"),
+
+
+
     // 群组
     GROUP("09", "群组"),
     // 属性

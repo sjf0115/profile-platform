@@ -133,7 +133,6 @@ CREATE TABLE IF NOT EXISTS `profile_meta_dataset`(
     UNIQUE(`dataset_id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集';
 
-
 -- 7. 标签类目
 DROP TABLE IF EXISTS `profile_meta_label_category`;
 CREATE TABLE IF NOT EXISTS `profile_meta_label_category`(
@@ -156,7 +155,7 @@ CREATE TABLE IF NOT EXISTS `profile_meta_label_category`(
 
 
 INSERT INTO `profile_meta_label_category` (`status`, `is_default`, `category_id`, `category_name`, `category_level`, `parent_category_id`, `category_seq`, `source_type`, `creator`, `modifier`)
-VALUES (1, 1, '08F631JOD1', '未分类', 1, '0', 1, 1, '0100000', '0100000');
+VALUES (1, 1, '0700000000000001', '未分类', 1, '0', 1, 1, '100000', '100000');
 
 -- 8. 标签
 DROP TABLE IF EXISTS `profile_meta_label`;
@@ -186,11 +185,111 @@ CREATE TABLE IF NOT EXISTS `profile_meta_label`(
     UNIQUE(`label_id`), UNIQUE(`label_name`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-标签';
 
-
 INSERT INTO `profile_meta_label` (
     `is_valid`, `label_id`, `label_name`, `label_status`, `label_type`, `label_desc`, `label_category_id`, `label_data_type`, `label_dist_type`,
     `label_organize_type`,	`label_produce_type`, `label_time_type`, `source_type`, `config`, `is_office`, `owner`, `creator`, `modifier`)
 VALUES (1, '07H137JO1D', '下单次数', 4, 2, '下单次数', '082ENU08E8', 2, 1, 1, 2, 1, 2, '', 1, '0100000', '0100000', '0100000');
+
+-- 9. 数据集与标签绑定关系
+DROP TABLE IF EXISTS `profile_meta_dataset_label`;
+CREATE TABLE IF NOT EXISTS `profile_meta_dataset_label`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `label_id` VARCHAR(40) NOT NULL COMMENT '标签ID',
+    `dataset_id` VARCHAR(40) NOT NULL COMMENT '数据集ID',
+    `dataset_field` VARCHAR(40) NOT NULL COMMENT '数据集字段',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '最后修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`dataset_id`, `label_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集与标签绑定关系';
+
+-- 10. 群组
+DROP Table `profile_meta_group`;
+CREATE TABLE IF NOT EXISTS `profile_meta_group`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `group_id` VARCHAR(40) NOT NULL COMMENT '群组ID',
+    `group_status` INT NOT NULL COMMENT '群组状态: 1-启用,2-停用',
+    `group_name` VARCHAR(100) NOT NULL COMMENT '群组名称',
+    `group_type` INT NOT NULL COMMENT '群组类型: 1-标签筛选,2-群组交并,3-行为圈选,4-行为序列圈选,5-组合人群,6-文件上传',
+    `group_desc` VARCHAR(200) COMMENT '群组描述',
+    `group_rule` VARCHAR(500) NOT NULL COMMENT '群组规则',
+    `group_count` INT NOT NULL COMMENT '群组覆盖规模',
+    `entity_id` VARCHAR(50) NOT NULL COMMENT '群组主体ID',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
+    `instance_id` INT COMMENT '最新执行任务实例ID',
+    `instance_status` INT COMMENT '最新执行状态: 1-未运行,2-运行中,3-运行成功,4-运行失败',
+    `instance_start_time` DATETIME COMMENT '最新执行开始时间',
+    `instance_end_time` DATETIME COMMENT '最新执行结束时间',
+    `instance_msg` VARCHAR(500) COMMENT '最新执行信息，只有运行失败时才有',
+    `owner` VARCHAR(100) NOT NULL COMMENT '群组负责人',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE (`group_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-群组';
+
+-- 13. 事件
+DROP Table `profile_meta_event`;
+CREATE TABLE IF NOT EXISTS `profile_meta_event`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+    `event_id` VARCHAR(40) NOT NULL COMMENT '事件ID',
+    `event_name` VARCHAR(100) NOT NULL COMMENT '事件名称',
+    `event_desc` VARCHAR(200) DEFAULT NULL COMMENT '事件描述',
+    `event_rules` VARCHAR(800) NOT NULL COMMENT '事件规则',
+    `dataset_id` VARCHAR(200) NOT NULL COMMENT '数据集ID: 配置事件必须配置一个对应的行为数据集',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
+    `owner` VARCHAR(100) NOT NULL COMMENT '负责人',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE (`event_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-事件';
+
+-- 14. 事件属性
+DROP Table `profile_meta_event_attr`;
+CREATE TABLE IF NOT EXISTS `profile_meta_event_attr`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+    `attr_id` VARCHAR(40) NOT NULL COMMENT '事件属性ID',
+    `attr_name` VARCHAR(100) NOT NULL COMMENT '事件属性名称',
+    `attr_desc` VARCHAR(200) COMMENT '事件属性描述',
+    `attr_type` INT NOT NULL DEFAULT 2 COMMENT '事件属性类型: 1-内置属性,2-公共属性(数据集),3-事件属性',
+    `dataset_id` VARCHAR(40) DEFAULT NULL COMMENT '数据集ID: 内置属性不需要',
+    `event_id` VARCHAR(40) DEFAULT NULL COMMENT '事件ID: 只有事件属性需要',
+    `entity_id` VARCHAR(40) DEFAULT NULL COMMENT '实体ID: 该属性对应实体时配置',
+    `attr_field` VARCHAR(100) NOT NULL COMMENT '属性提取字段',
+    `attr_path` VARCHAR(100)  NOT NULL COMMENT '属性提取的字段路径',
+    `attr_data_type` INT NOT NULL DEFAULT 1 COMMENT '属性数据类型: 1-文本型,2-数值型,3-时间型',
+    `attr_dist_type` INT NOT NULL DEFAULT 1 COMMENT '属性分布类型: 1-枚举,2-非枚举',
+    `attr_organize_type` INT NOT NULL DEFAULT 1 COMMENT '属性组织类型: 1-单值,2-多值',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE (`attr_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-事件属性';
+
+
+--INSERT INTO `profile_meta_event_attr` (`status`, `attr_id`, `attr_name`, `attr_desc`, `attr_type`, `dataset_id`, `entity_id`, `attr_field`, `attr_path`, `attr_data_type`, `attr_dist_type`, `attr_organize_type`)
+--VALUES
+--    (1, '', '主体对象ID', '一般指用户ID', 1, null, '03W199ZY5Z', 'subject_id', null, 1, 1, 1)
+--    ,(1, '', '主体对象类型', '一般指用户', 1, null, '03W199ZY5Z', 'subject_type', null, 1, 1, 1)
+--    ,(1, '', '主体对象属性', '一般指用户属性', 1, null, '03W199ZY5Z', 'subject_attr', null, 1, 1, 1)
+--    ,(1, '', '客体对象ID', '被操作对象的ID', 1, null, '03W199ZY5Z', 'object_id', null, 1, 1, 1)
+--    ,(1, '', '客体对象类型', '一般指内容或者媒体号', 1, null, '03W199ZY5Z', 'object_type', null, 1, 1, 1)
+--    ,(1, '', '客体对象属性', '被操作对象属性', 1, null, '03W199ZY5Z', 'object_attr', null, 1, 1, 1)
+--    ,(1, '', '行为时间', '行为发生时间', 1, null, '03W199ZY5Z', 'behavior_time', null, 1, 1, 1)
+--    ,(1, '', '行为类型', '行为类型', 1, null, '03W199ZY5Z', 'behavior_type', null, 1, 1, 1)
+--    ,(1, '', '行为属性', '行为属性', 1, null, '03W199ZY5Z', 'behavior_args', null, 1, 1, 1)
+--;
 
 
 -- 9. 任务 调度任务配置
@@ -252,93 +351,3 @@ CREATE TABLE IF NOT EXISTS `profile_meta_user_login`(
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-用户登录';
-
-
--- 12. 群组
-DROP Table `profile_meta_group`;
-CREATE TABLE IF NOT EXISTS `profile_meta_group`(
-    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `group_id` VARCHAR(40) NOT NULL COMMENT '群组ID',
-    `group_status` INT NOT NULL COMMENT '群组状态: 1-启用,2-停用',
-    `group_name` VARCHAR(100) NOT NULL COMMENT '群组名称',
-    `group_type` INT NOT NULL COMMENT '群组类型: 1-标签筛选,2-群组交并,3-行为圈选,4-行为序列圈选,5-组合人群,6-文件上传',
-    `group_desc` VARCHAR(200) COMMENT '群组描述',
-    `group_rule` VARCHAR(500) NOT NULL COMMENT '群组规则',
-    `group_count` INT NOT NULL COMMENT '群组覆盖规模',
-    `entity_id` VARCHAR(50) NOT NULL COMMENT '群组主体ID',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
-    `instance_id` INT COMMENT '最新执行任务实例ID',
-    `instance_status` INT COMMENT '最新执行状态: 1-未运行,2-运行中,3-运行成功,4-运行失败',
-    `instance_start_time` DATETIME COMMENT '最新执行开始时间',
-    `instance_end_time` DATETIME COMMENT '最新执行结束时间',
-    `instance_msg` VARCHAR(500) COMMENT '最新执行信息，只有运行失败时才有',
-    `owner` VARCHAR(100) NOT NULL COMMENT '群组负责人',
-    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
-    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
-    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`),
-    UNIQUE (`group_id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-群组';
-
-
--- 13. 事件
-DROP Table `profile_meta_event`;
-CREATE TABLE IF NOT EXISTS `profile_meta_event`(
-    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
-    `event_id` VARCHAR(40) NOT NULL COMMENT '事件ID',
-    `event_name` VARCHAR(100) NOT NULL COMMENT '事件名称',
-    `event_desc` VARCHAR(200) DEFAULT NULL COMMENT '事件描述',
-    `event_rules` VARCHAR(800) NOT NULL COMMENT '事件规则',
-    `dataset_id` VARCHAR(200) NOT NULL COMMENT '数据集ID: 配置事件必须配置一个对应的行为数据集',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
-    `owner` VARCHAR(100) NOT NULL COMMENT '负责人',
-    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
-    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
-    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`),
-    INDEX idx_id(`event_id`),
-    INDEX idx_name(`event_name`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-事件';
-
--- 14. 事件属性
-DROP Table `profile_meta_event_attr`;
-CREATE TABLE IF NOT EXISTS `profile_meta_event_attr`(
-    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
-    `attr_id` VARCHAR(40) NOT NULL COMMENT '事件属性ID',
-    `attr_name` VARCHAR(100) NOT NULL COMMENT '事件属性名称',
-    `attr_desc` VARCHAR(200) COMMENT '事件属性描述',
-    `attr_type` INT NOT NULL DEFAULT 2 COMMENT '事件属性类型: 1-内置属性,2-公共属性(数据集),3-事件属性',
-    `dataset_id` VARCHAR(40) DEFAULT NULL COMMENT '数据集ID: 内置属性不需要',
-    `event_id` VARCHAR(40) DEFAULT NULL COMMENT '事件ID: 只有事件属性需要',
-    `entity_id` VARCHAR(40) DEFAULT NULL COMMENT '实体ID: 该属性对应实体时配置',
-    `attr_field` VARCHAR(100) NOT NULL COMMENT '属性提取字段',
-    `attr_path` VARCHAR(100)  NOT NULL COMMENT '属性提取的字段路径',
-    `attr_data_type` INT NOT NULL DEFAULT 1 COMMENT '属性数据类型: 1-文本型,2-数值型,3-时间型',
-    `attr_dist_type` INT NOT NULL DEFAULT 1 COMMENT '属性分布类型: 1-枚举,2-非枚举',
-    `attr_organize_type` INT NOT NULL DEFAULT 1 COMMENT '属性组织类型: 1-单值,2-多值',
-    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
-    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
-    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`),
-    UNIQUE (`attr_id`),
-    INDEX idx_name(`attr_name`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-事件属性';
-
-
---INSERT INTO `profile_meta_event_attr` (`status`, `attr_id`, `attr_name`, `attr_desc`, `attr_type`, `dataset_id`, `entity_id`, `attr_field`, `attr_path`, `attr_data_type`, `attr_dist_type`, `attr_organize_type`)
---VALUES
---    (1, '', '主体对象ID', '一般指用户ID', 1, null, '03W199ZY5Z', 'subject_id', null, 1, 1, 1)
---    ,(1, '', '主体对象类型', '一般指用户', 1, null, '03W199ZY5Z', 'subject_type', null, 1, 1, 1)
---    ,(1, '', '主体对象属性', '一般指用户属性', 1, null, '03W199ZY5Z', 'subject_attr', null, 1, 1, 1)
---    ,(1, '', '客体对象ID', '被操作对象的ID', 1, null, '03W199ZY5Z', 'object_id', null, 1, 1, 1)
---    ,(1, '', '客体对象类型', '一般指内容或者媒体号', 1, null, '03W199ZY5Z', 'object_type', null, 1, 1, 1)
---    ,(1, '', '客体对象属性', '被操作对象属性', 1, null, '03W199ZY5Z', 'object_attr', null, 1, 1, 1)
---    ,(1, '', '行为时间', '行为发生时间', 1, null, '03W199ZY5Z', 'behavior_time', null, 1, 1, 1)
---    ,(1, '', '行为类型', '行为类型', 1, null, '03W199ZY5Z', 'behavior_type', null, 1, 1, 1)
---    ,(1, '', '行为属性', '行为属性', 1, null, '03W199ZY5Z', 'behavior_args', null, 1, 1, 1)
---;
