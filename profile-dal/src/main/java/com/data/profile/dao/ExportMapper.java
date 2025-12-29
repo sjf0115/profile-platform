@@ -1,6 +1,5 @@
 package com.data.profile.dao;
 
-import com.data.profile.model.Entity;
 import com.data.profile.model.Export;
 
 import java.util.List;

@@ -1,19 +1,15 @@
 package com.data.profile.service;
 
 import com.data.profile.common.domain.RequestContext;
-import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
-import com.data.profile.dao.EntityMapper;
 import com.data.profile.dao.ExportMapper;
-import com.data.profile.model.Entity;
 import com.data.profile.model.Export;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.annotation.Resource;
 import java.util.List;
