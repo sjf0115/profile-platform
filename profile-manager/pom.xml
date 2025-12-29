@@ -36,6 +36,12 @@
             <artifactId>freemarker</artifactId>
         </dependency>
 
+        <!-- 集成 Quartz -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-quartz</artifactId>
+        </dependency>
+
         <!-- SeaTunnel 引擎 -->
 <!--        <dependency>-->
 <!--            <groupId>org.apache.seatunnel</groupId>-->

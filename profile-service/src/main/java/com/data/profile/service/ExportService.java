@@ -6,10 +6,15 @@ import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.ExportMapper;
+import com.data.profile.manager.dao.SchedulerJob;
+import com.data.profile.manager.scheduler.quartz.SchedulerService;
 import com.data.profile.model.Export;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.quartz.SchedulerException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -26,6 +31,9 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class ExportService {
+    @Autowired
+    private SchedulerService schedulerService;
+
     @Resource
     private ExportMapper exportMapper;
 
@@ -75,6 +83,7 @@ public class ExportService {
      * @return
      * @throws RuntimeException
      */
+    @Transactional
     public int save(Export export) throws RuntimeException {
         if (StringUtils.isBlank(export.getExportId())) {
             // 新增
@@ -94,6 +103,19 @@ public class ExportService {
             export.setOwner(userId); // 创建者即为负责人
             export.setCreator(userId);
             export.setModifier(userId);
+
+            try {
+                SchedulerJob schedulerJob = new SchedulerJob();
+                schedulerJob.setJobClass("");
+                schedulerJob.setJobGroup("");
+                schedulerJob.setJobName("");
+                schedulerJob.setCronExpression("");
+                schedulerService.createJob(schedulerJob);
+            } catch (SchedulerException e) {
+                throw new RuntimeException(e);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
             return exportMapper.insertSelective(export);
         } else {
             // 修改
