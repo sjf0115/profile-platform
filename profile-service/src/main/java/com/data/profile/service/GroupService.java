@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 功能：群组服务
@@ -20,10 +21,10 @@ import org.springframework.stereotype.Service;
 public class GroupService {
     private static Logger LOG = LoggerFactory.getLogger(GroupService.class);
 
-    /*public Response upload(MultipartFile file) {
+    public Response upload(MultipartFile file) {
         if (file.isEmpty()) {
             return Response.error("请选择一个文件上传", ResponseCode.ERROR);
         }
         return Response.success(null);
-    }*/
+    }
 }

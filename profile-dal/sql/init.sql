@@ -190,7 +190,7 @@ INSERT INTO `profile_meta_label` (
     `label_organize_type`,	`label_produce_type`, `label_time_type`, `source_type`, `config`, `is_office`, `owner`, `creator`, `modifier`)
 VALUES (1, '07H137JO1D', '下单次数', 4, 2, '下单次数', '082ENU08E8', 2, 1, 1, 2, 1, 2, '', 1, '0100000', '0100000', '0100000');
 
--- 9. 数据集与标签绑定关系
+-- 数据集与标签绑定关系
 DROP TABLE IF EXISTS `profile_meta_dataset_label`;
 CREATE TABLE IF NOT EXISTS `profile_meta_dataset_label`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
@@ -205,7 +205,7 @@ CREATE TABLE IF NOT EXISTS `profile_meta_dataset_label`(
     UNIQUE(`dataset_id`, `label_id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集与标签绑定关系';
 
--- 10. 群组
+-- 9. 群组
 DROP Table `profile_meta_group`;
 CREATE TABLE IF NOT EXISTS `profile_meta_group`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
@@ -231,6 +231,36 @@ CREATE TABLE IF NOT EXISTS `profile_meta_group`(
     PRIMARY KEY (`id`),
     UNIQUE (`group_id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-群组';
+
+-- 10. 投递
+DROP Table `profile_meta_export`;
+CREATE TABLE `profile_meta_export` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+    `status` int NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+    `export_id` varchar(40) NOT NULL COMMENT '投递ID',
+    `export_type` int NOT NULL COMMENT '投递类型：1-群组,2-标签',
+    `export_name` varchar(100) NOT NULL COMMENT '投递名称',
+    `export_desc` varchar(100) COMMENT '投递描述',
+    `export_config` text NOT NULL COMMENT '投递配置',
+    `scheduler_type` int NOT NULL COMMENT '调度类型:1-手动触发调度,2-API触发调度,3-日周期调度,4-小时周期调度',
+    `scheduler_cron` varchar(20) COMMENT '调度 cron 表达式:只有周期自动触发更新才有',
+    `scheduler_url` VARCHAR(100) COMMENT '调度触发URL:只有API触发调度才有',
+    `scheduler_start_time` bigint COMMENT '触发调度有效开始时间:只有周期自动触发更新才有',
+    `scheduler_end_time` bigint COMMENT '触发调度有效结束时间:只有周期自动触发更新才有',
+    `source_type` int NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
+    `owner` varchar(100) NOT NULL COMMENT '负责人',
+    `creator` varchar(100) NOT NULL COMMENT '创建者',
+    `modifier` varchar(100) NOT NULL COMMENT '修改者',
+    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`export_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-投递';
+
+
+
+
+
 
 -- 13. 事件
 DROP Table `profile_meta_event`;
@@ -319,7 +349,7 @@ CREATE TABLE IF NOT EXISTS `profile_meta_task`(
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-调度任务';
 
 -- 任务实例 调度任务运行实例
-DROP Table `profile_meta_task_instance`;
+DROP Table `profile_meta_instance`;
 CREATE TABLE IF NOT EXISTS `profile_meta_task_instance`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
     `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态:1-未运行,2-运行中,3-运行失败,4-运行成功',

@@ -25,8 +25,6 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/entity", produces = MediaType.APPLICATION_JSON_VALUE)
 public class EntityController {
-    private static Logger LOG = LoggerFactory.getLogger(EntityController.class);
-
     @Autowired
     private EntityService entityService;
 

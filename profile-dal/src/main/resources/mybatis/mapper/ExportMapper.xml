@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.dao.ExportMapper">
+    <resultMap id="BaseResultMap" type="com.data.profile.model.Export">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="status" jdbcType="INTEGER" property="status" />
+        <result column="export_id" jdbcType="VARCHAR" property="exportId" />
+        <result column="export_type" jdbcType="INTEGER" property="exportType" />
+        <result column="export_name" jdbcType="VARCHAR" property="exportName" />
+        <result column="export_desc" jdbcType="VARCHAR" property="exportDesc" />
+        <result column="export_config" jdbcType="LONGVARCHAR" property="exportConfig" />
+        <result column="scheduler_type" jdbcType="INTEGER" property="schedulerType" />
+        <result column="scheduler_cron" jdbcType="VARCHAR" property="schedulerCron" />
+        <result column="scheduler_url" jdbcType="VARCHAR" property="schedulerUrl" />
+        <result column="scheduler_start_time" jdbcType="BIGINT" property="schedulerStartTime" />
+        <result column="scheduler_end_time" jdbcType="BIGINT" property="schedulerEndTime" />
+        <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+        <result column="owner" jdbcType="VARCHAR" property="owner" />
+        <result column="creator" jdbcType="VARCHAR" property="creator" />
+        <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+    </resultMap>
+
+    <resultMap extends="BaseResultMap" id="ResultMapWithInstance" type="com.data.profile.model.Export">
+        <result column="instance_id" jdbcType="VARCHAR" property="instanceId" />
+        <result column="instance_status" jdbcType="INTEGER" property="instanceStatus" />
+        <result column="instance_start_time" jdbcType="BIGINT" property="instanceStartTime" />
+        <result column="instance_end_time" jdbcType="BIGINT" property="instanceEndTime" />
+        <result column="instance_duration" jdbcType="BIGINT" property="instanceDuration" />
+        <result column="instance_message" jdbcType="VARCHAR" property="instanceMessage" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        t1.id, t1.status, t1.export_id, t1.export_type, t1.export_name, t1.export_desc, t1.export_config,
+        t1.scheduler_type, t1.scheduler_cron, t1.scheduler_url, t1.scheduler_start_time, t1.scheduler_end_time,
+        t1.source_type, t1.owner, t1.creator, t1.modifier, t1.gmt_create, t1.gmt_modified
+    </sql>
+
+    <sql id="Instance_Column_List">
+        t2.id as instance_id, IF(t2.status is null, 1, t2.status) as instance_status,
+        t2.start_time as instance_start_time, t2.end_time as instance_end_time,
+        t2.duration as instance_duration, t2.message as instance_message
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectSimpleByExportId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_export as t1
+        where export_id = #{exportId,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByExportId" parameterType="java.lang.String" resultMap="ResultMapWithInstance">
+        select
+        <include refid="Base_Column_List" />
+        ,<include refid="Instance_Column_List" />
+        from profile_meta_export as t1
+        left outer join profile_meta_task_instance as t2
+        on t1.export_id = t2.instance_related_id
+        where export_id = #{exportId,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 根据名字查询 -->
+    <select id="selectSimpleByExportName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_export as t1
+        where export_name = #{exportName,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByExportName" parameterType="java.lang.String" resultMap="ResultMapWithInstance">
+        select
+        <include refid="Base_Column_List" />
+        ,<include refid="Instance_Column_List" />
+        from profile_meta_export as t1
+        left outer join profile_meta_task_instance as t2
+        on t1.export_id = t2.instance_related_id
+        where export_name = #{exportName,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 模糊查询 -->
+    <select id="selectSimpleByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_export as t1
+        where export_name LIKE CONCAT('%', #{exportName,jdbcType=VARCHAR}, '%')
+    </select>
+
+    <select id="selectByKeyword" parameterType="java.lang.String" resultMap="ResultMapWithInstance">
+        select
+        <include refid="Base_Column_List" />
+        ,<include refid="Instance_Column_List" />
+        from profile_meta_export as t1
+        left outer join profile_meta_task_instance as t2
+        on t1.export_id = t2.instance_related_id
+        where export_name LIKE CONCAT('%', #{exportName,jdbcType=VARCHAR}, '%')
+    </select>
+
+    <!-- 根据参数查询 -->
+    <select id="selectSimpleByParams" parameterType="com.data.profile.model.Export" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_export as t1
+        where 1 = 1
+        <if test="status != null">
+            and status = #{status,jdbcType=INTEGER}
+        </if>
+        <if test="exportId != null">
+            and export_id = #{exportId,jdbcType=VARCHAR}
+        </if>
+        <if test="exportType != null">
+            and export_type = #{exportType,jdbcType=INTEGER}
+        </if>
+        <if test="exportName != null">
+            and export_name = #{exportName,jdbcType=VARCHAR}
+        </if>
+        <if test="exportDesc != null">
+            and export_desc = #{exportDesc,jdbcType=VARCHAR}
+        </if>
+        <if test="schedulerType != null">
+            and scheduler_type = #{schedulerType,jdbcType=INTEGER}
+        </if>
+        <if test="schedulerCron != null">
+            and scheduler_cron = #{schedulerCron,jdbcType=VARCHAR}
+        </if>
+        <if test="schedulerUrl != null">
+            and scheduler_url = #{schedulerUrl,jdbcType=VARCHAR}
+        </if>
+        <if test="schedulerStartTime != null">
+            and scheduler_start_time = #{schedulerStartTime,jdbcType=BIGINT}
+        </if>
+        <if test="schedulerEndTime != null">
+            and scheduler_end_time = #{schedulerEndTime,jdbcType=BIGINT}
+        </if>
+        <if test="sourceType != null">
+            and source_type = #{sourceType,jdbcType=INTEGER}
+        </if>
+        <if test="owner != null">
+            and owner = #{owner,jdbcType=VARCHAR}
+        </if>
+        <if test="creator != null">
+            and creator = #{creator,jdbcType=VARCHAR}
+        </if>
+        <if test="modifier != null">
+            and modifier = #{modifier,jdbcType=VARCHAR}
+        </if>
+        <if test="exportConfig != null">
+            and export_config = #{exportConfig,jdbcType=LONGVARCHAR}
+        </if>
+    </select>
+
+    <select id="selectByParams" parameterType="com.data.profile.model.Export" resultMap="ResultMapWithInstance">
+        select
+        <include refid="Base_Column_List" />
+        ,<include refid="Instance_Column_List" />
+        from profile_meta_export as t1
+        left outer join profile_meta_task_instance as t2
+        on t1.export_id = t2.instance_related_id
+        where 1 = 1
+        <if test="status != null">
+            status,
+        </if>
+        <if test="exportId != null">
+            export_id,
+        </if>
+        <if test="exportType != null">
+            export_type,
+        </if>
+        <if test="exportName != null">
+            export_name,
+        </if>
+        <if test="schedulerType != null">
+            scheduler_type,
+        </if>
+        <if test="schedulerCron != null">
+            scheduler_cron,
+        </if>
+        <if test="schedulerUrl != null">
+            scheduler_url,
+        </if>
+        <if test="schedulerStartTime != null">
+            scheduler_start_time,
+        </if>
+        <if test="schedulerEndTime != null">
+            scheduler_end_time,
+        </if>
+        <if test="sourceType != null">
+            source_type,
+        </if>
+        <if test="owner != null">
+            owner,
+        </if>
+        <if test="creator != null">
+            creator,
+        </if>
+        <if test="modifier != null">
+            modifier,
+        </if>
+        <if test="gmtCreate != null">
+            gmt_create,
+        </if>
+        <if test="gmtModified != null">
+            gmt_modified,
+        </if>
+        <if test="instanceStatus != null">
+            instance_status
+        </if>
+    </select>
+
+    <!-- 插入 -->
+    <insert id="insert" parameterType="com.data.profile.model.Export">
+        insert into profile_meta_export (id, status, export_id,
+            export_type, export_name, export_desc,
+            scheduler_type, scheduler_cron, scheduler_url,
+            scheduler_start_time, scheduler_end_time, source_type,
+            owner, creator, modifier, export_config
+        )
+        values (#{id,jdbcType=BIGINT}, #{status,jdbcType=INTEGER}, #{exportId,jdbcType=VARCHAR},
+        #{exportType,jdbcType=INTEGER}, #{exportName,jdbcType=VARCHAR}, #{exportDesc,jdbcType=VARCHAR},
+        #{schedulerType,jdbcType=INTEGER}, #{schedulerCron,jdbcType=VARCHAR}, #{schedulerUrl,jdbcType=VARCHAR},
+        #{schedulerStartTime,jdbcType=BIGINT}, #{schedulerEndTime,jdbcType=BIGINT}, #{sourceType,jdbcType=INTEGER},
+        #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR}, #{exportConfig,jdbcType=LONGVARCHAR}
+        )
+    </insert>
+
+    <insert id="insertSelective" parameterType="com.data.profile.model.Export">
+        insert into profile_meta_export
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="status != null">
+                status,
+            </if>
+            <if test="exportId != null">
+                export_id,
+            </if>
+            <if test="exportType != null">
+                export_type,
+            </if>
+            <if test="exportName != null">
+                export_name,
+            </if>
+            <if test="exportDesc != null">
+                export_desc,
+            </if>
+            <if test="schedulerType != null">
+                scheduler_type,
+            </if>
+            <if test="schedulerCron != null">
+                scheduler_cron,
+            </if>
+            <if test="schedulerUrl != null">
+                scheduler_url,
+            </if>
+            <if test="schedulerStartTime != null">
+                scheduler_start_time,
+            </if>
+            <if test="schedulerEndTime != null">
+                scheduler_end_time,
+            </if>
+            <if test="sourceType != null">
+                source_type,
+            </if>
+            <if test="owner != null">
+                owner,
+            </if>
+            <if test="creator != null">
+                creator,
+            </if>
+            <if test="modifier != null">
+                modifier,
+            </if>
+            <if test="exportConfig != null">
+                export_config,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id,jdbcType=BIGINT},
+            </if>
+            <if test="status != null">
+                #{status,jdbcType=INTEGER},
+            </if>
+            <if test="exportId != null">
+                #{exportId,jdbcType=VARCHAR},
+            </if>
+            <if test="exportType != null">
+                #{exportType,jdbcType=INTEGER},
+            </if>
+            <if test="exportName != null">
+                #{exportName,jdbcType=VARCHAR},
+            </if>
+            <if test="exportDesc != null">
+                #{exportDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="schedulerType != null">
+                #{schedulerType,jdbcType=INTEGER},
+            </if>
+            <if test="schedulerCron != null">
+                #{schedulerCron,jdbcType=VARCHAR},
+            </if>
+            <if test="schedulerUrl != null">
+                #{schedulerUrl,jdbcType=VARCHAR},
+            </if>
+            <if test="schedulerStartTime != null">
+                #{schedulerStartTime,jdbcType=BIGINT},
+            </if>
+            <if test="schedulerEndTime != null">
+                #{schedulerEndTime,jdbcType=BIGINT},
+            </if>
+            <if test="sourceType != null">
+                #{sourceType,jdbcType=INTEGER},
+            </if>
+            <if test="owner != null">
+                #{owner,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null">
+                #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="modifier != null">
+                #{modifier,jdbcType=VARCHAR},
+            </if>
+            <if test="exportConfig != null">
+                #{exportConfig,jdbcType=LONGVARCHAR},
+            </if>
+        </trim>
+    </insert>
+
+    <!-- 删除 -->
+    <delete id="deleteByExportId" parameterType="java.lang.String">
+        delete from profile_meta_export
+        where export_id = #{exportId,jdbcType=VARCHAR}
+    </delete>
+
+    <!-- 更新 -->
+    <update id="updateByExportIdSelective" parameterType="com.data.profile.model.Export">
+        update profile_meta_export
+        <set>
+            <if test="status != null">
+                status = #{status,jdbcType=INTEGER},
+            </if>
+            <if test="exportId != null">
+                export_id = #{exportId,jdbcType=VARCHAR},
+            </if>
+            <if test="exportType != null">
+                export_type = #{exportType,jdbcType=INTEGER},
+            </if>
+            <if test="exportName != null">
+                export_name = #{exportName,jdbcType=VARCHAR},
+            </if>
+            <if test="exportDesc != null">
+                export_desc = #{exportDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="schedulerType != null">
+                scheduler_type = #{schedulerType,jdbcType=INTEGER},
+            </if>
+            <if test="schedulerCron != null">
+                scheduler_cron = #{schedulerCron,jdbcType=VARCHAR},
+            </if>
+            <if test="schedulerUrl != null">
+                scheduler_url = #{schedulerUrl,jdbcType=VARCHAR},
+            </if>
+            <if test="schedulerStartTime != null">
+                scheduler_start_time = #{schedulerStartTime,jdbcType=BIGINT},
+            </if>
+            <if test="schedulerEndTime != null">
+                scheduler_end_time = #{schedulerEndTime,jdbcType=BIGINT},
+            </if>
+            <if test="sourceType != null">
+                source_type = #{sourceType,jdbcType=INTEGER},
+            </if>
+            <if test="owner != null">
+                owner = #{owner,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null">
+                creator = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="modifier != null">
+                modifier = #{modifier,jdbcType=VARCHAR},
+            </if>
+            <if test="exportConfig != null">
+                export_config = #{exportConfig,jdbcType=LONGVARCHAR},
+            </if>
+        </set>
+        where export_id = #{exportId,jdbcType=VARCHAR}
+    </update>
+
+    <update id="updateByExportId" parameterType="com.data.profile.model.Export">
+        update profile_meta_export
+        set status = #{status,jdbcType=INTEGER},
+        export_id = #{exportId,jdbcType=VARCHAR},
+        export_type = #{exportType,jdbcType=INTEGER},
+        export_name = #{exportName,jdbcType=VARCHAR},
+        export_desc = #{exportDesc,jdbcType=VARCHAR},
+        scheduler_type = #{schedulerType,jdbcType=INTEGER},
+        scheduler_cron = #{schedulerCron,jdbcType=VARCHAR},
+        scheduler_url = #{schedulerUrl,jdbcType=VARCHAR},
+        scheduler_start_time = #{schedulerStartTime,jdbcType=BIGINT},
+        scheduler_end_time = #{schedulerEndTime,jdbcType=BIGINT},
+        source_type = #{sourceType,jdbcType=INTEGER},
+        owner = #{owner,jdbcType=VARCHAR},
+        creator = #{creator,jdbcType=VARCHAR},
+        modifier = #{modifier,jdbcType=VARCHAR},
+        where export_id = #{exportId,jdbcType=VARCHAR}
+    </update>
+</mapper>

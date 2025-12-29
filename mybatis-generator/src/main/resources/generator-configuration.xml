@@ -48,7 +48,7 @@
         </javaClientGenerator>
 
         <!-- 要生成哪些表 -->
-        <table tableName="profile_meta_event_attr" domainObjectName="EventAttr"
+        <table tableName="profile_meta_export" domainObjectName="Export"
                enableCountByExample="false"
                enableUpdateByExample="false"
                enableDeleteByExample="false"

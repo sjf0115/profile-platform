@@ -17,25 +17,22 @@ public enum ModelType {
     LABEL_CATEGORY("07", "标签类目"),
     // 标签
     LABEL("08", "标签"),
-
-
-
     // 群组
     GROUP("09", "群组"),
-    // 属性
-    ATTRIBUTE("10", "属性"),
-    // 事件
-    EVENT("11", "事件"),
-    // 分析
-    ANALYSIS("12", "分析"),
     // 投递
-    EXPORT("13", "投递"),
+    EXPORT("10", "投递"),
+    // 属性
+    ATTRIBUTE("11", "属性"),
+    // 事件
+    EVENT("12", "事件"),
+    // 分析
+    ANALYSIS("13", "分析"),
     // 质量
     QUALITY("14", "质量"),
     // 任务
     TASK("15", "任务"),
-    // 任务实例
-    INSTANCE("16", "任务实例"),
+    // 实例
+    INSTANCE("16", "实例"),
     // 工作流
     WORKFLOW("17", "工作流"),
     // 角色

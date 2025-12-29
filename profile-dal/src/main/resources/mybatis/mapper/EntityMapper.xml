@@ -63,7 +63,7 @@
   <select id="selectSimpleByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List" />
-    from profile_meta_entity
+    from profile_meta_entity as t1
     where entity_name LIKE CONCAT('%', #{entityName,jdbcType=VARCHAR}, '%')
   </select>
 
@@ -80,7 +80,7 @@
   <select id="selectSimpleByParams" parameterType="com.data.profile.model.Entity" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List" />
-    from profile_meta_entity
+    from profile_meta_entity as t1
     where 1 = 1
     <if test="status != null">
       and status = #{status,jdbcType=INTEGER}
