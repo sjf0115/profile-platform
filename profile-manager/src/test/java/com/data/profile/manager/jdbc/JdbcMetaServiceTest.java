@@ -2,7 +2,7 @@ package com.data.profile.manager.jdbc;
 
 import com.data.profile.manager.domain.ConnectionParam;
 import com.data.profile.manager.domain.Table;
-import com.data.profile.manager.utils.JdbcUtil;
+import com.data.profile.manager.service.JdbcMetaService;
 import org.junit.Test;
 
 import java.sql.SQLException;

@@ -1,4 +1,4 @@
-package com.data.profile.manager.seatunnel;
+package com.data.profile.manager.service.seatunnel;
 
 /**
  * 功能：JobExecutor

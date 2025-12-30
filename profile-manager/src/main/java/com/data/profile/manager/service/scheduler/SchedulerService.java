@@ -1,4 +1,4 @@
-package com.data.profile.manager.scheduler.quartz;
+package com.data.profile.manager.service.scheduler;
 
 import com.data.profile.common.enums.SchedulerJobType;
 import org.quartz.*;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class SchedulerService {
-    private final static String baseClass = "com.data.profile.manager.scheduler.job";
+    private final static String baseClass = "com.data.profile.manager.service.scheduler.job";
     @Autowired
     private Scheduler scheduler;
 
@@ -24,12 +24,11 @@ public class SchedulerService {
      * @param jobName
      * @param cron
      * @throws SchedulerException
-     * @throws ClassNotFoundException
      */
     public void createJob(SchedulerJobType jobType, String jobName, String cron) throws SchedulerException {
         String jobClassName = baseClass + jobType.getName();
         // 1. 获取任务执行类
-        Class<? extends Job> jobClass = null;
+        Class<? extends Job> jobClass;
         try {
             jobClass = (Class<? extends Job>) Class.forName(jobClassName);
         } catch (ClassNotFoundException e) {

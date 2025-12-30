@@ -1,10 +1,10 @@
-package com.data.profile.manager.config;
+package com.data.profile.manager.domain;
 
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 功能：ClickHouse 配置类
+ * 功能：Jdbc 配置类
  * 作者：@SmartSi
  * 博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
@@ -12,7 +12,7 @@ import lombok.Setter;
  */
 @Setter
 @Getter
-public class ClickHouseConfig {
+public class JdbcConfig {
     private String driverClassName;
     private String url;
     private String username;

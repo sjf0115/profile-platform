@@ -2,6 +2,7 @@ package com.data.profile.manager.template;
 
 import com.data.profile.manager.domain.Column;
 import com.data.profile.manager.domain.ColumnBuilder;
+import com.data.profile.manager.utils.TemplateBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.junit.Test;

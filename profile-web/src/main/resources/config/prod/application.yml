@@ -1,0 +1,32 @@
+server:
+  port: 8080
+#logging.config=classpath:logback.xml
+management:
+  server:
+    port: 7016
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  profiles:
+    active: prod
+  application:
+    name: profile-web
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/profile?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true
+    username: root
+    password: root
+#    type-aliases-package: com.data.profile.model
+#    mapperLocations: classpath:mybatis/mapper/*.xml
+  clickhouse:
+    driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
+    url: jdbc:ch:http://localhost:8123/default
+    username: test
+    password: test
+
+mybatis:
+  mapper-locations: classpath:mybatis/mapper/*.xml
+  type-aliases-package: com.data.profile.model
+  configuration:
+    map-underscore-to-camel-case: true

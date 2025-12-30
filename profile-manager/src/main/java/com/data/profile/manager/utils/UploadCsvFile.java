@@ -1,4 +1,4 @@
-package com.data.profile.manager.engine;
+package com.data.profile.manager.utils;
 
 import com.data.profile.common.domain.UploadLabel;
 import com.google.common.collect.Lists;

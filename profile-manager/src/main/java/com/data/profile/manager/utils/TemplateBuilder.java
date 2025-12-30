@@ -1,4 +1,4 @@
-package com.data.profile.manager.template;
+package com.data.profile.manager.utils;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;

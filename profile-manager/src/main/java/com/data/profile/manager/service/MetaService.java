@@ -1,4 +1,4 @@
-package com.data.profile.manager.core;
+package com.data.profile.manager.service;
 
 import com.data.profile.manager.domain.Column;
 import com.data.profile.manager.domain.ConnectionParam;

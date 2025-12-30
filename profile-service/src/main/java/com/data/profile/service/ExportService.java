@@ -2,12 +2,12 @@ package com.data.profile.service;
 
 import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.enums.ModelType;
+import com.data.profile.common.enums.SchedulerJobType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.ExportMapper;
-import com.data.profile.manager.dao.SchedulerJob;
-import com.data.profile.manager.scheduler.quartz.SchedulerService;
+import com.data.profile.manager.service.scheduler.SchedulerService;
 import com.data.profile.model.Export;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -105,16 +105,10 @@ public class ExportService {
             export.setModifier(userId);
 
             try {
-                SchedulerJob schedulerJob = new SchedulerJob();
-                schedulerJob.setJobClass("");
-                schedulerJob.setJobGroup("");
-                schedulerJob.setJobName("");
-                schedulerJob.setCronExpression("");
-                schedulerService.createJob(schedulerJob);
+                // 创建调度任务
+                schedulerService.createJob(SchedulerJobType.EXPORT, export.getExportId(), export.getSchedulerCron());
             } catch (SchedulerException e) {
-                throw new RuntimeException(e);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("创建投递调度任务失败", e.getCause());
             }
             return exportMapper.insertSelective(export);
         } else {

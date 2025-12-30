@@ -1,7 +1,9 @@
-package com.data.profile.manager.scheduler.job;
+package com.data.profile.manager.service.scheduler.job;
 
+import com.data.profile.manager.service.engine.ExportService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.quartz.QuartzJobBean;
 
 /**
@@ -15,6 +17,9 @@ import org.springframework.scheduling.quartz.QuartzJobBean;
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
 public class ExportJob extends QuartzJobBean {
+    @Autowired
+    private ExportService exportService;
+
     // 投递任务
     @Override
     protected void executeInternal(JobExecutionContext context) throws JobExecutionException {

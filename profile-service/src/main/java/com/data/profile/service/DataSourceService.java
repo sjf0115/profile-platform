@@ -7,7 +7,6 @@ import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.DataSourceMapper;
-import com.data.profile.manager.jdbc.JdbcMetaService;
 import com.data.profile.model.DataSource;
 import com.data.profile.model.DataSourceSchema;
 import com.google.gson.Gson;
