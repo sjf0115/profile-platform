@@ -29,5 +29,10 @@ public class ExportJob extends QuartzJobBean {
         // 执行具体的业务逻辑
         log.info("Welcome to Quartz: {}", count);
         jobDataMap.put("count", count+1);
+
+        // 具体执行的投递逻辑
+        // 需要知道投递的群组 group_id 以及目标数据源 datasource_id 和写入的目标对象 object
+        // 投递
+        exportService.export();
     }
 }

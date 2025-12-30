@@ -15,4 +15,8 @@ import org.springframework.stereotype.Service;
 public class ExportService {
     @Autowired
     private ExportDao exportDao;
+
+    public void export(){
+        exportDao.exportGroup("");
+    }
 }

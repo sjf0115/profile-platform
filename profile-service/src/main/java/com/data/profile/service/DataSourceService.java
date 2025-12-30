@@ -33,7 +33,6 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class DataSourceService {
-    private static Logger LOG = LoggerFactory.getLogger(DataSourceService.class);
     private static Gson gson = new GsonBuilder().create();
 
     @Resource
