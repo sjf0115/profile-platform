@@ -44,6 +44,30 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/datasource/detail.vue'),
         meta: { title: '数据源详情' },
       },
+      {
+        path: 'label-market',
+        name: 'LabelMarket',
+        component: () => import('@/views/label/index.vue'),
+        meta: { title: '标签管理' },
+      },
+      {
+        path: 'project',
+        name: 'Project',
+        redirect: '/project/datasource',
+        meta: { title: '项目中心' },
+      },
+      {
+        path: 'project/datasource',
+        name: 'DataSourceProject',
+        component: () => import('@/views/datasource/index.vue'),
+        meta: { title: '数据源管理' },
+      },
+      {
+        path: 'project/label-category',
+        name: 'LabelCategory',
+        component: () => import('@/views/label/category.vue'),
+        meta: { title: '标签类目管理' },
+      },
     ],
   },
 ]

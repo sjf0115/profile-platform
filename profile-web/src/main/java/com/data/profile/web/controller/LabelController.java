@@ -30,7 +30,7 @@ public class LabelController {
     @Autowired
     private LabelService labelService;
 
-    @GetMapping(value = "/list")
+    @PostMapping(value = "/list")
     public Response getList(@RequestBody Label label) {
         List<Label> labels = labelService.getList(label);
         return Response.success(labels);

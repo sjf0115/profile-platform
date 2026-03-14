@@ -26,7 +26,7 @@
           :class="{ active: activeTopNav === '/label-market' }"
           @click="router.push('/label-market')"
         >
-          标签市场
+          标签管理
         </div>
         
         <!-- 用户洞察 - 有下拉 -->
@@ -121,13 +121,17 @@
           </div>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="router.push('/datasource')">
+              <el-dropdown-item @click="router.push('/project/datasource')">
                 <el-icon><Coin /></el-icon>
                 <span>数据源管理</span>
               </el-dropdown-item>
               <el-dropdown-item @click="router.push('/dataset')">
                 <el-icon><FolderOpened /></el-icon>
                 <span>数据集管理</span>
+              </el-dropdown-item>
+              <el-dropdown-item @click="router.push('/project/label-category')">
+                <el-icon><CollectionTag /></el-icon>
+                <span>标签类目管理</span>
               </el-dropdown-item>
               <el-dropdown-item @click="router.push('/event')">
                 <el-icon><Bell /></el-icon>
@@ -285,13 +289,17 @@
           <!-- 项目中心子菜单 -->
           <template v-if="activeTopNav === '/project'">
             <div class="menu-group-title">项目中心</div>
-            <el-menu-item index="/datasource">
+            <el-menu-item index="/project/datasource">
               <el-icon><Coin /></el-icon>
               <span>数据源管理</span>
             </el-menu-item>
             <el-menu-item index="/dataset">
               <el-icon><FolderOpened /></el-icon>
               <span>数据集管理</span>
+            </el-menu-item>
+            <el-menu-item index="/project/label-category">
+              <el-icon><CollectionTag /></el-icon>
+              <span>标签类目管理</span>
             </el-menu-item>
             <el-menu-item index="/event">
               <el-icon><Bell /></el-icon>
@@ -324,7 +332,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { 
   DataLine, ArrowDown, Bell, QuestionFilled, Setting, Grid, User, UserFilled,
   View, Filter, DataAnalysis, Promotion, TrendCharts, Timer, Switch, PieChart, Share, Connection,
-  Coin, FolderOpened
+  Coin, FolderOpened, CollectionTag
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -339,7 +347,7 @@ const activeTopNav = computed(() => {
   if (path.startsWith('/insight')) return '/insight'
   if (path.startsWith('/group')) return '/group'
   if (path.startsWith('/analysis')) return '/analysis'
-  if (path.startsWith('/project') || path.startsWith('/datasource') || path.startsWith('/dataset') || path.startsWith('/event') || path.startsWith('/entity') || path.startsWith('/task')) return '/project'
+  if (path.startsWith('/project')) return '/project'
   return '/home'
 })
 

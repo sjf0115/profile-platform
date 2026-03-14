@@ -31,14 +31,14 @@ public class LabelCategoryController {
     @Autowired
     private LabelCategoryService categoryService;
 
-    @GetMapping(value = "/list")
+    @PostMapping(value = "/list")
     public Response getList(@RequestBody LabelCategory category) {
         List<LabelCategory> categories = categoryService.getList(category);
         return Response.success(categories);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam String categoryId) {
+    public Response getDetail(@RequestParam(name = "category_id") String categoryId) {
         Optional<LabelCategory> optional = categoryService.getDetail(categoryId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -48,7 +48,7 @@ public class LabelCategoryController {
     }
 
     @GetMapping(value = "/add")
-    public Response add(@RequestParam String categoryName, @RequestParam String parentCategoryId) {
+    public Response add(@RequestParam(name = "category_name") String categoryName, @RequestParam(name = "parent_category_id") String parentCategoryId) {
         int result = categoryService.add(categoryName, parentCategoryId);
         if (result > 0) {
             return Response.success(result);
@@ -58,7 +58,7 @@ public class LabelCategoryController {
     }
 
     @GetMapping(value = "/delete")
-    public Response delete(@RequestParam String categoryId) {
+    public Response delete(@RequestParam(name = "category_id") String categoryId) {
         int result = categoryService.delete(categoryId);
         if (result > 0) {
             return Response.success(result);
@@ -68,7 +68,7 @@ public class LabelCategoryController {
     }
 
     @GetMapping(value = "/rename")
-    public Response rename(@RequestParam String categoryId, @RequestParam String categoryName) {
+    public Response rename(@RequestParam(name = "category_id") String categoryId, @RequestParam(name = "category_name") String categoryName) {
         int result = categoryService.rename(categoryId, categoryName);
         if (result > 0) {
             return Response.success(result);
