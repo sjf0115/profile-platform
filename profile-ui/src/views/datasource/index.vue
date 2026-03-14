@@ -88,11 +88,22 @@
             <span class="desc-text">{{ row.datasource_desc || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="gmt_create" label="创建时间" width="160" />
-        <el-table-column prop="gmt_modified" label="修改时间" width="160" />
-        <el-table-column prop="modifier" label="修改人" width="100" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="创建时间" width="160">
           <template #default="{ row }">
+            {{ formatDateTime(row.gmt_create) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="修改时间" width="160">
+          <template #default="{ row }">
+            {{ formatDateTime(row.gmt_modified) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="modifier" label="修改人" width="100" />
+        <el-table-column label="操作" width="180" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="handleView(row)">
+              查看
+            </el-button>
             <el-button link type="primary" @click="handleEdit(row)">
               编辑
             </el-button>
@@ -129,6 +140,20 @@ import type { DataSource, DataSourceSchema, DataSourceQueryParams } from '@/type
 import { dataSourceApi, dataSourceSchemaApi } from '@/api/datasource'
 
 const router = useRouter()
+
+// 格式化日期时间
+const formatDateTime = (dateStr?: string) => {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return dateStr
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
 
 // 加载状态
 const loading = ref(false)
@@ -215,6 +240,14 @@ const handleReset = () => {
 // 新增 - 跳转到数据源类型选择页面
 const handleAdd = () => {
   router.push('/datasource/select-type')
+}
+
+// 查看
+const handleView = (row: DataSource) => {
+  router.push({
+    path: `/datasource/detail/${row.datasource_id}`,
+    query: { schema_id: row.schema_id },
+  })
 }
 
 // 编辑

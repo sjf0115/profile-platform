@@ -1,7 +1,6 @@
 package com.data.profile.service;
 
 import com.data.profile.common.domain.RequestContext;
-import com.data.profile.common.enums.DataSourceSchemaType;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
@@ -13,8 +12,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -46,8 +43,7 @@ public class DataSourceService {
      * @return
      */
     public List<DataSource> getList(DataSource dataSource) {
-        List<DataSource> dataSources = dataSourceMapper.selectByParams(dataSource);
-        return dataSources;
+        return dataSourceMapper.selectByParams(dataSource);
     }
 
     /**
@@ -73,7 +69,7 @@ public class DataSourceService {
         if (StringUtils.isBlank(datasource.getDatasourceId())) {
             // 新增
             List<DataSource> dataSources = dataSourceMapper.selectSimpleByDatasourceName(datasource.getDatasourceName());
-            if (dataSources.size() > 0) {
+            if (!dataSources.isEmpty()) {
                 throw new RuntimeException("数据源已经存在，不允许重复添加");
             }
             String datasourceId = IDGenerator.getInstance().generate(ModelType.DATASOURCE);
@@ -93,27 +89,24 @@ public class DataSourceService {
             datasource.setOwner(RequestContext.currentUserId());
             datasource.setCreator(RequestContext.currentUserId());
             datasource.setModifier(RequestContext.currentUserId());
-            int result = dataSourceMapper.insertSelective(datasource);
-            return result;
+            return dataSourceMapper.insertSelective(datasource);
         } else {
             // 修改
             datasource.setModifier(RequestContext.currentUserId());
-            int result = dataSourceMapper.updateByDataSourceIdSelective(datasource);
-            return result;
+            return dataSourceMapper.updateByDataSourceIdSelective(datasource);
         }
     }
 
     /**
      * 删除数据源
-     * @param dataSourceId
-     * @return
+     * @param dataSourceId 数据源ID
      */
     public int delete(String dataSourceId) {
         DataSource dataSource = dataSourceMapper.selectByDatasourceId(dataSourceId);
         if (Objects.equals(dataSource.getSourceType(), SourceType.BUILT_IN.getCode())) {
             throw new RuntimeException("内置数据源不允许删除");
         }
-        int result = dataSourceMapper.deleteByDatasourceId(dataSourceId);
-        return result;
+        // TODO: 逻辑删除
+        return dataSourceMapper.deleteByDatasourceId(dataSourceId);
     }
 }

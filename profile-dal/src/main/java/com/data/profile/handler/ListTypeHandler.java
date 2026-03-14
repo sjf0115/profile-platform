@@ -22,6 +22,7 @@ import java.util.List;
  * 公众号：大数据生态
  * 日期：2025/4/2 22:53
  */
+@Deprecated
 public class ListTypeHandler<T> extends BaseTypeHandler<List<T>> {
     private final Gson gson = new GsonBuilder().serializeNulls().create();
     private final Type type;

@@ -6,8 +6,14 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: MainLayout,
-    redirect: '/datasource',
+    redirect: '/home',
     children: [
+      {
+        path: 'home',
+        name: 'Home',
+        component: () => import('@/views/home/index.vue'),
+        meta: { title: '首页' },
+      },
       {
         path: 'datasource',
         name: 'DataSource',
@@ -31,6 +37,12 @@ const routes: RouteRecordRaw[] = [
         name: 'DataSourceEdit',
         component: () => import('@/views/datasource/create.vue'),
         meta: { title: '编辑数据源' },
+      },
+      {
+        path: 'datasource/detail/:id',
+        name: 'DataSourceDetail',
+        component: () => import('@/views/datasource/detail.vue'),
+        meta: { title: '数据源详情' },
       },
     ],
   },
