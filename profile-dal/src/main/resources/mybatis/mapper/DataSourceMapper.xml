@@ -15,13 +15,13 @@
         <result column="modifier" jdbcType="VARCHAR" property="modifier" />
         <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
         <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
-        <result column="config" jdbcType="LONGVARCHAR" property="config" />
     </resultMap>
 
     <resultMap extends="BaseResultMap" id="ResultMapWithSchema" type="com.data.profile.model.DataSource">
         <result column="schema_name" jdbcType="VARCHAR" property="schemaName" />
         <result column="schema_type" jdbcType="VARCHAR" property="schemaType" />
-        <result column="config_template" property="configTemplate" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.handler.SchemaConfigItemHandler"/>
+        <result column="config" property="config" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.handler.DataSourceConfigHandler"/>
+        <result column="config_template" property="configTemplate" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.handler.SchemaConfigHandler"/>
     </resultMap>
 
     <sql id="Base_Column_List">

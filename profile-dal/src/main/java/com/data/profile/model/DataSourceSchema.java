@@ -29,5 +29,5 @@ public class DataSourceSchema {
 
     private Date gmtModified;
 
-    private List<SchemaConfigItem> configTemplate;
+    private List<SchemaConfig> configTemplate;
 }

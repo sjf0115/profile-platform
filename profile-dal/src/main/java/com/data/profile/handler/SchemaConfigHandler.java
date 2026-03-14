@@ -1,17 +1,19 @@
 package com.data.profile.handler;
 
-import com.data.profile.model.SchemaConfigItem;
+import com.data.profile.model.SchemaConfig;
+
+import java.util.List;
 
 /**
- * 功能：SchemaConfigItemHandler
+ * 功能：SchemaConfigHandler
  * 作者：SmartSi
  * CSDN博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
  * 日期：2025/4/2 22:53
  */
-public class SchemaConfigItemHandler extends ListTypeHandler<SchemaConfigItem> {
+public class SchemaConfigHandler extends GsonTypeHandler<List<SchemaConfig>> {
     // 必须显式调用父类的带参构造函数
-    public SchemaConfigItemHandler() {
+    /*public SchemaConfigHandler() {
         super(SchemaConfigItem.class);  // 明确传递具体类型
-    }
+    }*/
 }

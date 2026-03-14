@@ -47,12 +47,6 @@ public class DataSourceService {
      */
     public List<DataSource> getList(DataSource dataSource) {
         List<DataSource> dataSources = dataSourceMapper.selectByParams(dataSource);
-        // 根据SchemeType查询时需要特殊处理
-        Integer schemaType = dataSource.getSchemaType();
-        if (!Objects.equals(schemaType, null)) {
-            dataSource.setSchemaType(DataSourceSchemaType.BOTH.getCode());
-            dataSources.addAll(dataSourceMapper.selectByParams(dataSource));
-        }
         return dataSources;
     }
 

@@ -7,7 +7,10 @@ import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.DataSourceSchemaMapper;
+import com.data.profile.model.DataSourceCategory;
 import com.data.profile.model.DataSourceSchema;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -18,6 +21,7 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * 功能：数据源Schema服务
@@ -30,6 +34,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class DataSourceSchemaService {
+    private static Gson gson = new Gson().newBuilder().create();
     private static Logger LOG = LoggerFactory.getLogger(DataSourceSchemaService.class);
 
     @Resource
@@ -41,14 +46,7 @@ public class DataSourceSchemaService {
      * @return
      */
     public List<DataSourceSchema> getList(DataSourceSchema schema) {
-        List<DataSourceSchema> schemas = schemaMapper.selectByParams(schema);
-        // 根据SchemeType查询时需要特殊处理
-        Integer schemaType = schema.getSchemaType();
-        if (!Objects.equals(schemaType, null)) {
-            schema.setSchemaType(DataSourceSchemaType.BOTH.getCode());
-            schemas.addAll(schemaMapper.selectByParams(schema));
-        }
-        return schemas;
+        return schemaMapper.selectByParams(schema);
     }
 
     /**
@@ -107,6 +105,19 @@ public class DataSourceSchemaService {
             throw new RuntimeException("内置数据源Schema不允许删除");
         }
         int result = schemaMapper.deleteByDataSourceSchemaId(schemaId);
+        return result;
+    }
+
+    /**
+     * 获取数据源分类列表
+     * @return
+     */
+    public List<DataSourceCategory> getCategory() {
+        List<DataSourceCategory> categories = schemaMapper.selectCategory();
+        List<DataSourceCategory> result = categories.stream()
+                .peek(category -> category.setName(DataSourceSchemaType.codeOf(category.getId())))
+                .collect(Collectors.toList());
+        LOG.info("成功获取{}类数据源: {}", categories.size(), gson.toJson(result));
         return result;
     }
 }

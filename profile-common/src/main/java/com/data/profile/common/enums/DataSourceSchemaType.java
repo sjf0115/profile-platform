@@ -1,13 +1,17 @@
 package com.data.profile.common.enums;
 
-// 数据源Schema类型
+import java.util.Objects;
+
+// 数据源Schema分类
 public enum DataSourceSchemaType {
-    // source
-    SOURCE(1, "source"),
-    // sink
-    SINK(2, "sink"),
-    // source/sink
-    BOTH(3, "both")
+    // 数据库
+    DATABASE(1, "数据库"),
+    // 分析性数据库
+    OLAP(2, "分析性数据库"),
+    // 对象存储
+    OSS(3, "对象存储"),
+    // 消息队列
+    MQ(4, "消息队列")
     ;
 
     private Integer code;
@@ -28,5 +32,14 @@ public enum DataSourceSchemaType {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public static String codeOf(Integer code) {
+        for (DataSourceSchemaType value : values()) {
+            if (Objects.equals(value.code, code)) {
+                return value.message;
+            }
+        }
+        return null;
     }
 }

@@ -1,6 +1,5 @@
 package com.data.profile.manager.service.scheduler.job;
 
-import com.data.profile.manager.service.engine.ExportService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +17,7 @@ import org.springframework.scheduling.quartz.QuartzJobBean;
 @DisallowConcurrentExecution
 public class ExportJob extends QuartzJobBean {
     @Autowired
-    private ExportService exportService;
+    //private ExportService exportService;
 
     // 投递任务
     @Override
@@ -33,6 +32,6 @@ public class ExportJob extends QuartzJobBean {
         // 具体执行的投递逻辑
         // 需要知道投递的群组 group_id 以及目标数据源 datasource_id 和写入的目标对象 object
         // 投递
-        exportService.export();
+        //exportService.export();
     }
 }

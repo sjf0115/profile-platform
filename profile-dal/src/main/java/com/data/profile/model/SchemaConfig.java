@@ -11,7 +11,7 @@ import lombok.Data;
  * 日期：2025/3/31 23:31
  */
 @Data
-public class SchemaConfigItem {
+public class SchemaConfig {
     // 展示名称
     @SerializedName("show_name")
     private String showName;

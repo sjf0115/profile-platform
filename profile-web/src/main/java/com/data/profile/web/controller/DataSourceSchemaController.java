@@ -2,6 +2,7 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.model.DataSourceCategory;
 import com.data.profile.model.DataSourceSchema;
 import com.data.profile.service.DataSourceSchemaService;
 import lombok.extern.slf4j.Slf4j;
@@ -30,14 +31,14 @@ public class DataSourceSchemaController {
     @Autowired
     private DataSourceSchemaService schemaService;
 
-    @GetMapping(value = "/list")
+    @PostMapping(value = "/list")
     public Response getList(@RequestBody DataSourceSchema schema) {
         List<DataSourceSchema> schemas = schemaService.getList(schema);
         return Response.success(schemas);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam String schemaId) {
+    public Response getDetail(@RequestParam(name = "schema_id") String schemaId) {
         Optional<DataSourceSchema> optional = schemaService.getDetail(schemaId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -64,5 +65,11 @@ public class DataSourceSchemaController {
         } else {
             return Response.error("删除数据源Schema失败", ResponseCode.ERROR);
         }
+    }
+
+    @GetMapping(value = "/category")
+    public Response getCategory() {
+        List<DataSourceCategory> schemas = schemaService.getCategory();
+        return Response.success(schemas);
     }
 }

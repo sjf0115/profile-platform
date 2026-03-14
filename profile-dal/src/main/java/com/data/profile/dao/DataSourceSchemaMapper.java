@@ -1,5 +1,6 @@
 package com.data.profile.dao;
 
+import com.data.profile.model.DataSourceCategory;
 import com.data.profile.model.DataSourceSchema;
 
 import java.util.List;
@@ -11,6 +12,8 @@ public interface DataSourceSchemaMapper {
     List<DataSourceSchema> selectByDataSourceSchemaName(String schemaName); // 根据名字查询
 
     List<DataSourceSchema> selectByParams(DataSourceSchema dataSourceType); //根据参数查询
+
+    List<DataSourceCategory> selectCategory(); // 数据源分类
 
     // 插入
     int insert(DataSourceSchema schema); // 插入全部

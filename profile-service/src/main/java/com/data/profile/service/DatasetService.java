@@ -241,12 +241,12 @@ public class DatasetService {
         }
         DataSource dataSource = dataSourceOptional.get();
 
-        // 只支持 Source 类型数据源
+        /*// 只支持 Source 类型数据源
         String schemaName = dataSource.getSchemaName();
         Integer schemaType = dataSource.getSchemaType();
         if (Objects.equals(schemaType, DataSourceSchemaType.SINK)) {
             throw new RuntimeException("不支持数据源类型[" + schemaName + "]，请重新选择");
-        }
+        }*/
 
         // 获取 JDBC 协议
         String schemaId = dataSource.getSchemaId();
@@ -259,8 +259,9 @@ public class DatasetService {
 
         // 生成 ConnectionParam
         // Todo 不同类型解析不一样
-        String config = dataSource.getConfig();
-        ConnectionParam connectionParam = gson.fromJson(config, ConnectionParam.class);
+        // String config = dataSource.getConfig();
+        // ConnectionParam connectionParam = gson.fromJson(config, ConnectionParam.class);
+        ConnectionParam connectionParam = null;
         connectionParam.setProtocol(jdbcProtocol);
 
         // JDBC URL

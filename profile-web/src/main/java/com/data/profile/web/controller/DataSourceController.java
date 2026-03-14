@@ -30,14 +30,14 @@ public class DataSourceController {
     @Autowired
     private DataSourceService dataSourceService;
 
-    @GetMapping(value = "/list")
+    @PostMapping(value = "/list")
     public Response getList(@RequestBody DataSource dataSource) {
         List<DataSource> dataSources = dataSourceService.getList(dataSource);
         return Response.success(dataSources);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam String datasourceId) {
+    public Response getDetail(@RequestParam(name = "datasource_id") String datasourceId) {
         Optional<DataSource> optional = dataSourceService.getDetail(datasourceId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -57,7 +57,7 @@ public class DataSourceController {
     }
 
     @DeleteMapping(value = "/delete")
-    public Response delete(@RequestParam String datasourceId) {
+    public Response delete(@RequestParam(name = "datasource_id") String datasourceId) {
         int result = dataSourceService.delete(datasourceId);
         if (result > 0) {
             return Response.success(result);

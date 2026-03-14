@@ -14,8 +14,13 @@
     <result column="modifier" jdbcType="VARCHAR" property="modifier" />
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
     <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
-    <result column="config_template" property="configTemplate" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.handler.SchemaConfigItemHandler"/>
+    <result column="config_template" property="configTemplate" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.handler.SchemaConfigHandler"/>
   </resultMap>
+
+    <resultMap id="CategoryResultMap" type="com.data.profile.model.DataSourceCategory">
+        <result column="schema_type" jdbcType="VARCHAR" property="id" />
+        <result column="count" jdbcType="INTEGER" property="count" />
+    </resultMap>
 
   <sql id="Base_Column_List">
     id, status, schema_id, schema_name, schema_type, jdbc_protocol, source_type, config_template, creator, modifier,
@@ -63,6 +68,12 @@
       and modifier = #{modifier,jdbcType=VARCHAR}
     </if>
   </select>
+
+    <select id="selectCategory" resultMap="CategoryResultMap">
+        select schema_type, count(*) AS count
+        from profile_meta_datasource_schema
+        group by schema_type
+    </select>
 
   <insert id="insert" parameterType="com.data.profile.model.DataSourceSchema">
     insert into profile_meta_datasource_schema (status, schema_id,

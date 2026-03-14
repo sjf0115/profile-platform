@@ -31,3 +31,23 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Vue Frontend (profile-ui) ###
+profile-ui/node_modules/
+profile-ui/dist/
+profile-ui/dist-ssr/
+profile-ui/*.local
+profile-ui/.env.local
+profile-ui/.env.*.local
+profile-ui/npm-debug.log*
+profile-ui/yarn-debug.log*
+profile-ui/yarn-error.log*
+profile-ui/pnpm-debug.log*
+profile-ui/.vscode/*
+!profile-ui/.vscode/extensions.json
+profile-ui/.idea
+profile-ui/*.suo
+profile-ui/*.ntvs*
+profile-ui/*.njsproj
+profile-ui/*.sln
+profile-ui/*.sw?
