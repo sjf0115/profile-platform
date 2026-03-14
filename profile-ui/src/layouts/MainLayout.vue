@@ -125,7 +125,7 @@
                 <el-icon><Coin /></el-icon>
                 <span>数据源管理</span>
               </el-dropdown-item>
-              <el-dropdown-item @click="router.push('/dataset')">
+              <el-dropdown-item @click="router.push('/project/dataset')">
                 <el-icon><FolderOpened /></el-icon>
                 <span>数据集管理</span>
               </el-dropdown-item>
@@ -293,7 +293,7 @@
               <el-icon><Coin /></el-icon>
               <span>数据源管理</span>
             </el-menu-item>
-            <el-menu-item index="/dataset">
+            <el-menu-item index="/project/dataset">
               <el-icon><FolderOpened /></el-icon>
               <span>数据集管理</span>
             </el-menu-item>

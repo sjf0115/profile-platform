@@ -15,7 +15,7 @@ const request: AxiosInstance = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
-    // 可以在这里添加 token 等认证信息
+    console.log('请求:', config.method?.toUpperCase(), config.url, config.data)
     return config
   },
   (error) => {
@@ -26,8 +26,9 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
+    console.log('响应:', response.config.url, response.data)
     const { data } = response
-    if (data.code !== 0) {
+    if (data.code !== 200 && data.code !== 0) {
       ElMessage.error(data.message || '请求失败')
       return Promise.reject(new Error(data.message))
     }

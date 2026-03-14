@@ -15,6 +15,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '首页' },
       },
       {
+        path: 'project',
+        name: 'Project',
+        redirect: '/project/datasource',
+        meta: { title: '项目中心' },
+      },
+      {
+        path: 'project/label-category',
+        name: 'LabelCategory',
+        component: () => import('@/views/label/category.vue'),
+        meta: { title: '标签类目管理' },
+      },
+      {
         path: 'datasource',
         name: 'DataSource',
         component: () => import('@/views/datasource/index.vue'),
@@ -49,13 +61,7 @@ const routes: RouteRecordRaw[] = [
         name: 'LabelMarket',
         component: () => import('@/views/label/index.vue'),
         meta: { title: '标签管理' },
-      },
-      {
-        path: 'project',
-        name: 'Project',
-        redirect: '/project/datasource',
-        meta: { title: '项目中心' },
-      },
+      },      
       {
         path: 'project/datasource',
         name: 'DataSourceProject',
@@ -63,11 +69,17 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '数据源管理' },
       },
       {
-        path: 'project/label-category',
-        name: 'LabelCategory',
-        component: () => import('@/views/label/category.vue'),
-        meta: { title: '标签类目管理' },
+        path: 'project/dataset',
+        name: 'Dataset',
+        component: () => import('@/views/dataset/index.vue'),
+        meta: { title: '数据集管理' },
       },
+      {
+        path: 'dataset/create/label',
+        name: 'CreateLabelDataset',
+        component: () => import('@/views/dataset/create-label.vue'),
+        meta: { title: '创建标签数据集' },
+      }
     ],
   },
 ]

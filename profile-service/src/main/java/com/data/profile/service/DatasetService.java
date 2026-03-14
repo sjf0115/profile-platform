@@ -175,10 +175,9 @@ public class DatasetService {
     private int createDataset(Dataset dataset) {
         // 数据集名称是否唯一
         List<Dataset> datasets = datasetMapper.selectByDatasetName(dataset.getDatasetName());
-        if (datasets.size() > 0) {
+        if (!datasets.isEmpty()) {
             throw new RuntimeException("数据集已经存在，不允许重复添加");
         }
-        // 数据集ID是否唯一
         String datasetId = IDGenerator.getInstance().generate(ModelType.DATASET);
         Dataset target = datasetMapper.selectByDatasetId(datasetId);
         if (!Objects.equals(target, null)) {
@@ -192,8 +191,8 @@ public class DatasetService {
         dataset.setModifier(RequestContext.currentUserId());
         int result = datasetMapper.insertSelective(dataset);
         // TODO 创建数据集表 在引擎中创建数据集表
-        String datasetTable = createDatasetTable(dataset);
-        LOG.info("创建表语句: " + datasetTable);
+        // String datasetTable = createDatasetTable(dataset);
+        // LOG.info("创建表语句: " + datasetTable);
         return result;
     }
 

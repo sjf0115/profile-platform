@@ -122,52 +122,49 @@
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="55" />
-          <el-table-column prop="label_name" label="标签名称" min-width="150" />
-          <el-table-column v-if="visibleColumns.includes('cover_count')" prop="cover_count" label="覆盖数量" width="100" />
-          <el-table-column v-if="visibleColumns.includes('cover_rate')" prop="cover_rate" label="覆盖率" width="100" />
-          <el-table-column v-if="visibleColumns.includes('label_value')" prop="label_value" label="标签值" min-width="120" />
-          <el-table-column v-if="visibleColumns.includes('gmt_modified')" label="更新时间" width="160">
+          <el-table-column prop="label_name" label="标签名称" min-width="150" show-overflow-tooltip />
+          <el-table-column prop="label_desc" label="标签描述" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="label_status" label="标签状态" width="100">
+            <template #default="{ row }">
+              <el-tag v-if="row.label_status === 1" type="success" size="small">启用</el-tag>
+              <el-tag v-else type="danger" size="small">禁用</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="label_type" label="标签类型" width="120" />
+          <el-table-column prop="label_produce_type" label="创建方式" width="100">
+            <template #default="{ row }">
+              <span v-if="row.label_produce_type === 1">系统生成</span>
+              <span v-else-if="row.label_produce_type === 2">自定义</span>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="owner" label="标签负责人" width="120" />
+          <el-table-column label="数据更新时间" width="160">
             <template #default="{ row }">
               {{ formatDateTime(row.gmt_modified) }}
             </template>
           </el-table-column>
-          <el-table-column v-if="visibleColumns.includes('exec_status')" prop="exec_status" label="执行状态" width="100">
-            <template #default="{ row }">
-              <el-tag v-if="row.exec_status === 'success'" type="success" size="small">
-                <el-icon><CircleCheck /></el-icon>
-                执行成功
-              </el-tag>
-              <el-tag v-else-if="row.exec_status === 'running'" type="warning" size="small">
-                执行中
-              </el-tag>
-              <el-tag v-else type="info" size="small">未执行</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column v-if="visibleColumns.includes('creator')" prop="creator" label="创建人" width="100" />
-          <el-table-column v-if="visibleColumns.includes('label_type')" prop="label_type" label="创建方式" width="100" />
-          <el-table-column v-if="visibleColumns.includes('source_type')" prop="source_type" label="标签来源" width="100" />
-          <el-table-column v-if="visibleColumns.includes('gmt_create')" label="创建时间" width="160">
+          <el-table-column label="创建时间" width="160">
             <template #default="{ row }">
               {{ formatDateTime(row.gmt_create) }}
             </template>
           </el-table-column>
-          <el-table-column v-if="visibleColumns.includes('label_desc')" prop="label_desc" label="标签说明" min-width="150" show-overflow-tooltip />
-          <el-table-column v-if="visibleColumns.includes('heat_score')" prop="heat_score" label="总使用热度" width="100" />
-          <el-table-column v-if="visibleColumns.includes('view_count')" prop="view_count" label="透视次数" width="100" />
+          <el-table-column prop="cover_count" label="覆盖量" width="100" />
           
-          <el-table-column label="操作" width="200" fixed="right">
+          <el-table-column label="操作" width="220" fixed="right">
             <template #default="{ row }">
-              <el-button link type="primary" @click="handleDetail(row)">详情</el-button>
+              <el-button link type="primary" @click="handleDetail(row)">查看</el-button>
               <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-              <el-button link type="primary" @click="handleFilter(row)">筛选</el-button>
+              <el-button link type="primary" @click="handleConfig(row)">配置</el-button>
               <el-dropdown trigger="click">
                 <el-button link type="primary">
                   <el-icon><More /></el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item @click="handleAuthorize(row)">授权</el-dropdown-item>
-                    <el-dropdown-item @click="handleUpdate(row)">更新</el-dropdown-item>
+                    <el-dropdown-item @click="handleToggleStatus(row)">
+                      {{ row.label_status === 1 ? '禁用' : '启用' }}
+                    </el-dropdown-item>
                     <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -191,6 +188,53 @@
       </div>
     </div>
   </div>
+
+  <!-- 选择创建方式弹窗 -->
+  <el-dialog
+    v-model="createDialogVisible"
+    title="请选择创建方式"
+    width="700px"
+    destroy-on-close
+    :close-on-click-modal="true"
+  >
+    <div class="create-methods">
+      <div class="method-card" @click="handleCreateByMethod('datasource')">
+        <div class="method-icon">
+          <el-icon :size="32" color="#409EFF"><Coin /></el-icon>
+        </div>
+        <div class="method-title">数据源导入</div>
+        <div class="method-desc">从数据源导入画像平台时，通过为字段配置标签别名的方式给用户打标签，后续使用标签时，实质上是在使用对应的字段。</div>
+        <el-button type="primary" plain>立即创建</el-button>
+      </div>
+
+      <div class="method-card" @click="handleCreateByMethod('custom')">
+        <div class="method-icon">
+          <el-icon :size="32" color="#67C23A"><Setting /></el-icon>
+        </div>
+        <div class="method-title">自定义标签</div>
+        <div class="method-desc">可基于四则运算、简单函数实现标签的计算。</div>
+        <el-button type="primary" plain>立即创建</el-button>
+      </div>
+
+      <div class="method-card" @click="handleCreateByMethod('sql')">
+        <div class="method-icon">
+          <el-icon :size="32" color="#E6A23C"><Document /></el-icon>
+        </div>
+        <div class="method-title">SQL</div>
+        <div class="method-desc">可直接使用SQL语言进行标签的新建。</div>
+        <el-button type="primary" plain>立即创建</el-button>
+      </div>
+
+      <div class="method-card" @click="handleCreateByMethod('upload')">
+        <div class="method-icon">
+          <el-icon :size="32" color="#F56C6C"><Upload /></el-icon>
+        </div>
+        <div class="method-title">上传文件</div>
+        <div class="method-desc">上传包含实体ID(例如用户)的文件，可直接创建标签。</div>
+        <el-button type="primary" plain>立即创建</el-button>
+      </div>
+    </div>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -198,7 +242,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
-  Plus, Search, Folder, Grid, CircleCheck, More 
+  Plus, Search, Folder, Grid, CircleCheck, More, Coin, Setting, Document, Upload
 } from '@element-plus/icons-vue'
 import type { Label, LabelCategory, LabelQueryParams } from '@/types'
 import { labelApi, labelCategoryApi } from '@/api/label'
@@ -244,6 +288,9 @@ const queryParams = reactive<LabelQueryParams>({
   page_size: 10,
 })
 
+// 创建方式弹窗显示状态
+const createDialogVisible = ref(false)
+
 // 所有列
 const allColumns = [
   { prop: 'cover_count', label: '覆盖数量' },
@@ -274,13 +321,54 @@ const visibleColumns = ref([
   'label_desc',
 ])
 
-// 过滤后的类目列表
+// 构建树形结构
+const buildCategoryTree = (list: LabelCategory[]): any[] => {
+  const map: Record<string, any> = {}
+  const roots: any[] = []
+  
+  // 先创建所有节点的映射
+  list.forEach(item => {
+    map[item.category_id] = {
+      ...item,
+      children: []
+    }
+  })
+  
+  // 构建树形结构
+  list.forEach(item => {
+    const node = map[item.category_id]
+    if (item.parent_category_id && map[item.parent_category_id]) {
+      map[item.parent_category_id].children.push(node)
+    } else if (!item.parent_category_id) {
+      // 没有父节点的作为根节点（一级类目）
+      roots.push(node)
+    }
+  })
+  
+  return roots
+}
+
+// 过滤后的类目列表（树形结构）
 const filteredCategoryList = computed(() => {
-  if (!categorySearch.value) return categoryList.value
+  const treeData = buildCategoryTree(categoryList.value)
+  
+  if (!categorySearch.value) return treeData
+  
+  // 搜索过滤
   const search = categorySearch.value.toLowerCase()
-  return categoryList.value.filter(cat => 
-    cat.category_name.toLowerCase().includes(search)
-  )
+  const filterTree = (nodes: any[]): any[] => {
+    return nodes.filter(node => {
+      const match = node.category_name.toLowerCase().includes(search)
+      const children = filterTree(node.children || [])
+      if (children.length > 0) {
+        node.children = children
+        return true
+      }
+      return match
+    })
+  }
+  
+  return filterTree(treeData)
 })
 
 // 格式化日期时间
@@ -307,20 +395,35 @@ const fetchCategoryList = async () => {
   }
 }
 
+// 所有标签列表（用于前端过滤）
+const allLabelList = ref<Label[]>([])
+
 // 获取标签列表
 const fetchLabelList = async () => {
   loading.value = true
   try {
     const params: LabelQueryParams = {
       ...queryParams,
-      label_name: searchKeyword.value,
     }
-    if (selectedCategory.value) {
-      params.label_category_id = selectedCategory.value
+    // 只有当搜索关键词不为空时才传递
+    if (searchKeyword.value && searchKeyword.value.trim()) {
+      params.label_name = searchKeyword.value.trim()
     }
+    // 不传递分类ID，获取所有标签，然后在前端过滤
     const res = await labelApi.getList(params)
-    labelList.value = res.data.data || []
-    total.value = res.data.data?.length || 0
+    allLabelList.value = res.data.data || []
+    
+    // 前端过滤：根据选中的分类及其子分类
+    let filteredList = allLabelList.value
+    if (selectedCategory.value) {
+      const categoryIds = getAllCategoryIds(selectedCategory.value)
+      filteredList = allLabelList.value.filter(label => 
+        categoryIds.includes(label.label_category_id || '')
+      )
+    }
+    
+    labelList.value = filteredList
+    total.value = filteredList.length
   } catch (error) {
     console.error('获取标签列表失败:', error)
   } finally {
@@ -333,6 +436,22 @@ const selectCategory = (categoryId: string) => {
   selectedCategory.value = categoryId
   queryParams.page_num = 1
   fetchLabelList()
+}
+
+// 获取分类及其所有子分类的ID列表
+const getAllCategoryIds = (categoryId: string): string[] => {
+  const ids: string[] = [categoryId]
+  
+  const findChildren = (id: string) => {
+    const children = categoryList.value.filter(cat => cat.parent_category_id === id)
+    children.forEach(child => {
+      ids.push(child.category_id)
+      findChildren(child.category_id)
+    })
+  }
+  
+  findChildren(categoryId)
+  return ids
 }
 
 // 点击类目树节点
@@ -350,8 +469,33 @@ const handleSearch = () => {
 
 // 创建标签
 const handleCreate = () => {
-  // TODO: 跳转到创建标签页面
-  ElMessage.info('创建标签功能开发中')
+  createDialogVisible.value = true
+}
+
+// 选择创建方式
+const handleCreateByMethod = (method: string) => {
+  createDialogVisible.value = false
+  
+  switch (method) {
+    case 'datasource':
+      ElMessage.info('数据源导入功能开发中')
+      // router.push('/label/create/datasource')
+      break
+    case 'custom':
+      ElMessage.info('自定义标签功能开发中')
+      // router.push('/label/create/custom')
+      break
+    case 'sql':
+      ElMessage.info('SQL创建标签功能开发中')
+      // router.push('/label/create/sql')
+      break
+    case 'upload':
+      ElMessage.info('上传文件创建标签功能开发中')
+      // router.push('/label/create/upload')
+      break
+    default:
+      break
+  }
 }
 
 // 查看详情
@@ -407,6 +551,29 @@ const handleDelete = (row: Label) => {
     .catch(() => {
       // 取消删除
     })
+}
+
+// 配置标签
+const handleConfig = (row: Label) => {
+  ElMessage.info(`配置标签: ${row.label_name}`)
+  // TODO: 打开配置弹窗
+}
+
+// 启用/禁用标签
+const handleToggleStatus = async (row: Label) => {
+  const newStatus = row.label_status === 1 ? 0 : 1
+  const actionText = newStatus === 1 ? "启用" : "禁用"
+  
+  try {
+    await labelApi.update({
+      ...row,
+      label_status: newStatus
+    })
+    ElMessage.success(`${actionText}成功`)
+    fetchLabelList()
+  } catch (error) {
+    console.error(`${actionText}失败:`, error)
+  }
 }
 
 // 多选
@@ -595,5 +762,60 @@ onMounted(() => {
   flex-direction: column;
   gap: 8px;
   min-width: 150px;
+}
+
+// 创建方式弹窗样式
+.create-methods {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  padding: 10px;
+}
+
+.method-card {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  &:hover {
+    border-color: #409eff;
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
+  }
+
+  .method-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    background-color: #f5f7fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .method-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #303133;
+    margin-bottom: 12px;
+  }
+
+  .method-desc {
+    font-size: 13px;
+    color: #606266;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    min-height: 60px;
+  }
+
+  .el-button {
+    width: 120px;
+  }
 }
 </style>

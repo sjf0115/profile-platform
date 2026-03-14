@@ -35,7 +35,7 @@ public class DatasetController {
     @Autowired
     private DatasetService datasetService;
 
-    @GetMapping(value = "/list")
+    @PostMapping(value = "/list")
     public Response getList(@RequestBody Dataset dataset) {
         List<Dataset> datasets = datasetService.getList(dataset);
         return Response.success(datasets);

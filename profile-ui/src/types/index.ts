@@ -133,3 +133,48 @@ export interface LabelQueryParams extends PageParams {
   label_status?: number
   label_type?: string
 }
+
+// 数据集字段
+export interface DatasetField {
+  field_name: string
+  field_type: string
+  field_desc?: string
+  is_import?: number  // 是否导入：1-是，0-否
+  id_type?: string    // 实体ID类型
+}
+
+// 数据集
+export interface Dataset {
+  id?: number
+  status?: number
+  dataset_id: string
+  dataset_name: string
+  dataset_type?: number
+  dataset_desc?: string
+  source_type?: number
+  datasource_id?: string
+  datasource_name?: string  // 扩展字段，用于展示
+  table_name?: string
+  partition_field?: string
+  partition_format?: string
+  entity_id?: string
+  entity_field?: string
+  fields?: DatasetField[]
+  instance_id?: string
+  instance_status?: number
+  instance_start_time?: string
+  instance_end_time?: string
+  instance_msg?: number
+  owner?: string
+  creator?: string
+  modifier?: string
+  gmt_create?: string
+  gmt_modified?: string
+}
+
+// 数据集查询参数
+export interface DatasetQueryParams extends PageParams {
+  dataset_name?: string
+  dataset_status?: number
+  dataset_type?: number
+}
