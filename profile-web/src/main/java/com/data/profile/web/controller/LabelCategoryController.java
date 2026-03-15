@@ -2,7 +2,6 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.model.Entity;
 import com.data.profile.model.LabelCategory;
 import com.data.profile.service.LabelCategoryService;
 import lombok.extern.slf4j.Slf4j;

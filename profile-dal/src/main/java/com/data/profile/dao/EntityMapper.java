@@ -7,34 +7,21 @@ import java.util.List;
 
 @Mapper
 public interface EntityMapper {
+    Entity selectByEntityId(String entityId);
 
-    // 查询
-    Entity selectSimpleByEntityId(String entityId); // 根据ID查询
+    List<Entity> selectByEntityName(String entityName);
 
-    Entity selectByEntityId(String entityId); // 根据ID查询
+    List<Entity> selectByParams(Entity entity);
 
-    List<Entity> selectSimpleByEntityName(String entityName); // 根据名字查询
+    List<Entity> selectByKeyword(String entityName);
 
-    List<Entity> selectByEntityName(String entityName); // 根据名字查询
+    int insert(Entity entity);
 
-    List<Entity> selectSimpleByParams(Entity entity); // 根据参数查询
+    int insertSelective(Entity entity);
 
-    List<Entity> selectByParams(Entity entity); // 根据参数查询
+    int deleteByEntityId(String entityId);
 
-    List<Entity> selectSimpleByKeyword(String keyword); // 模糊查询
-
-    List<Entity> selectByKeyword(String keyword); // 模糊查询
-
-    // 插入
-    int insert(Entity entity); // 插入全部
-
-    int insertSelective(Entity entity); // 选择性插入
-
-    // 删除
-    int deleteByEntityId(String entityId); // 根据ID删除
-
-    // 更新
-    int updateByEntityIdSelective(Entity row);
+    int updateByEntityIdSelective(Entity entity);
 
     int updateByEntityId(Entity entity);
 }

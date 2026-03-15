@@ -5,8 +5,6 @@ import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.model.Entity;
 import com.data.profile.service.EntityService;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -55,7 +53,7 @@ public class EntityController {
     }
 
     @DeleteMapping(value = "/delete")
-    public Response delete(@RequestParam(name = "entity_id") String entityId) {
+    public Response delete(@RequestParam(name = "entity_id", required = true) String entityId) {
         int result = entityService.delete(entityId);
         if (result > 0) {
             return Response.success(result);

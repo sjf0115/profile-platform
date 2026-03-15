@@ -137,7 +137,7 @@
                 <el-icon><Bell /></el-icon>
                 <span>事件管理</span>
               </el-dropdown-item>
-              <el-dropdown-item @click="router.push('/entity')">
+              <el-dropdown-item @click="router.push('/project/entity')">
                 <el-icon><User /></el-icon>
                 <span>实体管理</span>
               </el-dropdown-item>
@@ -305,7 +305,7 @@
               <el-icon><Bell /></el-icon>
               <span>事件管理</span>
             </el-menu-item>
-            <el-menu-item index="/entity">
+            <el-menu-item index="/project/entity">
               <el-icon><User /></el-icon>
               <span>实体管理</span>
             </el-menu-item>

@@ -51,8 +51,8 @@
         <!-- 筛选栏 -->
         <div class="filter-bar">
           <div class="filter-left">
-            <el-radio-group v-model="entityType" size="default">
-              <el-radio-button label="entity">实体</el-radio-button>
+            <el-radio-group v-model="entity" size="default">
+              <el-radio-button label="entityIdentifier">实体</el-radio-button>
               <el-radio-button label="user">用户</el-radio-button>
             </el-radio-group>
           </div>
@@ -253,7 +253,7 @@ const router = useRouter()
 const loading = ref(false)
 
 // 实体类型
-const entityType = ref('entity')
+const entity = ref('entityIdentifier')
 
 // 热度统计周期
 const heatPeriod = ref('7d')

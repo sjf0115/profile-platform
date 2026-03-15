@@ -3,10 +3,10 @@ package com.data.profile.common.enums;
 public enum ModelType {
     // 用户
     USER("01", "用户"),
+    // 实体标识
+    ENTITY_IDENTIFIER("02", "实体标识"),
     // 实体
-    ENTITY("02", "实体"),
-    // 实体类型
-    ENTITY_TYPE("03", "实体类型"),
+    ENTITY("03", "实体"),
     // 数据源Schema
     DATASOURCE_SCHEMA("04", "数据源Schema"),
     // 数据源

@@ -49,7 +49,7 @@ public class DefaultIDGenerator {
     }
 
     public static void main(String[] args) {
-        String name = DefaultIDGenerator.generate(ModelType.ENTITY_TYPE);
+        String name = DefaultIDGenerator.generate(ModelType.ENTITY_IDENTIFIER);
         System.out.println(name);
     }
 }

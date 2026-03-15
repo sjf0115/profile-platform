@@ -139,10 +139,10 @@
               style="width: 300px"
             >
               <el-option
-                v-for="entity in entityList"
-                :key="entity.entity_id"
-                :label="entity.entity_type_name + '>' + entity.entity_name"
-                :value="entity.entity_id"
+                v-for="entityIdentifier in entityList"
+                :key="entityIdentifier.entity_id"
+                :label="entityIdentifier.entity_type_name + '>' + entityIdentifier.entity_name"
+                :value="entityIdentifier.entity_id"
               />
             </el-select>
           </el-form-item>
@@ -211,7 +211,7 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft, QuestionFilled, Search, InfoFilled } from '@element-plus/icons-vue'
 import type { Dataset, DatasetField } from '@/types'
 import { datasetApi } from '@/api/dataset'
-import { entityApi, type Entity } from '@/api/entity'
+import { entityApi, type Entity } from '@/api/entityIdentifier'
 
 const router = useRouter()
 
