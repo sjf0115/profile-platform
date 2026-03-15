@@ -46,6 +46,12 @@
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="entity_identifier_name" label="实体标识名称" min-width="120" show-overflow-tooltip />
       <el-table-column prop="entity_name" label="实体" min-width="100" align="center" />
+      <el-table-column prop="status" label="状态" min-width="80" align="center">
+        <template #default="{ row }">
+          <el-tag v-if="row.status === 1" type="success" size="small">启用</el-tag>
+          <el-tag v-else type="danger" size="small">禁用</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="source_type" label="创建方式" min-width="100" align="center">
         <template #default="{ row }">
           <el-tag v-if="row.source_type === 1" type="info" size="small">系统预置</el-tag>
@@ -53,7 +59,7 @@
         </template>
       </el-table-column>
       <el-table-column prop="creator" label="创建人" min-width="100" align="center" />
-      <el-table-column label="操作" min-width="150" align="center" fixed="right">
+      <el-table-column label="操作" min-width="180" align="center" fixed="right">
         <template #default="{ row }">
           <div class="operation-btns">
             <el-button link type="primary" size="small" @click="handleDetail(row)">详情</el-button>
@@ -65,6 +71,15 @@
               @click="handleEdit(row)"
             >
               编辑
+            </el-button>
+            <el-button 
+              v-if="row.source_type !== 1" 
+              link 
+              :type="row.status === 1 ? 'warning' : 'success'" 
+              size="small"
+              @click="handleToggleStatus(row)"
+            >
+              {{ row.status === 1 ? '禁用' : '启用' }}
             </el-button>
             <el-button 
               v-if="row.source_type !== 1" 
@@ -148,6 +163,10 @@
         <el-descriptions-item label="实体标识名称">{{ detailData.entity_identifier_name }}</el-descriptions-item>
         <el-descriptions-item label="所属实体">{{ detailData.entity_name }}</el-descriptions-item>
         <el-descriptions-item label="实体ID">{{ detailData.entity_id }}</el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag v-if="detailData.status === 1" type="success">启用</el-tag>
+          <el-tag v-else type="danger">禁用</el-tag>
+        </el-descriptions-item>
         <el-descriptions-item label="创建方式">
           <el-tag v-if="detailData.source_type === 1" type="info">系统预置</el-tag>
           <el-tag v-else type="success">自定义</el-tag>
@@ -273,6 +292,28 @@ const handleEdit = (row: EntityIdentifier) => {
 const handleDetail = (row: EntityIdentifier) => {
   detailData.value = row
   detailVisible.value = true
+}
+
+// 启用/禁用
+const handleToggleStatus = (row: EntityIdentifier) => {
+  const action = row.status === 1 ? '禁用' : '启用'
+  const newStatus = row.status === 1 ? 0 : 1
+  ElMessageBox.confirm(`确认${action}该实体标识吗？`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await entityIdentifierApi.save({
+        entity_identifier_id: row.entity_identifier_id,
+        status: newStatus
+      })
+      ElMessage.success(`${action}成功`)
+      fetchList()
+    } catch (error) {
+      console.error(`${action}失败:`, error)
+    }
+  }).catch(() => {})
 }
 
 // 删除
