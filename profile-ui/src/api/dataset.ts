@@ -7,6 +7,13 @@ export const datasetApi = {
     return request.post<ApiResponse<Dataset[]>>('/dataset/list', params)
   },
 
+  // 获取可用的数据源列表（根据数据集类型）
+  getDatasources: (datasetType: number) => {
+    return request.get<ApiResponse<any[]>>('/dataset/datasources', {
+      params: { dataset_type: datasetType }
+    })
+  },
+
   // 获取数据集详情
   detail: (datasetId: string) => {
     return request.get<ApiResponse<Dataset>>('/dataset/detail', {
@@ -31,7 +38,7 @@ export const datasetApi = {
 
   // 获取数据表列表
   getTables: (datasourceId: string) => {
-    return request.get<ApiResponse<any[]>>('/dataset/tables', {
+    return request.get<ApiResponse<any[]>>('/datasource/tables', {
       params: { datasource_id: datasourceId }
     })
   },
@@ -40,9 +47,9 @@ export const datasetApi = {
   getFields: (datasourceId: string, tableName: string, datasetId?: string) => {
     return request.get<ApiResponse<any[]>>('/dataset/fields', {
       params: { 
-        datasource_id: datasourceId, 
-        table_name: tableName,
-        dataset_id: datasetId || ''
+        datasourceId: datasourceId, 
+        tableName: tableName,
+        datasetId: datasetId || ''
       }
     })
   }

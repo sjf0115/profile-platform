@@ -1,7 +1,6 @@
 package com.data.profile.manager.service;
 
 import com.data.profile.manager.domain.Column;
-import com.data.profile.manager.domain.ColumnBuilder;
 import com.data.profile.manager.domain.ConnectionParam;
 import com.data.profile.manager.domain.Table;
 import com.google.common.collect.Lists;
@@ -58,13 +57,11 @@ public class JdbcMetaService implements MetaService {
             while (rs.next()) {
                 String columnName = rs.getString("COLUMN_NAME"); // 列名
                 String columnType = rs.getString("TYPE_NAME"); // 数据类型
-                int columnSize = rs.getInt("COLUMN_SIZE"); // 列大小
                 String columnComment = rs.getString("REMARKS"); // 列备注
-                Column column = new ColumnBuilder()
-                        .setColumnName(columnName)
-                        .setColumnType(columnType)
-                        .setColumnComment(columnComment)
-                        .setColumnSize(columnSize)
+                Column column = Column.builder()
+                        .columnName(columnName)
+                        .columnType(columnType)
+                        .columnComment(columnComment)
                         .build();
                 columns.add(column);
 
@@ -98,8 +95,7 @@ public class JdbcMetaService implements MetaService {
             ResultSet rs = meta.getTables(null, databaseName, "%", new String[]{"TABLE"});
             while (rs.next()) {
                 String tableName = rs.getString("TABLE_NAME");
-                Table table = new Table();
-                table.setName(tableName);
+                Table table = Table.builder().tableName(tableName).build();
                 tables.add(table);
             }
             return tables;

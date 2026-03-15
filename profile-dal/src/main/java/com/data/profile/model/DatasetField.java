@@ -27,6 +27,4 @@ public class DatasetField {
     private String columnType;
     // 1-枚举,2-非枚举
     private int distType = 1;
-    // 绑定的对象ID
-    private String relationId;
 }

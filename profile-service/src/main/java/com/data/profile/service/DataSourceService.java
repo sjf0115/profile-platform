@@ -6,8 +6,11 @@ import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.DataSourceMapper;
+import com.data.profile.manager.domain.Column;
+import com.data.profile.manager.domain.Table;
 import com.data.profile.model.DataSource;
 import com.data.profile.model.DataSourceSchema;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -39,17 +42,17 @@ public class DataSourceService {
 
     /**
      * 根据查询条件获取数据源列表
-     * @param dataSource
-     * @return
+     * @param dataSource 查询条件
      */
     public List<DataSource> getList(DataSource dataSource) {
-        return dataSourceMapper.selectByParams(dataSource);
+        List<DataSource> dataSources = dataSourceMapper.selectByParams(dataSource);
+        log.info("根据查询条件获取 {} 个数据源: {}", dataSources.size(), gson.toJson(dataSources));
+        return dataSources;
     }
 
     /**
      * 根据数据源ID获取数据源详细信息
-     * @param dataSourceId
-     * @return
+     * @param dataSourceId 数据源ID
      */
     public Optional<DataSource> getDetail(String dataSourceId) {
         DataSource dataSource = dataSourceMapper.selectByDatasourceId(dataSourceId);
@@ -108,5 +111,35 @@ public class DataSourceService {
         }
         // TODO: 逻辑删除
         return dataSourceMapper.deleteByDatasourceId(dataSourceId);
+    }
+
+    /**
+     * 根据数据源ID获取数据表
+     * @param datasourceId 数据源ID
+     * @return
+     */
+    public List<Table> getTables(String datasourceId) {
+        List<Table> tables = Lists.newArrayList();
+        if (StringUtils.isBlank(datasourceId)) {
+            return tables;
+        }
+
+        try {
+            /* ConnectionParam connectionParam = getConnectionParam(datasourceId);
+            tables = metaService.getTables(connectionParam);*/
+            List<Column> columns = Lists.newArrayList(
+                    Column.builder().columnName("dt").columnComment("日期").columnType("string").build(),
+                    Column.builder().columnName("uid").columnComment("用户ID").columnType("string").build(),
+                    Column.builder().columnName("age").columnComment("年龄").columnType("int").build(),
+                    Column.builder().columnName("sex").columnComment("性别").columnType("string").build()
+            );
+
+            tables = Lists.newArrayList(
+                    Table.builder().tableName("dws_app_user_base_1d").tableComment("用户基础表").isPartitionTable(true).columns(columns).build()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("获取数据表失败: [" + e.getMessage() + "]");
+        }
+        return tables;
     }
 }

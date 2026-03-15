@@ -1,6 +1,11 @@
 package com.data.profile.manager.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 /**
  * 功能：数据库表
@@ -10,8 +15,16 @@ import lombok.Data;
  * 日期：2025/4/6 13:38
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Table {
-    private String name;
-    private String comment;
+    // 表名
+    private String tableName;
+    // 表备注
+    private String tableComment;
+    // 是否是分区表
     private boolean isPartitionTable;
+    // 表字段
+    private List<Column> columns;
 }

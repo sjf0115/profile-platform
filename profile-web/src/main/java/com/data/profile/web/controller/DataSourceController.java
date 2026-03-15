@@ -2,6 +2,7 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.manager.domain.Table;
 import com.data.profile.model.DataSource;
 import com.data.profile.service.DataSourceService;
 import lombok.extern.slf4j.Slf4j;
@@ -64,5 +65,11 @@ public class DataSourceController {
         } else {
             return Response.error("删除数据源失败", ResponseCode.ERROR);
         }
+    }
+
+    @GetMapping(value = "/tables")
+    public Response getTables(@RequestParam(name = "datasource_id") String datasourceId) {
+        List<Table> tables = dataSourceService.getTables(datasourceId);
+        return Response.success(tables);
     }
 }

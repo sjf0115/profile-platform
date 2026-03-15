@@ -29,8 +29,8 @@
               @change="handleDatasourceChange"
             >
               <el-option
-                v-for="item in datasourceList"
-                :key="item.datasource_id"
+                v-for="(item, index) in datasourceList"
+                :key="index"
                 :label="item.datasource_name"
                 :value="item.datasource_id"
               />
@@ -47,10 +47,10 @@
               @change="handleTableChange"
             >
               <el-option
-                v-for="item in tableList"
-                :key="item.name"
-                :label="item.name"
-                :value="item.name"
+                v-for="(item, index) in tableList"
+                :key="index"
+                :label="item.table_name + (item.table_comment ? ' (' + item.table_comment + ')' : '')"
+                :value="item.table_name"
               />
             </el-select>
           </el-form-item>
@@ -66,19 +66,12 @@
 
           <template v-if="formData.has_partition === 1">
             <el-form-item label="时间分区字段" required>
-              <el-select
+              <el-input
                 v-model="formData.partition_field"
-                placeholder="请选择分区字段"
+                placeholder="请输入时间分区字段"
                 clearable
                 style="width: 300px"
-              >
-                <el-option
-                  v-for="field in partitionFieldOptions"
-                  :key="field"
-                  :label="field"
-                  :value="field"
-                />
-              </el-select>
+              />
             </el-form-item>
 
             <el-form-item label="分区值格式" required>
@@ -120,82 +113,86 @@
             />
           </el-form-item>
 
-          <div class="section-title">用户标识配置</div>
+          <div class="section-title">实体标识配置</div>
 
-          <el-form-item label="用户标识字段" required>
+          <el-form-item label="实体字段" required>
             <el-select
               v-model="formData.entity_field"
-              placeholder="请选择用户标识字段"
+              placeholder="请选择实体字段"
               clearable
               style="width: 300px"
             >
               <el-option
-                v-for="field in fieldList"
-                :key="field.field_name"
-                :label="field.field_name"
-                :value="field.field_name"
+                v-for="(field, index) in fieldList"
+                :key="index"
+                :label="field.name"
+                :value="field.name"
               />
             </el-select>
           </el-form-item>
 
-          <el-form-item label="用户标识类型" required>
+          <el-form-item label="实体类型" required>
             <el-select
               v-model="formData.entity_id"
-              placeholder="请选择用户标识类型"
+              placeholder="请选择实体类型"
               clearable
               style="width: 300px"
             >
-              <el-option label="OneID" value="one_id" />
-              <el-option label="手机号" value="mobile" />
-              <el-option label="邮箱" value="email" />
-              <el-option label="设备ID" value="device_id" />
-              <el-option label="会员ID" value="member_id" />
+              <el-option
+                v-for="entity in entityList"
+                :key="entity.entity_id"
+                :label="entity.entity_type_name + '>' + entity.entity_name"
+                :value="entity.entity_id"
+              />
             </el-select>
           </el-form-item>
 
           <div class="section-title">
             字段列表
+            <span class="field-count">共 {{ filteredFieldList.length }} 个字段</span>
             <el-input
               v-model="fieldSearch"
-              placeholder="请输入标签别名或字段名"
+              placeholder="请输入字段名"
               clearable
               style="width: 250px; float: right;"
               :prefix-icon="Search"
             />
           </div>
 
-          <el-table :data="filteredFieldList" border style="width: 100%">
+          <el-table 
+            :data="filteredFieldList" 
+            border 
+            style="width: 100%"
+            max-height="400"
+          >
             <el-table-column type="index" label="序号" width="60" align="center" />
-            <el-table-column prop="field_name" label="字段名" min-width="120" />
-            <el-table-column prop="field_desc" label="字段描述" min-width="150">
+            <el-table-column prop="name" label="字段名" min-width="140" show-overflow-tooltip />
+            <el-table-column prop="alias" label="字段描述" min-width="180">
               <template #default="{ row }">
-                <el-input v-model="row.field_desc" placeholder="请输入字段描述" />
+                <el-input 
+                  v-model="row.alias" 
+                  placeholder="请输入字段描述"
+                  size="small"
+                />
               </template>
             </el-table-column>
-            <el-table-column prop="field_type" label="字段类型" width="100" />
-            <el-table-column label="是否导入" width="80" align="center">
+            <el-table-column prop="column_type" label="字段类型" width="100" align="center" />
+            <el-table-column label="是否导入" width="90" align="center">
               <template #default="{ row }">
-                <el-switch v-model="row.is_import" :active-value="1" :inactive-value="0" />
-              </template>
-            </el-table-column>
-            <el-table-column label="实体ID类型" min-width="150">
-              <template #default="{ row }">
-                <el-select
-                  v-model="row.id_type"
-                  placeholder="请选择"
-                  clearable
-                  style="width: 100%"
-                  :disabled="row.field_name !== formData.entity_field"
-                >
-                  <el-option label="OneID" value="one_id" />
-                  <el-option label="手机号" value="mobile" />
-                  <el-option label="邮箱" value="email" />
-                  <el-option label="设备ID" value="device_id" />
-                  <el-option label="会员ID" value="member_id" />
-                </el-select>
+                <el-switch 
+                  v-model="row.import_status" 
+                  :active-value="1" 
+                  :inactive-value="2"
+                  size="small"
+                />
               </template>
             </el-table-column>
           </el-table>
+
+          <div class="field-tips">
+            <el-icon><InfoFilled /></el-icon>
+            <span>提示：实体字段必须选择为导入状态，否则无法完成创建</span>
+          </div>
 
           <el-form-item class="form-actions">
             <el-button @click="handlePrev">上一步</el-button>
@@ -211,10 +208,10 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, QuestionFilled, Search } from '@element-plus/icons-vue'
+import { ArrowLeft, QuestionFilled, Search, InfoFilled } from '@element-plus/icons-vue'
 import type { Dataset, DatasetField } from '@/types'
 import { datasetApi } from '@/api/dataset'
-import { dataSourceApi } from '@/api/datasource'
+import { entityApi, type Entity } from '@/api/entity'
 
 const router = useRouter()
 
@@ -225,13 +222,22 @@ const activeStep = ref(0)
 const datasourceList = ref<any[]>([])
 
 // 数据表列表
-const tableList = ref<any[]>([])
+interface TableItem {
+  table_name: string
+  table_comment?: string
+  is_partition_table?: boolean
+  columns?: any[]  // 表字段列表
+}
+const tableList = ref<TableItem[]>([])
 
 // 字段列表
 const fieldList = ref<DatasetField[]>([])
 
 // 字段搜索
 const fieldSearch = ref('')
+
+// 实体列表
+const entityList = ref<Entity[]>([])
 
 // 表单数据
 const formData = reactive({
@@ -247,23 +253,13 @@ const formData = reactive({
   fields: [] as DatasetField[]
 })
 
-// 分区字段选项（通常是日期/时间类型的字段）
-const partitionFieldOptions = computed(() => {
-  return fieldList.value
-    .filter(f => {
-      const type = f.field_type?.toLowerCase() || ''
-      return type.includes('date') || type.includes('time') || f.field_name?.toLowerCase().includes('date') || f.field_name?.toLowerCase().includes('time')
-    })
-    .map(f => f.field_name)
-})
-
 // 过滤后的字段列表
 const filteredFieldList = computed(() => {
   if (!fieldSearch.value) return fieldList.value
   const keyword = fieldSearch.value.toLowerCase()
   return fieldList.value.filter(field => 
-    field.field_name?.toLowerCase().includes(keyword) ||
-    field.field_desc?.toLowerCase().includes(keyword)
+    field.name?.toLowerCase().includes(keyword) ||
+    field.alias?.toLowerCase().includes(keyword)
   )
 })
 
@@ -279,51 +275,65 @@ const canGoNext = computed(() => {
 // 获取数据源列表
 const fetchDatasourceList = async () => {
   try {
-    const res = await dataSourceApi.getList({
-      page_num: 1,
-      page_size: 1000
-    })
-    if (res.data.code === 200) {
-      datasourceList.value = res.data.data || []
-    }
+    const res = await datasetApi.getDatasources(1) // dataset_type = 1 标签数据集
+    console.log('数据源列表响应:', res)
+    datasourceList.value = res.data.data || []
+    console.log('数据源列表数据:', datasourceList.value)
   } catch (error) {
     console.error('获取数据源列表失败:', error)
+    ElMessage.error('获取数据源列表失败')
+  }
+}
+
+// 获取数据表列表
+const fetchTableList = async (datasourceId: string) => {
+  try {
+    const res = await datasetApi.getTables(datasourceId)
+    console.log('数据表列表响应:', res)
+    tableList.value = res.data.data || []
+  } catch (error) {
+    console.error('获取数据表列表失败:', error)
+    ElMessage.error('获取数据表列表失败')
+  }
+}
+
+// 获取实体列表
+const fetchEntityList = async () => {
+  try {
+    const res = await entityApi.list()
+    console.log('实体列表响应:', res)
+    entityList.value = res.data.data || []
+  } catch (error) {
+    console.error('获取实体列表失败:', error)
   }
 }
 
 // 数据源变更
-const handleDatasourceChange = async (datasourceId: string) => {
+const handleDatasourceChange = (datasourceId: string) => {
   formData.table_name = ''
+  fieldList.value = []
   tableList.value = []
   if (!datasourceId) return
-  
-  try {
-    const res = await datasetApi.getTables(datasourceId)
-    if (res.data.code === 200) {
-      tableList.value = res.data.data || []
-    }
-  } catch (error) {
-    console.error('获取数据表列表失败:', error)
-  }
+  fetchTableList(datasourceId)
 }
 
 // 数据表变更
-const handleTableChange = async (tableName: string) => {
+const handleTableChange = (tableName: string) => {
   if (!tableName || !formData.datasource_id) return
   
-  try {
-    const res = await datasetApi.getFields(formData.datasource_id, tableName)
-    if (res.data.code === 200) {
-      // 初始化字段列表
-      fieldList.value = (res.data.data || []).map((field: any) => ({
-        ...field,
-        is_import: 1,
-        field_desc: field.field_desc || '',
-        id_type: ''
-      }))
-    }
-  } catch (error) {
-    console.error('获取字段列表失败:', error)
+  // 从已加载的表列表中找到选中的表，获取其 columns 字段
+  const selectedTable = tableList.value.find(t => t.table_name === tableName)
+  if (selectedTable && selectedTable.columns) {
+    fieldList.value = selectedTable.columns.map((col: any) => ({
+      name: col.column_name,
+      alias: col.column_comment || '',
+      column_type: col.column_type,
+      import_status: 1,
+      category: undefined  // 实体ID类型默认为空，需要用户选择
+    }))
+    console.log('字段列表数据:', fieldList.value)
+  } else {
+    fieldList.value = []
   }
 }
 
@@ -353,11 +363,11 @@ const handleSubmit = async () => {
     return
   }
   if (!formData.entity_field) {
-    ElMessage.warning('请选择用户标识字段')
+    ElMessage.warning('请选择实体字段')
     return
   }
   if (!formData.entity_id) {
-    ElMessage.warning('请选择用户标识类型')
+    ElMessage.warning('请选择实体类型')
     return
   }
 
@@ -372,21 +382,21 @@ const handleSubmit = async () => {
       partition_format: formData.has_partition === 1 ? formData.partition_format : undefined,
       entity_field: formData.entity_field,
       entity_id: formData.entity_id,
-      fields: fieldList.value.filter(f => f.is_import === 1)
+      fields: fieldList.value.filter(f => f.import_status === 1)
     }
 
-    const res = await datasetApi.save(submitData as Dataset)
-    if (res.data.code === 200) {
-      ElMessage.success('创建成功')
-      router.push('/project/dataset')
-    }
+    await datasetApi.save(submitData as Dataset)
+    ElMessage.success('创建成功')
+    router.push('/project/dataset')
   } catch (error) {
     console.error('创建失败:', error)
+    // 错误已在响应拦截器中处理，显示错误消息
   }
 }
 
 onMounted(() => {
   fetchDatasourceList()
+  fetchEntityList()
 })
 </script>
 
@@ -442,6 +452,29 @@ onMounted(() => {
   
   &:first-child {
     margin-top: 0;
+  }
+  
+  .field-count {
+    font-size: 13px;
+    font-weight: normal;
+    color: #909399;
+    margin-left: 10px;
+  }
+}
+
+.field-tips {
+  margin-top: 12px;
+  padding: 10px 15px;
+  background-color: #f4f4f5;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #606266;
+  
+  .el-icon {
+    color: #909399;
   }
 }
 

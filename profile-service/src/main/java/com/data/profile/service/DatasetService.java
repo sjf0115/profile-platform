@@ -4,19 +4,15 @@ import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.enums.*;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.manager.domain.Column;
-import com.data.profile.manager.domain.ColumnBuilder;
 import com.data.profile.manager.service.JdbcMetaService;
-import com.data.profile.manager.utils.TemplateBuilder;
 import com.data.profile.manager.utils.JdbcUtil;
 import com.data.profile.dao.DatasetMapper;
 import com.data.profile.manager.domain.ConnectionParam;
-import com.data.profile.manager.domain.Table;
 import com.data.profile.model.DataSource;
 import com.data.profile.model.DataSourceSchema;
 import com.data.profile.model.Dataset;
 import com.data.profile.model.DatasetField;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -103,26 +99,6 @@ public class DatasetService {
     }
 
     /**
-     * 根据数据源ID获取数据表
-     * @param datasourceId
-     * @return
-     */
-    public List<Table> getTables(String datasourceId) {
-        List<Table> tables = Lists.newArrayList();
-        if (StringUtils.isBlank(datasourceId)) {
-            return tables;
-        }
-
-        try {
-            ConnectionParam connectionParam = getConnectionParam(datasourceId);
-            tables = metaService.getTables(connectionParam);
-        } catch (SQLException e) {
-            throw new RuntimeException("获取数据表失败: [" + e.getMessage() + "]");
-        }
-        return tables;
-    }
-
-    /**
      * 获取数据集字段
      * @param datasourceId
      * @param tableName
@@ -194,6 +170,18 @@ public class DatasetService {
         // String datasetTable = createDatasetTable(dataset);
         // LOG.info("创建表语句: " + datasetTable);
         return result;
+    }
+
+    /**
+     * 获取支持的数据源
+     * @param datasetType
+     * @return
+     */
+    public List<DataSource> getDataSources(String datasetType) {
+        // 模拟数据
+        //DataSource dataSource = DataSource.builder().sourceType(1).build();
+        DataSource dataSource = null;
+        return dataSourceService.getList(dataSource);
     }
 
     /**
@@ -280,7 +268,7 @@ public class DatasetService {
      * @param dataset
      * @return
      */
-    private String createDatasetTable(Dataset dataset) {
+    /*private String createDatasetTable(Dataset dataset) {
         String tableName = dataset.getDatasetId();
         String tableComment = dataset.getDatasetName();
         List<DatasetField> fields = dataset.getFields();
@@ -303,5 +291,5 @@ public class DatasetService {
                 .setParams(params)
                 .build();
         return createTableSQL;
-    }
+    }*/
 }

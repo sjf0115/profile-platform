@@ -4,6 +4,7 @@ import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.DataSourceSchemaType;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.manager.domain.Table;
+import com.data.profile.model.DataSource;
 import com.data.profile.model.Dataset;
 import com.data.profile.model.DatasetField;
 import com.data.profile.service.DatasetService;
@@ -62,15 +63,16 @@ public class DatasetController {
         }
     }
 
-    @GetMapping(value = "/tables")
-    public Response getTables(@RequestParam String datasourceId) {
-        List<Table> tables = datasetService.getTables(datasourceId);
-        return Response.success(tables);
+    // 获取支持数据集的数据源
+    @GetMapping(value = "/datasources")
+    public Response getDataSources(@RequestParam(name = "dataset_type") String datasetType) {
+        List<DataSource> dataSources = datasetService.getDataSources(datasetType);
+        return Response.success(dataSources);
     }
 
-    @GetMapping(value = "/fields")
+    /*@GetMapping(value = "/fields")
     public Response getFields(@RequestParam String datasourceId, @RequestParam String tableName, @RequestParam String datasetId) {
         List<DatasetField> fields = datasetService.getDatasetField(datasourceId, tableName, datasetId);
         return Response.success(fields);
-    }
+    }*/
 }
