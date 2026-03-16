@@ -1,18 +1,23 @@
 package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
-import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.common.enums.*;
 import com.data.profile.model.Label;
 import com.data.profile.service.LabelService;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 功能：标签
@@ -25,8 +30,6 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/label", produces = MediaType.APPLICATION_JSON_VALUE)
 public class LabelController {
-    private static Logger LOG = LoggerFactory.getLogger(LabelController.class);
-
     @Autowired
     private LabelService labelService;
 
@@ -37,7 +40,7 @@ public class LabelController {
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam String labelId) {
+    public Response getDetail(@RequestParam(name = "label_id") String labelId) {
         Optional<Label> optional = labelService.getDetail(labelId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -54,5 +57,42 @@ public class LabelController {
         } else {
             return Response.error("添加标签失败", ResponseCode.ERROR);
         }
+    }
+
+    @GetMapping(value = "/config")
+    public Response getConfig() {
+        Map<String, Object> config = new HashMap<>();
+
+        // 标签类型: 1-属性标签,2-行为标签
+        config.put("label_type", Stream.of(LabelType.values())
+                .map(e -> ImmutableMap.of("id", e.getCode(), "name", e.getMessage()))
+                .collect(Collectors.toList()));
+
+        // 标签数据类型: 1-文本型, 2-数值型, 3-时间型
+        config.put("data_type", Stream.of(LabelDataType.values())
+                .map(e -> ImmutableMap.of("id", e.getCode(), "name", e.getMessage()))
+                .collect(Collectors.toList()));
+        
+        // 标签数据分布类型: 1-枚举, 2-非枚举
+        config.put("dist_type", Stream.of(LabelDistType.values())
+                .map(e -> ImmutableMap.of("id", e.getCode(), "name", e.getMessage()))
+                .collect(Collectors.toList()));
+        
+        // 标签组织类型: 1-单值, 2-多值, 3-KV, 4-KKV
+        config.put("organize_type", Stream.of(LabelOrganizeType.values())
+                .map(e -> ImmutableMap.of("id", e.getCode(), "name", e.getMessage()))
+                .collect(Collectors.toList()));
+        
+        // 标签加工类型: 0-未知,1-事实标签,2-统计标签,3-预测标签
+        config.put("produce_type", Stream.of(LabelProduceType.values())
+                .map(e -> ImmutableMap.of("id", e.getCode(), "name", e.getMessage()))
+                .collect(Collectors.toList()));
+        
+        // 标签时效性类型: 0-未知,1-离线标签,2-实时标签
+        config.put("time_type", Stream.of(LabelTimeType.values())
+                .map(e -> ImmutableMap.of("id", e.getCode(), "name", e.getMessage()))
+                .collect(Collectors.toList()));
+        
+        return Response.success(config);
     }
 }

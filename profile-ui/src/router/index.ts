@@ -61,6 +61,18 @@ const routes: RouteRecordRaw[] = [
         name: 'LabelMarket',
         component: () => import('@/views/label/index.vue'),
         meta: { title: '标签管理' },
+      },
+      {
+        path: 'label/create/datasource',
+        name: 'CreateLabelDatasource',
+        component: () => import('@/views/label/create-datasource.vue'),
+        meta: { title: '创建标签 - 数据源导入' },
+      },
+      {
+        path: 'label/create/custom',
+        name: 'CreateLabelCustom',
+        component: () => import('@/views/label/create-custom.vue'),
+        meta: { title: '创建标签 - 自定义标签' },
       },      
       {
         path: 'project/datasource',

@@ -17,8 +17,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -38,7 +36,6 @@ import java.util.stream.Collectors;
 @Service
 public class DatasetService {
     private static final Gson gson = new GsonBuilder().create();
-    private static Logger LOG = LoggerFactory.getLogger(DatasetService.class);
 
     @Resource
     private DatasetMapper datasetMapper;
@@ -54,21 +51,21 @@ public class DatasetService {
 
     /**
      * 根据查询条件获取数据集列表
-     * @param dataset
-     * @return
+     * @param dataset 数据集
      */
     public List<Dataset> getList(Dataset dataset) {
         List<Dataset> datasets = datasetMapper.selectByParams(dataset);
+        log.info("根据查询条件获取 {} 个数据集: {}", datasets.size(), gson.toJson(datasets));
         return datasets;
     }
 
     /**
      * 根据数据集ID获取数据集详细信息
-     * @param datasetId
-     * @return
+     * @param datasetId 数据集ID
      */
     public Optional<Dataset> getDetail(String datasetId) {
         Dataset dataset = datasetMapper.selectByDatasetId(datasetId);
+        log.info("根据数据集ID {} 获取数据集详细信息: {}", datasetId, gson.toJson(dataset));
         if (dataset == null) {
             return Optional.empty();
         }
@@ -77,8 +74,7 @@ public class DatasetService {
 
     /**
      * 保存数据集 创建/修改
-     * @param dataset
-     * @return
+     * @param dataset 数据集
      */
     public int save(Dataset dataset) {
         // 数据集字段判断
@@ -99,12 +95,66 @@ public class DatasetService {
     }
 
     /**
+     * 创建数据集
+     * @param dataset 数据集
+     */
+    private int createDataset(Dataset dataset) {
+        // 数据集名称是否唯一
+        List<Dataset> datasets = datasetMapper.selectByDatasetName(dataset.getDatasetName());
+        if (!datasets.isEmpty()) {
+            log.error("创建数据集失败，数据集 {} 已经存在，不允许重复添加", dataset.getDatasetName());
+            throw new RuntimeException("数据集已经存在，不允许重复添加");
+        }
+        String datasetId = IDGenerator.getInstance().generate(ModelType.DATASET);
+        Dataset target = datasetMapper.selectByDatasetId(datasetId);
+        if (!Objects.equals(target, null)) {
+            log.error("创建数据集失败，数据集ID {} 已经存在，不允许重复添加", datasetId);
+            throw new RuntimeException("数据集ID已经存在，不允许重复添加");
+        }
+        dataset.setDatasetId(datasetId);
+        dataset.setStatus(Status.ENABLE.getCode());
+        dataset.setSourceType(SourceType.CUSTOM.getCode());
+        dataset.setOwner(RequestContext.currentUserId());
+        dataset.setCreator(RequestContext.currentUserId());
+        dataset.setModifier(RequestContext.currentUserId());
+        int result = datasetMapper.insertSelective(dataset);
+        // TODO 创建数据集表 在引擎中创建数据集表
+        // String datasetTable = createDatasetTable(dataset);
+        log.info("创建数据集: {}", gson.toJson(dataset));
+        return result;
+    }
+
+    /**
+     * 修改数据集
+     * @param dataset 数据集
+     */
+    private int updateDataset(Dataset dataset) {
+        dataset.setModifier(RequestContext.currentUserId());
+        log.info("修改数据集: {}", gson.toJson(dataset));
+        return datasetMapper.updateByDatasetIdSelective(dataset);
+    }
+
+    /**
+     * 获取支持的数据源
+     * @param datasetType 数据集类型
+     */
+    public List<DataSource> getDataSources(String datasetType) {
+        // 模拟数据
+        //DataSource dataSource = DataSource.builder().sourceType(1).build();
+        DataSource dataSource = null;
+        List<DataSource> dataSources = dataSourceService.getList(dataSource);
+        log.info("获取数据集类型 {} 支持的数据源: {}", datasetType, gson.toJson(dataSources));
+        return dataSources;
+    }
+
+    /**
      * 获取数据集字段
      * @param datasourceId
      * @param tableName
      * @param datasetId
      * @return
      */
+    @Deprecated
     public List<DatasetField> getDatasetField(String datasourceId, String tableName, String datasetId) {
         // 原始表列
         List<Column> columns = getTableColumns(datasourceId, tableName);
@@ -144,63 +194,12 @@ public class DatasetService {
     }
 
     /**
-     * 创建数据集
-     * @param dataset
-     * @return
-     */
-    private int createDataset(Dataset dataset) {
-        // 数据集名称是否唯一
-        List<Dataset> datasets = datasetMapper.selectByDatasetName(dataset.getDatasetName());
-        if (!datasets.isEmpty()) {
-            throw new RuntimeException("数据集已经存在，不允许重复添加");
-        }
-        String datasetId = IDGenerator.getInstance().generate(ModelType.DATASET);
-        Dataset target = datasetMapper.selectByDatasetId(datasetId);
-        if (!Objects.equals(target, null)) {
-            throw new RuntimeException("数据集ID已经存在，不允许重复添加");
-        }
-        dataset.setDatasetId(datasetId);
-        dataset.setStatus(Status.ENABLE.getCode());
-        dataset.setSourceType(SourceType.CUSTOM.getCode());
-        dataset.setOwner(RequestContext.currentUserId());
-        dataset.setCreator(RequestContext.currentUserId());
-        dataset.setModifier(RequestContext.currentUserId());
-        int result = datasetMapper.insertSelective(dataset);
-        // TODO 创建数据集表 在引擎中创建数据集表
-        // String datasetTable = createDatasetTable(dataset);
-        // LOG.info("创建表语句: " + datasetTable);
-        return result;
-    }
-
-    /**
-     * 获取支持的数据源
-     * @param datasetType
-     * @return
-     */
-    public List<DataSource> getDataSources(String datasetType) {
-        // 模拟数据
-        //DataSource dataSource = DataSource.builder().sourceType(1).build();
-        DataSource dataSource = null;
-        return dataSourceService.getList(dataSource);
-    }
-
-    /**
-     * 修改数据集
-     * @param dataset
-     * @return
-     */
-    private int updateDataset(Dataset dataset) {
-        dataset.setModifier(RequestContext.currentUserId());
-        int result = datasetMapper.updateByDatasetIdSelective(dataset);
-        return result;
-    }
-
-    /**
      * 获取表列信息
      * @param datasourceId
      * @param tableName
      * @return
      */
+    @Deprecated
     private List<Column> getTableColumns(String datasourceId, String tableName) {
         List<Column> columns = Lists.newArrayList();
         if (StringUtils.isBlank(tableName)) {
@@ -220,6 +219,7 @@ public class DatasetService {
      * @param datasourceId
      * @return
      */
+    @Deprecated
     private ConnectionParam getConnectionParam(String datasourceId) {
         // 数据源
         Optional<DataSource> dataSourceOptional = dataSourceService.getDetail(datasourceId);

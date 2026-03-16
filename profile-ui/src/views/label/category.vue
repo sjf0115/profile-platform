@@ -108,8 +108,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, Folder, Search, Refresh } from '@element-plus/icons-vue'
-import type { LabelCategory } from '@/types'
-import { labelCategoryApi } from '@/api/label'
+import { labelCategoryApi, type LabelCategory } from '@/api/labelCategory'
 
 // 类目列表
 const categoryList = ref<LabelCategory[]>([])
@@ -126,7 +125,14 @@ const dialogTitle = ref('新增类目')
 const isEdit = ref(false)
 
 // 表单数据
-const formData = ref<Partial<LabelCategory>>({
+interface FormData {
+  category_id: string
+  category_name: string
+  category_level: number
+  parent_category_id: string
+}
+
+const formData = ref<FormData>({
   category_id: '',
   category_name: '',
   category_level: 1,
@@ -212,11 +218,12 @@ const parentCategoryName = computed(() => {
 // 新增子类目
 const handleAddSub = (row: LabelCategory) => {
   isEdit.value = false
-  dialogTitle.value = `新增${row.category_level + 1}级类目`
+  const level = (row.level || 1) + 1
+  dialogTitle.value = `新增${level}级类目`
   formData.value = {
     category_id: '',
     category_name: '',
-    category_level: row.category_level + 1,
+    category_level: level,
     parent_category_id: row.category_id,
   }
   dialogVisible.value = true
@@ -252,7 +259,12 @@ const handleAdd = (level: number) => {
 const handleEdit = (item: LabelCategory) => {
   isEdit.value = true
   dialogTitle.value = '编辑类目'
-  formData.value = { ...item }
+  formData.value = {
+    category_id: item.category_id,
+    category_name: item.category_name,
+    category_level: item.level || 1,
+    parent_category_id: item.parent_category_id || '',
+  }
   dialogVisible.value = true
 }
 
@@ -285,8 +297,8 @@ const handleSave = async () => {
 
 // 删除类目
 const handleDelete = (item: LabelCategory) => {
-  const isDefault = item.is_default === 1
-  if (isDefault) {
+  // 默认一级类目不能删除
+  if (item.level === 1 && item.category_name === '未分类') {
     ElMessage.warning('默认类目不能删除')
     return
   }
@@ -304,16 +316,6 @@ const handleDelete = (item: LabelCategory) => {
       try {
         await labelCategoryApi.delete(item.category_id)
         ElMessage.success('删除成功')
-        // 重置选中状态
-        if (selectedLevel1.value?.category_id === item.category_id) {
-          selectedLevel1.value = null
-        }
-        if (selectedLevel2.value?.category_id === item.category_id) {
-          selectedLevel2.value = null
-        }
-        if (selectedLevel3.value?.category_id === item.category_id) {
-          selectedLevel3.value = null
-        }
         fetchCategoryList()
       } catch (error) {
         console.error('删除失败:', error)

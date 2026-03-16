@@ -131,18 +131,18 @@
             </el-select>
           </el-form-item>
 
-          <el-form-item label="实体类型" required>
+          <el-form-item label="实体标识" required>
             <el-select
               v-model="formData.entity_id"
-              placeholder="请选择实体类型"
+              placeholder="请选择实体标识"
               clearable
               style="width: 300px"
             >
               <el-option
-                v-for="entityIdentifier in entityList"
-                :key="entityIdentifier.entity_id"
-                :label="entityIdentifier.entity_type_name + '>' + entityIdentifier.entity_name"
-                :value="entityIdentifier.entity_id"
+                v-for="item in entityIdentifierList"
+                :key="item.entity_identifier_id"
+                :label="item.entity_name + '>' + item.entity_identifier_name"
+                :value="item.entity_identifier_id"
               />
             </el-select>
           </el-form-item>
@@ -211,7 +211,7 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft, QuestionFilled, Search, InfoFilled } from '@element-plus/icons-vue'
 import type { Dataset, DatasetField } from '@/types'
 import { datasetApi } from '@/api/dataset'
-import { entityApi, type Entity } from '@/api/entityIdentifier'
+import { entityIdentifierApi, type EntityIdentifier } from '@/api/entity'
 
 const router = useRouter()
 
@@ -236,8 +236,8 @@ const fieldList = ref<DatasetField[]>([])
 // 字段搜索
 const fieldSearch = ref('')
 
-// 实体列表
-const entityList = ref<Entity[]>([])
+// 实体标识列表
+const entityIdentifierList = ref<EntityIdentifier[]>([])
 
 // 表单数据
 const formData = reactive({
@@ -297,14 +297,14 @@ const fetchTableList = async (datasourceId: string) => {
   }
 }
 
-// 获取实体列表
-const fetchEntityList = async () => {
+// 获取实体标识列表
+const fetchEntityIdentifierList = async () => {
   try {
-    const res = await entityApi.list()
-    console.log('实体列表响应:', res)
-    entityList.value = res.data.data || []
+    const res = await entityIdentifierApi.list()
+    console.log('实体标识列表响应:', res)
+    entityIdentifierList.value = res.data.data || []
   } catch (error) {
-    console.error('获取实体列表失败:', error)
+    console.error('获取实体标识列表失败:', error)
   }
 }
 
@@ -396,7 +396,7 @@ const handleSubmit = async () => {
 
 onMounted(() => {
   fetchDatasourceList()
-  fetchEntityList()
+  fetchEntityIdentifierList()
 })
 </script>
 

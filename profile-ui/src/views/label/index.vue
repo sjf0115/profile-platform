@@ -242,10 +242,20 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
-  Plus, Search, Folder, Grid, CircleCheck, More, Coin, Setting, Document, Upload
+  Plus, Search, Folder, Grid, More, Coin, Setting, Document, Upload
 } from '@element-plus/icons-vue'
-import type { Label, LabelCategory, LabelQueryParams } from '@/types'
-import { labelApi, labelCategoryApi } from '@/api/label'
+import { labelApi } from '@/api/label'
+import { labelCategoryApi } from '@/api/labelCategory'
+import type { Label, LabelCategory } from '@/types'
+
+// 标签查询参数
+interface LabelQueryParams {
+  page_num: number
+  page_size: number
+  keyword?: string
+  category_id?: string
+  label_name?: string
+}
 
 const router = useRouter()
 
@@ -478,12 +488,10 @@ const handleCreateByMethod = (method: string) => {
   
   switch (method) {
     case 'datasource':
-      ElMessage.info('数据源导入功能开发中')
-      // router.push('/label/create/datasource')
+      router.push('/label/create/datasource')
       break
     case 'custom':
-      ElMessage.info('自定义标签功能开发中')
-      // router.push('/label/create/custom')
+      router.push('/label/create/custom')
       break
     case 'sql':
       ElMessage.info('SQL创建标签功能开发中')

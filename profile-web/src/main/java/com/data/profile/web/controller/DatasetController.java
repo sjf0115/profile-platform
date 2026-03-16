@@ -1,23 +1,16 @@
 package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
-import com.data.profile.common.enums.DataSourceSchemaType;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.manager.domain.Table;
 import com.data.profile.model.DataSource;
 import com.data.profile.model.Dataset;
-import com.data.profile.model.DatasetField;
 import com.data.profile.service.DatasetService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -31,8 +24,6 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/dataset", produces = MediaType.APPLICATION_JSON_VALUE)
 public class DatasetController {
-    private static Logger LOG = LoggerFactory.getLogger(DatasetController.class);
-
     @Autowired
     private DatasetService datasetService;
 
@@ -43,7 +34,8 @@ public class DatasetController {
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam String datasetId) {
+    public Response getDetail(@RequestParam(name = "dataset_id") String datasetId) {
+        log.info("发起请求查看 {} 的数据集信息", datasetId);
         Optional<Dataset> optional = datasetService.getDetail(datasetId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
