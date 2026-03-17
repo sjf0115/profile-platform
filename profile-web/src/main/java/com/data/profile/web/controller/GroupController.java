@@ -1,12 +1,9 @@
 package com.data.profile.web.controller;
 
-
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.model.Label;
-import com.data.profile.service.LabelService;
-import com.sun.org.slf4j.internal.Logger;
-import com.sun.org.slf4j.internal.LoggerFactory;
+import com.data.profile.model.Group;
+import com.data.profile.service.GroupService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -27,42 +24,42 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/group", produces = MediaType.APPLICATION_JSON_VALUE)
 public class GroupController {
-    private static Logger LOG = LoggerFactory.getLogger(GroupController.class);
+    @Autowired
+    private GroupService groupService;
 
-    /*@Autowired
-    private LabelService labelService;
-
-    @GetMapping(value = "/list")
-    public Response getList(@RequestBody Label label) {
-        List<Label> labels = labelService.getList(label);
-        return Response.success(labels);
+    @PostMapping(value = "/list")
+    public Response getList(@RequestBody Group group) {
+        List<Group> groups = groupService.getList(group);
+        return Response.success(groups);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam String labelId) {
-        Optional<Label> optional = labelService.getDetail(labelId);
+    public Response getDetail(@RequestParam(name = "group_id") String groupId) {
+        Optional<Group> optional = groupService.getDetail(groupId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
         } else {
-            return Response.error("请求的标签不存在", ResponseCode.ERROR);
+            return Response.error("请求的群组不存在", ResponseCode.ERROR);
         }
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody Label label) {
-        int result = labelService.save(label);
+    public Response save(@RequestBody Group group) {
+        int result = groupService.save(group);
         if (result > 0) {
             return Response.success(result);
         } else {
-            return Response.error("添加标签失败", ResponseCode.ERROR);
+            return Response.error("添加群组失败", ResponseCode.ERROR);
         }
-    }*/
+    }
 
-    @PostMapping(value = "/upload")
-    public Response upload(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
-            return Response.error("请选择一个文件上传", ResponseCode.ERROR);
+    @DeleteMapping(value = "/delete")
+    public Response delete(@RequestParam(name = "group_id") String groupId) {
+        int result = groupService.delete(groupId);
+        if (result > 0) {
+            return Response.success(result);
+        } else {
+            return Response.error("删除群组失败", ResponseCode.ERROR);
         }
-        return Response.success(null);
     }
 }
