@@ -73,6 +73,12 @@ const routes: RouteRecordRaw[] = [
         name: 'CreateLabelCustom',
         component: () => import('@/views/label/create-custom.vue'),
         meta: { title: '创建标签 - 自定义标签' },
+      },
+      {
+        path: 'label/detail/:id',
+        name: 'LabelDetail',
+        component: () => import('@/views/label/detail.vue'),
+        meta: { title: '标签详情' },
       },      
       {
         path: 'project/datasource',

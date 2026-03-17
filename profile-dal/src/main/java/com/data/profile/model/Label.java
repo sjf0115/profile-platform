@@ -34,7 +34,7 @@ public class Label {
     // 创建方式: 1-系统内置,2-数据源导入,3-文件上传,4-四则运算,5-SQL计算,6-自定义规则,7-API导入,8-数据表导入
     private Integer sourceType;
     // 标签计算规则,不同创建方式不同规则
-    private String config;
+    private LabelConfig config;
     // 是否官方认证:0-否,1-是
     private Integer isOffice;
     // 标签负责人

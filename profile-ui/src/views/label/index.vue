@@ -244,7 +244,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   Plus, Search, Folder, Grid, More, Coin, Setting, Document, Upload
 } from '@element-plus/icons-vue'
-import { labelApi } from '@/api/label'
+import { labelApi, type LabelConfigResponse } from '@/api/label'
 import { labelCategoryApi } from '@/api/labelCategory'
 import type { Label, LabelCategory } from '@/types'
 
@@ -285,6 +285,55 @@ const labelList = ref<Label[]>([])
 
 // 标签类目列表
 const categoryList = ref<LabelCategory[]>([])
+
+// 标签配置
+const labelConfig = reactive<LabelConfigResponse>({
+  label_type: [],
+  data_type: [],
+  dist_type: [],
+  organize_type: [],
+  produce_type: [],
+  time_type: []
+})
+
+// 获取标签配置
+const fetchLabelConfig = async () => {
+  try {
+    const res = await labelApi.getConfig()
+    const data = res.data.data
+    if (data) {
+      labelConfig.label_type = data.label_type || []
+      labelConfig.data_type = data.data_type || []
+      labelConfig.dist_type = data.dist_type || []
+      labelConfig.organize_type = data.organize_type || []
+      labelConfig.produce_type = data.produce_type || []
+      labelConfig.time_type = data.time_type || []
+    }
+  } catch (error) {
+    console.error('获取标签配置失败:', error)
+  }
+}
+
+// 获取标签类型名称
+const getLabelTypeName = (type?: number) => {
+  if (!type) return '-'
+  const item = labelConfig.label_type.find(t => t.id === type)
+  return item?.name || '-'
+}
+
+// 获取数据类型名称
+const getDataTypeName = (type?: number) => {
+  if (!type) return '-'
+  const item = labelConfig.data_type.find(t => t.id === type)
+  return item?.name || '-'
+}
+
+// 获取分布类型名称
+const getDistTypeName = (type?: number) => {
+  if (!type) return '-'
+  const item = labelConfig.dist_type.find(t => t.id === type)
+  return item?.name || '-'
+}
 
 // 总条数
 const total = ref(0)
@@ -508,8 +557,7 @@ const handleCreateByMethod = (method: string) => {
 
 // 查看详情
 const handleDetail = (row: Label) => {
-  // TODO: 跳转到标签详情页
-  ElMessage.info('标签详情功能开发中')
+  router.push(`/label/detail/${row.label_id}`)
 }
 
 // 编辑标签
@@ -604,6 +652,7 @@ const handleCurrentChange = (val: number) => {
 onMounted(() => {
   fetchCategoryList()
   fetchLabelList()
+  fetchLabelConfig()
 })
 </script>
 

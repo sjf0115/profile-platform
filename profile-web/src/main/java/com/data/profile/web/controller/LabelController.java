@@ -6,6 +6,8 @@ import com.data.profile.model.Label;
 import com.data.profile.service.LabelService;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -30,17 +32,20 @@ import java.util.stream.Stream;
 @RestController
 @RequestMapping(value = "/label", produces = MediaType.APPLICATION_JSON_VALUE)
 public class LabelController {
+    private static final Gson gson = new GsonBuilder().create();
     @Autowired
     private LabelService labelService;
 
     @PostMapping(value = "/list")
     public Response getList(@RequestBody Label label) {
+        log.info("根据标签信息查询标签: {}", gson.toJson(label));
         List<Label> labels = labelService.getList(label);
         return Response.success(labels);
     }
 
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam(name = "label_id") String labelId) {
+        log.info("根据标签ID查询标签信息: {}", labelId);
         Optional<Label> optional = labelService.getDetail(labelId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -51,6 +56,7 @@ public class LabelController {
 
     @PostMapping(value = "/save")
     public Response save(@RequestBody Label label) {
+        log.info("保存/更新标签信息: {}", gson.toJson(label));
         int result = labelService.save(label);
         if (result > 0) {
             return Response.success(result);
@@ -59,8 +65,20 @@ public class LabelController {
         }
     }
 
+    @DeleteMapping(value = "/delete")
+    public Response delete(@RequestParam(name = "label_id") String labelId) {
+        log.info("删除标签: {}", labelId);
+        int result = labelService.delete(labelId);
+        if (result > 0) {
+            return Response.success(result);
+        } else {
+            return Response.error("删除标签失败", ResponseCode.ERROR);
+        }
+    }
+
     @GetMapping(value = "/config")
     public Response getConfig() {
+        log.info("获取标签配置信息");
         Map<String, Object> config = new HashMap<>();
 
         // 标签类型: 1-属性标签,2-行为标签
@@ -90,6 +108,11 @@ public class LabelController {
         
         // 标签时效性类型: 0-未知,1-离线标签,2-实时标签
         config.put("time_type", Stream.of(LabelTimeType.values())
+                .map(e -> ImmutableMap.of("id", e.getCode(), "name", e.getMessage()))
+                .collect(Collectors.toList()));
+
+        // 创建方式: 1-系统内置,2-数据源导入,3-文件上传,4-四则运算,5-SQL计算,6-自定义规则,7-API导入,8-数据表导入
+        config.put("source_type", Stream.of(LabelSourceType.values())
                 .map(e -> ImmutableMap.of("id", e.getCode(), "name", e.getMessage()))
                 .collect(Collectors.toList()));
         

@@ -16,7 +16,7 @@
     <result column="label_produce_type" jdbcType="INTEGER" property="labelProduceType" />
     <result column="label_time_type" jdbcType="INTEGER" property="labelTimeType" />
     <result column="source_type" jdbcType="INTEGER" property="sourceType" />
-    <result column="config" jdbcType="VARCHAR" property="config" />
+    <result column="config" property="config" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.handler.LabelConfigHandler"/>
     <result column="is_office" jdbcType="INTEGER" property="isOffice" />
     <result column="owner" jdbcType="VARCHAR" property="owner" />
     <result column="creator" jdbcType="VARCHAR" property="creator" />

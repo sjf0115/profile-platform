@@ -426,25 +426,31 @@ const handleSubmit = async () => {
     const submitData: any = {
       label_name: formData.label_name,
       label_desc: formData.label_desc,
-      category_id: formData.category_id,
+      label_category_id: formData.category_id,
       label_type: formData.label_type,
-      data_type: formData.data_type,
-      dist_type: formData.dist_type,
-      organize_type: formData.organize_type,
-      produce_type: formData.produce_type,
-      time_type: formData.time_type,
-      label_status: skipSource.value ? 0 : 1  // 跳过则待上架(0)，否则在线(1)
+      label_data_type: formData.data_type,
+      label_dist_type: formData.dist_type,
+      label_organize_type: formData.organize_type,
+      label_produce_type: formData.produce_type,
+      label_time_type: formData.time_type,
+      label_status: skipSource.value ? 0 : 1,  // 跳过则待上架(0)，否则在线(1)
+      source_type: 2  // 数据源导入方式
     }
 
-    // 如果不跳过，添加数据集信息
+    // 组装 config 对象（直接传递对象，后端会自动映射为 LabelConfig）
+    const configObj: any = {}
+
+    // 如果不跳过，添加数据集信息到 config
     if (!skipSource.value) {
       if (formData.dataset_id) {
-        submitData.dataset_id = formData.dataset_id
+        configObj.dataset_id = formData.dataset_id
       }
       if (formData.dataset_field) {
-        submitData.dataset_field = formData.dataset_field
+        configObj.dataset_field = formData.dataset_field
       }
     }
+
+    submitData.config = configObj
 
     await labelApi.save(submitData)
     ElMessage.success('创建成功')

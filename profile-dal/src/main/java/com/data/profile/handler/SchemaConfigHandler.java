@@ -12,8 +12,4 @@ import java.util.List;
  * 日期：2025/4/2 22:53
  */
 public class SchemaConfigHandler extends GsonTypeHandler<List<SchemaConfig>> {
-    // 必须显式调用父类的带参构造函数
-    /*public SchemaConfigHandler() {
-        super(SchemaConfigItem.class);  // 明确传递具体类型
-    }*/
 }
