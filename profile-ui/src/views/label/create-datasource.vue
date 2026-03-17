@@ -242,25 +242,15 @@ const config = reactive<LabelConfigResponse>({
   time_type: []
 })
 
-// 类目树
-const categoryTree = ref<LabelCategory[]>([])
-
 // 层级类目选择
 const selectedLevel1 = ref('')
 const selectedLevel2 = ref('')
 const selectedLevel3 = ref('')
 
-// 计算各级类目
-const level1Categories = computed(() => categoryTree.value)
-const level2Categories = computed(() => {
-  const level1 = categoryTree.value.find(item => item.category_id === selectedLevel1.value)
-  return level1?.children || []
-})
-const level3Categories = computed(() => {
-  const level1 = categoryTree.value.find(item => item.category_id === selectedLevel1.value)
-  const level2 = level1?.children?.find(item => item.category_id === selectedLevel2.value)
-  return level2?.children || []
-})
+// 各级类目列表
+const level1Categories = ref<LabelCategory[]>([])
+const level2Categories = ref<LabelCategory[]>([])
+const level3Categories = ref<LabelCategory[]>([])
 
 // 监听层级选择变化，设置最终的 category_id
 watch([selectedLevel1, selectedLevel2, selectedLevel3], ([level1, level2, level3]) => {
@@ -276,14 +266,53 @@ watch([selectedLevel1, selectedLevel2, selectedLevel3], ([level1, level2, level3
 })
 
 // 一级类目变化
-const handleLevel1Change = (val: string) => {
+const handleLevel1Change = async (val: string) => {
   selectedLevel2.value = ''
   selectedLevel3.value = ''
+  level2Categories.value = []
+  level3Categories.value = []
+  if (val) {
+    await fetchLevel2Categories(val)
+  }
 }
 
 // 二级类目变化
-const handleLevel2Change = (val: string) => {
+const handleLevel2Change = async (val: string) => {
   selectedLevel3.value = ''
+  level3Categories.value = []
+  if (val) {
+    await fetchLevel3Categories(val)
+  }
+}
+
+// 获取一级类目
+const fetchLevel1Categories = async () => {
+  try {
+    const res = await labelCategoryApi.getList({ category_level: 1 })
+    level1Categories.value = res.data.data || []
+  } catch (error) {
+    console.error('获取一级类目失败:', error)
+  }
+}
+
+// 获取二级类目
+const fetchLevel2Categories = async (parentId: string) => {
+  try {
+    const res = await labelCategoryApi.getList({ parent_category_id: parentId })
+    level2Categories.value = res.data.data || []
+  } catch (error) {
+    console.error('获取二级类目失败:', error)
+  }
+}
+
+// 获取三级类目
+const fetchLevel3Categories = async (parentId: string) => {
+  try {
+    const res = await labelCategoryApi.getList({ parent_category_id: parentId })
+    level3Categories.value = res.data.data || []
+  } catch (error) {
+    console.error('获取三级类目失败:', error)
+  }
 }
 
 // 数据集列表
@@ -338,13 +367,9 @@ const fetchConfig = async () => {
 }
 
 // 获取类目树
+// 获取类目列表（已废弃，使用分级加载）
 const fetchCategoryTree = async () => {
-  try {
-    const res = await labelCategoryApi.getList()
-    categoryTree.value = res.data.data || []
-  } catch (error) {
-    console.error('获取类目列表失败:', error)
-  }
+  await fetchLevel1Categories()
 }
 
 // 获取数据集列表（标签数据集）

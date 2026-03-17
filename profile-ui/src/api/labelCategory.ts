@@ -6,7 +6,7 @@ export interface LabelCategory {
   category_id: string
   category_name: string
   parent_category_id?: string
-  level?: number
+  category_level?: number
   children?: LabelCategory[]
   gmt_create?: string
   gmt_modified?: string
