@@ -32,8 +32,10 @@ export const datasetApi = {
   },
 
   // 删除数据集
-  delete: (datasetId: string) => {
-    return request.post<ApiResponse<number>>('/dataset/delete', { dataset_id: datasetId })
+  delete: (dataset_id: string) => {
+    return request.delete<ApiResponse<number>>('/dataset/delete', {
+      params: { dataset_id }
+    })
   },
 
   // 获取数据表列表

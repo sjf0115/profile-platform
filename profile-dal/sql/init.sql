@@ -173,6 +173,7 @@ CREATE TABLE IF NOT EXISTS `profile_meta_label`(
     `label_organize_type` INT NOT NULL DEFAULT 1 COMMENT '标签组织类型: 1-单值,2-多值,3-KV,4-KKV',
     `label_produce_type` INT DEFAULT 0 COMMENT '标签加工类型: 0-未知,1-事实标签,2-统计标签,3-预测标签',
     `label_time_type` INT DEFAULT 0 COMMENT '标签时效性类型: 0-未知,1-离线标签,2-实时标签',
+    `entity_identifier_id` VARCHAR(500) COMMENT '标签实体标识ID',
     `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-数据集导入,3-文件上传,4-四则运算,5-SQL计算,6-自定义规则,7-API导入,8-数据表导入',
     `config` VARCHAR(500) NOT NULL COMMENT '标签计算规则,不同创建方式不同规则',
     `is_office` INT NOT NULL DEFAULT 0 COMMENT '是否官方认证:0-否,1-是',
@@ -190,20 +191,24 @@ INSERT INTO `profile_meta_label` (
     `label_organize_type`,	`label_produce_type`, `label_time_type`, `source_type`, `config`, `is_office`, `owner`, `creator`, `modifier`)
 VALUES (1, '07H137JO1D', '下单次数', 4, 2, '下单次数', '082ENU08E8', 2, 1, 1, 2, 1, 2, '', 1, '0100000', '0100000', '0100000');
 
--- 数据集与标签绑定关系
---DROP TABLE IF EXISTS `profile_meta_dataset_label`;
---CREATE TABLE IF NOT EXISTS `profile_meta_dataset_label`(
---    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
---    `label_id` VARCHAR(40) NOT NULL COMMENT '标签ID',
---    `dataset_id` VARCHAR(40) NOT NULL COMMENT '数据集ID',
---    `dataset_field` VARCHAR(40) NOT NULL COMMENT '数据集字段',
---    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
---    `modifier` VARCHAR(100) NOT NULL COMMENT '最后修改者',
---    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
---    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后修改时间',
---    PRIMARY KEY (`id`),
---    UNIQUE(`dataset_id`, `label_id`)
---)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集与标签绑定关系';
+-- 数据集字段
+DROP TABLE IF EXISTS `profile_meta_dataset_field`;
+CREATE TABLE IF NOT EXISTS `profile_meta_dataset_field`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `dataset_id` VARCHAR(40) NOT NULL COMMENT '数据集ID',
+    `field_status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-新增字段:数据集字段没有但原始表列有(标记新增的标识)、2-修改字段:数据集字段和原始表列均有、3-删除字段:数据集字段有但原始表列已经删除(标记删除标识)',
+    `field_name` VARCHAR(40) NOT NULL COMMENT '字段名称',
+    `field_desc` VARCHAR(200) COMMENT '字段描述',
+    `field_type` VARCHAR(200) NOT NULL COMMENT '字段类型',
+    `import_status` INT NOT NULL DEFAULT 1 COMMENT '导入状态: 1-导入,2-不导入',
+    `related_id` VARCHAR(40) NULL COMMENT '数据集关联对象ID',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '最后修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`dataset_id`, `field_name`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集字段';
 
 -- 9. 群组
 DROP Table `profile_meta_group`;

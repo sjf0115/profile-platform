@@ -130,7 +130,16 @@
               <el-tag v-else type="danger" size="small">禁用</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="label_type" label="标签类型" width="120" />
+          <el-table-column prop="label_type" label="标签类型" width="120">
+            <template #default="{ row }">
+              {{ getLabelTypeName(row.label_type) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="实体标识" width="150">
+            <template #default="{ row }">
+              {{ row.entity_name && row.entity_identifier_name ? `${row.entity_name}>${row.entity_identifier_name}` : '-' }}
+            </template>
+          </el-table-column>
           <el-table-column prop="label_produce_type" label="创建方式" width="100">
             <template #default="{ row }">
               <span v-if="row.label_produce_type === 1">系统生成</span>
@@ -315,9 +324,9 @@ const fetchLabelConfig = async () => {
 }
 
 // 获取标签类型名称
-const getLabelTypeName = (type?: number) => {
+const getLabelTypeName = (type?: string | number) => {
   if (!type) return '-'
-  const item = labelConfig.label_type.find(t => t.id === type)
+  const item = labelConfig.label_type.find(t => t.id.toString() === type.toString())
   return item?.name || '-'
 }
 

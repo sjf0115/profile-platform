@@ -8,10 +8,7 @@ import com.data.profile.manager.service.JdbcMetaService;
 import com.data.profile.manager.utils.JdbcUtil;
 import com.data.profile.dao.DatasetMapper;
 import com.data.profile.manager.domain.ConnectionParam;
-import com.data.profile.model.DataSource;
-import com.data.profile.model.DataSourceSchema;
-import com.data.profile.model.Dataset;
-import com.data.profile.model.DatasetField;
+import com.data.profile.model.*;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -92,6 +89,25 @@ public class DatasetService {
             // 修改数据集
             return updateDataset(dataset);
         }
+    }
+
+    /**
+     * 删除数据集ID
+     * @param datasetId 数据集ID
+     */
+    public int delete(String datasetId) {
+        Dataset dataset = datasetMapper.selectByDatasetId(datasetId);
+        if (Objects.equals(dataset, null)) {
+            log.error("数据集 {} 不存在，无法删除", datasetId);
+            throw new RuntimeException("数据集不存在，无法删除");
+        }
+        if (Objects.equals(dataset.getSourceType(), SourceType.BUILT_IN.getCode())) {
+            log.error("内置数据集 {} 不允许删除", datasetId);
+            throw new RuntimeException("内置数据集不允许删除");
+        }
+        // TODO 检查依赖确保无下游使用
+        log.info("删除数据集: {}", datasetId);
+        return datasetMapper.deleteByDatasetId(datasetId);
     }
 
     /**

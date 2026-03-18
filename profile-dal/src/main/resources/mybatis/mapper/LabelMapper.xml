@@ -1,115 +1,146 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.data.profile.dao.LabelMapper">
-  <resultMap id="BaseResultMap" type="com.data.profile.model.Label">
-    <id column="id" jdbcType="BIGINT" property="id" />
-    <result column="is_valid" jdbcType="INTEGER" property="isValid" />
-    <result column="label_id" jdbcType="VARCHAR" property="labelId" />
-    <result column="label_name" jdbcType="VARCHAR" property="labelName" />
-    <result column="label_status" jdbcType="INTEGER" property="labelStatus" />
-    <result column="label_type" jdbcType="VARCHAR" property="labelType" />
-    <result column="label_desc" jdbcType="VARCHAR" property="labelDesc" />
-    <result column="label_category_id" jdbcType="VARCHAR" property="labelCategoryId" />
-    <result column="label_data_type" jdbcType="INTEGER" property="labelDataType" />
-    <result column="label_dist_type" jdbcType="INTEGER" property="labelDistType" />
-    <result column="label_organize_type" jdbcType="INTEGER" property="labelOrganizeType" />
-    <result column="label_produce_type" jdbcType="INTEGER" property="labelProduceType" />
-    <result column="label_time_type" jdbcType="INTEGER" property="labelTimeType" />
-    <result column="source_type" jdbcType="INTEGER" property="sourceType" />
-    <result column="config" property="config" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.handler.LabelConfigHandler"/>
-    <result column="is_office" jdbcType="INTEGER" property="isOffice" />
-    <result column="owner" jdbcType="VARCHAR" property="owner" />
-    <result column="creator" jdbcType="VARCHAR" property="creator" />
-    <result column="modifier" jdbcType="VARCHAR" property="modifier" />
-    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
-    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
-  </resultMap>
+    <resultMap id="BaseResultMap" type="com.data.profile.model.Label">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="is_valid" jdbcType="INTEGER" property="isValid" />
+        <result column="label_id" jdbcType="VARCHAR" property="labelId" />
+        <result column="label_name" jdbcType="VARCHAR" property="labelName" />
+        <result column="label_status" jdbcType="INTEGER" property="labelStatus" />
+        <result column="label_type" jdbcType="VARCHAR" property="labelType" />
+        <result column="label_desc" jdbcType="VARCHAR" property="labelDesc" />
+        <result column="label_category_id" jdbcType="VARCHAR" property="labelCategoryId" />
+        <result column="label_data_type" jdbcType="INTEGER" property="labelDataType" />
+        <result column="label_dist_type" jdbcType="INTEGER" property="labelDistType" />
+        <result column="label_organize_type" jdbcType="INTEGER" property="labelOrganizeType" />
+        <result column="label_produce_type" jdbcType="INTEGER" property="labelProduceType" />
+        <result column="label_time_type" jdbcType="INTEGER" property="labelTimeType" />
+        <result column="entity_identifier_id" jdbcType="VARCHAR" property="entityIdentifierId" />
+        <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+        <result column="config" property="config" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.handler.LabelConfigHandler"/>
+        <result column="is_office" jdbcType="INTEGER" property="isOffice" />
+        <result column="owner" jdbcType="VARCHAR" property="owner" />
+        <result column="creator" jdbcType="VARCHAR" property="creator" />
+        <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+    </resultMap>
 
-  <sql id="Base_Column_List">
-    id, is_valid, label_id, label_name, label_status, label_type, label_desc, label_category_id, 
-    label_data_type, label_dist_type, label_organize_type, label_produce_type, label_time_type, 
-    source_type, config, is_office, owner, creator, modifier, gmt_create, gmt_modified
-  </sql>
+    <resultMap extends="BaseResultMap" id="ResultMapWithEntity" type="com.data.profile.model.Label">
+        <result column="entity_identifier_name" jdbcType="VARCHAR" property="entityIdentifierName" />
+        <result column="entity_id" jdbcType="VARCHAR" property="entityId" />
+        <result column="entity_name" jdbcType="VARCHAR" property="entityName" />
+    </resultMap>
 
-  <select id="selectByLabelId" parameterType="java.lang.String" resultMap="BaseResultMap">
-    select 
-    <include refid="Base_Column_List" />
-    from profile_meta_label
-    where label_id = #{labelId,jdbcType=VARCHAR}
-  </select>
+    <sql id="Base_Column_List">
+        t1.id, t1.is_valid, t1.label_id, t1.label_name, t1.label_status, t1.label_type, t1.label_desc, t1.label_category_id,
+        t1.label_data_type, t1.label_dist_type, t1.label_organize_type, t1.label_produce_type, t1.label_time_type,
+        t1.entity_identifier_id, t1.source_type, t1.config, t1.is_office, t1.owner, t1.creator, t1.modifier, t1.gmt_create, t1.gmt_modified
+    </sql>
+
+    <sql id="Entity_Column_List">
+        t2.entity_identifier_name, t2.entity_id, t3.entity_name
+    </sql>
+
+    <select id="selectSimpleByLabelId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+            <include refid="Base_Column_List" />
+        from profile_meta_label as t1
+        where label_id = #{labelId,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByLabelId" parameterType="java.lang.String" resultMap="ResultMapWithEntity">
+        select
+            <include refid="Base_Column_List" />
+            ,<include refid="Entity_Column_List" />
+        from profile_meta_label as t1
+        left outer join profile_meta_entity_identifier as t2
+        on t1.entity_identifier_id = t2.entity_identifier_id
+        left outer join profile_meta_entity as t3
+        on t2.entity_id = t3.entity_id
+        where label_id = #{labelId,jdbcType=VARCHAR}
+    </select>
 
   <select id="selectByLabelName" parameterType="java.lang.String" resultMap="BaseResultMap">
     select
-    <include refid="Base_Column_List" />
-    from profile_meta_label
+        <include refid="Base_Column_List" />
+    from profile_meta_label as t1
     where label_name = #{labelName,jdbcType=VARCHAR}
   </select>
 
-  <select id="selectByParams" parameterType="com.data.profile.model.Label" resultMap="BaseResultMap">
+  <select id="selectByParams" parameterType="com.data.profile.model.Label" resultMap="ResultMapWithEntity">
     select
-    <include refid="Base_Column_List" />
-    from profile_meta_label
+        <include refid="Base_Column_List" />
+      ,<include refid="Entity_Column_List" />
+    from profile_meta_label as t1
+    left outer join profile_meta_entity_identifier as t2
+    on t1.entity_identifier_id = t2.entity_identifier_id
+    left outer join profile_meta_entity as t3
+    on t2.entity_id = t3.entity_id
     where 1 = 1
     <if test="isValid != null">
-      AND is_valid = #{isValid,jdbcType=INTEGER}
+      AND t1.is_valid = #{isValid,jdbcType=INTEGER}
     </if>
     <if test="labelId != null">
-      AND label_id = #{labelId,jdbcType=VARCHAR}
+      AND t1.label_id = #{labelId,jdbcType=VARCHAR}
     </if>
     <if test="labelName != null">
-      AND label_name = #{labelName,jdbcType=VARCHAR}
+      AND t1.label_name = #{labelName,jdbcType=VARCHAR}
     </if>
     <if test="labelStatus != null">
-      AND label_status = #{labelStatus,jdbcType=INTEGER}
+      AND t1.label_status = #{labelStatus,jdbcType=INTEGER}
     </if>
     <if test="labelType != null">
-      AND label_type = #{labelType,jdbcType=VARCHAR}
+      AND t1.label_type = #{labelType,jdbcType=VARCHAR}
     </if>
     <if test="labelCategoryId != null">
-      AND label_category_id = #{labelCategoryId,jdbcType=VARCHAR}
+      AND t1.label_category_id = #{labelCategoryId,jdbcType=VARCHAR}
     </if>
     <if test="labelDataType != null">
-      AND label_data_type = #{labelDataType,jdbcType=INTEGER}
+      AND t1.label_data_type = #{labelDataType,jdbcType=INTEGER}
     </if>
     <if test="labelDistType != null">
-      AND label_dist_type = #{labelDistType,jdbcType=INTEGER}
+      AND t1.label_dist_type = #{labelDistType,jdbcType=INTEGER}
     </if>
     <if test="labelOrganizeType != null">
-      AND label_organize_type = #{labelOrganizeType,jdbcType=INTEGER}
+      AND t1.label_organize_type = #{labelOrganizeType,jdbcType=INTEGER}
     </if>
     <if test="labelProduceType != null">
-      AND label_produce_type = #{labelProduceType,jdbcType=INTEGER}
+      AND t1.label_produce_type = #{labelProduceType,jdbcType=INTEGER}
     </if>
     <if test="labelTimeType != null">
-      AND label_time_type = #{labelTimeType,jdbcType=INTEGER}
+      AND t1.label_time_type = #{labelTimeType,jdbcType=INTEGER}
+    </if>
+    <if test="entityIdentifierId != null">
+      AND t1.entity_identifier_id = #{entityIdentifierId,jdbcType=VARCHAR}
     </if>
     <if test="sourceType != null">
-      AND source_type = #{sourceType,jdbcType=INTEGER}
+      AND t1.source_type = #{sourceType,jdbcType=INTEGER}
     </if>
     <if test="isOffice != null">
-      AND is_office = #{isOffice,jdbcType=INTEGER}
+      AND t1.is_office = #{isOffice,jdbcType=INTEGER}
     </if>
     <if test="owner != null">
-      AND owner = #{owner,jdbcType=VARCHAR}
+      AND t1.owner = #{owner,jdbcType=VARCHAR}
     </if>
     <if test="creator != null">
-      AND creator = #{creator,jdbcType=VARCHAR}
+      AND t1.creator = #{creator,jdbcType=VARCHAR}
     </if>
     <if test="modifier != null">
-      AND modifier = #{modifier,jdbcType=VARCHAR}
+      AND t1.modifier = #{modifier,jdbcType=VARCHAR}
     </if>
     <if test="gmtCreate != null">
-      AND gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}
+      AND t1.gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}
     </if>
     <if test="gmtModified != null">
-      AND gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
+      AND t1.gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
     </if>
   </select>
 
   <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
     select
-    <include refid="Base_Column_List" />
-    from profile_meta_label
+        <include refid="Base_Column_List" />
+    from profile_meta_label as t1
     where label_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
   </select>
 
@@ -117,14 +148,14 @@
     insert into profile_meta_label (is_valid, label_id,
       label_name, label_status, label_type, 
       label_desc, label_category_id, label_data_type, 
-      label_dist_type, label_organize_type, label_produce_type, 
-      label_time_type, source_type, config, is_office,
+      label_dist_type, label_organize_type, label_produce_type, label_time_type,
+      entity_identifier_id, source_type, config, is_office,
       owner, creator, modifier)
     values (#{isValid,jdbcType=INTEGER}, #{labelId,jdbcType=VARCHAR},
       #{labelName,jdbcType=VARCHAR}, #{labelStatus,jdbcType=INTEGER}, #{labelType,jdbcType=VARCHAR},
       #{labelDesc,jdbcType=VARCHAR}, #{labelCategoryId,jdbcType=VARCHAR}, #{labelDataType,jdbcType=INTEGER}, 
       #{labelDistType,jdbcType=INTEGER}, #{labelOrganizeType,jdbcType=INTEGER}, #{labelProduceType,jdbcType=INTEGER}, 
-      #{labelTimeType,jdbcType=INTEGER}, #{sourceType,jdbcType=INTEGER}, #{config,jdbcType=VARCHAR},
+      #{labelTimeType,jdbcType=INTEGER}, #{entityIdentifierId,jdbcType=VARCHAR}, #{sourceType,jdbcType=INTEGER}, #{config,jdbcType=VARCHAR},
       #{isOffice,jdbcType=INTEGER}, #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR})
   </insert>
 
@@ -166,6 +197,9 @@
       </if>
       <if test="labelTimeType != null">
         label_time_type,
+      </if>
+      <if test="entityIdentifierId != null">
+        entity_identifier_id,
       </if>
       <if test="sourceType != null">
         source_type,
@@ -223,6 +257,9 @@
       <if test="labelTimeType != null">
         #{labelTimeType,jdbcType=INTEGER},
       </if>
+      <if test="entityIdentifierId != null">
+        #{entityIdentifierId,jdbcType=VARCHAR},
+      </if>
       <if test="sourceType != null">
         #{sourceType,jdbcType=INTEGER},
       </if>
@@ -262,6 +299,7 @@
         label_organize_type = #{labelOrganizeType,jdbcType=INTEGER},
         label_produce_type = #{labelProduceType,jdbcType=INTEGER},
         label_time_type = #{labelTimeType,jdbcType=INTEGER},
+        entity_identifier_id = #{entityIdentifierId,jdbcType=VARCHAR},
         source_type = #{sourceType,jdbcType=INTEGER},
         config = #{config,jdbcType=VARCHAR},
         is_office = #{isOffice,jdbcType=INTEGER},
@@ -306,6 +344,9 @@
       </if>
       <if test="labelTimeType != null">
         label_time_type = #{labelTimeType,jdbcType=INTEGER},
+      </if>
+      <if test="entityIdentifierId != null">
+        entity_identifier_id = #{entityIdentifierId,jdbcType=VARCHAR},
       </if>
       <if test="sourceType != null">
         source_type = #{sourceType,jdbcType=INTEGER},

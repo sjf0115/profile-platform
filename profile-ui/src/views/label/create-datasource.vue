@@ -168,6 +168,22 @@
           </el-form-item>
 
           <template v-if="!skipSource">
+            <el-form-item label="实体标识" prop="entity_identifier_id">
+              <el-select 
+                v-model="formData.entity_identifier_id" 
+                placeholder="请选择实体标识"
+                clearable
+                style="width: 100%"
+              >
+                <el-option 
+                  v-for="item in entityIdentifierList" 
+                  :key="item.entity_identifier_id" 
+                  :label="`${item.entity_name}>${item.entity_identifier_name}`" 
+                  :value="item.entity_identifier_id" 
+                />
+              </el-select>
+            </el-form-item>
+
             <el-form-item label="数据集名称" prop="dataset_id">
               <el-select 
                 v-model="formData.dataset_id" 
@@ -220,8 +236,10 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
 import { labelApi, type LabelConfigResponse } from '@/api/label'
-import { labelCategoryApi, type LabelCategory } from '@/api/labelCategory'
+import { labelCategoryApi } from '@/api/labelCategory'
+import type { LabelCategory } from '@/types'
 import { datasetApi } from '@/api/dataset'
+import { entityIdentifierApi } from '@/api/entity'
 
 const router = useRouter()
 
@@ -315,6 +333,9 @@ const fetchLevel3Categories = async (parentId: string) => {
   }
 }
 
+// 实体标识列表
+const entityIdentifierList = ref<any[]>([])
+
 // 数据集列表
 const datasetList = ref<any[]>([])
 
@@ -332,6 +353,7 @@ const formData = reactive({
   organize_type: 1, // 默认为单值
   produce_type: 1,  // 默认为事实标签
   time_type: 1,     // 默认为离线标签
+  entity_identifier_id: '',  // 实体标识ID
   dataset_id: '',
   dataset_field: ''
 })
@@ -370,6 +392,16 @@ const fetchConfig = async () => {
 // 获取类目列表（已废弃，使用分级加载）
 const fetchCategoryTree = async () => {
   await fetchLevel1Categories()
+}
+
+// 获取实体标识列表
+const fetchEntityIdentifierList = async () => {
+  try {
+    const res = await entityIdentifierApi.list()
+    entityIdentifierList.value = res.data.data || []
+  } catch (error) {
+    console.error('获取实体标识列表失败:', error)
+  }
 }
 
 // 获取数据集列表（标签数据集）
@@ -437,6 +469,13 @@ const handleSubmit = async () => {
       source_type: 2  // 数据源导入方式
     }
 
+    // 如果不跳过，添加实体标识和数据集信息
+    if (!skipSource.value) {
+      if (formData.entity_identifier_id) {
+        submitData.entity_identifier_id = formData.entity_identifier_id
+      }
+    }
+
     // 组装 config 对象（直接传递对象，后端会自动映射为 LabelConfig）
     const configObj: any = {}
 
@@ -468,6 +507,7 @@ const goBack = () => {
 onMounted(() => {
   fetchConfig()
   fetchCategoryTree()
+  fetchEntityIdentifierList()
   fetchDatasetList()
 })
 </script>

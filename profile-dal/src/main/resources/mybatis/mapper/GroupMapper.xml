@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.dao.GroupMapper">
+  <resultMap id="BaseResultMap" type="com.data.profile.model.Group">
+    <result column="group_id" jdbcType="VARCHAR" property="groupId" />
+    <result column="group_status" jdbcType="INTEGER" property="groupStatus" />
+    <result column="group_name" jdbcType="VARCHAR" property="groupName" />
+    <result column="group_type" jdbcType="INTEGER" property="groupType" />
+    <result column="group_desc" jdbcType="VARCHAR" property="groupDesc" />
+    <result column="group_rule" jdbcType="VARCHAR" property="groupRule" />
+    <result column="group_count" jdbcType="INTEGER" property="groupCount" />
+    <result column="entity_id" jdbcType="VARCHAR" property="entityId" />
+    <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+    <result column="instance_id" jdbcType="INTEGER" property="instanceId" />
+    <result column="instance_status" jdbcType="INTEGER" property="instanceStatus" />
+    <result column="instance_start_time" jdbcType="TIMESTAMP" property="instanceStartTime" />
+    <result column="instance_end_time" jdbcType="TIMESTAMP" property="instanceEndTime" />
+    <result column="instance_msg" jdbcType="VARCHAR" property="instanceMsg" />
+    <result column="owner" jdbcType="VARCHAR" property="owner" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    t1.id, t1.group_id, t1.group_status, t1.group_name, t1.group_type, t1.group_desc, 
+    t1.group_rule, t1.group_count, t1.entity_id, t1.source_type, t1.instance_id, 
+    t1.instance_status, t1.instance_start_time, t1.instance_end_time, t1.instance_msg,
+    t1.owner, t1.creator, t1.modifier, t1.gmt_create, t1.gmt_modified
+  </sql>
+
+  <select id="selectSimpleByGroupId" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from profile_meta_group as t1
+    where group_id = #{groupId,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectByGroupId" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+        <include refid="Base_Column_List" />
+    from profile_meta_group as t1
+    where group_id = #{groupId,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectSimpleByGroupName" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+        <include refid="Base_Column_List" />
+    from profile_meta_group as t1
+    where group_name = #{groupName,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectByGroupName" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+        <include refid="Base_Column_List" />
+    from profile_meta_group as t1
+    where group_name = #{groupName,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectSimpleByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+        <include refid="Base_Column_List" />
+    from profile_meta_group as t1
+    where group_name LIKE CONCAT('%', #{groupName,jdbcType=VARCHAR}, '%')
+  </select>
+
+  <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+        <include refid="Base_Column_List" />
+    from profile_meta_group as t1
+    where group_name LIKE CONCAT('%', #{groupName,jdbcType=VARCHAR}, '%')
+  </select>
+
+  <select id="selectSimpleByParams" parameterType="com.data.profile.model.Group" resultMap="BaseResultMap">
+    select
+        <include refid="Base_Column_List" />
+    from profile_meta_group as t1
+    where 1 = 1
+    <if test="groupStatus != null">
+      and group_status = #{groupStatus,jdbcType=INTEGER}
+    </if>
+    <if test="groupId != null and groupId != ''">
+      and group_id = #{groupId,jdbcType=VARCHAR}
+    </if>
+    <if test="groupName != null and groupName != ''">
+      and group_name = #{groupName,jdbcType=VARCHAR}
+    </if>
+    <if test="groupType != null">
+      and group_type = #{groupType,jdbcType=INTEGER}
+    </if>
+    <if test="entityId != null and entityId != ''">
+      and entity_id = #{entityId,jdbcType=VARCHAR}
+    </if>
+    <if test="sourceType != null">
+      and source_type = #{sourceType,jdbcType=INTEGER}
+    </if>
+    <if test="creator != null and creator != ''">
+      and creator = #{creator,jdbcType=VARCHAR}
+    </if>
+    <if test="modifier != null and modifier != ''">
+      and modifier = #{modifier,jdbcType=VARCHAR}
+    </if>
+  </select>
+
+  <select id="selectByParams" parameterType="com.data.profile.model.Group" resultMap="BaseResultMap">
+    select
+        <include refid="Base_Column_List" />
+    from profile_meta_group as t1
+    where 1 = 1
+    <if test="groupStatus != null">
+      and group_status = #{groupStatus,jdbcType=INTEGER}
+    </if>
+    <if test="groupId != null and groupId != ''">
+      and group_id = #{groupId,jdbcType=VARCHAR}
+    </if>
+    <if test="groupName != null and groupName != ''">
+      and group_name = #{groupName,jdbcType=VARCHAR}
+    </if>
+    <if test="groupType != null">
+      and group_type = #{groupType,jdbcType=INTEGER}
+    </if>
+    <if test="sourceType != null">
+      and source_type = #{sourceType,jdbcType=INTEGER}
+    </if>
+    <if test="creator != null and creator != ''">
+      and creator = #{creator,jdbcType=VARCHAR}
+    </if>
+    <if test="modifier != null and modifier != ''">
+      and modifier = #{modifier,jdbcType=VARCHAR}
+    </if>
+    <if test="entityId != null and entityId != ''">
+      and entity_id = #{entityId,jdbcType=VARCHAR}
+    </if>
+  </select>
+
+  <delete id="deleteByGroupId" parameterType="java.lang.String">
+    delete from profile_meta_group
+    where group_id = #{groupId,jdbcType=VARCHAR}
+  </delete>
+
+  <insert id="insert" parameterType="com.data.profile.model.Group">
+    insert into profile_meta_group (
+      group_id, group_status, group_name, group_type, group_desc, 
+      group_rule, group_count, entity_id, source_type, instance_id, 
+      instance_status, instance_start_time, instance_end_time, instance_msg,
+      owner, creator, modifier
+    ) values (
+      #{groupId,jdbcType=VARCHAR}, #{groupStatus,jdbcType=INTEGER}, #{groupName,jdbcType=VARCHAR}, 
+      #{groupType,jdbcType=INTEGER}, #{groupDesc,jdbcType=VARCHAR}, #{groupRule,jdbcType=VARCHAR}, 
+      #{groupCount,jdbcType=INTEGER}, #{entityId,jdbcType=VARCHAR}, #{sourceType,jdbcType=INTEGER}, 
+      #{instanceId,jdbcType=INTEGER}, #{instanceStatus,jdbcType=INTEGER}, 
+      #{instanceStartTime,jdbcType=TIMESTAMP}, #{instanceEndTime,jdbcType=TIMESTAMP}, 
+      #{instanceMsg,jdbcType=VARCHAR}, #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, 
+      #{modifier,jdbcType=VARCHAR}
+    )
+  </insert>
+
+  <insert id="insertSelective" parameterType="com.data.profile.model.Group">
+    insert into profile_meta_group
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="groupId != null and groupId != ''">
+        group_id,
+      </if>
+      <if test="groupStatus != null">
+        group_status,
+      </if>
+      <if test="groupName != null and groupName != ''">
+        group_name,
+      </if>
+      <if test="groupType != null">
+        group_type,
+      </if>
+      <if test="groupDesc != null and groupDesc != ''">
+        group_desc,
+      </if>
+      <if test="groupRule != null and groupRule != ''">
+        group_rule,
+      </if>
+      <if test="groupCount != null">
+        group_count,
+      </if>
+      <if test="entityId != null and entityId != ''">
+        entity_id,
+      </if>
+      <if test="sourceType != null">
+        source_type,
+      </if>
+      <if test="instanceId != null">
+        instance_id,
+      </if>
+      <if test="instanceStatus != null">
+        instance_status,
+      </if>
+      <if test="instanceStartTime != null">
+        instance_start_time,
+      </if>
+      <if test="instanceEndTime != null">
+        instance_end_time,
+      </if>
+      <if test="instanceMsg != null and instanceMsg != ''">
+        instance_msg,
+      </if>
+      <if test="owner != null and owner != ''">
+        owner,
+      </if>
+      <if test="creator != null and creator != ''">
+        creator,
+      </if>
+      <if test="modifier != null and modifier != ''">
+        modifier,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="groupId != null and groupId != ''">
+        #{groupId,jdbcType=VARCHAR},
+      </if>
+      <if test="groupStatus != null">
+        #{groupStatus,jdbcType=INTEGER},
+      </if>
+      <if test="groupName != null and groupName != ''">
+        #{groupName,jdbcType=VARCHAR},
+      </if>
+      <if test="groupType != null">
+        #{groupType,jdbcType=INTEGER},
+      </if>
+      <if test="groupDesc != null and groupDesc != ''">
+        #{groupDesc,jdbcType=VARCHAR},
+      </if>
+      <if test="groupRule != null and groupRule != ''">
+        #{groupRule,jdbcType=VARCHAR},
+      </if>
+      <if test="groupCount != null">
+        #{groupCount,jdbcType=INTEGER},
+      </if>
+      <if test="entityId != null and entityId != ''">
+        #{entityId,jdbcType=VARCHAR},
+      </if>
+      <if test="sourceType != null">
+        #{sourceType,jdbcType=INTEGER},
+      </if>
+      <if test="instanceId != null">
+        #{instanceId,jdbcType=INTEGER},
+      </if>
+      <if test="instanceStatus != null">
+        #{instanceStatus,jdbcType=INTEGER},
+      </if>
+      <if test="instanceStartTime != null">
+        #{instanceStartTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="instanceEndTime != null">
+        #{instanceEndTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="instanceMsg != null and instanceMsg != ''">
+        #{instanceMsg,jdbcType=VARCHAR},
+      </if>
+      <if test="owner != null and owner != ''">
+        #{owner,jdbcType=VARCHAR},
+      </if>
+      <if test="creator != null and creator != ''">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="modifier != null and modifier != ''">
+        #{modifier,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+
+  <update id="updateByGroupIdSelective" parameterType="com.data.profile.model.Group">
+    update profile_meta_group
+    <set>
+      <if test="groupStatus != null">
+        group_status = #{groupStatus,jdbcType=INTEGER},
+      </if>
+      <if test="groupName != null and groupName != ''">
+        group_name = #{groupName,jdbcType=VARCHAR},
+      </if>
+      <if test="groupType != null">
+        group_type = #{groupType,jdbcType=INTEGER},
+      </if>
+      <if test="groupDesc != null and groupDesc != ''">
+        group_desc = #{groupDesc,jdbcType=VARCHAR},
+      </if>
+      <if test="groupRule != null and groupRule != ''">
+        group_rule = #{groupRule,jdbcType=VARCHAR},
+      </if>
+      <if test="groupCount != null">
+        group_count = #{groupCount,jdbcType=INTEGER},
+      </if>
+      <if test="entityId != null and entityId != ''">
+        entity_id = #{entityId,jdbcType=VARCHAR},
+      </if>
+      <if test="sourceType != null">
+        source_type = #{sourceType,jdbcType=INTEGER},
+      </if>
+      <if test="instanceId != null">
+        instance_id = #{instanceId,jdbcType=INTEGER},
+      </if>
+      <if test="instanceStatus != null">
+        instance_status = #{instanceStatus,jdbcType=INTEGER},
+      </if>
+      <if test="instanceStartTime != null">
+        instance_start_time = #{instanceStartTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="instanceEndTime != null">
+        instance_end_time = #{instanceEndTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="instanceMsg != null and instanceMsg != ''">
+        instance_msg = #{instanceMsg,jdbcType=VARCHAR},
+      </if>
+      <if test="owner != null and owner != ''">
+        owner = #{owner,jdbcType=VARCHAR},
+      </if>
+      <if test="creator != null and creator != ''">
+        creator = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="modifier != null and modifier != ''">
+        modifier = #{modifier,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where group_id = #{groupId,jdbcType=VARCHAR}
+  </update>
+
+  <update id="updateByGroupId" parameterType="com.data.profile.model.Group">
+    update profile_meta_group
+    set 
+      group_status = #{groupStatus,jdbcType=INTEGER},
+      group_name = #{groupName,jdbcType=VARCHAR},
+      group_type = #{groupType,jdbcType=INTEGER},
+      group_desc = #{groupDesc,jdbcType=VARCHAR},
+      group_rule = #{groupRule,jdbcType=VARCHAR},
+      group_count = #{groupCount,jdbcType=INTEGER},
+      entity_id = #{entityId,jdbcType=VARCHAR},
+      source_type = #{sourceType,jdbcType=INTEGER},
+      instance_id = #{instanceId,jdbcType=INTEGER},
+      instance_status = #{instanceStatus,jdbcType=INTEGER},
+      instance_start_time = #{instanceStartTime,jdbcType=TIMESTAMP},
+      instance_end_time = #{instanceEndTime,jdbcType=TIMESTAMP},
+      instance_msg = #{instanceMsg,jdbcType=VARCHAR},
+      owner = #{owner,jdbcType=VARCHAR},
+      creator = #{creator,jdbcType=VARCHAR},
+      modifier = #{modifier,jdbcType=VARCHAR}
+    where group_id = #{groupId,jdbcType=VARCHAR}
+  </update>
+</mapper>
