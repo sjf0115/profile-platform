@@ -99,6 +99,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '创建标签数据集' },
       },
       {
+        path: 'dataset/detail/:id',
+        name: 'DatasetDetail',
+        component: () => import('@/views/dataset/detail.vue'),
+        meta: { title: '数据集详情' },
+      },
+      {
+        path: 'dataset/edit/:id',
+        name: 'DatasetEdit',
+        component: () => import('@/views/dataset/create-label.vue'),
+        meta: { title: '编辑标签数据集' },
+      },
+      {
         path: 'project/entity',
         name: 'EntityManagement',
         component: () => import('@/views/entity/index.vue'),

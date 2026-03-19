@@ -134,9 +134,18 @@ public class DataSourceService {
                     Column.builder().columnName("sex").columnComment("性别").columnType("string").build()
             );
 
-            tables = Lists.newArrayList(
-                    Table.builder().tableName("dws_app_user_base_1d").tableComment("用户基础表").isPartitionTable(true).columns(columns).build()
+            List<Column> columns2 = Lists.newArrayList(
+                    Column.builder().columnName("dt").columnComment("日期").columnType("string").build(),
+                    Column.builder().columnName("item_id").columnComment("内容ID").columnType("string").build(),
+                    Column.builder().columnName("item_type").columnComment("内容类型").columnType("string").build(),
+                    Column.builder().columnName("show_source").columnComment("展示来源").columnType("string").build()
             );
+
+            tables = Lists.newArrayList(
+                    Table.builder().tableName("dws_app_user_base_1d").tableComment("用户基础表").isPartitionTable(true).columns(columns).build(),
+                    Table.builder().tableName("dws_app_item_base_1d").tableComment("内容基础表").isPartitionTable(true).columns(columns2).build()
+            );
+
         } catch (Exception e) {
             throw new RuntimeException("获取数据表失败: [" + e.getMessage() + "]");
         }

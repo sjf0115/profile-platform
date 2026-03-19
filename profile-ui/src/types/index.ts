@@ -136,15 +136,12 @@ export interface LabelQueryParams extends PageParams {
 
 // 数据集字段
 export interface DatasetField {
-  name: string           // 字段名
-  alias?: string         // 字段别名/描述
-  column_type?: string   // 字段类型
+  field_name: string           // 字段名
+  field_desc?: string         // 字段描述
+  field_status?: number   // 字段状态
+  field_type?: string // 字段类型
   import_status?: number // 导入状态: 1-导入, 2-不导入
-  category?: number      // 1-实体ID、2-标签、3-行为类型、4-行为时间、5-行为属性、6-行为指标、7-自定义
-  status?: number        // 1-新增、2-修改、3-删除
-  data_type?: number     // 1-文本型、2-数值型、3-时间型
-  organize_type?: number // 1-单值,2-多值,3-KV,4-KKV,5-JSON,6-MAP
-  dist_type?: number     // 1-枚举,2-非枚举
+  related_id?: string // 数据集关联对象ID
 }
 
 // 数据集

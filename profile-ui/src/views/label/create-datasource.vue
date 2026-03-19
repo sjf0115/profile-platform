@@ -210,9 +210,9 @@
               >
                 <el-option 
                   v-for="field in datasetFieldList" 
-                  :key="field.name" 
-                  :label="field.name" 
-                  :value="field.name" 
+                  :key="field.field_name" 
+                  :label="field.field_name" 
+                  :value="field.field_name" 
                 />
               </el-select>
             </el-form-item>

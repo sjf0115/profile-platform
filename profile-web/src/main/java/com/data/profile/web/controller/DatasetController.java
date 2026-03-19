@@ -4,6 +4,7 @@ import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.model.DataSource;
 import com.data.profile.model.Dataset;
+import com.data.profile.model.DatasetField;
 import com.data.profile.service.DatasetService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -13,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -78,9 +80,16 @@ public class DatasetController {
         }
     }
 
-    /*@GetMapping(value = "/fields")
-    public Response getFields(@RequestParam String datasourceId, @RequestParam String tableName, @RequestParam String datasetId) {
-        List<DatasetField> fields = datasetService.getDatasetField(datasourceId, tableName, datasetId);
-        return Response.success(fields);
-    }*/
+    @GetMapping(value = "/refresh")
+    public Response refresh(@RequestParam(name = "datasource_id") String datasourceId,
+                            @RequestParam(name = "dataset_id") String datasetId,
+                            @RequestParam(name = "table_name") String tableName) {
+        log.info("根据数据源ID {}、数据集ID {}、表名 {} 请求刷新数据集字段", datasourceId, datasetId, tableName);
+        List<DatasetField> fields = datasetService.refresh(datasourceId, datasetId, tableName);
+        if (!Objects.equals(fields, null)) {
+            return Response.success(fields);
+        } else {
+            return Response.error("刷新数据集字段失败", ResponseCode.ERROR);
+        }
+    }
 }

@@ -33,16 +33,12 @@ import java.util.stream.Collectors;
 @Service
 public class DatasetService {
     private static final Gson gson = new GsonBuilder().create();
-
     @Resource
     private DatasetMapper datasetMapper;
-
     @Resource
     private DataSourceService dataSourceService;
-
     @Resource
     private DataSourceSchemaService schemaService;
-
     @Resource
     private JdbcMetaService metaService;
 
@@ -77,9 +73,9 @@ public class DatasetService {
         // 数据集字段判断
         List<DatasetField> fields = dataset.getFields();
         for (DatasetField field : fields) {
-            int status = field.getStatus();
+            int status = field.getFieldStatus();
             if (Objects.equals(status, FieldStatus.DELETE_FIELD.getCode())) {
-                throw new RuntimeException("数据集字段[" + field.getName() + "]在原始表中已经被删除，请尽快联系原始表Owner处理");
+                throw new RuntimeException("数据集字段[" + field.getFieldName() + "]在原始表中已经被删除，请尽快联系原始表Owner处理");
             }
         }
         if (StringUtils.isBlank(dataset.getDatasetId())) {
@@ -134,6 +130,17 @@ public class DatasetService {
         dataset.setCreator(RequestContext.currentUserId());
         dataset.setModifier(RequestContext.currentUserId());
         int result = datasetMapper.insertSelective(dataset);
+
+        // 保存数据集字段
+        /*List<DatasetField> fields = dataset.getFields();
+        if (fields != null && !fields.isEmpty()) {
+            for (DatasetField field : fields) {
+                field.setDatasetId(datasetId);
+                datasetFieldService.save(field);
+            }
+            log.info("创建数据集 {} 的 {} 个字段", datasetId, fields.size());
+        }*/
+
         // TODO 创建数据集表 在引擎中创建数据集表
         // String datasetTable = createDatasetTable(dataset);
         log.info("创建数据集: {}", gson.toJson(dataset));
@@ -165,16 +172,15 @@ public class DatasetService {
 
     /**
      * 获取数据集字段
-     * @param datasourceId
-     * @param tableName
-     * @param datasetId
-     * @return
+     * @param datasourceId 数据源ID
+     * @param tableName 表名
+     * @param datasetId 数据集ID
      */
-    @Deprecated
-    public List<DatasetField> getDatasetField(String datasourceId, String tableName, String datasetId) {
+    // Todo 完善
+    public List<DatasetField> refresh(String datasourceId, String datasetId, String tableName) {
         // 原始表列
         List<Column> columns = getTableColumns(datasourceId, tableName);
-        Set<String> columnNames = columns.stream().map(c -> c.getColumnName()).collect(Collectors.toSet()); // 原始列名称集合
+        Set<String> columnNames = columns.stream().map(Column::getColumnName).collect(Collectors.toSet()); // 原始列名称集合
         // 数据集字段
         List<DatasetField> fields = Lists.newArrayList();
         if (StringUtils.isNotBlank(datasetId)) {
@@ -184,14 +190,14 @@ public class DatasetService {
 
         // 修改字段、删除字段
         for (DatasetField field : fields) {
-            if (columnNames.contains(field.getName())) {
+            if (columnNames.contains(field.getFieldName())) {
                 // 修改字段(数据集字段在原始表中还存在)
-                field.setStatus(FieldStatus.UPDATE_FIELD.getCode());
+                field.setFieldStatus(FieldStatus.UPDATE_FIELD.getCode());
                 // 移除数据集字段(最后剩下是原始表新增字段)
-                columnNames.remove(field.getName());
+                columnNames.remove(field.getFieldName());
             } else {
                 // 删除字段(数据集字段在原始表中已经删除)
-                field.setStatus(FieldStatus.DELETE_FIELD.getCode());
+                field.setFieldStatus(FieldStatus.DELETE_FIELD.getCode());
             }
         }
 
@@ -200,9 +206,9 @@ public class DatasetService {
             if (columnNames.contains(column.getColumnName())) {
                 // 新增字段 Column -> DatasetField 均是默认值
                 DatasetField datasetField = new DatasetField();
-                datasetField.setName(column.getColumnName());
-                datasetField.setAlias(column.getColumnComment());
-                datasetField.setStatus(FieldStatus.ADD_FIELD.getCode());
+                datasetField.setFieldName(column.getColumnName());
+                datasetField.setFieldDesc(column.getColumnComment());
+                datasetField.setFieldStatus(FieldStatus.ADD_FIELD.getCode());
                 fields.add(datasetField);
             }
         }

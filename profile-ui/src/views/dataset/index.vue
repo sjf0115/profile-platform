@@ -288,14 +288,12 @@ const handleCreateByMethod = (method: string) => {
 
 // 查看详情
 const handleDetail = (row: Dataset) => {
-  // TODO: 跳转到数据集详情页
-  ElMessage.info('数据集详情功能开发中')
+  router.push(`/dataset/detail/${row.dataset_id}`)
 }
 
 // 编辑数据集
 const handleEdit = (row: Dataset) => {
-  // TODO: 跳转到编辑数据集页面
-  ElMessage.info('编辑数据集功能开发中')
+  router.push(`/dataset/edit/${row.dataset_id}`)
 }
 
 // 启用/禁用数据集

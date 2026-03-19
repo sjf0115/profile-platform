@@ -5,7 +5,7 @@
         <el-button link @click="goBack">
           <el-icon><ArrowLeft /></el-icon>
         </el-button>
-        <h2 class="page-title">创建标签数据集</h2>
+        <h2 class="page-title">{{ isEditMode ? '编辑标签数据集' : '创建标签数据集' }}</h2>
       </div>
     </div>
 
@@ -115,36 +115,40 @@
 
           <div class="section-title">实体标识配置</div>
 
-          <el-form-item label="实体字段" required>
-            <el-select
-              v-model="formData.entity_field"
-              placeholder="请选择实体字段"
-              clearable
-              style="width: 300px"
-            >
-              <el-option
-                v-for="(field, index) in fieldList"
-                :key="index"
-                :label="field.name"
-                :value="field.name"
-              />
-            </el-select>
-          </el-form-item>
-
-          <el-form-item label="实体标识" required>
-            <el-select
-              v-model="formData.entity_id"
-              placeholder="请选择实体标识"
-              clearable
-              style="width: 300px"
-            >
-              <el-option
-                v-for="item in entityIdentifierList"
-                :key="item.entity_identifier_id"
-                :label="item.entity_name + '>' + item.entity_identifier_name"
-                :value="item.entity_identifier_id"
-              />
-            </el-select>
+          <el-form-item required>
+            <template #label>
+              <span>实体配置</span>
+            </template>
+            <div class="entity-config-row">
+              <el-select
+                v-model="formData.entity_id"
+                placeholder="请选择实体标识"
+                clearable
+                style="width: 220px"
+                @change="handleEntityIdentifierChange"
+              >
+                <el-option
+                  v-for="item in entityIdentifierList"
+                  :key="item.entity_identifier_id"
+                  :label="item.entity_name + '>' + item.entity_identifier_name"
+                  :value="item.entity_identifier_id"
+                />
+              </el-select>
+              <el-select
+                v-model="formData.entity_field"
+                placeholder="请选择实体字段"
+                clearable
+                style="width: 180px"
+                :disabled="!formData.entity_id"
+              >
+                <el-option
+                  v-for="(field, index) in fieldList"
+                  :key="index"
+                  :label="field.field_name"
+                  :value="field.field_name"
+                />
+              </el-select>
+            </div>
           </el-form-item>
 
           <div class="section-title">
@@ -166,17 +170,17 @@
             max-height="400"
           >
             <el-table-column type="index" label="序号" width="60" align="center" />
-            <el-table-column prop="name" label="字段名" min-width="140" show-overflow-tooltip />
-            <el-table-column prop="alias" label="字段描述" min-width="180">
+            <el-table-column prop="field_name" label="字段名" min-width="140" show-overflow-tooltip />
+            <el-table-column prop="field_desc" label="字段描述" min-width="180">
               <template #default="{ row }">
                 <el-input 
-                  v-model="row.alias" 
+                  v-model="row.field_desc" 
                   placeholder="请输入字段描述"
                   size="small"
                 />
               </template>
             </el-table-column>
-            <el-table-column prop="column_type" label="字段类型" width="100" align="center" />
+            <el-table-column prop="field_type" label="字段类型" width="100" align="center" />
             <el-table-column label="是否导入" width="90" align="center">
               <template #default="{ row }">
                 <el-switch 
@@ -185,6 +189,25 @@
                   :inactive-value="2"
                   size="small"
                 />
+              </template>
+            </el-table-column>
+            <el-table-column label="关联标签" min-width="180">
+              <template #default="{ row }">
+                <el-select
+                  v-model="row.related_id"
+                  placeholder="请选择关联标签"
+                  clearable
+                  size="small"
+                  style="width: 100%"
+                  :disabled="!formData.entity_id || labelList.length === 0"
+                >
+                  <el-option
+                    v-for="label in labelList"
+                    :key="label.label_id"
+                    :label="label.label_name"
+                    :value="label.label_id"
+                  />
+                </el-select>
               </template>
             </el-table-column>
           </el-table>
@@ -206,14 +229,20 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, QuestionFilled, Search, InfoFilled } from '@element-plus/icons-vue'
 import type { Dataset, DatasetField } from '@/types'
 import { datasetApi } from '@/api/dataset'
 import { entityIdentifierApi, type EntityIdentifier } from '@/api/entity'
+import { labelApi } from '@/api/label'
 
+const route = useRoute()
 const router = useRouter()
+
+// 判断是否为编辑模式
+const isEditMode = computed(() => !!route.params.id)
+const datasetId = computed(() => route.params.id as string)
 
 // 当前步骤
 const activeStep = ref(0)
@@ -230,14 +259,25 @@ interface TableItem {
 }
 const tableList = ref<TableItem[]>([])
 
-// 字段列表
-const fieldList = ref<DatasetField[]>([])
+// 字段列表（使用后端字段命名 - 下划线命名）
+interface DatasetFieldItem {
+  field_name: string
+  field_desc?: string
+  field_type?: string
+  import_status?: number
+  field_status?: number
+  related_id?: string
+}
+const fieldList = ref<DatasetFieldItem[]>([])
 
 // 字段搜索
 const fieldSearch = ref('')
 
 // 实体标识列表
 const entityIdentifierList = ref<EntityIdentifier[]>([])
+
+// 标签列表
+const labelList = ref<any[]>([])
 
 // 表单数据
 const formData = reactive({
@@ -258,8 +298,8 @@ const filteredFieldList = computed(() => {
   if (!fieldSearch.value) return fieldList.value
   const keyword = fieldSearch.value.toLowerCase()
   return fieldList.value.filter(field => 
-    field.name?.toLowerCase().includes(keyword) ||
-    field.alias?.toLowerCase().includes(keyword)
+    field.field_name?.toLowerCase().includes(keyword) ||
+    field.field_desc?.toLowerCase().includes(keyword)
   )
 })
 
@@ -308,6 +348,33 @@ const fetchEntityIdentifierList = async () => {
   }
 }
 
+// 获取标签列表
+const fetchLabelList = async (entityIdentifierId: string) => {
+  try {
+    const res = await labelApi.getList({ entity_identifier_id: entityIdentifierId })
+    console.log('标签列表响应:', res)
+    labelList.value = res.data.data || []
+  } catch (error) {
+    console.error('获取标签列表失败:', error)
+    labelList.value = []
+  }
+}
+
+// 实体标识变更
+const handleEntityIdentifierChange = (entityIdentifierId: string) => {
+  // 清空已选择的实体字段和字段中的关联标签
+  formData.entity_field = ''
+  fieldList.value.forEach(field => {
+    field.related_id = undefined
+  })
+  // 如果选择了实体标识，获取对应的标签列表
+  if (entityIdentifierId) {
+    fetchLabelList(entityIdentifierId)
+  } else {
+    labelList.value = []
+  }
+}
+
 // 数据源变更
 const handleDatasourceChange = (datasourceId: string) => {
   formData.table_name = ''
@@ -325,11 +392,12 @@ const handleTableChange = (tableName: string) => {
   const selectedTable = tableList.value.find(t => t.table_name === tableName)
   if (selectedTable && selectedTable.columns) {
     fieldList.value = selectedTable.columns.map((col: any) => ({
-      name: col.column_name,
-      alias: col.column_comment || '',
-      column_type: col.column_type,
+      field_name: col.column_name,
+      field_desc: col.column_comment || '',
+      field_type: col.column_type,
       import_status: 1,
-      category: undefined  // 实体ID类型默认为空，需要用户选择
+      field_status: 1,  // 1-新增字段
+      related_id: undefined  // 关联标签ID
     }))
     console.log('字段列表数据:', fieldList.value)
   } else {
@@ -382,11 +450,16 @@ const handleSubmit = async () => {
       partition_format: formData.has_partition === 1 ? formData.partition_format : undefined,
       entity_field: formData.entity_field,
       entity_id: formData.entity_id,
-      fields: fieldList.value.filter(f => f.import_status === 1)
+      fields: fieldList.value as any
+    }
+    
+    // 编辑模式添加 dataset_id
+    if (isEditMode.value) {
+      submitData.dataset_id = datasetId.value
     }
 
     await datasetApi.save(submitData as Dataset)
-    ElMessage.success('创建成功')
+    ElMessage.success(isEditMode.value ? '编辑成功' : '创建成功')
     router.push('/project/dataset')
   } catch (error) {
     console.error('创建失败:', error)
@@ -394,9 +467,57 @@ const handleSubmit = async () => {
   }
 }
 
+// 加载数据集详情（编辑模式）
+const fetchDatasetDetail = async () => {
+  if (!isEditMode.value) return
+  
+  try {
+    const res = await datasetApi.detail(datasetId.value)
+    console.log('数据集详情:', res)
+    const dataset = res.data.data
+    
+    if (dataset) {
+      // 填充表单数据
+      formData.datasource_id = dataset.datasource_id || ''
+      formData.table_name = dataset.table_name || ''
+      formData.dataset_name = dataset.dataset_name || ''
+      formData.dataset_desc = dataset.dataset_desc || ''
+      formData.has_partition = dataset.partition_field ? 1 : 0
+      formData.partition_field = dataset.partition_field || ''
+      formData.partition_format = dataset.partition_format || '${yyyyMMdd}'
+      formData.entity_field = dataset.entity_field || ''
+      formData.entity_id = dataset.entity_id || ''
+      
+      // 填充字段列表
+      if (dataset.fields && dataset.fields.length > 0) {
+        fieldList.value = dataset.fields.map((field: any) => ({
+          field_name: field.field_name,
+          field_desc: field.field_desc || '',
+          field_type: field.field_type,
+          import_status: field.import_status,
+          field_status: field.field_status,
+          related_id: field.related_id
+        }))
+      }
+      
+      // 获取标签列表
+      if (formData.entity_id) {
+        await fetchLabelList(formData.entity_id)
+      }
+      
+      // 编辑模式直接跳到第二步
+      activeStep.value = 1
+    }
+  } catch (error) {
+    console.error('获取数据集详情失败:', error)
+    ElMessage.error('获取数据集详情失败')
+  }
+}
+
 onMounted(() => {
   fetchDatasourceList()
   fetchEntityIdentifierList()
+  fetchDatasetDetail()
 })
 </script>
 
@@ -460,6 +581,11 @@ onMounted(() => {
     color: #909399;
     margin-left: 10px;
   }
+}
+
+.entity-config-row {
+  display: flex;
+  gap: 12px;
 }
 
 .field-tips {

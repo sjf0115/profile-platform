@@ -4,6 +4,8 @@ import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.model.EntityIdentifier;
 import com.data.profile.service.EntityIdentifierService;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -23,17 +25,20 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/entity/identifier", produces = MediaType.APPLICATION_JSON_VALUE)
 public class EntityIdentifierController {
+    private static final Gson gson = new GsonBuilder().create();
     @Autowired
     private EntityIdentifierService entityIdentifierService;
 
     @PostMapping(value = "/list")
     public Response getList(@RequestBody EntityIdentifier entityIdentifier) {
+        log.info("根据查询条件请求获取实体标识: {}", gson.toJson(entityIdentifier));
         List<EntityIdentifier> entityIdentifiers = entityIdentifierService.getList(entityIdentifier);
         return Response.success(entityIdentifiers);
     }
 
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam(name = "entity_identifier_id") String entityIdentifierId) {
+        log.info("根据实体标识ID请求获取实体标识: {}", entityIdentifierId);
         Optional<EntityIdentifier> optional = entityIdentifierService.getDetail(entityIdentifierId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -44,6 +49,7 @@ public class EntityIdentifierController {
 
     @PostMapping(value = "/save")
     public Response save(@RequestBody EntityIdentifier entityIdentifier) {
+        log.info("请求保存实体标识: {}", gson.toJson(entityIdentifier));
         int result = entityIdentifierService.save(entityIdentifier);
         if (result > 0) {
             return Response.success(result);
@@ -54,6 +60,7 @@ public class EntityIdentifierController {
 
     @DeleteMapping(value = "/delete")
     public Response delete(@RequestParam(name = "entity_identifier_id") String entityIdentifierId) {
+        log.info("根据实体标识ID请求删除实体标识: {}", entityIdentifierId);
         int result = entityIdentifierService.delete(entityIdentifierId);
         if (result > 0) {
             return Response.success(result);
