@@ -6,22 +6,24 @@ import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
+import com.data.profile.dao.DatasetMapper;
 import com.data.profile.dao.LabelMapper;
-import com.data.profile.model.EntityIdentifier;
-import com.data.profile.model.FileImportLabelConfig;
-import com.data.profile.model.Label;
+import com.data.profile.model.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * 功能：标签服务
@@ -38,6 +40,8 @@ public class LabelService {
 
     @Resource
     private LabelMapper labelMapper;
+    @Resource
+    private DatasetMapper datasetMapper;
 
     /**
      * 根据查询条件获取标签列表
@@ -67,6 +71,7 @@ public class LabelService {
      * @param label 标签信息
      */
     public int save(Label label) throws RuntimeException {
+        // 标签处理
         if (StringUtils.isBlank(label.getLabelId())) {
             // 新增
             List<Label> labels = labelMapper.selectByLabelName(label.getLabelName());
@@ -87,13 +92,36 @@ public class LabelService {
             label.setCreator(RequestContext.currentUserId());
             label.setModifier(RequestContext.currentUserId());
             log.info("新增标签: {}", gson.toJson(label));
-            return labelMapper.insertSelective(label);
         } else {
             // 修改
             label.setModifier(RequestContext.currentUserId());
             log.info("修改标签: {}", gson.toJson(label));
-            return labelMapper.updateByLabelIdSelective(label);
         }
+
+        // 数据集字段处理 绑定数据集
+        String fieldName = label.getDatasetFieldName();
+        if (StringUtils.isNotEmpty(fieldName)) {
+            Dataset dataset = datasetMapper.selectByDatasetId(label.getDatasetId());
+            boolean isModified = false;
+            List<DatasetField> fields = Lists.newArrayList();
+            for (DatasetField field : dataset.getFields()) {
+                if (Objects.equals(field.getFieldName(), fieldName)) {
+                    String relatedId = field.getRelatedId();
+                    if (!Objects.equals(relatedId, label.getLabelId())) {
+                        field.setRelatedId(label.getLabelId());
+                        field.setGmtModified(new Date());
+                        isModified = true;
+                    }
+                }
+                fields.add(field);
+            }
+            if (isModified) {
+                dataset.setFields(fields);
+                log.info("更新数据集 {} 绑定的标签: {}", dataset.getDatasetId(), label.getLabelId());
+                datasetMapper.updateByDatasetId(dataset);
+            }
+        }
+        return labelMapper.insertSelective(label);
     }
 
     /**
