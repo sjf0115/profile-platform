@@ -69,10 +69,22 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '创建标签 - 数据源导入' },
       },
       {
+        path: 'label/edit/datasource/:id',
+        name: 'EditLabelDatasource',
+        component: () => import('@/views/label/create-datasource.vue'),
+        meta: { title: '编辑标签 - 数据源导入' },
+      },
+      {
         path: 'label/create/custom',
         name: 'CreateLabelCustom',
         component: () => import('@/views/label/create-custom.vue'),
         meta: { title: '创建标签 - 自定义标签' },
+      },
+      {
+        path: 'label/edit/custom/:id',
+        name: 'EditLabelCustom',
+        component: () => import('@/views/label/create-custom.vue'),
+        meta: { title: '编辑标签 - 自定义标签' },
       },
       {
         path: 'label/detail/:id',

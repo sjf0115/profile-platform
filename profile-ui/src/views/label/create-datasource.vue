@@ -5,7 +5,7 @@
         <el-button link @click="goBack">
           <el-icon><ArrowLeft /></el-icon>
         </el-button>
-        <h2 class="page-title">创建标签 - 数据源导入</h2>
+        <h2 class="page-title">{{ isEditMode ? '编辑标签 - 数据源导入' : '创建标签 - 数据源导入' }}</h2>
       </div>
     </div>
 
@@ -163,27 +163,27 @@
       <div v-if="activeStep === 1" class="step-content">
         <el-form :model="formData" label-width="120px" class="label-form">
           <el-form-item>
-            <el-checkbox v-model="skipSource">跳过标签来源配置</el-checkbox>
-            <div class="skip-tip">选择跳过，标签状态将设置为待上架；否则设置为在线</div>
+            <el-checkbox v-model="skipSource">跳过数据集配置</el-checkbox>
+            <div class="skip-tip">选择跳过，标签为待上架，后续在数据集中绑定标签</div>
+          </el-form-item>
+
+          <el-form-item label="实体标识" prop="entity_identifier_id">
+            <el-select 
+              v-model="formData.entity_identifier_id" 
+              placeholder="请选择实体标识"
+              clearable
+              style="width: 100%"
+            >
+              <el-option 
+                v-for="item in entityIdentifierList" 
+                :key="item.entity_identifier_id" 
+                :label="`${item.entity_name}>${item.entity_identifier_name}`" 
+                :value="item.entity_identifier_id" 
+              />
+            </el-select>
           </el-form-item>
 
           <template v-if="!skipSource">
-            <el-form-item label="实体标识" prop="entity_identifier_id">
-              <el-select 
-                v-model="formData.entity_identifier_id" 
-                placeholder="请选择实体标识"
-                clearable
-                style="width: 100%"
-              >
-                <el-option 
-                  v-for="item in entityIdentifierList" 
-                  :key="item.entity_identifier_id" 
-                  :label="`${item.entity_name}>${item.entity_identifier_name}`" 
-                  :value="item.entity_identifier_id" 
-                />
-              </el-select>
-            </el-form-item>
-
             <el-form-item label="数据集名称" prop="dataset_id">
               <el-select 
                 v-model="formData.dataset_id" 
@@ -231,7 +231,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
@@ -241,7 +241,12 @@ import type { LabelCategory } from '@/types'
 import { datasetApi } from '@/api/dataset'
 import { entityIdentifierApi } from '@/api/entity'
 
+const route = useRoute()
 const router = useRouter()
+
+// 判断是否为编辑模式
+const isEditMode = computed(() => !!route.params.id)
+const labelId = computed(() => route.params.id as string)
 
 // 当前步骤
 const activeStep = ref(0)
@@ -355,7 +360,11 @@ const formData = reactive({
   time_type: 1,     // 默认为离线标签
   entity_identifier_id: '',  // 实体标识ID
   dataset_id: '',
-  dataset_field: ''
+  dataset_field: '',
+  // 编辑模式需要的字段
+  is_office: 0,
+  owner: '',
+  creator: ''
 })
 
 // 第一步表单验证规则
@@ -391,7 +400,13 @@ const fetchConfig = async () => {
 // 获取类目树
 // 获取类目列表（已废弃，使用分级加载）
 const fetchCategoryTree = async () => {
-  await fetchLevel1Categories()
+  try {
+    // 加载完整的类目树（包含 children）
+    const res = await labelCategoryApi.getList()
+    level1Categories.value = res.data.data || []
+  } catch (error) {
+    console.error('获取类目树失败:', error)
+  }
 }
 
 // 获取实体标识列表
@@ -466,36 +481,129 @@ const handleSubmit = async () => {
       label_produce_type: formData.produce_type,
       label_time_type: formData.time_type,
       label_status: skipSource.value ? 0 : 1,  // 跳过则待上架(0)，否则在线(1)
-      source_type: 2  // 数据源导入方式
+      source_type: 2,  // 数据源导入方式
+      entity_identifier_id: formData.entity_identifier_id  // 实体标识始终提交
     }
 
-    // 如果不跳过，添加实体标识和数据集信息
-    if (!skipSource.value) {
-      if (formData.entity_identifier_id) {
-        submitData.entity_identifier_id = formData.entity_identifier_id
-      }
+    // 编辑模式添加 label_id 和其他字段
+    if (isEditMode.value) {
+      submitData.label_id = labelId.value
+      submitData.is_office = formData.is_office
+      submitData.owner = formData.owner
+      submitData.creator = formData.creator
     }
 
-    // 组装 config 对象（直接传递对象，后端会自动映射为 LabelConfig）
-    const configObj: any = {}
+    console.log('提交数据:', submitData, 'isEditMode:', isEditMode.value, 'labelId:', labelId.value)
 
-    // 如果不跳过，添加数据集信息到 config
+    // 如果不跳过，添加数据集信息
     if (!skipSource.value) {
       if (formData.dataset_id) {
-        configObj.dataset_id = formData.dataset_id
+        submitData.dataset_id = formData.dataset_id
       }
       if (formData.dataset_field) {
-        configObj.dataset_field = formData.dataset_field
+        submitData.dataset_field_name = formData.dataset_field
       }
     }
 
-    submitData.config = configObj
+    submitData.config = {}
 
     await labelApi.save(submitData)
-    ElMessage.success('创建成功')
+    ElMessage.success(isEditMode.value ? '编辑成功' : '创建成功')
     router.push('/label-market')
   } catch (error) {
-    console.error('创建失败:', error)
+    console.error('保存失败:', error)
+  }
+}
+
+// 加载标签详情（编辑模式）
+const fetchLabelDetail = async () => {
+  if (!isEditMode.value) return
+  
+  try {
+    const res = await labelApi.getDetail(labelId.value)
+    const label = res.data.data
+    console.log('标签详情:', label)
+    
+    if (label) {
+      // 填充表单数据
+      formData.label_name = label.label_name || ''
+      formData.label_desc = label.label_desc || ''
+      formData.category_id = label.label_category_id || ''
+      // 标签类型需要转换为数字类型以匹配 config 中的 id
+      formData.label_type = label.label_type ? Number(label.label_type) : 1
+      formData.data_type = label.label_data_type || 1
+      formData.dist_type = label.label_dist_type || 1
+      formData.organize_type = label.label_organize_type || 1
+      formData.produce_type = label.label_produce_type || 1
+      formData.time_type = label.label_time_type || 1
+      formData.entity_identifier_id = label.entity_identifier_id || ''
+      // 编辑模式需要的字段
+      formData.is_office = label.is_office || 0
+      formData.owner = label.owner || ''
+      formData.creator = label.creator || ''
+      
+      // 设置类目层级选择
+      if (formData.category_id) {
+        await setCategoryLevels(formData.category_id)
+      }
+      
+      // 判断是否跳过数据集配置：没有绑定字段则跳过
+      skipSource.value = !label.dataset_field_name
+      
+      // 如果有数据集信息，填充
+      if (label.dataset_id) {
+        formData.dataset_id = label.dataset_id
+        // 等待数据集字段加载
+        await fetchDatasetFields(label.dataset_id)
+        formData.dataset_field = label.dataset_field_name || ''
+      }
+    }
+  } catch (error) {
+    console.error('获取标签详情失败:', error)
+    ElMessage.error('获取标签详情失败')
+  }
+}
+
+// 根据类目ID设置层级选择
+const setCategoryLevels = async (categoryId: string) => {
+  // 递归查找类目及其所有父级
+  const findCategoryPath = (categories: LabelCategory[], id: string, path: LabelCategory[] = []): LabelCategory[] | null => {
+    for (const cat of categories) {
+      if (cat.category_id === id) {
+        return [...path, cat]
+      }
+      if (cat.children && cat.children.length > 0) {
+        const found = findCategoryPath(cat.children, id, [...path, cat])
+        if (found) return found
+      }
+    }
+    return null
+  }
+  
+  // 查找类目路径（从根到目标类目）
+  const path = findCategoryPath(level1Categories.value, categoryId)
+  console.log('类目路径:', path, '类目树:', level1Categories.value)
+  
+  if (path && path.length > 0) {
+    if (path.length === 1) {
+      // 一级类目
+      selectedLevel1.value = path[0].category_id
+    } else if (path.length === 2) {
+      // 二级类目
+      selectedLevel1.value = path[0].category_id
+      // 加载二级类目列表
+      await fetchLevel2Categories(path[0].category_id)
+      selectedLevel2.value = path[1].category_id
+    } else if (path.length === 3) {
+      // 三级类目
+      selectedLevel1.value = path[0].category_id
+      // 加载二级类目列表
+      await fetchLevel2Categories(path[0].category_id)
+      selectedLevel2.value = path[1].category_id
+      // 加载三级类目列表
+      await fetchLevel3Categories(path[1].category_id)
+      selectedLevel3.value = path[2].category_id
+    }
   }
 }
 
@@ -504,11 +612,13 @@ const goBack = () => {
   router.back()
 }
 
-onMounted(() => {
+onMounted(async () => {
+  console.log('onMounted - route.params:', route.params, 'isEditMode:', isEditMode.value, 'labelId:', labelId.value)
   fetchConfig()
-  fetchCategoryTree()
+  await fetchCategoryTree()  // 等待类目加载完成
   fetchEntityIdentifierList()
   fetchDatasetList()
+  fetchLabelDetail()  // 类目加载完成后再加载标签详情
 })
 </script>
 

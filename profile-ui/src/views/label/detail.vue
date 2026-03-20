@@ -345,17 +345,11 @@ const getProduceTypeName = (type?: number) => {
   return item?.name || '-'
 }
 
-// 获取标签类型名称（字符串类型）
-const getLabelTypeName = (type?: string) => {
+// 获取标签类型名称
+const getLabelTypeName = (type?: string | number) => {
   if (!type) return '-'
-  // 根据 label_type 字符串返回中文
-  const typeMap: Record<string, string> = {
-    'datasource': '数据源导入',
-    'custom': '自定义标签',
-    'sql': 'SQL',
-    'upload': '上传文件'
-  }
-  return typeMap[type] || type
+  const item = labelConfig.label_type.find(t => t.id.toString() === type.toString())
+  return item?.name || '-'
 }
 
 // 获取时效性类型名称

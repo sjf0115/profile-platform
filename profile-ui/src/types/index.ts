@@ -101,7 +101,7 @@ export interface Label {
   label_id: string
   label_name: string
   label_status?: number
-  label_type?: string
+  label_type?: string | number
   label_desc?: string
   label_category_id?: string
   label_data_type?: number
@@ -117,6 +117,12 @@ export interface Label {
   modifier?: string
   gmt_create?: string
   gmt_modified?: string
+  // 数据源导入相关字段
+  entity_identifier_id?: string
+  dataset_id?: string
+  dataset_field_name?: string
+  // 自定义标签相关字段
+  update_type?: number  // 1-手动更新, 2-周期更新
   // 扩展字段（用于展示）
   cover_count?: number
   cover_rate?: string

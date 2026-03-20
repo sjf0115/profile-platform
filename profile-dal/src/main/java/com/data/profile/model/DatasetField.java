@@ -10,10 +10,10 @@ import java.util.Date;
 public class DatasetField {
     private Long id;
     // 数据集ID
-    @Deprecated
     @SerializedName("dataset_id")
     private String datasetId;
-    // 字段状态:1-新增字段,2-修改字段,3-删除字段
+    // 废弃：字段状态:1-新增字段,2-修改字段,3-删除字段
+    @Deprecated
     @SerializedName("field_status")
     private Integer fieldStatus;
     // 字段名称

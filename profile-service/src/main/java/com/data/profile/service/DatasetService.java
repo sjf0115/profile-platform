@@ -15,6 +15,7 @@ import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.net.URISyntaxException;
@@ -40,6 +41,8 @@ public class DatasetService {
     @Resource
     private DataSourceSchemaService schemaService;
     @Resource
+    private DatasetFieldService datasetFieldService;
+    @Resource
     private JdbcMetaService metaService;
 
     /**
@@ -48,6 +51,7 @@ public class DatasetService {
      */
     public List<Dataset> getList(Dataset dataset) {
         List<Dataset> datasets = datasetMapper.selectByParams(dataset);
+        // 暂时没有查询数据集字段
         log.info("根据查询条件获取 {} 个数据集: {}", datasets.size(), gson.toJson(datasets));
         return datasets;
     }
@@ -57,11 +61,15 @@ public class DatasetService {
      * @param datasetId 数据集ID
      */
     public Optional<Dataset> getDetail(String datasetId) {
+        // 获取数据集信息
         Dataset dataset = datasetMapper.selectByDatasetId(datasetId);
         log.info("根据数据集ID {} 获取数据集详细信息: {}", datasetId, gson.toJson(dataset));
         if (dataset == null) {
             return Optional.empty();
         }
+        // 获取数据集字段
+        List<DatasetField> fields = datasetFieldService.getListByDatasetId(datasetId);
+        dataset.setFields(fields);
         return Optional.of(dataset);
     }
 
@@ -69,15 +77,15 @@ public class DatasetService {
      * 保存数据集 创建/修改
      * @param dataset 数据集
      */
+    @Transactional
     public int save(Dataset dataset) {
-        // 数据集字段判断
-        List<DatasetField> fields = dataset.getFields();
+        /*List<DatasetField> fields = dataset.getFields();
         for (DatasetField field : fields) {
             int status = field.getFieldStatus();
             if (Objects.equals(status, FieldStatus.DELETE_FIELD.getCode())) {
                 throw new RuntimeException("数据集字段[" + field.getFieldName() + "]在原始表中已经被删除，请尽快联系原始表Owner处理");
             }
-        }
+        }*/
         if (StringUtils.isBlank(dataset.getDatasetId())) {
             // 创建数据集
             return createDataset(dataset);
@@ -91,16 +99,21 @@ public class DatasetService {
      * 删除数据集ID
      * @param datasetId 数据集ID
      */
+    @Transactional
     public int delete(String datasetId) {
+        // 判断数据集是否存在
         Dataset dataset = datasetMapper.selectByDatasetId(datasetId);
         if (Objects.equals(dataset, null)) {
             log.error("数据集 {} 不存在，无法删除", datasetId);
             throw new RuntimeException("数据集不存在，无法删除");
         }
+        // 内置数据集不可以删除
         if (Objects.equals(dataset.getSourceType(), SourceType.BUILT_IN.getCode())) {
             log.error("内置数据集 {} 不允许删除", datasetId);
             throw new RuntimeException("内置数据集不允许删除");
         }
+        // 删除关联数据集字段
+        datasetFieldService.deleteByDatasetId(datasetId);
         // TODO 检查依赖确保无下游使用
         log.info("删除数据集: {}", datasetId);
         return datasetMapper.deleteByDatasetId(datasetId);
@@ -111,7 +124,6 @@ public class DatasetService {
      * @param dataset 数据集
      */
     private int createDataset(Dataset dataset) {
-        // 数据集名称是否唯一
         List<Dataset> datasets = datasetMapper.selectByDatasetName(dataset.getDatasetName());
         if (!datasets.isEmpty()) {
             log.error("创建数据集失败，数据集 {} 已经存在，不允许重复添加", dataset.getDatasetName());
@@ -129,22 +141,20 @@ public class DatasetService {
         dataset.setOwner(RequestContext.currentUserId());
         dataset.setCreator(RequestContext.currentUserId());
         dataset.setModifier(RequestContext.currentUserId());
-        int result = datasetMapper.insertSelective(dataset);
 
         // 保存数据集字段
-        /*List<DatasetField> fields = dataset.getFields();
+        List<DatasetField> fields = dataset.getFields();
         if (fields != null && !fields.isEmpty()) {
             for (DatasetField field : fields) {
                 field.setDatasetId(datasetId);
                 datasetFieldService.save(field);
             }
-            log.info("创建数据集 {} 的 {} 个字段", datasetId, fields.size());
-        }*/
+        }
 
         // TODO 创建数据集表 在引擎中创建数据集表
         // String datasetTable = createDatasetTable(dataset);
         log.info("创建数据集: {}", gson.toJson(dataset));
-        return result;
+        return datasetMapper.insertSelective(dataset);
     }
 
     /**
@@ -152,6 +162,18 @@ public class DatasetService {
      * @param dataset 数据集
      */
     private int updateDataset(Dataset dataset) {
+        String datasetId = dataset.getDatasetId();
+        // 先清空再保存数据集字段
+        datasetFieldService.deleteByDatasetId(datasetId);
+        List<DatasetField> fields = dataset.getFields();
+        if (fields != null && !fields.isEmpty()) {
+            for (DatasetField field : fields) {
+                field.setDatasetId(datasetId);
+                datasetFieldService.save(field);
+            }
+        }
+
+        // 修改数据集
         dataset.setModifier(RequestContext.currentUserId());
         log.info("修改数据集: {}", gson.toJson(dataset));
         return datasetMapper.updateByDatasetIdSelective(dataset);

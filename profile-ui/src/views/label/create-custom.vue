@@ -5,7 +5,7 @@
         <el-button link @click="goBack">
           <el-icon><ArrowLeft /></el-icon>
         </el-button>
-        <h2 class="page-title">创建标签 - 自定义标签</h2>
+        <h2 class="page-title">{{ isEditMode ? '编辑标签 - 自定义标签' : '创建标签 - 自定义标签' }}</h2>
       </div>
     </div>
 
@@ -216,14 +216,20 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Plus, RefreshLeft, RefreshRight, Delete, VideoPlay } from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
 import { labelApi } from '@/api/label'
 import { labelCategoryApi, type LabelCategory } from '@/api/labelCategory'
 
+const route = useRoute()
 const router = useRouter()
+
+// 判断是否为编辑模式
+const isEditMode = computed(() => !!route.params.id)
+const labelId = computed(() => route.params.id as string)
+
 const formRef = ref<FormInstance>()
 
 // 表单数据
@@ -232,7 +238,11 @@ const formData = reactive({
   label_desc: '',
   category_id: '',
   update_type: 1,  // 1-手动更新, 2-周期更新
-  expression: ''
+  expression: '',
+  // 编辑模式需要的字段
+  is_office: 0,
+  owner: '',
+  creator: ''
 })
 
 // 表单验证规则
@@ -385,20 +395,124 @@ const handleSubmit = async () => {
       try {
         // 构建表达式字符串
         const expression = expressionItems.value.map(item => item.value).join(' ')
-        const submitData = {
-          ...formData,
-          expression,
+        const submitData: any = {
+          label_name: formData.label_name,
+          label_desc: formData.label_desc,
+          label_category_id: formData.category_id,
+          update_type: formData.update_type,
+          config: expression,  // 自定义标签直接传递表达式字符串
           label_type: 2,  // 自定义标签
-          label_status: 1  // 在线
+          label_status: 1,  // 在线
+          source_type: 6  // 自定义规则
         }
+        
+        // 编辑模式添加 label_id 和其他字段
+        if (isEditMode.value) {
+          submitData.label_id = labelId.value
+          submitData.is_office = formData.is_office
+          submitData.owner = formData.owner
+          submitData.creator = formData.creator
+        }
+        
+        console.log('提交数据:', submitData)
         await labelApi.save(submitData)
-        ElMessage.success('创建成功')
+        ElMessage.success(isEditMode.value ? '编辑成功' : '创建成功')
         router.push('/label-market')
       } catch (error) {
-        console.error('创建失败:', error)
+        console.error('保存失败:', error)
       }
     }
   })
+}
+
+// 加载标签详情（编辑模式）
+const fetchLabelDetail = async () => {
+  if (!isEditMode.value) return
+  
+  try {
+    const res = await labelApi.getDetail(labelId.value)
+    const label = res.data.data
+    console.log('标签详情:', label)
+    
+    if (label) {
+      // 填充表单数据
+      formData.label_name = label.label_name || ''
+      formData.label_desc = label.label_desc || ''
+      formData.category_id = label.label_category_id || ''
+      formData.update_type = label.update_type || 1
+      formData.expression = label.config || ''
+      // 编辑模式需要的字段
+      formData.is_office = label.is_office || 0
+      formData.owner = label.owner || ''
+      formData.creator = label.creator || ''
+      
+      // 解析表达式
+      if (formData.expression) {
+        const items = formData.expression.split(' ').filter(v => v)
+        expressionItems.value = items.map((value, index) => ({
+          id: index,
+          value,
+          type: getExpressionItemType(value)
+        }))
+      }
+      
+      // 设置类目层级选择
+      if (formData.category_id) {
+        await setCategoryLevels(formData.category_id)
+      }
+    }
+  } catch (error) {
+    console.error('获取标签详情失败:', error)
+    ElMessage.error('获取标签详情失败')
+  }
+}
+
+// 获取表达式项类型
+const getExpressionItemType = (value: string): string => {
+  if (['+', '-', '*', '/', '(', ')'].includes(value)) {
+    return 'operator'
+  } else if (/^\d+(\.\d+)?$/.test(value)) {
+    return 'number'
+  } else {
+    return 'field'
+  }
+}
+
+// 根据类目ID设置层级选择
+const setCategoryLevels = async (categoryId: string) => {
+  // 递归查找类目及其所有父级
+  const findCategoryPath = (categories: LabelCategory[], id: string, path: LabelCategory[] = []): LabelCategory[] | null => {
+    for (const cat of categories) {
+      if (cat.category_id === id) {
+        return [...path, cat]
+      }
+      if (cat.children && cat.children.length > 0) {
+        const found = findCategoryPath(cat.children, id, [...path, cat])
+        if (found) return found
+      }
+    }
+    return null
+  }
+  
+  // 查找类目路径（从根到目标类目）
+  const path = findCategoryPath(level1Categories.value, categoryId)
+  console.log('类目路径:', path)
+  
+  if (path && path.length > 0) {
+    if (path.length === 1) {
+      // 一级类目
+      selectedLevel1.value = path[0].category_id
+    } else if (path.length === 2) {
+      // 二级类目
+      selectedLevel1.value = path[0].category_id
+      selectedLevel2.value = path[1].category_id
+    } else if (path.length === 3) {
+      // 三级类目
+      selectedLevel1.value = path[0].category_id
+      selectedLevel2.value = path[1].category_id
+      selectedLevel3.value = path[2].category_id
+    }
+  }
 }
 
 // 返回
@@ -406,8 +520,9 @@ const goBack = () => {
   router.back()
 }
 
-onMounted(() => {
-  fetchCategoryTree()
+onMounted(async () => {
+  await fetchCategoryTree()  // 等待类目加载完成
+  fetchLabelDetail()  // 类目加载完成后再加载标签详情
 })
 </script>
 

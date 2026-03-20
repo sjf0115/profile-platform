@@ -38,14 +38,14 @@ public class LabelController {
 
     @PostMapping(value = "/list")
     public Response getList(@RequestBody Label label) {
-        log.info("根据标签信息查询标签: {}", gson.toJson(label));
+        log.info("根据标签信息请求查询标签: {}", gson.toJson(label));
         List<Label> labels = labelService.getList(label);
         return Response.success(labels);
     }
 
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam(name = "label_id") String labelId) {
-        log.info("根据标签ID查询标签信息: {}", labelId);
+        log.info("根据标签ID请求查询标签信息: {}", labelId);
         Optional<Label> optional = labelService.getDetail(labelId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -56,7 +56,7 @@ public class LabelController {
 
     @PostMapping(value = "/save")
     public Response save(@RequestBody Label label) {
-        log.info("保存/更新标签信息: {}", gson.toJson(label));
+        log.info("请求保存/更新标签信息: {}", gson.toJson(label));
         int result = labelService.save(label);
         if (result > 0) {
             return Response.success(result);
@@ -67,7 +67,7 @@ public class LabelController {
 
     @DeleteMapping(value = "/delete")
     public Response delete(@RequestParam(name = "label_id") String labelId) {
-        log.info("删除标签: {}", labelId);
+        log.info("请求删除标签: {}", labelId);
         int result = labelService.delete(labelId);
         if (result > 0) {
             return Response.success(result);

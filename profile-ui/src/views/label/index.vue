@@ -571,8 +571,24 @@ const handleDetail = (row: Label) => {
 
 // 编辑标签
 const handleEdit = (row: Label) => {
-  // TODO: 跳转到编辑标签页面
-  ElMessage.info('编辑标签功能开发中')
+  // 根据标签创建方式跳转到不同的编辑页面
+  // source_type: 2-数据源导入, 3-文件上传, 5-SQL计算, 6-自定义规则
+  switch (row.source_type) {
+    case 2:  // 数据源导入
+      router.push(`/label/edit/datasource/${row.label_id}`)
+      break
+    case 6:  // 自定义规则
+      router.push(`/label/edit/custom/${row.label_id}`)
+      break
+    case 5:  // SQL计算
+      ElMessage.info('SQL计算标签编辑功能开发中')
+      break
+    case 3:  // 文件上传
+      ElMessage.info('文件上传标签编辑功能开发中')
+      break
+    default:
+      ElMessage.warning('未知标签类型，无法编辑')
+  }
 }
 
 // 筛选标签
