@@ -57,10 +57,6 @@
           </div>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="router.push('/group/detail')">
-                <el-icon><View /></el-icon>
-                <span>群组细查</span>
-              </el-dropdown-item>
               <el-dropdown-item @click="router.push('/group/filter')">
                 <el-icon><Filter /></el-icon>
                 <span>群组筛选</span>
@@ -239,10 +235,6 @@
           <!-- 群组洞察子菜单 -->
           <template v-if="activeTopNav === '/group'">
             <div class="menu-group-title">群组洞察</div>
-            <el-menu-item index="/group/detail">
-              <el-icon><View /></el-icon>
-              <span>群组细查</span>
-            </el-menu-item>
             <el-menu-item index="/group/filter">
               <el-icon><Filter /></el-icon>
               <span>群组筛选</span>

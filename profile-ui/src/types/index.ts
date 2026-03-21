@@ -193,19 +193,35 @@ export interface Group {
   group_name: string
   group_desc?: string
   group_status?: number  // 1-启用, 2-停用
-  group_type?: number    // 1-标签筛选, 2-群组交并, 3-行为圈选, 4-行为序列圈选, 5-组合人群, 6-文件上传
-  group_rule?: string    // 群组规则JSON
+  group_type?: number    // 1-规则筛选, 2-文件上传, 3-SQL创建
+  group_rule?: string | any  // 群组规则JSON
   group_count?: number   // 群组规模
   entity_id?: string     // 群组主体ID
+  entity_identifier_id?: string  // 群组主体标识ID
+  entity_identifier_name?: string
+  entity_name?: string
   source_type?: number   // 1-系统内置, 2-自定义
+  
+  // 调度任务
+  trigger_type?: number      // 1-手动触发, 2-周期调度, 3-API触发
+  trigger_cron?: string      // Cron表达式
+  trigger_url?: string       // API触发URL
+  trigger_start_time?: string
+  trigger_end_time?: string
+  
+  // 实例信息
   instance_id?: number
-  instance_status?: number  // 1-未运行, 2-运行中, 3-运行成功, 4-运行失败
+  instance_status?: number   // 1-未运行, 2-运行中, 3-运行成功, 4-运行失败
   instance_start_time?: string
   instance_end_time?: string
   instance_msg?: string
+  
+  // 人员信息
   owner?: string
   creator?: string
   modifier?: string
+  
+  // 时间
   gmt_create?: string
   gmt_modified?: string
 }

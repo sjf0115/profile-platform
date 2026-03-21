@@ -24,8 +24,6 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class TaskInstanceService {
-    private static Logger LOG = LoggerFactory.getLogger(UserService.class);
-
     @Resource
     private TaskInstanceMapper instanceMapper;
 

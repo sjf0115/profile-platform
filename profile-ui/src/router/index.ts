@@ -130,10 +130,10 @@ const routes: RouteRecordRaw[] = [
       },
       // 群组洞察
       {
-        path: 'group/detail',
+        path: 'group/detail/:id',
         name: 'GroupDetail',
-        component: () => import('@/views/group/index.vue'),
-        meta: { title: '群组细查' },
+        component: () => import('@/views/group/detail.vue'),
+        meta: { title: '群组详情' },
       },
       {
         path: 'group/filter',
@@ -150,7 +150,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'group/edit/:id',
         name: 'EditGroup',
-        component: () => import('@/views/group/create-rule.vue'),
+        component: () => import('@/views/group/edit.vue'),
         meta: { title: '编辑群组' },
       }
     ],

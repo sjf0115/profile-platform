@@ -65,7 +65,7 @@ public class TaskService {
      * @param relatedId 关联ID
      */
     public Task getDetailByRelatedId(String relatedId) {
-        Task task = taskMapper.selectByTaskId(relatedId);
+        Task task = taskMapper.selectByRelatedId(relatedId);
         log.info("根据关联ID {} 获取调度任务详细信息: {}", relatedId, gson.toJson(task));
         return task;
     }
@@ -104,14 +104,14 @@ public class TaskService {
     }
 
     /**
-     * 根据调度任务ID删除任务
+     * 根据调度任务ID删除调度任务
      * @param taskId 调度任务ID
      */
     public int delete(String taskId) {
         Task task = taskMapper.selectByTaskId(taskId);
         if (Objects.equals(task, null)) {
             log.warn("调度任务 {} 不存在，无法删除", taskId);
-            throw new RuntimeException("调度任务不存在，无法删除");
+            return 1;
         }
         if (Objects.equals(task.getSourceType(), SourceType.BUILT_IN.getCode())) {
             log.error("内置调度任务 {} 不允许删除", taskId);
@@ -120,5 +120,24 @@ public class TaskService {
         // Todo 删除定时任务
         log.info("根据调度任务ID删除任务: {}", taskId);
         return taskMapper.deleteByTaskId(taskId);
+    }
+
+    /**
+     * 根据关联ID删除调度任务
+     * @param relatedId 关联ID
+     */
+    public int deleteByRelatedId(String relatedId) {
+        Task task = taskMapper.selectByRelatedId(relatedId);
+        if (Objects.equals(task, null)) {
+            log.warn("调度关联ID {} 对应的任务不存在，无法删除", relatedId);
+            return 1;
+        }
+        if (Objects.equals(task.getSourceType(), SourceType.BUILT_IN.getCode())) {
+            log.error("调度关联ID {} 对应的内置调度任务 {} 不允许删除", relatedId, task.getTaskId());
+            throw new RuntimeException("内置调度任务不允许删除");
+        }
+        // Todo 删除定时任务
+        log.info("根据关联ID删除调度任务: {}", relatedId);
+        return taskMapper.deleteByRelatedId(relatedId);
     }
 }

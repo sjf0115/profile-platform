@@ -16,6 +16,8 @@ public interface TaskMapper {
     int insertSelective(Task task); // 选择性插入
     // 删除
     int deleteByTaskId(String taskId); // 根据ID删除
+    int deleteByRelatedId(String relatedId); // 根据关联ID删除
+
     // 更新
     int updateByTaskId(Task task); // 全部更新
     int updateByTaskIdSelective(Task task); // 部分更新

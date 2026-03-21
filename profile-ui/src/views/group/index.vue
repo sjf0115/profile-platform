@@ -47,46 +47,59 @@
       v-loading="loading"
     >
       <el-table-column type="selection" width="55" />
-      <el-table-column prop="group_name" label="分群名称" min-width="150" show-overflow-tooltip />
-      <el-table-column prop="group_count" label="人数" width="100" sortable>
+      <el-table-column prop="group_name" label="群组名称" min-width="150" show-overflow-tooltip />
+      <el-table-column prop="group_status" label="群组状态" width="100">
+        <template #default="{ row }">
+          <el-tag :type="getStatusType(row.group_status)" size="small">
+            {{ getStatusText(row.group_status) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="group_type" label="创建方式" width="120">
+        <template #default="{ row }">
+          {{ getGroupTypeText(row.group_type) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="entity_identifier_id" label="实体类型" width="120" show-overflow-tooltip />
+      <el-table-column prop="group_count" label="群组规模" width="100" sortable>
         <template #default="{ row }">
           {{ row.group_count || 0 }}
         </template>
       </el-table-column>
-      <el-table-column label="刷新" width="120">
+      <el-table-column prop="creator" label="创建人" width="120" />
+      <el-table-column prop="gmt_create" label="创建时间" width="150">
         <template #default="{ row }">
-          <el-tag v-if="row.group_type === 1" size="small">固定</el-tag>
-          <span v-else>-</span>
+          {{ formatDateTime(row.gmt_create) }}
         </template>
       </el-table-column>
-      <el-table-column prop="creator" label="创建者" width="120" />
-      <el-table-column prop="gmt_create" label="最近使用" width="150">
+      <el-table-column prop="instance_end_time" label="更新时间" width="150">
         <template #default="{ row }">
-          {{ formatDate(row.gmt_create) }}
+          {{ formatDateTime(row.instance_end_time) }}
         </template>
       </el-table-column>
-      <el-table-column label="主体" width="100">
+      <el-table-column prop="instance_status" label="执行状态" width="100">
         <template #default="{ row }">
-          {{ getEntityName(row.entity_id) }}
+          <el-tag :type="getInstanceStatusType(row.instance_status)" size="small">
+            {{ getInstanceStatusText(row.instance_status) }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="280" fixed="right">
+      <el-table-column label="操作" width="200" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" @click="handleView(row)">查看</el-button>
           <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
           <el-button link type="primary" @click="handleAnalyze(row)">分析</el-button>
-          <el-button link type="primary" @click="handlePush(row)">推送</el-button>
-          <el-button link type="primary" @click="handleUpdate(row)">更新</el-button>
-          <el-button link type="primary" @click="handleDownload(row)">下载</el-button>
-          <el-button link type="primary" @click="handleCopy(row)">复制</el-button>
           <el-dropdown trigger="click">
             <el-button link type="primary">
               <el-icon><More /></el-icon>
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item @click="handleViewUsers(row)">查看用户列表</el-dropdown-item>
-                <el-dropdown-item @click="handleDelete(row)">删除</el-dropdown-item>
+                <el-dropdown-item @click="handlePush(row)">推送</el-dropdown-item>
+                <el-dropdown-item @click="handleUpdate(row)">重新执行</el-dropdown-item>
+                <el-dropdown-item @click="handleDownload(row)">下载</el-dropdown-item>
+                <el-dropdown-item @click="handleCopy(row)">复制</el-dropdown-item>
+                <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -254,9 +267,63 @@ const formatDate = (dateStr?: string) => {
   return new Date(dateStr).toLocaleDateString()
 }
 
+const formatDateTime = (dateStr?: string) => {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
 const getEntityName = (entityId?: string) => {
   // 实际应该从实体列表中获取名称
   return entityId ? '主体1' : '-'
+}
+
+// 群组状态
+const getStatusType = (status?: number) => {
+  switch (status) {
+    case 1: return 'success'
+    case 2: return 'danger'
+    default: return 'info'
+  }
+}
+
+const getStatusText = (status?: number) => {
+  switch (status) {
+    case 1: return '启用'
+    case 2: return '停用'
+    default: return '未知'
+  }
+}
+
+// 执行状态
+const getInstanceStatusType = (status?: number) => {
+  switch (status) {
+    case 1: return 'info'
+    case 2: return 'warning'
+    case 3: return 'success'
+    case 4: return 'danger'
+    default: return 'info'
+  }
+}
+
+const getInstanceStatusText = (status?: number) => {
+  switch (status) {
+    case 1: return '未运行'
+    case 2: return '运行中'
+    case 3: return '成功'
+    case 4: return '失败'
+    default: return '-'
+  }
+}
+
+// 创建方式
+const getGroupTypeText = (type?: number) => {
+  switch (type) {
+    case 1: return '规则筛选'
+    case 2: return '文件上传'
+    case 3: return 'SQL创建'
+    default: return '未知'
+  }
 }
 
 onMounted(() => {

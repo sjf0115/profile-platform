@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -27,7 +28,7 @@ public class TaskController {
     @Autowired
     private TaskService taskService;
 
-    @GetMapping(value = "/list")
+    @PostMapping(value = "/list")
     public Response getList(@RequestBody Task task) {
         List<Task> tasks = taskService.getList(task);
         return Response.success(tasks);
@@ -38,6 +39,16 @@ public class TaskController {
         Optional<Task> optional = taskService.getDetail(taskId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
+        } else {
+            return Response.error("请求的任务不存在", ResponseCode.ERROR);
+        }
+    }
+
+    @GetMapping(value = "/detailByRelatedId")
+    public Response getDetailByRelatedId(@RequestParam(name = "related_id") String relatedId) {
+        Task task = taskService.getDetailByRelatedId(relatedId);
+        if (!Objects.equals(task, null)) {
+            return Response.success(task);
         } else {
             return Response.error("请求的任务不存在", ResponseCode.ERROR);
         }
@@ -65,7 +76,7 @@ public class TaskController {
         }
     }
 
-    @GetMapping(value = "/delete")
+    @DeleteMapping(value = "/delete")
     public Response delete(@RequestParam(name = "task_id") String taskId) {
         int result = taskService.delete(taskId);
         if (result > 0) {

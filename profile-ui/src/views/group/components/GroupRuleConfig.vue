@@ -724,12 +724,15 @@ const convertTimePeriod = (timeRange?: [Date, Date]) => {
 /**
  * 获取后端 GroupRule 格式的数据
  * 返回符合 GroupRule -> SelectorExpression -> SelectorConditionGroup -> SelectorCondition 结构
+ * 注意：后端 SelectorExpression 中 groups 字段有 @SerializedName("expression") 注解，
+ * 会序列化为 expression 字段
  */
 const getGroupRule = () => {
   // 构建 SelectorExpression
+  // 注意：前端使用 groups，后端 Gson 会通过 @SerializedName 映射为 expression
   const selectorExpression = {
     logic: groupsLogic.value,  // 规则组之间的逻辑
-    expression: ruleGroups.value.map(group => ({
+    groups: ruleGroups.value.map(group => ({
       // SelectorConditionGroup
       logic: group.inner_logic,  // 组内规则之间的逻辑
       conditions: group.rules.map(rule => convertToSelectorCondition(rule))
@@ -751,14 +754,125 @@ onMounted(() => {
   fetchLabelOperators()
   fetchGroupList()
   fetchEventList()
-  if (ruleGroups.value.length === 0) {
+  // 如果有传入的初始值（编辑模式），则解析
+  if (props.modelValue?.rule_groups && props.modelValue.rule_groups.length > 0) {
+    parseGroupRule(props.modelValue)
+  } else if (ruleGroups.value.length === 0) {
     addRuleGroup()
   }
 })
 
+/**
+ * 从后端 GroupRule 格式解析为前端 RuleGroup 格式
+ */
+const parseGroupRule = (data: any) => {
+  if (!data?.rule_groups || !Array.isArray(data.rule_groups)) {
+    return
+  }
+  
+  // 清空现有数据
+  ruleGroups.value = []
+  
+  // 遍历规则组
+  data.rule_groups.forEach((group: any, index: number) => {
+    const ruleGroup: RuleGroup = {
+      id: generateId(),
+      expanded: group.expanded !== false, // 默认展开
+      inner_logic: group.inner_logic || 'AND',
+      logic: group.logic || (index === 0 ? 'AND' : 'OR'),
+      rules: []
+    }
+    
+    // 解析规则
+    if (group.rules && Array.isArray(group.rules)) {
+      group.rules.forEach((rule: any) => {
+        const parsedRule = parseRule(rule)
+        if (parsedRule) {
+          ruleGroup.rules.push(parsedRule)
+        }
+      })
+    }
+    
+    ruleGroups.value.push(ruleGroup)
+  })
+  
+  // 更新模型值
+  updateModelValue()
+}
+
+/**
+ * 解析单个规则
+ */
+const parseRule = (rule: any): GroupRule | null => {
+  if (!rule?.rule_type) return null
+  
+  const baseRule: GroupRule = {
+    id: generateId(),
+    rule_type: rule.rule_type
+  }
+  
+  switch (rule.rule_type) {
+    case 'tag':
+      return {
+        ...baseRule,
+        tag_id: rule.tag_id || '',
+        tag_data_type: rule.tag_data_type,
+        operator: rule.operator || 'eq',
+        value: rule.value || ''
+      }
+    case 'group':
+      return {
+        ...baseRule,
+        group_id: rule.group_id || '',
+        relation: rule.relation || 'in'
+      }
+    case 'event':
+      return {
+        ...baseRule,
+        event_code: rule.event_code || '',
+        happen_type: rule.happen_type || 'done',
+        time_range: parseTimeRange(rule.time_range),
+        metric: rule.metric || 'total_count',
+        operator: rule.operator || 'gte',
+        value: rule.value || 1
+      }
+    case 'sequence':
+      return {
+        ...baseRule,
+        time_range: parseTimeRange(rule.time_range),
+        sequence_events: (rule.sequence_events || []).map((e: any) => ({
+          id: generateId(),
+          event_code: e.event_code || ''
+        }))
+      }
+    default:
+      return null
+  }
+}
+
+/**
+ * 解析时间范围
+ */
+const parseTimeRange = (timeRange?: any): [Date, Date] | undefined => {
+  if (!timeRange || !Array.isArray(timeRange) || timeRange.length !== 2) {
+    return undefined
+  }
+  try {
+    const start = new Date(timeRange[0])
+    const end = new Date(timeRange[1])
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return getYesterdayRange()
+    }
+    return [start, end]
+  } catch {
+    return getYesterdayRange()
+  }
+}
+
 defineExpose({
   validate,
-  getGroupRule
+  getGroupRule,
+  parseGroupRule // 导出解析方法供外部调用
 })
 </script>
 
