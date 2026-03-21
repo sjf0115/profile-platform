@@ -185,3 +185,41 @@ export interface DatasetQueryParams extends PageParams {
   dataset_status?: number
   dataset_type?: number
 }
+
+// 群组
+export interface Group {
+  id?: number
+  group_id: string
+  group_name: string
+  group_desc?: string
+  group_status?: number  // 1-启用, 2-停用
+  group_type?: number    // 1-标签筛选, 2-群组交并, 3-行为圈选, 4-行为序列圈选, 5-组合人群, 6-文件上传
+  group_rule?: string    // 群组规则JSON
+  group_count?: number   // 群组规模
+  entity_id?: string     // 群组主体ID
+  source_type?: number   // 1-系统内置, 2-自定义
+  instance_id?: number
+  instance_status?: number  // 1-未运行, 2-运行中, 3-运行成功, 4-运行失败
+  instance_start_time?: string
+  instance_end_time?: string
+  instance_msg?: string
+  owner?: string
+  creator?: string
+  modifier?: string
+  gmt_create?: string
+  gmt_modified?: string
+}
+
+// 群组配置响应
+export interface GroupConfigResponse {
+  group_type: { id: number; name: string }[]
+  group_status: { id: number; name: string }[]
+  instance_status: { id: number; name: string }[]
+}
+
+// 群组查询参数
+export interface GroupQueryParams extends PageParams {
+  group_name?: string
+  group_status?: number
+  group_type?: number
+}

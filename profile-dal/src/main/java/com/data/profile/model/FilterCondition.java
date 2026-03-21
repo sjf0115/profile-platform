@@ -1,6 +1,9 @@
 package com.data.profile.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
@@ -12,6 +15,9 @@ import java.util.List;
  * 日期：2025/3/30 16:35
  */
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class FilterCondition {
     // 1-标签,2-群组,3-事件
     private int type;

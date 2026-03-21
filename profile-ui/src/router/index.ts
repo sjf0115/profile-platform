@@ -127,6 +127,31 @@ const routes: RouteRecordRaw[] = [
         name: 'EntityManagement',
         component: () => import('@/views/entity/index.vue'),
         meta: { title: '实体管理' },
+      },
+      // 群组洞察
+      {
+        path: 'group/detail',
+        name: 'GroupDetail',
+        component: () => import('@/views/group/index.vue'),
+        meta: { title: '群组细查' },
+      },
+      {
+        path: 'group/filter',
+        name: 'GroupFilter',
+        component: () => import('@/views/group/index.vue'),
+        meta: { title: '群组筛选' },
+      },
+      {
+        path: 'group/create/rule',
+        name: 'CreateGroupRule',
+        component: () => import('@/views/group/create-rule.vue'),
+        meta: { title: '规则创建群组' },
+      },
+      {
+        path: 'group/edit/:id',
+        name: 'EditGroup',
+        component: () => import('@/views/group/create-rule.vue'),
+        meta: { title: '编辑群组' },
       }
     ],
   },

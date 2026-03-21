@@ -1,7 +1,10 @@
 package com.data.profile.model;
 
 import com.google.gson.annotations.SerializedName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
@@ -13,6 +16,9 @@ import java.util.List;
  * 日期：2025/3/30 16:28
  */
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class SelectorExpression {
     private String logic;
     @SerializedName("expression")

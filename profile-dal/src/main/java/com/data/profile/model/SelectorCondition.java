@@ -1,6 +1,9 @@
 package com.data.profile.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 功能：筛选器条件
@@ -10,6 +13,9 @@ import lombok.Data;
  * 日期：2025/3/30 16:31
  */
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class SelectorCondition {
     // 用户是(profile)/用户不是(not_profile)/用户做过(event)/用户没有做过(not_event)/用户依次做过(event_sequence)/用户没有依次做过(not_event_sequence)
     private String type;

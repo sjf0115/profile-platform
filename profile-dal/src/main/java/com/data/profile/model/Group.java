@@ -19,7 +19,7 @@ public class Group {
     // 群组描述
     private String groupDesc;
     // 群组规则
-    private String groupRule;
+    private GroupRule groupRule;
     // 群组覆盖规模
     private Integer groupCount;
     // 群组主体ID

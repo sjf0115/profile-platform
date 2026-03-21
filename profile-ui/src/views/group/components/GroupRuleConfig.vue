@@ -1,0 +1,982 @@
+<template>
+  <div class="group-rule-config">
+    <!-- 规则组列表容器（带左侧垂直线） -->
+    <div class="rule-groups-container" :class="{ 'has-logic': ruleGroups.length > 1 }">
+      <!-- 规则组间逻辑选择器（只有一个，在最左侧） -->
+      <div v-if="ruleGroups.length > 1" class="groups-logic-wrapper">
+        <div
+          class="logic-toggle-btn"
+          :class="{ 'is-or': groupsLogic === 'OR' }"
+          @click="toggleGroupsLogic"
+        >
+          {{ groupsLogic === 'AND' ? '且' : '或' }}
+        </div>
+      </div>
+
+      <!-- 规则组列表 -->
+      <div class="rule-group-list">
+        <div
+          v-for="(group, groupIndex) in ruleGroups"
+          :key="group.id"
+          class="rule-group-wrapper"
+        >
+          <div class="rule-group">
+            <!-- 规则组内容 -->
+            <div class="rule-group-content">
+              <div class="rules-wrapper">
+                <!-- 左侧垂直线条（包含组内逻辑选择器） -->
+                <div class="group-left-line">
+                  <div v-if="group.rules.length > 1" class="inner-logic-wrapper">
+                    <div
+                      class="logic-toggle-btn"
+                      :class="{ 'is-or': group.inner_logic === 'OR' }"
+                      @click="toggleInnerLogic(group)"
+                    >
+                      {{ group.inner_logic === 'AND' ? '且' : '或' }}
+                    </div>
+                  </div>
+                </div>
+
+              <!-- 规则列表 -->
+              <div class="rule-list">
+                <div
+                  v-for="(rule, ruleIndex) in group.rules"
+                  :key="rule.id"
+                  class="rule-item"
+                >
+                  <!-- 规则类型标签 -->
+                  <div class="rule-type-tag" :class="rule.rule_type">
+                    {{ getRuleTypeLabel(rule.rule_type) }}
+                  </div>
+
+                  <!-- 规则内容 -->
+                  <div class="rule-content">
+                    <!-- 标签规则 -->
+                    <template v-if="rule.rule_type === 'tag'">
+                      <el-select
+                        v-model="rule.tag_id"
+                        placeholder="选择标签"
+                        size="default"
+                        style="width: 180px"
+                        filterable
+                        @change="(val: string) => handleTagChange(rule, val)"
+                      >
+                        <el-option
+                          v-for="tag in tagList"
+                          :key="tag.label_id"
+                          :label="tag.label_name"
+                          :value="tag.label_id"
+                        />
+                      </el-select>
+
+                      <el-select
+                        v-model="rule.operator"
+                        placeholder="操作符"
+                        size="default"
+                        style="width: 100px"
+                      >
+                        <el-option
+                          v-for="op in getTagOperators(rule.tag_data_type)"
+                          :key="op.value"
+                          :label="op.label"
+                          :value="op.value"
+                        />
+                      </el-select>
+
+                      <el-input
+                        v-model="rule.value"
+                        placeholder="请输入值"
+                        size="default"
+                        style="width: 150px"
+                      />
+                    </template>
+
+                    <!-- 群组规则 -->
+                    <template v-if="rule.rule_type === 'group'">
+                      <el-select v-model="rule.relation" size="default" style="width: 100px">
+                        <el-option label="包含" value="in" />
+                        <el-option label="不包含" value="not_in" />
+                      </el-select>
+
+                      <el-select
+                        v-model="rule.group_id"
+                        placeholder="选择群组"
+                        size="default"
+                        style="width: 200px"
+                        filterable
+                      >
+                        <el-option
+                          v-for="g in groupList"
+                          :key="g.group_id"
+                          :label="g.group_name"
+                          :value="g.group_id"
+                        />
+                      </el-select>
+                    </template>
+
+                    <!-- 事件规则 -->
+                    <template v-if="rule.rule_type === 'event'">
+                      <el-date-picker
+                        v-model="rule.time_range"
+                        type="daterange"
+                        size="default"
+                        style="width: 220px"
+                        placeholder="选择时间范围"
+                        :shortcuts="dateShortcuts"
+                      />
+
+                      <el-select v-model="rule.happen_type" size="default" style="width: 90px">
+                        <el-option label="做过" value="done" />
+                        <el-option label="没做过" value="not_done" />
+                      </el-select>
+
+                      <el-select
+                        v-model="rule.event_code"
+                        placeholder="选择事件"
+                        size="default"
+                        style="width: 180px"
+                        filterable
+                      >
+                        <el-option
+                          v-for="event in eventList"
+                          :key="event.event_code"
+                          :label="event.event_name"
+                          :value="event.event_code"
+                        />
+                      </el-select>
+
+                      <el-select v-model="rule.metric" size="default" style="width: 100px">
+                        <el-option label="总次数" value="total_count" />
+                        <el-option label="总人数" value="total_users" />
+                      </el-select>
+
+                      <el-select v-model="rule.operator" size="default" style="width: 70px">
+                        <el-option label=">=" value="gte" />
+                        <el-option label=">" value="gt" />
+                        <el-option label="=" value="eq" />
+                        <el-option label="<" value="lt" />
+                        <el-option label="<=" value="lte" />
+                      </el-select>
+
+                      <el-input-number
+                        v-model="rule.value"
+                        :min="0"
+                        size="default"
+                        style="width: 80px"
+                      />
+                    </template>
+
+                    <!-- 行为序列规则 -->
+                    <template v-if="rule.rule_type === 'sequence'">
+                      <el-date-picker
+                        v-model="rule.time_range"
+                        type="daterange"
+                        size="default"
+                        style="width: 220px"
+                        placeholder="选择时间范围"
+                        :shortcuts="dateShortcuts"
+                      />
+
+                      <span class="sequence-label">依次发生过</span>
+
+                      <div class="sequence-list">
+                        <div
+                          v-for="(seq, sIndex) in rule.sequence_events"
+                          :key="seq.id"
+                          class="sequence-item"
+                        >
+                          <span class="seq-num">{{ sIndex + 1 }}</span>
+                          <el-select
+                            v-model="seq.event_code"
+                            placeholder="选择事件"
+                            size="default"
+                            style="width: 180px"
+                            filterable
+                          >
+                            <el-option
+                              v-for="event in eventList"
+                              :key="event.event_code"
+                              :label="event.event_name"
+                              :value="event.event_code"
+                            />
+                          </el-select>
+                          <el-button
+                            v-if="rule.sequence_events && rule.sequence_events.length > 2"
+                            link
+                            type="danger"
+                            @click="removeSequenceEvent(rule, sIndex)"
+                          >
+                            <el-icon><Close /></el-icon>
+                          </el-button>
+                        </div>
+                        <el-button link type="primary" @click="addSequenceEvent(rule)">
+                          <el-icon><Plus /></el-icon>
+                          添加事件
+                        </el-button>
+                      </div>
+                    </template>
+                  </div>
+
+                  <!-- 规则操作栏 -->
+                  <div class="rule-actions">
+                    <el-tooltip content="删除" placement="top">
+                      <el-button link type="danger" @click="deleteRule(group, ruleIndex)">
+                        <el-icon><CircleClose /></el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <el-tooltip content="复制" placement="top">
+                      <el-button link @click="copyRule(group, rule)">
+                        <el-icon><CopyDocument /></el-icon>
+                      </el-button>
+                    </el-tooltip>
+                    <el-tooltip content="添加规则" placement="top">
+                      <el-button link @click="addRuleAfter(group, ruleIndex)">
+                        <el-icon><Operation /></el-icon>
+                      </el-button>
+                    </el-tooltip>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 添加规则组按钮 -->
+            <div v-if="groupIndex === ruleGroups.length - 1" class="add-rule-btn-wrapper">
+              <el-button link type="primary" size="small" @click="addRuleGroup">
+                <el-icon><Plus /></el-icon>
+                添加规则组
+              </el-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 添加规则类型选择弹窗 -->
+    <el-dialog
+      v-model="showRuleTypeDialog"
+      title="选择规则类型"
+      width="400px"
+      :show-close="false"
+    >
+      <div class="rule-type-options">
+        <div class="rule-type-option" @click="selectRuleType('tag')">
+          <div class="option-icon tag">
+            <el-icon><PriceTag /></el-icon>
+          </div>
+          <div class="option-info">
+            <div class="option-title">标签</div>
+            <div class="option-desc">根据标签值筛选用户</div>
+          </div>
+        </div>
+        <div class="rule-type-option" @click="selectRuleType('group')">
+          <div class="option-icon group">
+            <el-icon><User /></el-icon>
+          </div>
+          <div class="option-info">
+            <div class="option-title">群组</div>
+            <div class="option-desc">根据群组关系筛选用户</div>
+          </div>
+        </div>
+        <div class="rule-type-option" @click="selectRuleType('event')">
+          <div class="option-icon event">
+            <el-icon><Calendar /></el-icon>
+          </div>
+          <div class="option-info">
+            <div class="option-title">事件</div>
+            <div class="option-desc">根据用户行为事件筛选（仅用户实体）</div>
+          </div>
+        </div>
+        <div class="rule-type-option" @click="selectRuleType('sequence')">
+          <div class="option-icon sequence">
+            <el-icon><Sort /></el-icon>
+          </div>
+          <div class="option-info">
+            <div class="option-title">行为序列</div>
+            <div class="option-desc">根据事件序列筛选用户（仅用户实体）</div>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
+  </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, watch, onMounted } from 'vue'
+import {
+  Plus, Close, CopyDocument, CircleClose, Operation,
+  User, Calendar, PriceTag, Sort
+} from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import type { Group, Label } from '@/types'
+import { groupApi } from '@/api/group'
+import { labelApi } from '@/api/label'
+
+const props = defineProps<{
+  modelValue: any
+  entityIdentifierId?: string
+}>()
+
+const emit = defineEmits<{
+  'update:modelValue': [value: any]
+}>()
+
+// 规则类型定义
+interface SequenceEvent {
+  id: number
+  event_code: string
+}
+
+interface GroupRule {
+  id: number
+  rule_type: 'tag' | 'group' | 'event' | 'sequence'
+  // 标签规则
+  tag_id?: string
+  tag_data_type?: number
+  operator?: string
+  value?: string | number
+  // 群组规则
+  group_id?: string
+  relation?: string
+  // 事件规则
+  event_code?: string
+  happen_type?: string
+  time_range?: [Date, Date]
+  metric?: string
+  // 行为序列
+  sequence_events?: SequenceEvent[]
+}
+
+interface RuleGroup {
+  id: number
+  expanded: boolean
+  inner_logic: 'AND' | 'OR'  // 组内规则之间的逻辑
+  logic: 'AND' | 'OR'  // 与其他规则组的逻辑
+  rules: GroupRule[]
+}
+
+// 数据
+const ruleGroups = ref<RuleGroup[]>([])
+const showRuleTypeDialog = ref(false)
+const currentGroup = ref<RuleGroup | null>(null)
+const currentRuleIndex = ref<number>(-1)
+
+// 列表数据
+const tagList = ref<Label[]>([])
+const groupList = ref<Group[]>([])
+const eventList = ref<{ event_code: string; event_name: string }[]>([])
+
+// 规则组间逻辑（只有一个，用于所有规则组之间）
+const groupsLogic = ref<'AND' | 'OR'>('AND')
+
+// ID生成器
+let idCounter = 0
+const generateId = () => ++idCounter
+
+// 默认时间范围（昨天）
+const getYesterdayRange = (): [Date, Date] => {
+  const end = new Date()
+  end.setHours(0, 0, 0, 0)
+  const start = new Date(end)
+  start.setDate(start.getDate() - 1)
+  return [start, end]
+}
+
+// 日期快捷选项
+const dateShortcuts = [
+  { text: '昨天', value: () => getYesterdayRange() },
+  { text: '过去7天', value: () => getDateRange(7) },
+  { text: '过去30天', value: () => getDateRange(30) },
+  { text: '过去90天', value: () => getDateRange(90) }
+]
+
+const getDateRange = (days: number): [Date, Date] => {
+  const end = new Date()
+  const start = new Date()
+  start.setDate(start.getDate() - days)
+  return [start, end]
+}
+
+// 获取标签操作符
+const getTagOperators = (dataType?: number) => {
+  const commonOperators = [
+    { label: '=', value: 'eq' },
+    { label: '≠', value: 'ne' },
+    { label: '>', value: 'gt' },
+    { label: '≥', value: 'gte' },
+    { label: '<', value: 'lt' },
+    { label: '≤', value: 'lte' }
+  ]
+
+  const stringOperators = [
+    { label: '包含', value: 'contains' },
+    { label: '不包含', value: 'not_contains' },
+    { label: '属于', value: 'in' },
+    { label: '不属于', value: 'not_in' }
+  ]
+
+  if (dataType === 1) {
+    return [...commonOperators, ...stringOperators]
+  }
+  return commonOperators
+}
+
+// 标签变化处理
+const handleTagChange = (rule: GroupRule, tagId: string) => {
+  const tag = tagList.value.find(t => t.label_id === tagId)
+  if (tag) {
+    rule.tag_data_type = tag.label_data_type as number
+    rule.operator = undefined
+  }
+}
+
+// 获取规则类型标签
+const getRuleTypeLabel = (type: string) => {
+  const labels: Record<string, string> = {
+    tag: '标签',
+    group: '群组',
+    event: '事件',
+    sequence: '行为序列'
+  }
+  return labels[type] || type
+}
+
+// 加载标签列表
+const fetchTagList = async () => {
+  try {
+    const res = await labelApi.getList({ page_size: 1000 })
+    tagList.value = res.data.data || []
+  } catch (error) {
+    console.error('获取标签列表失败:', error)
+  }
+}
+
+// 加载群组列表
+const fetchGroupList = async () => {
+  try {
+    const res = await groupApi.getList({ page_size: 1000 })
+    groupList.value = res.data.data || []
+  } catch (error) {
+    console.error('获取群组列表失败:', error)
+  }
+}
+
+// 加载事件列表
+const fetchEventList = async () => {
+  eventList.value = [
+    { event_code: 'app_launch', event_name: 'App启动' },
+    { event_code: 'page_view', event_name: '页面浏览' },
+    { event_code: 'product_click', event_name: '商品点击' },
+    { event_code: 'add_cart', event_name: '加入购物车' },
+    { event_code: 'order_submit', event_name: '提交订单' },
+    { event_code: 'payment', event_name: '支付成功' },
+    { event_code: 'login', event_name: '登录' },
+    { event_code: 'register', event_name: '注册' }
+  ]
+}
+
+// 切换规则组展开/折叠
+const toggleGroup = (group: RuleGroup) => {
+  group.expanded = !group.expanded
+}
+
+// 切换所有规则组间的逻辑（只有一个）
+const toggleGroupsLogic = () => {
+  groupsLogic.value = groupsLogic.value === 'AND' ? 'OR' : 'AND'
+}
+
+// 切换规则组内逻辑
+const toggleInnerLogic = (group: RuleGroup) => {
+  group.inner_logic = group.inner_logic === 'AND' ? 'OR' : 'AND'
+}
+
+// 添加规则组
+const addRuleGroup = () => {
+  const newGroup: RuleGroup = {
+    id: generateId(),
+    expanded: true,
+    inner_logic: 'AND',
+    logic: 'AND',
+    rules: []
+  }
+  ruleGroups.value.push(newGroup)
+  addRuleToGroup(newGroup, 'tag')
+}
+
+// 删除规则组
+const deleteRuleGroup = (index: number) => {
+  ruleGroups.value.splice(index, 1)
+  updateModelValue()
+}
+
+// 添加规则到组
+const addRuleToGroup = (group: RuleGroup, type?: string) => {
+  currentGroup.value = group
+  currentRuleIndex.value = -1
+  if (type) {
+    createRule(type)
+  } else {
+    showRuleTypeDialog.value = true
+  }
+}
+
+// 在规则后添加
+const addRuleAfter = (group: RuleGroup, index: number) => {
+  currentGroup.value = group
+  currentRuleIndex.value = index
+  showRuleTypeDialog.value = true
+}
+
+// 选择规则类型
+const selectRuleType = (type: string) => {
+  createRule(type)
+  showRuleTypeDialog.value = false
+}
+
+// 创建规则
+const createRule = (type: string) => {
+  if (!currentGroup.value) return
+
+  const newRule: GroupRule = {
+    id: generateId(),
+    rule_type: type as 'tag' | 'group' | 'event' | 'sequence'
+  }
+
+  switch (type) {
+    case 'tag':
+      newRule.tag_id = ''
+      newRule.operator = 'eq'
+      newRule.value = ''
+      break
+    case 'group':
+      newRule.relation = 'in'
+      newRule.group_id = ''
+      break
+    case 'event':
+      newRule.time_range = getYesterdayRange()
+      newRule.happen_type = 'done'
+      newRule.event_code = ''
+      newRule.metric = 'total_count'
+      newRule.operator = 'gte'
+      newRule.value = 1
+      break
+    case 'sequence':
+      newRule.time_range = getYesterdayRange()
+      newRule.sequence_events = [
+        { id: generateId(), event_code: '' },
+        { id: generateId(), event_code: '' }
+      ]
+      break
+  }
+
+  if (currentRuleIndex.value >= 0) {
+    currentGroup.value.rules.splice(currentRuleIndex.value + 1, 0, newRule)
+  } else {
+    currentGroup.value.rules.push(newRule)
+  }
+
+  updateModelValue()
+}
+
+// 复制规则
+const copyRule = (group: RuleGroup, rule: GroupRule) => {
+  const index = group.rules.indexOf(rule)
+  const copiedRule = { ...rule, id: generateId() }
+  if (copiedRule.sequence_events) {
+    copiedRule.sequence_events = copiedRule.sequence_events.map(se => ({
+      ...se,
+      id: generateId()
+    }))
+  }
+  group.rules.splice(index + 1, 0, copiedRule)
+  updateModelValue()
+}
+
+// 删除规则
+const deleteRule = (group: RuleGroup, index: number) => {
+  group.rules.splice(index, 1)
+  updateModelValue()
+}
+
+// 添加序列事件
+const addSequenceEvent = (rule: GroupRule) => {
+  if (rule.sequence_events) {
+    rule.sequence_events.push({
+      id: generateId(),
+      event_code: ''
+    })
+  }
+  updateModelValue()
+}
+
+// 删除序列事件
+const removeSequenceEvent = (rule: GroupRule, index: number) => {
+  if (rule.sequence_events) {
+    rule.sequence_events.splice(index, 1)
+  }
+  updateModelValue()
+}
+
+// 更新模型值
+const updateModelValue = () => {
+  emit('update:modelValue', { rule_groups: ruleGroups.value })
+}
+
+// 验证
+const validate = () => {
+  if (ruleGroups.value.length === 0) {
+    ElMessage.warning('请至少添加一个规则组')
+    return false
+  }
+  return true
+}
+
+// 监听变化
+watch(ruleGroups, updateModelValue, { deep: true })
+
+// 初始化
+onMounted(() => {
+  fetchTagList()
+  fetchGroupList()
+  fetchEventList()
+  if (ruleGroups.value.length === 0) {
+    addRuleGroup()
+  }
+})
+
+defineExpose({
+  validate
+})
+</script>
+
+<style scoped lang="scss">
+.group-rule-config {
+  // 确保垂直排列，防止被父级flex影响
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+
+  // 规则组容器（带左侧垂直线）
+  .rule-groups-container {
+    display: flex;
+    position: relative;
+    width: 100%;
+
+    // 最左侧垂直线（只在有多个规则组时显示）
+    &.has-logic::before {
+      content: '';
+      position: absolute;
+      left: 20px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: #dcdfe6;
+    }
+
+    // 规则组间逻辑选择器（最左侧）
+    .groups-logic-wrapper {
+      width: 40px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+
+      .logic-toggle-btn {
+        width: 32px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #409eff;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+
+        &:hover {
+          opacity: 0.9;
+        }
+
+        &.is-or {
+          background-color: #67c23a;
+        }
+      }
+    }
+
+    .rule-group-list {
+      flex: 1;
+      min-width: 0;
+
+      .rule-group-wrapper {
+        position: relative;
+        margin-bottom: 16px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        // 规则组间逻辑关系行（已移除，现在在最左侧统一显示）
+        .group-logic-row {
+          display: none;
+        }
+
+        .rule-group {
+          margin-bottom: 8px;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+        .rule-group-content {
+          .rules-wrapper {
+            display: flex;
+
+            // 左侧垂直线条（包含组内逻辑选择器）
+            .group-left-line {
+              width: 40px;
+              flex-shrink: 0;
+              position: relative;
+
+              &::before {
+                content: '';
+                position: absolute;
+                left: 50%;
+                top: 0;
+                bottom: 0;
+                width: 2px;
+                background-color: #dcdfe6;
+                transform: translateX(-50%);
+              }
+
+              .inner-logic-wrapper {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 1;
+
+                .inner-logic-select {
+                  width: 50px;
+                  background-color: #fff;
+
+                  :deep(.el-input__wrapper) {
+                    padding: 0 4px;
+                    box-shadow: 0 0 0 1px #dcdfe6 inset;
+                  }
+                }
+
+                // 点击切换按钮样式
+                .logic-toggle-btn {
+                  width: 32px;
+                  height: 24px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  background-color: #409eff;
+                  color: #fff;
+                  font-size: 12px;
+                  font-weight: 500;
+                  border-radius: 4px;
+                  cursor: pointer;
+                  transition: all 0.3s;
+
+                  &:hover {
+                    opacity: 0.9;
+                  }
+
+                  &.is-or {
+                    background-color: #67c23a;
+                  }
+                }
+              }
+            }
+
+            .rule-list {
+              flex: 1;
+
+              .rule-item {
+                display: flex;
+                align-items: flex-start;
+                margin-bottom: 12px;
+
+                &:last-child {
+                  margin-bottom: 0;
+                }
+
+                &:hover {
+                  .rule-actions {
+                    opacity: 1;
+                    visibility: visible;
+                  }
+                }
+
+                .rule-type-tag {
+                  flex-shrink: 0;
+                  padding: 6px 12px;
+                  border-radius: 4px;
+                  font-size: 13px;
+                  color: #fff;
+                  margin-right: 12px;
+
+                  &.tag {
+                    background-color: #409eff;
+                  }
+
+                  &.group {
+                    background-color: #67c23a;
+                  }
+
+                  &.event {
+                    background-color: #e6a23c;
+                  }
+
+                  &.sequence {
+                    background-color: #f56c6c;
+                  }
+                }
+
+                .rule-content {
+                  display: flex;
+                  flex-wrap: wrap;
+                  align-items: center;
+                  gap: 8px;
+
+                  .sequence-label {
+                    color: #606266;
+                    font-size: 14px;
+                  }
+
+                  .sequence-list {
+                    width: 100%;
+                    margin-top: 8px;
+
+                    .sequence-item {
+                      display: flex;
+                      align-items: center;
+                      gap: 8px;
+                      margin-bottom: 8px;
+
+                      .seq-num {
+                        width: 24px;
+                        height: 24px;
+                        border-radius: 50%;
+                        background-color: #409eff;
+                        color: #fff;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 12px;
+                      }
+                    }
+                  }
+                }
+
+                .rule-actions {
+                  flex-shrink: 0;
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                  margin-left: 8px;
+                  opacity: 0;
+                  visibility: hidden;
+                  transition: opacity 0.2s, visibility 0.2s;
+
+                  .el-button {
+                    padding: 4px;
+                    
+                    .el-icon {
+                      font-size: 16px;
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          .add-rule-btn-wrapper {
+            margin-top: 8px;
+            padding-left: 40px;
+
+            .el-button {
+              font-size: 13px;
+              color: #909399;
+
+              &:hover {
+                color: #409eff;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// 规则类型选项弹窗样式
+.rule-type-options {
+  .rule-type-option {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid #e4e7ed;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+
+    &:hover {
+      border-color: #409eff;
+      background-color: #f5f7fa;
+    }
+
+    .option-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .el-icon {
+        font-size: 24px;
+        color: #fff;
+      }
+
+      &.tag {
+        background-color: #409eff;
+      }
+
+      &.group {
+        background-color: #67c23a;
+      }
+
+      &.event {
+        background-color: #e6a23c;
+      }
+
+      &.sequence {
+        background-color: #f56c6c;
+      }
+    }
+
+    .option-info {
+      .option-title {
+        font-size: 16px;
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+
+      .option-desc {
+        font-size: 13px;
+        color: #909399;
+      }
+    }
+  }
+}
+}
+</style>
