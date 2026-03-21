@@ -29,5 +29,10 @@ export const groupApi = {
   // 获取群组配置（筛选条件用）
   getConfig: () => {
     return request.get<ApiResponse<GroupConfigResponse>>('/group/config')
+  },
+
+  // 获取标签操作符配置
+  getLabelConfig: () => {
+    return request.get<ApiResponse<any[]>>('/group/config/label')
   }
 }

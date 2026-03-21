@@ -22,8 +22,8 @@ public class Group {
     private GroupRule groupRule;
     // 群组覆盖规模
     private Integer groupCount;
-    // 群组主体ID
-    private String entityId;
+    // 群组主体标识ID
+    private String entityIdentifierId;
     // 创建方式: 1-系统内置,2-自定义
     private Integer sourceType;
     // 最新执行任务实例ID
@@ -46,4 +46,17 @@ public class Group {
     private Date gmtCreate;
     // 修改时间
     private Date gmtModified;
+
+    //----------------------------------------------------------
+    // 调度
+    // 调度类型:1-手动触发调度,2-周期调度,3-API触发调度
+    private Integer triggerType;
+    // 调度 cron 表达式:只有周期自动触发更新才有
+    private String triggerCron;
+    // 调度触发URL:只有API触发调度才有
+    private String triggerUrl;
+    // 触发调度有效开始时间:只有周期自动触发更新才有
+    private String triggerStartTime;
+    // 触发调度有效结束时间:只有周期自动触发更新才有
+    private String triggerEndTime;
 }

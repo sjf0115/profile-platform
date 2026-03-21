@@ -37,24 +37,78 @@
               />
             </el-form-item>
 
-            <el-form-item label="计算周期" prop="calc_period" required>
-              <el-radio-group v-model="basicForm.calc_period">
-                <el-radio :label="1">每日例行</el-radio>
-                <el-radio :label="2">手动更新</el-radio>
+            <el-form-item label="计算周期" prop="trigger_type" required>
+              <el-radio-group v-model="basicForm.trigger_type">
+                <el-radio :label="2">周期调度</el-radio>
+                <el-radio :label="1">手动触发</el-radio>
               </el-radio-group>
               <el-tooltip content="计算周期说明" placement="top">
                 <el-icon class="help-icon"><QuestionFilled /></el-icon>
               </el-tooltip>
-              <div v-if="basicForm.calc_period === 1" class="form-tip">
-                提示：30天以上未使用的例行分群将会自动调整为手动更新
-              </div>
             </el-form-item>
+
+            <!-- 周期调度配置 -->
+            <template v-if="basicForm.trigger_type === 2">
+              <el-form-item label="调度周期" required>
+                <el-select v-model="basicForm.schedule_cycle" style="width: 200px">
+                  <el-option label="日" value="day" />
+                </el-select>
+              </el-form-item>
+
+              <el-form-item label="计算时间" required>
+                <el-time-picker
+                  v-model="basicForm.calc_time"
+                  format="HH:mm"
+                  value-format="HH:mm"
+                  placeholder="请选择计算时间"
+                  style="width: 200px"
+                  @change="updateCronExpression"
+                />
+              </el-form-item>
+
+              <el-form-item label="Cron 表达式">
+                <el-input
+                  v-model="basicForm.trigger_cron"
+                  readonly
+                  disabled
+                  style="width: 200px"
+                  placeholder="选择计算时间后自动生成"
+                />
+              </el-form-item>
+
+              <el-form-item label="生效日期" required>
+                <el-radio-group v-model="basicForm.effective_type" @change="handleEffectiveTypeChange">
+                  <el-radio :label="1">永久生效</el-radio>
+                  <el-radio :label="2">指定日期</el-radio>
+                </el-radio-group>
+              </el-form-item>
+
+              <el-form-item v-if="basicForm.effective_type === 2" label="时间区间">
+                <div style="width: 250px;">
+                  <el-date-picker
+                    v-model="basicForm.effective_date_range"
+                    type="daterange"
+                    unlink-panels
+                    range-separator="~"
+                    start-placeholder="开始"
+                    end-placeholder="结束"
+                    format="YYYY-MM-DD"
+                    value-format="YYYY-MM-DD"
+                    style="width: 100%;"
+                  />
+                </div>
+              </el-form-item>
+
+              <div class="form-tip schedule-tip">
+                提示：30天以上未使用的周期调度分群将会自动调整为手动更新
+              </div>
+            </template>
 
             <el-form-item label="分析主体" prop="entity_identifier_id" required>
               <el-select
                 v-model="basicForm.entity_identifier_id"
                 placeholder="请选择分析主体"
-                style="width: 500px"
+                style="width: 200px"
               >
                 <el-option
                   v-for="item in entityIdentifierList"
@@ -150,12 +204,62 @@ const entityIdentifierList = ref<any[]>([])
 const basicForm = reactive({
   group_name: '',
   group_desc: '',
-  calc_period: 2,  // 1-每日例行, 2-手动更新
-  calc_time_type: 1,
-  calc_hour: 0,
-  calc_minute: 0,
+  trigger_type: 1,  // 1-手动触发调度, 2-周期调度, 3-API触发调度
+  schedule_cycle: 'day',  // 调度周期：day
+  calc_time: '',  // 计算时间 HH:mm（不传递后端，用于生成 Cron）
+  trigger_cron: '',  // Cron 表达式（对应后端 triggerCron）
+  effective_type: 1,  // 1-永久生效, 2-指定日期
+  effective_date_range: [] as string[],  // 生效日期范围
   entity_identifier_id: ''
 })
+
+// 更新 Cron 表达式
+const updateCronExpression = () => {
+  if (basicForm.calc_time) {
+    const [hour, minute] = basicForm.calc_time.split(':')
+    // 日调度的 Cron 表达式: 秒 分 时 日 月 周
+    basicForm.trigger_cron = `0 ${minute} ${hour} * * ?`
+  } else {
+    basicForm.trigger_cron = ''
+  }
+}
+
+// 生效日期类型变化处理
+const handleEffectiveTypeChange = () => {
+  if (basicForm.effective_type === 1) {
+    basicForm.effective_date_range = []
+  }
+}
+
+// 获取触发开始时间
+const getTriggerStartTime = () => {
+  if (basicForm.effective_type === 1) {
+    // 永久生效：当前日期
+    return formatDate(new Date())
+  } else {
+    // 指定日期：用户选择的开始日期，默认当天
+    return basicForm.effective_date_range?.[0] || formatDate(new Date())
+  }
+}
+
+// 获取触发结束时间
+const getTriggerEndTime = () => {
+  if (basicForm.effective_type === 1) {
+    // 永久生效：9999-12-31
+    return '9999-12-31'
+  } else {
+    // 指定日期：用户选择的结束日期，默认当天
+    return basicForm.effective_date_range?.[1] || formatDate(new Date())
+  }
+}
+
+// 格式化日期为 YYYY-MM-DD
+const formatDate = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 // 基本信息验证规则
 const basicRules = {
@@ -163,7 +267,7 @@ const basicRules = {
     { required: true, message: '请输入分群名称', trigger: 'blur' },
     { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
   ],
-  calc_period: [
+  trigger_type: [
     { required: true, message: '请选择计算周期', trigger: 'change' }
   ],
   entity_identifier_id: [
@@ -210,15 +314,18 @@ const handleSave = async () => {
   }
 
   try {
+    // 获取后端格式的 GroupRule 数据
+    const groupRule = ruleConfigRef.value?.getGroupRule()
+
     const submitData = {
       group_name: basicForm.group_name,
       group_desc: basicForm.group_desc,
       entity_identifier_id: basicForm.entity_identifier_id,
-      calc_period: basicForm.calc_period,
-      calc_time_type: basicForm.calc_time_type,
-      calc_hour: basicForm.calc_hour,
-      calc_minute: basicForm.calc_minute,
-      group_rule: JSON.stringify(ruleForm.rule_groups),
+      trigger_type: basicForm.trigger_type,
+      trigger_cron: basicForm.trigger_type === 2 ? basicForm.trigger_cron : null,
+      trigger_start_time: getTriggerStartTime(),
+      trigger_end_time: getTriggerEndTime(),
+      group_rule: groupRule,
       group_type: 3,
       source_type: 2
     }
@@ -351,6 +458,15 @@ onMounted(() => {
     font-size: 12px;
     color: #909399;
     margin-top: 4px;
+  }
+  
+  .schedule-tip {
+    margin-left: 100px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background-color: #fdf6ec;
+    border-radius: 4px;
+    color: #e6a23c;
   }
   
   .help-icon {

@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -53,12 +54,25 @@ public class GroupController {
 
     @PostMapping(value = "/save")
     public Response save(@RequestBody Group group) {
-        log.info("请求保存群组: {}", gson.toJson(group));
-        int result = groupService.save(group);
-        if (result > 0) {
-            return Response.success(result);
+        String groupId = group.getGroupId();
+        if (StringUtils.isEmpty(groupId)) {
+            // 创建群组
+            log.info("请求创建群组: {}", gson.toJson(group));
+            int result = groupService.create(group);
+            if (result > 0) {
+                return Response.success(result);
+            } else {
+                return Response.error("创建群组失败", ResponseCode.ERROR);
+            }
         } else {
-            return Response.error("添加群组失败", ResponseCode.ERROR);
+            // 修改群组
+            log.info("请求修改群组: {}", gson.toJson(group));
+            int result = groupService.update(group);
+            if (result > 0) {
+                return Response.success(result);
+            } else {
+                return Response.error("修改群组失败", ResponseCode.ERROR);
+            }
         }
     }
 

@@ -73,7 +73,7 @@
                         v-model="rule.operator"
                         placeholder="操作符"
                         size="default"
-                        style="width: 100px"
+                        style="width: 120px"
                       >
                         <el-option
                           v-for="op in getTagOperators(rule.tag_data_type)"
@@ -366,6 +366,14 @@ const tagList = ref<Label[]>([])
 const groupList = ref<Group[]>([])
 const eventList = ref<{ event_code: string; event_name: string }[]>([])
 
+// 标签操作符列表（从接口获取）
+interface LabelOperator {
+  name: string  // 展示名称
+  code: string  // 操作码
+  types: number[]  // 支持的标签数据类型
+}
+const labelOperators = ref<LabelOperator[]>([])
+
 // 规则组间逻辑（只有一个，用于所有规则组之间）
 const groupsLogic = ref<'AND' | 'OR'>('AND')
 
@@ -397,28 +405,18 @@ const getDateRange = (days: number): [Date, Date] => {
   return [start, end]
 }
 
-// 获取标签操作符
+// 获取标签操作符（根据标签数据类型过滤）
 const getTagOperators = (dataType?: number) => {
-  const commonOperators = [
-    { label: '=', value: 'eq' },
-    { label: '≠', value: 'ne' },
-    { label: '>', value: 'gt' },
-    { label: '≥', value: 'gte' },
-    { label: '<', value: 'lt' },
-    { label: '≤', value: 'lte' }
-  ]
-
-  const stringOperators = [
-    { label: '包含', value: 'contains' },
-    { label: '不包含', value: 'not_contains' },
-    { label: '属于', value: 'in' },
-    { label: '不属于', value: 'not_in' }
-  ]
-
-  if (dataType === 1) {
-    return [...commonOperators, ...stringOperators]
+  if (labelOperators.value.length === 0) {
+    return []
   }
-  return commonOperators
+  // 未选择标签时显示全部操作符，选择标签后根据数据类型过滤
+  if (!dataType) {
+    return labelOperators.value.map(op => ({ label: op.name, value: op.code }))
+  }
+  return labelOperators.value
+    .filter(op => op.types.includes(dataType))
+    .map(op => ({ label: op.name, value: op.code }))
 }
 
 // 标签变化处理
@@ -448,6 +446,16 @@ const fetchTagList = async () => {
     tagList.value = res.data.data || []
   } catch (error) {
     console.error('获取标签列表失败:', error)
+  }
+}
+
+// 加载标签操作符配置
+const fetchLabelOperators = async () => {
+  try {
+    const res = await groupApi.getLabelConfig()
+    labelOperators.value = res.data.data || []
+  } catch (error) {
+    console.error('获取标签操作符配置失败:', error)
   }
 }
 
@@ -631,12 +639,116 @@ const validate = () => {
   return true
 }
 
+/**
+ * 将前端规则转换为后端 SelectorCondition 格式
+ * - 标签/群组规则: 使用 filters (FilterExpression)
+ * - 事件规则: 使用 event + measure
+ * - 行为序列: 使用 events + period
+ */
+const convertToSelectorCondition = (rule: GroupRule) => {
+  switch (rule.rule_type) {
+    case 'tag':
+      // 标签规则: type=profile, 使用 filters (FilterExpression)
+      return {
+        type: 'profile',
+        filters: {
+          logic: 'AND',
+          expression: [{
+            logic: 'AND',
+            conditions: [{
+              type: 1,  // 1-标签
+              id: rule.tag_id || '',
+              op: rule.operator || 'eq',
+              values: rule.value !== undefined && rule.value !== '' ? [String(rule.value)] : []
+            }]
+          }]
+        }
+      }
+    case 'group':
+      // 群组规则: type=profile/not_profile, 使用 filters (FilterExpression)
+      return {
+        type: rule.relation === 'in' ? 'profile' : 'not_profile',
+        filters: {
+          logic: 'AND',
+          expression: [{
+            logic: 'AND',
+            conditions: [{
+              type: 2,  // 2-群组
+              id: rule.group_id || ''
+            }]
+          }]
+        }
+      }
+    case 'event':
+      // 事件规则: type=event/not_event, 使用 event + measure
+      return {
+        type: rule.happen_type === 'done' ? 'event' : 'not_event',
+        event: {
+          eventId: rule.event_code || ''
+        },
+        period: convertTimePeriod(rule.time_range),
+        measure: {
+          type: rule.metric || 'total_count',
+          op: rule.operator || 'gte',
+          values: rule.value !== undefined ? [String(rule.value)] : []
+        }
+      }
+    case 'sequence':
+      // 行为序列: type=event_sequence, 使用 events + period
+      return {
+        type: 'event_sequence',
+        period: convertTimePeriod(rule.time_range),
+        events: (rule.sequence_events || []).map(e => ({
+          eventId: e.event_code
+        }))
+      }
+    default:
+      return {}
+  }
+}
+
+/**
+ * 转换时间范围为后端 TimePeriod 格式
+ */
+const convertTimePeriod = (timeRange?: [Date, Date]) => {
+  if (!timeRange || timeRange.length !== 2) {
+    return undefined
+  }
+  return {
+    type: 'absolute_time',
+    period: 'timestamp',
+    timestamp: [timeRange[0].getTime(), timeRange[1].getTime()]
+  }
+}
+
+/**
+ * 获取后端 GroupRule 格式的数据
+ * 返回符合 GroupRule -> SelectorExpression -> SelectorConditionGroup -> SelectorCondition 结构
+ */
+const getGroupRule = () => {
+  // 构建 SelectorExpression
+  const selectorExpression = {
+    logic: groupsLogic.value,  // 规则组之间的逻辑
+    expression: ruleGroups.value.map(group => ({
+      // SelectorConditionGroup
+      logic: group.inner_logic,  // 组内规则之间的逻辑
+      conditions: group.rules.map(rule => convertToSelectorCondition(rule))
+    }))
+  }
+
+  // 返回 GroupRule 结构
+  return {
+    expression: selectorExpression
+  }
+}
+
 // 监听变化
 watch(ruleGroups, updateModelValue, { deep: true })
 
 // 初始化
 onMounted(() => {
   fetchTagList()
+  fetchLabelOperators()
   fetchGroupList()
   fetchEventList()
   if (ruleGroups.value.length === 0) {
@@ -645,7 +757,8 @@ onMounted(() => {
 })
 
 defineExpose({
-  validate
+  validate,
+  getGroupRule
 })
 </script>
 

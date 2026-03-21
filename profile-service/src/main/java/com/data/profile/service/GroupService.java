@@ -4,14 +4,17 @@ import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
+import com.data.profile.common.enums.TaskType;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.dao.GroupMapper;
 import com.data.profile.model.Group;
+import com.data.profile.model.Task;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -32,6 +35,8 @@ public class GroupService {
     private static final Gson gson = new GsonBuilder().create();
     @Resource
     private GroupMapper groupMapper;
+    @Autowired
+    private TaskService taskService;
 
     /**
      * 根据查询条件获取群组列表
@@ -57,41 +62,83 @@ public class GroupService {
     }
 
     /**
-     * 保存群组 新增/修改
+     * 创建群组
      * @param group 群组
      */
-    public int save(Group group) throws RuntimeException {
-        if (StringUtils.isBlank(group.getGroupId())) {
-            // 新增
-            List<Group> groups = groupMapper.selectSimpleByGroupName(group.getGroupName());
-            if (!groups.isEmpty()) {
-                log.error("群组 {} 已经存在，不允许重复添加", group.getGroupName());
-                throw new RuntimeException("群组已经存在，不允许重复添加");
-            }
-            String groupId = IDGenerator.getInstance().generate(ModelType.GROUP);
-            Group target = groupMapper.selectSimpleByGroupId(groupId);
-            if (!Objects.equals(target, null)) {
-                log.error("群组ID {} 已经存在，不允许重复添加", groupId);
-                throw new RuntimeException("群组ID已经存在，不允许重复添加");
-            }
-            group.setGroupId(groupId);
-            group.setGroupStatus(Status.ENABLE.getCode());
-            group.setCreator(RequestContext.currentUserId());
-            group.setModifier(RequestContext.currentUserId());
-            log.info("新增群组: {}", gson.toJson(group));
-            return groupMapper.insertSelective(group);
-        } else {
-            // 修改
-            group.setModifier(RequestContext.currentUserId());
-            log.info("更新群组: {}", gson.toJson(group));
-            return groupMapper.updateByGroupIdSelective(group);
+    @Transactional
+    public int create(Group group) throws RuntimeException {
+        // Todo 保存时执行一次预估人数
+        group.setGroupCount(100);
+
+        // 群组处理
+        List<Group> groups = groupMapper.selectSimpleByGroupName(group.getGroupName());
+        if (!groups.isEmpty()) {
+            log.error("群组 {} 已经存在，不允许重复添加", group.getGroupName());
+            throw new RuntimeException("群组已经存在，不允许重复添加");
         }
+        String groupId = IDGenerator.getInstance().generate(ModelType.GROUP);
+        Group target = groupMapper.selectSimpleByGroupId(groupId);
+        if (!Objects.equals(target, null)) {
+            log.error("群组ID {} 已经存在，不允许重复添加", groupId);
+            throw new RuntimeException("群组ID已经存在，不允许重复添加");
+        }
+        group.setGroupId(groupId);
+        group.setSourceType(SourceType.CUSTOM.getCode());
+        group.setGroupStatus(Status.ENABLE.getCode());
+        group.setOwner(RequestContext.currentUserId());
+        group.setCreator(RequestContext.currentUserId());
+        group.setModifier(RequestContext.currentUserId());
+
+        // 创建调度任务
+        Task task = Task.builder()
+                .taskName(group.getGroupName() + "调度任务")
+                .taskType(TaskType.GROUP_CREATE.getCode())
+                .taskRelatedId(groupId)
+                .triggerType(group.getTriggerType())
+                .triggerCron(group.getTriggerCron())
+                .triggerStartTime(group.getTriggerStartTime())
+                .triggerEndTime(group.getTriggerEndTime())
+                .build();
+        taskService.create(task);
+
+        log.info("新增群组: {}", gson.toJson(group));
+        return groupMapper.insertSelective(group);
+    }
+
+    /**
+     * 修改群组
+     * @param group 群组
+     */
+    @Transactional
+    public int update(Group group) {
+        String groupId = group.getGroupId();
+        // Todo 保存时执行一次预估人数
+        group.setGroupCount(100);
+
+        // 修改群组
+        group.setModifier(RequestContext.currentUserId());
+
+        // 修改调度任务
+        Task task = Task.builder()
+                .taskName(group.getGroupName() + "调度任务")
+                .taskType(TaskType.GROUP_CREATE.getCode())
+                .taskRelatedId(groupId)
+                .triggerType(group.getTriggerType())
+                .triggerCron(group.getTriggerCron())
+                .triggerStartTime(group.getTriggerStartTime())
+                .triggerEndTime(group.getTriggerEndTime())
+                .build();
+        taskService.update(task);
+
+        log.info("更新群组: {}", gson.toJson(group));
+        return groupMapper.updateByGroupIdSelective(group);
     }
 
     /**
      * 删除群组
      * @param groupId 群组ID
      */
+    @Transactional
     public int delete(String groupId) {
         Group group = groupMapper.selectSimpleByGroupId(groupId);
         if (Objects.equals(group, null)) {
@@ -102,6 +149,11 @@ public class GroupService {
             log.error("内置群组 {} 不允许删除", groupId);
             throw new RuntimeException("内置群组不允许删除");
         }
+
+        // 删除调度任务
+        Task task = taskService.getDetailByRelatedId(groupId);
+        taskService.delete(task.getTaskId());
+
         // TODO 检查依赖确保无下游使用
         log.info("删除群组: {}", groupId);
         return groupMapper.deleteByGroupId(groupId);

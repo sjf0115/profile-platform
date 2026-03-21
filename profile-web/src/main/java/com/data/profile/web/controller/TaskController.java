@@ -5,8 +5,7 @@ import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.model.Task;
 import com.data.profile.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 功能：任务
+ * 功能：调度任务
  * 作者：SmartSi
  * CSDN博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
@@ -25,8 +24,6 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/task", produces = MediaType.APPLICATION_JSON_VALUE)
 public class TaskController {
-    private static Logger LOG = LoggerFactory.getLogger(TaskController.class);
-
     @Autowired
     private TaskService taskService;
 
@@ -37,7 +34,7 @@ public class TaskController {
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam String taskId) {
+    public Response getDetail(@RequestParam(name = "task_id") String taskId) {
         Optional<Task> optional = taskService.getDetail(taskId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -46,18 +43,30 @@ public class TaskController {
         }
     }
 
-    @GetMapping(value = "/add")
-    public Response add(@RequestParam String taskName) {
-        int result = taskService.add(taskName);
-        if (result > 0) {
-            return Response.success(result);
+    @PostMapping(value = "/save")
+    public Response save(@RequestBody Task task) {
+        String taskId = task.getTaskId();
+        if (StringUtils.isEmpty(taskId)) {
+            // 创建调度任务
+            int result = taskService.create(task);
+            if (result > 0) {
+                return Response.success(result);
+            } else {
+                return Response.error("创建调度任务失败", ResponseCode.ERROR);
+            }
         } else {
-            return Response.error("创建调度任务失败", ResponseCode.ERROR);
+            // 修改调度任务
+            int result = taskService.update(task);
+            if (result > 0) {
+                return Response.success(result);
+            } else {
+                return Response.error("修改调度任务失败", ResponseCode.ERROR);
+            }
         }
     }
 
     @GetMapping(value = "/delete")
-    public Response delete(@RequestParam String taskId) {
+    public Response delete(@RequestParam(name = "task_id") String taskId) {
         int result = taskService.delete(taskId);
         if (result > 0) {
             return Response.success(result);

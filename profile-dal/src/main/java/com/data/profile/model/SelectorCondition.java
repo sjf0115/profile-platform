@@ -17,14 +17,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SelectorCondition {
-    // 用户是(profile)/用户不是(not_profile)/用户做过(event)/用户没有做过(not_event)/用户依次做过(event_sequence)/用户没有依次做过(not_event_sequence)
+    // 标签规则：是(label)/不是(not_label); 群组规则: 包含(group)/不包含(not_group)；事件规则：做过(event)/没有做过(not_event)；行为序列规则：依次做过(event_sequence)/没有依次做过(not_event_sequence)
     private String type;
-    // 事件
+    // 事件：事件规则时使用
     private Event event;
+    // 指标：事件规则时使用
+    private Measure measure;
     // 时间周期范围
     private TimePeriod period;
-    // 指标
-    private Measure measure;
-    // 筛选器表达式
+    // 筛选器表达式：群组/标签规则时使用
     private FilterExpression filters;
 }

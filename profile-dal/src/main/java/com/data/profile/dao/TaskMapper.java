@@ -7,6 +7,7 @@ import java.util.List;
 public interface TaskMapper {
     // 查询
     Task selectByTaskId(String taskId); // 根据ID查询
+    Task selectByRelatedId(String relatedId); // 根据关联ID查询
     List<Task> selectByTaskName(String taskName); // 根据名字查询
     List<Task> selectByParams(Task task); //根据参数查询
     List<Task> selectByKeyword(String keyword); // 模糊查询

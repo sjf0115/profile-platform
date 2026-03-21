@@ -23,25 +23,32 @@
     <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
   </resultMap>
 
-  <sql id="Base_Column_List">
-    id, status, task_id, task_name, task_desc, task_type, task_related_id, trigger_target_id, 
-    trigger_type, trigger_cron, trigger_url, trigger_start_time, trigger_end_time, source_type, 
-    owner, creator, modifier, gmt_create, gmt_modified
-  </sql>
+    <sql id="Base_Column_List">
+        id, status, task_id, task_name, task_desc, task_type, task_related_id, trigger_target_id,
+        trigger_type, trigger_cron, trigger_url, trigger_start_time, trigger_end_time, source_type,
+        owner, creator, modifier, gmt_create, gmt_modified
+    </sql>
 
-  <select id="selectByTaskId" parameterType="java.lang.String" resultMap="BaseResultMap">
-    select 
-    <include refid="Base_Column_List" />
-    from profile_meta_task
-    where task_id = #{taskId,jdbcType=VARCHAR}
-  </select>
+    <select id="selectByTaskId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_task
+        where task_id = #{taskId,jdbcType=VARCHAR}
+    </select>
 
-  <select id="selectByTaskName" parameterType="java.lang.String" resultMap="BaseResultMap">
-    select
-    <include refid="Base_Column_List" />
-    from profile_meta_task
-    where task_name = #{taskName,jdbcType=VARCHAR}
-  </select>
+    <select id="selectByRelatedId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_task
+        where related_id = #{relatedId,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByTaskName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_task
+        where task_name = #{taskName,jdbcType=VARCHAR}
+    </select>
 
   <select id="selectByParams" parameterType="com.data.profile.model.Task" resultMap="BaseResultMap">
     select

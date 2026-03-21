@@ -23,6 +23,6 @@ public class LabelOperator {
     private String name;
     // 操作码
     private String code;
-    // 支持的标签数据类型
+    // 支持的标签数据类型 label_data_type
     private List<Integer> types;
 }

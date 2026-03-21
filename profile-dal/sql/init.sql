@@ -262,11 +262,6 @@ CREATE TABLE `profile_meta_export` (
     UNIQUE(`export_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-投递';
 
-
-
-
-
-
 -- 13. 事件
 DROP Table `profile_meta_event`;
 CREATE TABLE IF NOT EXISTS `profile_meta_event`(
@@ -332,13 +327,13 @@ DROP Table `profile_meta_task`;
 CREATE TABLE IF NOT EXISTS `profile_meta_task`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
     `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 1-启用,2-停用',
-    `task_id` VARCHAR(40) NOT NULL COMMENT '任务ID',
-    `task_name` VARCHAR(100) NOT NULL COMMENT '任务名称',
-    `task_desc` VARCHAR(100) COMMENT '任务描述',
-    `task_type` INT NOT NULL COMMENT '任务类型:1-数据集接入,2-群组圈选',
-    `task_related_id` VARCHAR(100) COMMENT '任务关联ID',
+    `task_id` VARCHAR(40) NOT NULL COMMENT '调度任务ID',
+    `task_name` VARCHAR(100) NOT NULL COMMENT '调度任务名称',
+    `task_desc` VARCHAR(100) COMMENT '调度任务描述',
+    `task_type` INT NOT NULL COMMENT '调度任务类型:1-数据集,2-群组圈选',
+    `task_related_id` VARCHAR(100) COMMENT '调度任务关联ID',
     `trigger_target_id` VARCHAR(100) COMMENT '调度对象ID',
-    `trigger_type` INT NOT NULL COMMENT '调度类型:1-手动触发调度,2-API触发调度,3-日周期调度,4-小时周期调度',
+    `trigger_type` INT NOT NULL COMMENT '调度类型:1-手动触发调度,2-API触发调度,3-周期调度',
     `trigger_cron` VARCHAR(20) COMMENT '调度 cron 表达式:只有周期自动触发更新才有',
     `trigger_url` VARCHAR(20) COMMENT '调度触发URL:只有API触发调度才有',
     `trigger_start_time` VARCHAR(20) COMMENT '触发调度有效开始时间:只有周期自动触发更新才有',
