@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * 功能：筛选器表达式
+ * 功能：规则表达式
  * 作者：SmartSi
  * CSDN博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
@@ -19,8 +19,8 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class SelectorExpression {
+public class RuleExpression {
     private String logic;
-    @SerializedName("expression")
-    private List<SelectorConditionGroup> groups;
+    @SerializedName("rule_groups")
+    private List<RuleGroup> ruleGroups;
 }

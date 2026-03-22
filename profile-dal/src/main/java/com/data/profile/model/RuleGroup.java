@@ -8,17 +8,19 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * 功能：过滤器条件组
+ * 功能：规则组
  * 作者：SmartSi
  * CSDN博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
- * 日期：2025/3/30 16:33
+ * 日期：2025/3/30 16:30
  */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class FilterConditionGroup {
+public class RuleGroup {
+    // AND OR
     private String logic;
-    private List<FilterCondition> conditions;
+    // 规则
+    private List<Rule> rules;
 }

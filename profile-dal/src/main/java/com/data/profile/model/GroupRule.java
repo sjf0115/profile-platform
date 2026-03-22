@@ -12,5 +12,5 @@ import lombok.Data;
 @Data
 public class GroupRule {
     // 标签筛选
-    private SelectorExpression expression;
+    private RuleExpression expression;
 }

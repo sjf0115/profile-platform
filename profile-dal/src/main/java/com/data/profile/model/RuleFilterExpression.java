@@ -19,8 +19,8 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class FilterExpression {
+public class RuleFilterExpression {
     private String logic;
-    @SerializedName("expression")
-    private List<FilterConditionGroup> groups;
+    @SerializedName("filter_groups")
+    private List<RuleFilterGroup> ruleFilterGroups;
 }

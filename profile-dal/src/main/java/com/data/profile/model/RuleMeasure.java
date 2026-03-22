@@ -19,29 +19,15 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Measure {
+public class RuleMeasure {
     // 指标ID
-    @SerializedName("id")
     private String id;
     // 指标名称
-    @SerializedName("name")
     private String name;
-    // 指标运算符 DISTINCT/COUNT
-    @SerializedName("type")
+    // 指标运算符 count
     private String type;
     // 指标运算符 > < =等
-    @SerializedName("op")
     private String op;
     // 指标值
-    @SerializedName("values")
     private List<String> values;
-    // 参与指标计算的可以有事件属性和标签
-    @SerializedName("property_type")
-    private String propertyType;
-    // 对应事件属性ID、标签ID
-    @SerializedName("property_id")
-    private String propertyId;
-    // 对应事件属性名称、标签名称
-    @SerializedName("property_name")
-    private String propertyName;
 }
