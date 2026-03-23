@@ -31,7 +31,7 @@
             </el-descriptions-item>
             <el-descriptions-item label="创建方式">{{ getGroupTypeText(groupInfo.group_type) }}</el-descriptions-item>
             <el-descriptions-item label="群组规模">{{ groupInfo.group_count || 0 }} 人</el-descriptions-item>
-            <el-descriptions-item label="实体类型">{{ groupInfo.entity_identifier_id || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="实体类型">{{ formatEntityType(groupInfo) }}</el-descriptions-item>
             <el-descriptions-item label="创建人">{{ groupInfo.creator }}</el-descriptions-item>
             <el-descriptions-item label="创建时间">{{ formatDateTime(groupInfo.gmt_create) }}</el-descriptions-item>
             <el-descriptions-item label="更新时间">{{ formatDateTime(groupInfo.gmt_modified) }}</el-descriptions-item>
@@ -77,11 +77,19 @@
         <div class="section-header">
           <el-icon class="section-icon"><Setting /></el-icon>
           <span class="section-title">群组规则</span>
+          <span class="rule-tip">符合下列条件的用户将创建分群，每条规则计算结果最长支持连续365天</span>
+          <el-tooltip content="规则说明" placement="top">
+            <el-icon class="help-icon"><QuestionFilled /></el-icon>
+          </el-tooltip>
         </div>
         <div class="section-content">
-          <div v-if="groupRule" class="rule-display">
-            <pre>{{ JSON.stringify(groupRule, null, 2) }}</pre>
-          </div>
+          <GroupRuleConfig
+            v-if="groupRule"
+            ref="ruleConfigRef"
+            v-model="ruleForm"
+            :entity-identifier-id="groupInfo.entity_identifier_id || ''"
+            :readonly="true"
+          />
           <el-empty v-else description="暂无规则数据" />
         </div>
       </div>
@@ -90,12 +98,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Menu, Setting, Timer } from '@element-plus/icons-vue'
+import { ArrowLeft, Menu, Setting, Timer, QuestionFilled } from '@element-plus/icons-vue'
 import { groupApi } from '@/api/group'
 import type { Group } from '@/types'
+import GroupRuleConfig from './components/GroupRuleConfig.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -104,6 +113,29 @@ const groupId = route.params.id as string
 const groupInfo = ref<Partial<Group>>({})
 const groupRule = ref<any>(null)
 const loading = ref(false)
+const ruleConfigRef = ref()
+
+// 规则表单
+const ruleForm = reactive<{
+  expression: {
+    logic: string
+    rule_groups: any[]
+  }
+}>({
+  expression: {
+    logic: 'AND',
+    rule_groups: []
+  }
+})
+
+// 格式化实体类型
+const formatEntityType = (info?: Partial<Group>): string => {
+  if (!info?.entity_identifier_id) return '-'
+  if (info.entity_name && info.entity_identifier_name) {
+    return `${info.entity_name} > ${info.entity_identifier_name}`
+  }
+  return info.entity_identifier_id
+}
 
 // 获取群组详情
 const fetchGroupDetail = async () => {
@@ -116,6 +148,11 @@ const fetchGroupDetail = async () => {
       groupRule.value = typeof groupInfo.value.group_rule === 'string' 
         ? JSON.parse(groupInfo.value.group_rule) 
         : groupInfo.value.group_rule
+      // 解析规则到表单
+      if (groupRule.value?.expression) {
+        ruleForm.expression.logic = groupRule.value.expression.logic || 'AND'
+        ruleForm.expression.rule_groups = groupRule.value.expression.rule_groups || []
+      }
     }
   } catch (error) {
     console.error('获取群组详情失败:', error)
@@ -263,26 +300,27 @@ onMounted(() => {
       font-weight: 500;
       color: #303133;
     }
+
+    .rule-tip {
+      font-size: 13px;
+      color: #909399;
+      margin-left: 12px;
+    }
+
+    .help-icon {
+      font-size: 14px;
+      color: #909399;
+      margin-left: 8px;
+      cursor: pointer;
+
+      &:hover {
+        color: #409eff;
+      }
+    }
   }
 
   .section-content {
     padding: 20px;
-  }
-}
-
-.rule-display {
-  background-color: #f5f7fa;
-  padding: 16px;
-  border-radius: 4px;
-
-  pre {
-    margin: 0;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    line-height: 1.6;
-    color: #303133;
-    white-space: pre-wrap;
-    word-wrap: break-word;
   }
 }
 </style>

@@ -39,6 +39,7 @@ public class Group {
 
     //----------------------------------------------------------
     // 调度任务
+    private String taskId;
     // 调度类型:1-手动触发调度,2-周期调度,3-API触发调度
     private Integer triggerType;
     // 调度 cron 表达式:只有周期自动触发更新才有

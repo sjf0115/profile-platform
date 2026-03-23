@@ -314,7 +314,7 @@ const handleSave = async () => {
   }
 
   try {
-    // 获取后端格式的 GroupRule 数据
+    // 获取后端格式的 RuleExpression 数据
     const groupRule = ruleConfigRef.value?.getGroupRule()
 
     const submitData = {

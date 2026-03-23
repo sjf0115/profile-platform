@@ -7,7 +7,7 @@
     <result column="group_name" jdbcType="VARCHAR" property="groupName" />
     <result column="group_type" jdbcType="INTEGER" property="groupType" />
     <result column="group_desc" jdbcType="VARCHAR" property="groupDesc" />
-    <result column="group_rule" property="groupRule" jdbcType="VARCHAR" typeHandler="com.data.profile.handler.GroupRuleHandler"/>
+    <result column="group_rule" property="groupRule" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.handler.GroupRuleHandler"/>
     <result column="group_count" jdbcType="INTEGER" property="groupCount" />
     <result column="entity_identifier_id" jdbcType="VARCHAR" property="entityIdentifierId" />
     <result column="source_type" jdbcType="INTEGER" property="sourceType" />
@@ -147,7 +147,7 @@
       owner, creator, modifier
     ) values (
       #{groupId,jdbcType=VARCHAR}, #{groupStatus,jdbcType=INTEGER}, #{groupName,jdbcType=VARCHAR}, 
-      #{groupType,jdbcType=INTEGER}, #{groupDesc,jdbcType=VARCHAR}, #{groupRule,jdbcType=VARCHAR}, 
+      #{groupType,jdbcType=INTEGER}, #{groupDesc,jdbcType=VARCHAR}, #{groupRule,jdbcType=LONGVARCHAR},
       #{groupCount,jdbcType=INTEGER}, #{entityIdentifierId,jdbcType=VARCHAR}, #{sourceType,jdbcType=INTEGER},
       #{instanceId,jdbcType=INTEGER}, #{instanceStatus,jdbcType=INTEGER}, 
       #{instanceStartTime,jdbcType=TIMESTAMP}, #{instanceEndTime,jdbcType=TIMESTAMP}, 
@@ -228,7 +228,7 @@
         #{groupDesc,jdbcType=VARCHAR},
       </if>
       <if test="groupRule != null and groupRule != ''">
-        #{groupRule,jdbcType=VARCHAR},
+        #{groupRule,jdbcType=LONGVARCHAR},
       </if>
       <if test="groupCount != null">
         #{groupCount,jdbcType=INTEGER},
@@ -282,7 +282,7 @@
         group_desc = #{groupDesc,jdbcType=VARCHAR},
       </if>
       <if test="groupRule != null and groupRule != ''">
-        group_rule = #{groupRule,jdbcType=VARCHAR},
+        group_rule = #{groupRule,jdbcType=LONGVARCHAR},
       </if>
       <if test="groupCount != null">
         group_count = #{groupCount,jdbcType=INTEGER},
@@ -328,7 +328,7 @@
       group_name = #{groupName,jdbcType=VARCHAR},
       group_type = #{groupType,jdbcType=INTEGER},
       group_desc = #{groupDesc,jdbcType=VARCHAR},
-      group_rule = #{groupRule,jdbcType=VARCHAR},
+      group_rule = #{groupRule,jdbcType=LONGVARCHAR},
       group_count = #{groupCount,jdbcType=INTEGER},
       entity_identifier_id = #{entityIdentifierId,jdbcType=VARCHAR},
       source_type = #{sourceType,jdbcType=INTEGER},

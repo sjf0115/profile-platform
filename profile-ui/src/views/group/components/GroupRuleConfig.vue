@@ -6,8 +6,8 @@
       <div v-if="ruleGroups.length > 1" class="groups-logic-wrapper">
         <div
           class="logic-toggle-btn"
-          :class="{ 'is-or': groupsLogic === 'OR' }"
-          @click="toggleGroupsLogic"
+          :class="{ 'is-or': groupsLogic === 'OR', 'is-disabled': readonly }"
+          @click="!readonly && toggleGroupsLogic()"
         >
           {{ groupsLogic === 'AND' ? '且' : '或' }}
         </div>
@@ -29,8 +29,8 @@
                   <div v-if="group.rules.length > 1" class="inner-logic-wrapper">
                     <div
                       class="logic-toggle-btn"
-                      :class="{ 'is-or': group.inner_logic === 'OR' }"
-                      @click="toggleInnerLogic(group)"
+                      :class="{ 'is-or': group.inner_logic === 'OR', 'is-disabled': readonly }"
+                      @click="!readonly && toggleInnerLogic(group)"
                     >
                       {{ group.inner_logic === 'AND' ? '且' : '或' }}
                     </div>
@@ -59,6 +59,7 @@
                         size="default"
                         style="width: 180px"
                         filterable
+                        :disabled="readonly"
                         @change="(val: string) => handleTagChange(rule, val)"
                       >
                         <el-option
@@ -74,6 +75,7 @@
                         placeholder="操作符"
                         size="default"
                         style="width: 120px"
+                        :disabled="readonly"
                       >
                         <el-option
                           v-for="op in getTagOperators(rule.tag_data_type)"
@@ -88,12 +90,13 @@
                         placeholder="请输入值"
                         size="default"
                         style="width: 150px"
+                        :disabled="readonly"
                       />
                     </template>
 
                     <!-- 群组规则 -->
                     <template v-if="rule.rule_type === 'group'">
-                      <el-select v-model="rule.relation" size="default" style="width: 100px">
+                      <el-select v-model="rule.relation" size="default" style="width: 100px" :disabled="readonly">
                         <el-option label="包含" value="in" />
                         <el-option label="不包含" value="not_in" />
                       </el-select>
@@ -104,6 +107,7 @@
                         size="default"
                         style="width: 200px"
                         filterable
+                        :disabled="readonly"
                       >
                         <el-option
                           v-for="g in groupList"
@@ -123,9 +127,10 @@
                         style="width: 220px"
                         placeholder="选择时间范围"
                         :shortcuts="dateShortcuts"
+                        :disabled="readonly"
                       />
 
-                      <el-select v-model="rule.happen_type" size="default" style="width: 90px">
+                      <el-select v-model="rule.happen_type" size="default" style="width: 90px" :disabled="readonly">
                         <el-option label="做过" value="done" />
                         <el-option label="没做过" value="not_done" />
                       </el-select>
@@ -136,6 +141,7 @@
                         size="default"
                         style="width: 180px"
                         filterable
+                        :disabled="readonly"
                       >
                         <el-option
                           v-for="event in eventList"
@@ -145,12 +151,12 @@
                         />
                       </el-select>
 
-                      <el-select v-model="rule.metric" size="default" style="width: 100px">
+                      <el-select v-model="rule.metric" size="default" style="width: 100px" :disabled="readonly">
                         <el-option label="总次数" value="total_count" />
                         <el-option label="总人数" value="total_users" />
                       </el-select>
 
-                      <el-select v-model="rule.operator" size="default" style="width: 70px">
+                      <el-select v-model="rule.operator" size="default" style="width: 70px" :disabled="readonly">
                         <el-option label=">=" value="gte" />
                         <el-option label=">" value="gt" />
                         <el-option label="=" value="eq" />
@@ -163,6 +169,7 @@
                         :min="0"
                         size="default"
                         style="width: 80px"
+                        :disabled="readonly"
                       />
                     </template>
 
@@ -175,6 +182,7 @@
                         style="width: 220px"
                         placeholder="选择时间范围"
                         :shortcuts="dateShortcuts"
+                        :disabled="readonly"
                       />
 
                       <span class="sequence-label">依次发生过</span>
@@ -192,6 +200,7 @@
                             size="default"
                             style="width: 180px"
                             filterable
+                            :disabled="readonly"
                           >
                             <el-option
                               v-for="event in eventList"
@@ -204,12 +213,13 @@
                             v-if="rule.sequence_events && rule.sequence_events.length > 2"
                             link
                             type="danger"
+                            :disabled="readonly"
                             @click="removeSequenceEvent(rule, sIndex)"
                           >
                             <el-icon><Close /></el-icon>
                           </el-button>
                         </div>
-                        <el-button link type="primary" @click="addSequenceEvent(rule)">
+                        <el-button link type="primary" :disabled="readonly" @click="addSequenceEvent(rule)">
                           <el-icon><Plus /></el-icon>
                           添加事件
                         </el-button>
@@ -218,7 +228,7 @@
                   </div>
 
                   <!-- 规则操作栏 -->
-                  <div class="rule-actions">
+                  <div v-if="!readonly" class="rule-actions">
                     <el-tooltip content="删除" placement="top">
                       <el-button link type="danger" @click="deleteRule(group, ruleIndex)">
                         <el-icon><CircleClose /></el-icon>
@@ -240,7 +250,7 @@
             </div>
 
             <!-- 添加规则组按钮 -->
-            <div v-if="groupIndex === ruleGroups.length - 1" class="add-rule-btn-wrapper">
+            <div v-if="!readonly && groupIndex === ruleGroups.length - 1" class="add-rule-btn-wrapper">
               <el-button link type="primary" size="small" @click="addRuleGroup">
                 <el-icon><Plus /></el-icon>
                 添加规则组
@@ -315,6 +325,7 @@ import { labelApi } from '@/api/label'
 const props = defineProps<{
   modelValue: any
   entityIdentifierId?: string
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -640,71 +651,156 @@ const validate = () => {
 }
 
 /**
- * 将前端规则转换为后端 SelectorCondition 格式
- * - 标签/群组规则: 使用 filters (FilterExpression)
- * - 事件规则: 使用 event + measure
- * - 行为序列: 使用 events + period
+ * 将前端规则转换为后端 Rule 格式（新 DSL）
+ * 结构: RuleExpression -> RuleGroup -> Rule -> RuleFilterExpression/RuleEvent/RuleSequence
+ * 
+ * 规则类型:
+ * - tag (1): 标签规则，使用 filter_expression
+ * - group (2): 群组规则，使用 filter_expression
+ * - event (3): 事件规则，使用 filter_expression + event
+ * - sequence (4): 行为序列规则，使用 events
  */
-const convertToSelectorCondition = (rule: GroupRule) => {
+const convertToBackendRule = (rule: GroupRule) => {
+  const baseRule: any = {
+    type: mapRuleTypeToBackend(rule.rule_type)
+  }
+
   switch (rule.rule_type) {
     case 'tag':
-      // 标签规则: type=profile, 使用 filters (FilterExpression)
       return {
-        type: 'profile',
-        filters: {
+        ...baseRule,
+        filter_expression: {
           logic: 'AND',
-          expression: [{
+          filter_groups: [{
             logic: 'AND',
-            conditions: [{
+            filters: [{
               type: 1,  // 1-标签
               id: rule.tag_id || '',
-              op: rule.operator || 'eq',
+              name: getTagName(rule.tag_id),
+              op: mapOperatorToBackend(rule.operator),
               values: rule.value !== undefined && rule.value !== '' ? [String(rule.value)] : []
             }]
           }]
         }
       }
+
     case 'group':
-      // 群组规则: type=profile/not_profile, 使用 filters (FilterExpression)
       return {
-        type: rule.relation === 'in' ? 'profile' : 'not_profile',
-        filters: {
+        ...baseRule,
+        filter_expression: {
           logic: 'AND',
-          expression: [{
+          filter_groups: [{
             logic: 'AND',
-            conditions: [{
+            filters: [{
               type: 2,  // 2-群组
-              id: rule.group_id || ''
+              id: rule.group_id || '',
+              name: getGroupName(rule.group_id),
+              op: rule.relation === 'in' ? '=' : '!=',
+              values: ['是']
             }]
           }]
         }
       }
+
     case 'event':
-      // 事件规则: type=event/not_event, 使用 event + measure
+      const timePeriod = convertTimePeriod(rule.time_range)
       return {
-        type: rule.happen_type === 'done' ? 'event' : 'not_event',
-        event: {
-          eventId: rule.event_code || ''
+        ...baseRule,
+        filter_expression: {
+          logic: 'AND',
+          filter_groups: []
         },
-        period: convertTimePeriod(rule.time_range),
-        measure: {
-          type: rule.metric || 'total_count',
-          op: rule.operator || 'gte',
-          values: rule.value !== undefined ? [String(rule.value)] : []
+        event: {
+          event: {
+            eventId: rule.event_code || '',
+            eventName: getEventName(rule.event_code)
+          },
+          measure: {
+            name: rule.metric === 'total_count' ? '总次数' : '总人数',
+            type: rule.metric === 'total_count' ? 'count' : 'users',
+            op: mapOperatorToBackend(rule.operator),
+            values: rule.value !== undefined ? [String(rule.value)] : []
+          },
+          period: timePeriod ? {
+            type: 2,  // 绝对时间
+            beginTimestamp: timePeriod.timestamp[0],
+            endTimestamp: timePeriod.timestamp[1],
+            unit: 'day',
+            amount: 0
+          } : undefined
         }
       }
+
     case 'sequence':
-      // 行为序列: type=event_sequence, 使用 events + period
+      const seqTimePeriod = convertTimePeriod(rule.time_range)
       return {
-        type: 'event_sequence',
-        period: convertTimePeriod(rule.time_range),
-        events: (rule.sequence_events || []).map(e => ({
-          eventId: e.event_code
+        ...baseRule,
+        events: (rule.sequence_events || []).map(seq => ({
+          event: {
+            event: {
+              eventId: seq.event_code,
+              eventName: getEventName(seq.event_code)
+            }
+          },
+          filter_expression: {
+            logic: 'AND',
+            filter_groups: []
+          }
         }))
       }
+
     default:
-      return {}
+      return baseRule
   }
+}
+
+// 映射规则类型到后端
+const mapRuleTypeToBackend = (type: string): string => {
+  const map: Record<string, string> = {
+    'tag': '1',
+    'group': '2',
+    'event': '3',
+    'sequence': '4'
+  }
+  return map[type] || '1'
+}
+
+// 映射操作符到后端
+const mapOperatorToBackend = (op?: string): string => {
+  const map: Record<string, string> = {
+    'eq': '=',
+    'ne': '!=',
+    'gt': '>',
+    'gte': '>=',
+    'lt': '<',
+    'lte': '<=',
+    'in': '=',
+    'not_in': '!=',
+    'contains': 'contains',
+    'not_contains': 'not_contains'
+  }
+  return map[op || ''] || '='
+}
+
+// 获取标签名称
+const getTagName = (tagId?: string): string => {
+  if (!tagId) return ''
+  const tag = tagList.value.find(t => t.label_id === tagId)
+  return tag?.label_name || ''
+}
+
+// 获取群组名称
+const getGroupName = (groupId?: string): string => {
+  if (!groupId) return ''
+  const group = groupList.value.find(g => g.group_id === groupId)
+  return group?.group_name || ''
+}
+
+// 获取事件名称
+const getEventName = (eventCode?: string): string => {
+  if (!eventCode) return ''
+  const event = eventList.value.find(e => e.event_code === eventCode)
+  return event?.event_name || ''
 }
 
 /**
@@ -723,25 +819,18 @@ const convertTimePeriod = (timeRange?: [Date, Date]) => {
 
 /**
  * 获取后端 GroupRule 格式的数据
- * 返回符合 GroupRule -> SelectorExpression -> SelectorConditionGroup -> SelectorCondition 结构
- * 注意：后端 SelectorExpression 中 groups 字段有 @SerializedName("expression") 注解，
- * 会序列化为 expression 字段
+ * GroupRule 包含 RuleExpression 字段
+ * 结构: GroupRule -> RuleExpression -> RuleGroup -> Rule
  */
 const getGroupRule = () => {
-  // 构建 SelectorExpression
-  // 注意：前端使用 groups，后端 Gson 会通过 @SerializedName 映射为 expression
-  const selectorExpression = {
-    logic: groupsLogic.value,  // 规则组之间的逻辑
-    groups: ruleGroups.value.map(group => ({
-      // SelectorConditionGroup
-      logic: group.inner_logic,  // 组内规则之间的逻辑
-      conditions: group.rules.map(rule => convertToSelectorCondition(rule))
-    }))
-  }
-
-  // 返回 GroupRule 结构
   return {
-    expression: selectorExpression
+    expression: {
+      logic: groupsLogic.value,
+      rule_groups: ruleGroups.value.map(group => ({
+        logic: group.inner_logic,
+        rules: group.rules.map(rule => convertToBackendRule(rule))
+      }))
+    }
   }
 }
 
@@ -755,7 +844,7 @@ onMounted(() => {
   fetchGroupList()
   fetchEventList()
   // 如果有传入的初始值（编辑模式），则解析
-  if (props.modelValue?.rule_groups && props.modelValue.rule_groups.length > 0) {
+  if (props.modelValue?.expression?.rule_groups && props.modelValue.expression.rule_groups.length > 0) {
     parseGroupRule(props.modelValue)
   } else if (ruleGroups.value.length === 0) {
     addRuleGroup()
@@ -764,29 +853,33 @@ onMounted(() => {
 
 /**
  * 从后端 GroupRule 格式解析为前端 RuleGroup 格式
+ * GroupRule 包含 RuleExpression 字段
  */
 const parseGroupRule = (data: any) => {
-  if (!data?.rule_groups || !Array.isArray(data.rule_groups)) {
+  // 获取 RuleExpression 数据
+  const expression = data?.expression
+  if (!expression?.rule_groups || !Array.isArray(expression.rule_groups)) {
     return
   }
   
   // 清空现有数据
   ruleGroups.value = []
+  groupsLogic.value = expression.logic || 'AND'
   
   // 遍历规则组
-  data.rule_groups.forEach((group: any, index: number) => {
+  expression.rule_groups.forEach((group: any, index: number) => {
     const ruleGroup: RuleGroup = {
       id: generateId(),
-      expanded: group.expanded !== false, // 默认展开
-      inner_logic: group.inner_logic || 'AND',
-      logic: group.logic || (index === 0 ? 'AND' : 'OR'),
+      expanded: true,
+      inner_logic: group.logic || 'AND',
+      logic: index === 0 ? 'AND' : (expression.logic || 'OR'),
       rules: []
     }
     
     // 解析规则
     if (group.rules && Array.isArray(group.rules)) {
       group.rules.forEach((rule: any) => {
-        const parsedRule = parseRule(rule)
+        const parsedRule = parseBackendRule(rule)
         if (parsedRule) {
           ruleGroup.rules.push(parsedRule)
         }
@@ -801,53 +894,91 @@ const parseGroupRule = (data: any) => {
 }
 
 /**
- * 解析单个规则
+ * 解析单个后端 Rule 为前端 GroupRule 格式
  */
-const parseRule = (rule: any): GroupRule | null => {
-  if (!rule?.rule_type) return null
+const parseBackendRule = (rule: any): GroupRule | null => {
+  if (!rule?.type) return null
+  
+  const ruleType = mapBackendTypeToFrontend(rule.type)
   
   const baseRule: GroupRule = {
     id: generateId(),
-    rule_type: rule.rule_type
+    rule_type: ruleType
   }
   
-  switch (rule.rule_type) {
+  switch (ruleType) {
     case 'tag':
+      const tagFilter = rule.filter_expression?.filter_groups?.[0]?.filters?.[0]
       return {
         ...baseRule,
-        tag_id: rule.tag_id || '',
-        tag_data_type: rule.tag_data_type,
-        operator: rule.operator || 'eq',
-        value: rule.value || ''
+        tag_id: tagFilter?.id || '',
+        tag_data_type: undefined,
+        operator: mapBackendOperatorToFrontend(tagFilter?.op) || 'eq',
+        value: tagFilter?.values?.[0] || ''
       }
     case 'group':
+      const groupFilter = rule.filter_expression?.filter_groups?.[0]?.filters?.[0]
       return {
         ...baseRule,
-        group_id: rule.group_id || '',
-        relation: rule.relation || 'in'
+        group_id: groupFilter?.id || '',
+        relation: groupFilter?.op === '=' ? 'in' : 'not_in'
       }
     case 'event':
+      const eventPeriod = rule.event?.period
       return {
         ...baseRule,
-        event_code: rule.event_code || '',
-        happen_type: rule.happen_type || 'done',
-        time_range: parseTimeRange(rule.time_range),
-        metric: rule.metric || 'total_count',
-        operator: rule.operator || 'gte',
-        value: rule.value || 1
+        event_code: rule.event?.event?.eventId || '',
+        happen_type: 'done',
+        time_range: eventPeriod ? [
+          new Date(eventPeriod.beginTimestamp),
+          new Date(eventPeriod.endTimestamp)
+        ] : getYesterdayRange(),
+        metric: rule.event?.measure?.type === 'count' ? 'total_count' : 'total_users',
+        operator: mapBackendOperatorToFrontend(rule.event?.measure?.op) || 'gte',
+        value: parseInt(rule.event?.measure?.values?.[0] || '1')
       }
     case 'sequence':
+      const seqPeriod = rule.events?.[0]?.event?.period
       return {
         ...baseRule,
-        time_range: parseTimeRange(rule.time_range),
-        sequence_events: (rule.sequence_events || []).map((e: any) => ({
+        time_range: seqPeriod ? [
+          new Date(seqPeriod.beginTimestamp),
+          new Date(seqPeriod.endTimestamp)
+        ] : getYesterdayRange(),
+        sequence_events: (rule.events || []).map((e: any) => ({
           id: generateId(),
-          event_code: e.event_code || ''
+          event_code: e.event?.event?.eventId || ''
         }))
       }
     default:
       return null
   }
+}
+
+// 映射后端规则类型到前端
+const mapBackendTypeToFrontend = (type: string): 'tag' | 'group' | 'event' | 'sequence' => {
+  const map: Record<string, 'tag' | 'group' | 'event' | 'sequence'> = {
+    '1': 'tag',
+    '2': 'group',
+    '3': 'event',
+    '4': 'sequence'
+  }
+  return map[type] || 'tag'
+}
+
+// 映射后端操作符到前端
+const mapBackendOperatorToFrontend = (op?: string): string => {
+  const map: Record<string, string> = {
+    '=': 'eq',
+    '!=': 'ne',
+    '>': 'gt',
+    '>=': 'gte',
+    '<': 'lt',
+    '<=': 'lte',
+    'contains': 'contains',
+    'not_contains': 'not_contains'
+  }
+  return map[op || ''] || 'eq'
 }
 
 /**
@@ -930,6 +1061,11 @@ defineExpose({
 
         &.is-or {
           background-color: #67c23a;
+        }
+
+        &.is-disabled {
+          cursor: not-allowed;
+          opacity: 0.7;
         }
       }
     }
@@ -1017,6 +1153,11 @@ defineExpose({
 
                   &.is-or {
                     background-color: #67c23a;
+                  }
+
+                  &.is-disabled {
+                    cursor: not-allowed;
+                    opacity: 0.7;
                   }
                 }
               }

@@ -203,6 +203,7 @@ export interface Group {
   source_type?: number   // 1-系统内置, 2-自定义
   
   // 调度任务
+  task_id?: string           // 调度任务ID
   trigger_type?: number      // 1-手动触发, 2-周期调度, 3-API触发
   trigger_cron?: string      // Cron表达式
   trigger_url?: string       // API触发URL

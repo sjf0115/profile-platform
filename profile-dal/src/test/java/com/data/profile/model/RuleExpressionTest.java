@@ -114,5 +114,11 @@ public class RuleExpressionTest {
         // 规则表达式
         RuleExpression ruleExpression = RuleExpression.builder().logic("OR").ruleGroups(Arrays.asList(ruleGroup1, ruleGroup2, ruleGroup3)).build();
         System.out.println(gson.toJson(ruleExpression));
+
+
+
+        String json = "{\"logic\":\"AND\",\"rule_groups\":[{\"logic\":\"AND\",\"rules\":[{\"type\":\"1\",\"filter_expression\":{\"logic\":\"AND\",\"filter_groups\":[{\"logic\":\"AND\",\"filters\":[{\"type\":1,\"id\":\"0821067752317952\",\"name\":\"性别\",\"op\":\"=\",\"values\":[\"vv\"]}]}]}}]}]}";
+        RuleExpression ruleExpression1 = gson.fromJson(json, RuleExpression.class);
+        System.out.println("结果：" + gson.toJson(ruleExpression1));
     }
 }

@@ -1,5 +1,6 @@
 package com.data.profile.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.annotations.SerializedName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,13 +26,13 @@ public class Rule {
 
     // 标签规则/群组规则/事件规则
     @SerializedName("filter_expression")
-    private RuleFilterExpression ruleFilterExpression;
+    private RuleFilterExpression filterExpression;
 
     // 事件规则使用
     @SerializedName("event")
-    private RuleEvent ruleEvent;
+    private RuleEvent event;
 
     // 行为序列规则使用
-    @SerializedName("events")
-    private List<RuleSequence> ruleSequences;
+    @JsonProperty("events")
+    private List<RuleSequence> events;
 }

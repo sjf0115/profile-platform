@@ -90,6 +90,7 @@ public class GroupService {
         // 获取群组调度配置
         Task task = taskService.getDetailByRelatedId(groupId);
         if (!Objects.equals(task, null)) {
+            group.setTaskId(task.getTaskId());
             group.setTriggerType(task.getTriggerType());
             group.setTriggerCron(task.getTriggerCron());
             group.setTriggerStartTime(task.getTriggerStartTime());
@@ -106,13 +107,14 @@ public class GroupService {
      */
     @Transactional
     public int create(Group group) throws RuntimeException {
+        String groupName = group.getGroupName();
         // Todo 保存时执行一次预估人数
         group.setGroupCount(100);
 
         // 群组处理
-        List<Group> groups = groupMapper.selectSimpleByGroupName(group.getGroupName());
+        List<Group> groups = groupMapper.selectSimpleByGroupName(groupName);
         if (!groups.isEmpty()) {
-            log.error("群组 {} 已经存在，不允许重复添加", group.getGroupName());
+            log.error("群组 {} 已经存在，不允许重复添加", groupName);
             throw new RuntimeException("群组已经存在，不允许重复添加");
         }
         String groupId = IDGenerator.getInstance().generate(ModelType.GROUP);
@@ -130,7 +132,7 @@ public class GroupService {
 
         // 创建调度任务
         Task task = Task.builder()
-                .taskName(group.getGroupName() + "调度任务")
+                .taskName(groupName + "调度任务")
                 .taskType(TaskType.GROUP_CREATE.getCode())
                 .taskRelatedId(groupId)
                 .triggerType(group.getTriggerType())
@@ -159,6 +161,7 @@ public class GroupService {
 
         // 修改调度任务
         Task task = Task.builder()
+                .taskId(group.getTaskId()) // 根据TaskId修改
                 .taskName(group.getGroupName() + "调度任务")
                 .taskType(TaskType.GROUP_CREATE.getCode())
                 .taskRelatedId(groupId)

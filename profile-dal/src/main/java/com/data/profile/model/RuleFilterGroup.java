@@ -22,5 +22,5 @@ import java.util.List;
 public class RuleFilterGroup {
     private String logic;
     @SerializedName("filters")
-    private List<RuleFilter> ruleFilters;
+    private List<RuleFilter> filters;
 }

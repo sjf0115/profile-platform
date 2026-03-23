@@ -60,7 +60,11 @@
           {{ getGroupTypeText(row.group_type) }}
         </template>
       </el-table-column>
-      <el-table-column prop="entity_identifier_id" label="实体类型" width="120" show-overflow-tooltip />
+      <el-table-column prop="entity_identifier_id" label="实体类型" width="180" show-overflow-tooltip>
+        <template #default="{ row }">
+          {{ formatEntityType(row) }}
+        </template>
+      </el-table-column>
       <el-table-column prop="group_count" label="群组规模" width="100" sortable>
         <template #default="{ row }">
           {{ row.group_count || 0 }}
@@ -135,6 +139,15 @@ import type { Group } from '@/types'
 import CreateTypeDialog from './components/CreateTypeDialog.vue'
 
 const router = useRouter()
+
+// 格式化实体类型
+const formatEntityType = (row: Group): string => {
+  if (!row.entity_identifier_id) return '-'
+  if (row.entity_name && row.entity_identifier_name) {
+    return `${row.entity_name} > ${row.entity_identifier_name}`
+  }
+  return row.entity_identifier_id
+}
 
 // 状态
 const loading = ref(false)

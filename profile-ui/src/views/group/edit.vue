@@ -181,8 +181,9 @@ const ruleConfigRef = ref()
 const saving = ref(false)
 
 // 规则表单
-const ruleForm = reactive<{ rule_groups?: any[] }>({
-  rule_groups: []
+const ruleForm = reactive<{ rule_groups?: any[]; logic?: string }>({
+  rule_groups: [],
+  logic: 'AND'
 })
 
 // 实体标识列表
@@ -200,7 +201,8 @@ const basicForm = reactive({
   trigger_cron: '',
   effective_type: 1,
   effective_date_range: [] as string[],
-  entity_identifier_id: ''
+  entity_identifier_id: '',
+  task_id: ''  // 调度任务ID
 })
 
 // 群组规则（用于回填）
@@ -245,10 +247,11 @@ const fetchGroupDetail = async () => {
       basicForm.group_id = data.group_id
       basicForm.group_name = data.group_name
       basicForm.group_desc = data.group_desc || ''
-      basicForm.trigger_type = data.trigger_type || 1
-      basicForm.entity_identifier_id = data.entity_identifier_id || ''
-      basicForm.trigger_cron = data.trigger_cron || ''
       basicForm.group_type = data.group_type || 1
+      basicForm.entity_identifier_id = data.entity_identifier_id || ''
+      basicForm.trigger_type = data.trigger_type || 1
+      basicForm.trigger_cron = data.trigger_cron || ''
+      basicForm.task_id = data.task_id || ''  // 获取 task_id
       
       // 解析生效日期
       if (data.trigger_start_time && data.trigger_end_time) {
@@ -276,15 +279,19 @@ const fetchGroupDetail = async () => {
         groupRule.value = parsedRule
         
         // 将后端 GroupRule 格式转换为前端 rule_groups 格式
-        // 注意：这里假设后端存储的是前端原始格式
-        // 如果后端存储的是 SelectorExpression 格式，需要另行转换
-        if (parsedRule?.expression) {
-          // 后端 SelectorExpression 格式，需要转换
-          ruleForm.rule_groups = convertSelectorExpressionToRuleGroups(parsedRule.expression)
-        } else if (Array.isArray(parsedRule?.rule_groups)) {
-          // 前端原始格式，直接使用
-          ruleForm.rule_groups = parsedRule.rule_groups
+        // GroupRule 包含 expression 字段（RuleExpression）
+        if (parsedRule?.expression?.rule_groups) {
+          // 后端 GroupRule 格式，直接赋值给 ruleForm
+          // 组件会通过 v-model 监听并解析
+          ruleForm.rule_groups = parsedRule.expression.rule_groups
+          // 同时设置规则组间逻辑
+          ruleForm.logic = parsedRule.expression.logic || 'AND'
         }
+      }
+      
+      // 等待 DOM 更新后，调用组件的 parseGroupRule 方法解析规则
+      if (ruleConfigRef.value && groupRule.value) {
+        ruleConfigRef.value.parseGroupRule(groupRule.value)
       }
     }
   } catch (error) {
@@ -427,7 +434,7 @@ const handleSave = async () => {
 
   saving.value = true
   try {
-    // 获取后端格式的 GroupRule 数据
+    // 获取后端格式的 RuleExpression 数据
     const groupRuleData = canEditRule.value 
       ? ruleConfigRef.value?.getGroupRule() 
       : groupRule.value
@@ -443,7 +450,8 @@ const handleSave = async () => {
       trigger_end_time: getTriggerEndTime(),
       group_rule: groupRuleData,
       group_type: basicForm.group_type,
-      source_type: 2
+      source_type: 2,
+      task_id: basicForm.task_id  // 传递 task_id
     }
 
     await groupApi.save(submitData)
