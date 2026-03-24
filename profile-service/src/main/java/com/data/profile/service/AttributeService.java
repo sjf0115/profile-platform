@@ -29,8 +29,6 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class AttributeService {
-    private static Logger LOG = LoggerFactory.getLogger(AttributeService.class);
-
     @Resource
     private AttributeMapper attrMapper;
 
