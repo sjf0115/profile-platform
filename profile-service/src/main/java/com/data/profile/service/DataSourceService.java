@@ -1,6 +1,9 @@
 package com.data.profile.service;
 
+import com.data.connector.api.ConnectorFactory;
 import com.data.profile.common.domain.RequestContext;
+import com.data.profile.common.domain.connector.request.ConnectorResponse;
+import com.data.profile.common.domain.connector.request.TestConnectionRequestParam;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
@@ -10,6 +13,7 @@ import com.data.profile.manager.domain.Column;
 import com.data.profile.manager.domain.Table;
 import com.data.profile.model.DataSource;
 import com.data.profile.model.DataSourceSchema;
+import com.data.spi.PluginLoader;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -39,6 +43,15 @@ public class DataSourceService {
     private DataSourceMapper dataSourceMapper;
     @Resource
     private DataSourceSchemaService schemaService;
+
+    /**
+     * 测试连通性
+     * @param param 参数
+     */
+    public ConnectorResponse testConnect(TestConnectionRequestParam param) {
+        ConnectorFactory connectorFactory = PluginLoader.getPluginLoader(ConnectorFactory.class).getOrCreatePlugin(param.getType());
+        return connectorFactory.getConnector().testConnect(param);
+    }
 
     /**
      * 根据查询条件获取数据源列表

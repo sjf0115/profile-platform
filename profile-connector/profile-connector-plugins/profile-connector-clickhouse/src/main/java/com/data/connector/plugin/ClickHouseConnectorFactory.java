@@ -1,11 +1,43 @@
 package com.data.connector.plugin;
 
-/**
- * 功能：ClickHouseConnectorFactory
- * 作者：@SmartSi
- * 博客：https://smartsi.blog.csdn.net/
- * 公众号：大数据生态
- * 日期：2026/3/24 22:03
- */
-public class ClickHouseConnectorFactory {
+import com.data.conenctor.plugin.AbstractJdbcConnectorFactory;
+import com.data.connector.api.*;
+
+public class ClickHouseConnectorFactory extends AbstractJdbcConnectorFactory {
+
+    @Override
+    public ParameterConverter getConnectorParameterConverter() {
+        return new ClickHouseParameterConverter();
+    }
+
+    @Override
+    public Dialect getDialect() {
+        return new ClickHouseDialect();
+    }
+
+    @Override
+    public Connector getConnector() {
+        return new ClickHouseConnector(getDataSourceClient());
+    }
+
+    @Override
+    public Executor getExecutor() {
+        return new ClickHouseExecutor(getDataSourceClient());
+    }
+
+    @Override
+    public MetricScript getMetricScript() {
+        //return new ClickHouseMetricScript();
+        return null;
+    }
+
+    @Override
+    public ConfigBuilder getConfigBuilder() {
+        return new ClickHouseConfigBuilder();
+    }
+
+    @Override
+    public TypeConverter getTypeConverter() {
+        return new ClickHouseTypeConverter();
+    }
 }

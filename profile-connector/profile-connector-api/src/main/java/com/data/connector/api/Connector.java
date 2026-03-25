@@ -1,6 +1,6 @@
 package com.data.connector.api;
 
-import com.data.profile.common.domain.connector.*;
+import com.data.profile.common.domain.connector.request.*;
 
 import java.sql.SQLException;
 import java.util.List;

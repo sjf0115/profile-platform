@@ -1,6 +1,8 @@
 package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
+import com.data.profile.common.domain.connector.request.ConnectorResponse;
+import com.data.profile.common.domain.connector.request.TestConnectionRequestParam;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.manager.domain.Table;
 import com.data.profile.model.DataSource;
@@ -26,10 +28,38 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/datasource", produces = MediaType.APPLICATION_JSON_VALUE)
 public class DataSourceController {
-    private static Logger LOG = LoggerFactory.getLogger(DataSourceController.class);
 
     @Autowired
     private DataSourceService dataSourceService;
+
+    @ApiOperation(value = "test connection")
+    @PostMapping(value = "/test", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Object testConnection(@RequestBody TestConnectionRequestParam param)  {
+        ConnectorResponse response = dataSourceService.testConnect(param);
+
+        ResultMap resultMap = new ResultMap();
+
+        if (response == null) {
+            return resultMap.fail().message("Connector response is null");
+        }
+
+        boolean isSuccess = response.getStatus() != null
+                && response.getStatus().isSuccess()
+                && Boolean.TRUE.equals(response.getResult());
+
+        if (isSuccess) {
+            return resultMap.success()
+                    .message("Connection test succeeded")
+                    .payload(true);
+        } else {
+            String errorMsg = StringUtils.isEmpty(response.getErrorMsg())
+                    ? "Connection failed"
+                    : response.getErrorMsg();
+            return resultMap.fail()
+                    .message(errorMsg)
+                    .payload(false);
+        }
+    }
 
     @PostMapping(value = "/list")
     public Response getList(@RequestBody DataSource dataSource) {

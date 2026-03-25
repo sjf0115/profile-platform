@@ -15,19 +15,19 @@ public interface ConnectorFactory {
 
     Dialect getDialect();
 
-    // ResponseConverter getResponseConverter();
+     ResponseConverter getResponseConverter();
 
-    // ParameterConverter getConnectorParameterConverter();
+     ParameterConverter getConnectorParameterConverter();
 
-    // ConfigBuilder getConfigBuilder();
+     ConfigBuilder getConfigBuilder();
 
-    // DataSourceClient getDataSourceClient();
+     DataSourceClient getDataSourceClient();
 
-    // StatementSplitter getStatementSplitter();
+     StatementSplitter getStatementSplitter();
 
-    // StatementParser getStatementParser();
+     StatementParser getStatementParser();
 
-    // MetricScript getMetricScript();
+     MetricScript getMetricScript();
 
     default Boolean showInFrontend() {
         return true;

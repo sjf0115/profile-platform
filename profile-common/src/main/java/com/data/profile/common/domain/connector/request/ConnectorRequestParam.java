@@ -1,4 +1,4 @@
-package com.data.profile.common.domain.connector;
+package com.data.profile.common.domain.connector.request;
 
 import lombok.Data;
 

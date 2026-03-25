@@ -1,4 +1,4 @@
-package com.data.profile.common.domain;
+package com.data.profile.common.domain.connector;
 
 import org.apache.commons.lang3.StringUtils;
 

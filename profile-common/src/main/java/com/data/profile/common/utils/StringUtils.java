@@ -1,14 +1,14 @@
 package com.data.profile.common.utils;
 
 
-import com.data.profile.common.domain.CommonConstants;
+import com.data.profile.common.domain.connector.CommonConstants;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Locale;
 
-import static com.data.profile.common.domain.CommonConstants.SINGLE_QUOTES;
+import static com.data.profile.common.domain.connector.CommonConstants.SINGLE_QUOTES;
 
 public class StringUtils {
 

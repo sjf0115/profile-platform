@@ -1,7 +1,7 @@
 package com.data.connector.api;
 
-import com.data.profile.common.domain.connector.ConnectorResponse;
-import com.data.profile.common.domain.connector.ExecuteRequestParam;
+import com.data.profile.common.domain.connector.request.ConnectorResponse;
+import com.data.profile.common.domain.connector.request.ExecuteRequestParam;
 
 public interface Executor {
 
