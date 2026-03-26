@@ -183,6 +183,9 @@ public class PluginLoader<T> {
         return c != null;
     }
 
+    /**
+     * 获取所有支持的插件
+     */
     public Set<String> getSupportedPlugins() {
         Map<String, Class<?>> classes = getPluginClasses();
         return Collections.unmodifiableSet(new TreeSet<>(classes.keySet()));

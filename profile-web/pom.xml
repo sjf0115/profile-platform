@@ -59,6 +59,12 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <!-- 插件 -->
+        <dependency>
+            <groupId>com.data</groupId>
+            <artifactId>profile-connector-all</artifactId>
+        </dependency>
     </dependencies>
 
     <profiles>

@@ -1,6 +1,6 @@
 package com.data.connector.plugin;
 
-import com.data.conenctor.plugin.AbstractJdbcConnectorFactory;
+import com.data.connector.plugin.AbstractJdbcConnectorFactory;
 import com.data.connector.api.*;
 
 public class ClickHouseConnectorFactory extends AbstractJdbcConnectorFactory {

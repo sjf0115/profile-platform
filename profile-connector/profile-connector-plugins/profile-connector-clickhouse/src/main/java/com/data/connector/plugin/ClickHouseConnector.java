@@ -1,6 +1,5 @@
 package com.data.connector.plugin;
 
-import com.data.conenctor.plugin.JdbcConnector;
 import com.data.connector.api.DataSourceClient;
 import com.data.profile.common.domain.connector.jdbc.BaseJdbcDataSourceInfo;
 

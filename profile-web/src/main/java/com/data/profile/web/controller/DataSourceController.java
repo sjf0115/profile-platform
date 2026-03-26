@@ -1,5 +1,6 @@
 package com.data.profile.web.controller;
 
+import com.data.connector.api.ConnectorFactory;
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.domain.connector.request.ConnectorResponse;
 import com.data.profile.common.domain.connector.request.TestConnectionRequestParam;
@@ -7,6 +8,8 @@ import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.manager.domain.Table;
 import com.data.profile.model.DataSource;
 import com.data.profile.service.DataSourceService;
+import com.data.profile.vo.Item;
+import com.data.spi.PluginLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,8 +17,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * 功能：数据源
@@ -32,7 +37,7 @@ public class DataSourceController {
     @Autowired
     private DataSourceService dataSourceService;
 
-    @ApiOperation(value = "test connection")
+    /*@ApiOperation(value = "test connection")
     @PostMapping(value = "/test", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Object testConnection(@RequestBody TestConnectionRequestParam param)  {
         ConnectorResponse response = dataSourceService.testConnect(param);
@@ -59,7 +64,7 @@ public class DataSourceController {
                     .message(errorMsg)
                     .payload(false);
         }
-    }
+    }*/
 
     @PostMapping(value = "/list")
     public Response getList(@RequestBody DataSource dataSource) {
@@ -95,6 +100,20 @@ public class DataSourceController {
         } else {
             return Response.error("删除数据源失败", ResponseCode.ERROR);
         }
+    }
+
+    @GetMapping(value = "/config/{type}")
+    public Response getConfigJson(@PathVariable String type){
+        log.info("请求指定插件类型的配置: {}", type);
+        String config = dataSourceService.getConfigJson(type);
+        return Response.success(config);
+    }
+
+    @GetMapping(value = "/type/list")
+    public Object getConnectorTypeList() {
+        log.info("请求获取插件类型");
+        List<Item> connectors = dataSourceService.getConnectorTypeList();
+        return Response.success(connectors);
     }
 
     @GetMapping(value = "/tables")

@@ -1,6 +1,5 @@
 package com.data.connector.plugin;
 
-import com.data.conenctor.plugin.JdbcTypeConverter;
 import com.data.profile.common.enums.DataType;
 import com.data.profile.common.utils.StringUtils;
 

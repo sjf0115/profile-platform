@@ -1,4 +1,4 @@
-package com.data.conenctor.plugin;
+package com.data.connector.plugin;
 
 import com.data.connector.api.MetricScript;
 

@@ -1,6 +1,5 @@
 package com.data.connector.plugin;
 
-import com.data.conenctor.plugin.JdbcParameterConverter;
 import java.util.Map;
 import static com.data.profile.common.domain.connector.ConfigConstants.*;
 

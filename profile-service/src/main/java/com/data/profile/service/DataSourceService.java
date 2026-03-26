@@ -13,6 +13,7 @@ import com.data.profile.manager.domain.Column;
 import com.data.profile.manager.domain.Table;
 import com.data.profile.model.DataSource;
 import com.data.profile.model.DataSourceSchema;
+import com.data.profile.vo.Item;
 import com.data.spi.PluginLoader;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -20,11 +21,11 @@ import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * 功能：数据源服务
@@ -127,9 +128,40 @@ public class DataSourceService {
     }
 
     /**
+     * 根据插件类型获取展示配置
+     * @param type 数据源类型
+     */
+    public String getConfigJson(String type) {
+        String config = PluginLoader.getPluginLoader(ConnectorFactory.class).getOrCreatePlugin(type).getConfigBuilder().build(false);
+        log.info("根据插件类型 {} 获取展示配置: {}", type, config);
+        return config;
+    }
+
+    /**
+     * 获取所有支持的插件类型
+     */
+    public List<Item> getConnectorTypeList() {
+        Set<String> connectorList = PluginLoader.getPluginLoader(ConnectorFactory.class).getSupportedPlugins();
+        List<Item> items = new ArrayList<>();
+        connectorList.forEach(it -> {
+            ConnectorFactory connectorFactory = PluginLoader.getPluginLoader(ConnectorFactory.class).getOrCreatePlugin(it);
+            if (connectorFactory.showInFrontend()) {
+                Item item = new Item(it, it);
+                items.add(item);
+            }
+        });
+        log.info("获取所有支持的插件类型: {}", gson.toJson(items));
+        return items;
+    }
+
+
+
+
+
+
+    /**
      * 根据数据源ID获取数据表
      * @param datasourceId 数据源ID
-     * @return
      */
     public List<Table> getTables(String datasourceId) {
         List<Table> tables = Lists.newArrayList();
@@ -164,4 +196,7 @@ public class DataSourceService {
         }
         return tables;
     }
+
+
+
 }
