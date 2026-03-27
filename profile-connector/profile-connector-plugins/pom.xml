@@ -17,6 +17,7 @@
         <module>profile-connector-clickhouse</module>
         <module>profile-connector-jdbc</module>
         <module>profile-connector-all</module>
+        <module>profile-connector-mysql</module>
     </modules>
 
     <properties>

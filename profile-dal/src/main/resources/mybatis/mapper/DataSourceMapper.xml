@@ -8,13 +8,13 @@
         <result column="datasource_name" jdbcType="VARCHAR" property="datasourceName" />
         <result column="datasource_desc" jdbcType="VARCHAR" property="datasourceDesc" />
         <result column="datasource_type" jdbcType="VARCHAR" property="datasourceType" />
+        <result column="config" jdbcType="VARCHAR" property="config" />
         <result column="source_type" jdbcType="INTEGER" property="sourceType" />
         <result column="owner" jdbcType="VARCHAR" property="owner" />
         <result column="creator" jdbcType="VARCHAR" property="creator" />
         <result column="modifier" jdbcType="VARCHAR" property="modifier" />
         <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
         <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
-        <result column="config" property="config" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.handler.DataSourceConfigHandler"/>
     </resultMap>
 
     <sql id="Base_Column_List">
