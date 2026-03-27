@@ -17,17 +17,17 @@
         </div>
         <div class="right-filters">
           <el-select
-            v-model="queryParams.schema_type"
+            v-model="queryParams.datasource_type"
             placeholder="数据源类型"
             clearable
             style="width: 180px"
             @change="handleSearch"
           >
             <el-option
-              v-for="item in schemaOptions"
-              :key="item.schema_id"
-              :label="item.schema_name"
-              :value="item.schema_type"
+              v-for="item in dataSourceTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
             />
           </el-select>
           <el-input
@@ -63,7 +63,7 @@
             <div class="datasource-info">
               <div class="datasource-name">{{ row.datasource_name }}</div>
               <div class="datasource-type">
-                <el-tag size="small" type="info">{{ row.schema_name }}</el-tag>
+                <el-tag size="small" type="info">{{ row.datasource_type?.toUpperCase() }}</el-tag>
               </div>
             </div>
           </template>
@@ -136,8 +136,8 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Upload, Search, Refresh } from '@element-plus/icons-vue'
-import type { DataSource, DataSourceSchema, DataSourceQueryParams } from '@/types'
-import { dataSourceApi, dataSourceSchemaApi } from '@/api/datasource'
+import type { DataSource, DataSourceQueryParams } from '@/types'
+import { dataSourceApi, dataSourceTypeApi } from '@/api/datasource'
 
 const router = useRouter()
 
@@ -164,14 +164,14 @@ const total = ref(0)
 
 // 查询参数
 const queryParams = reactive<DataSourceQueryParams>({
-  pageNum: 1,
-  pageSize: 10,
-  schema_type: undefined,
+  page_num: 1,
+  page_size: 10,
+  datasource_type: undefined,
   datasource_name: '',
 })
 
-// Schema 选项
-const schemaOptions = ref<DataSourceSchema[]>([])
+// 数据源类型选项
+const dataSourceTypeOptions = ref<{label: string; value: string}[]>([])
 
 // 选中的数据
 const selectedRows = ref<DataSource[]>([])
@@ -190,13 +190,16 @@ const fetchData = async () => {
   }
 }
 
-// 获取 Schema 列表
-const fetchSchemaList = async () => {
+// 获取数据源类型列表
+const fetchDataSourceTypeList = async () => {
   try {
-    const res = await dataSourceSchemaApi.getList({})
-    schemaOptions.value = res.data.data || []
+    const res = await dataSourceTypeApi.getList()
+    dataSourceTypeOptions.value = (res.data.data || []).map((item: {key: string; value: string}) => ({
+      label: item.value,
+      value: item.key
+    }))
   } catch (error) {
-    console.error('获取 Schema 列表失败:', error)
+    console.error('获取数据源类型列表失败:', error)
   }
 }
 
@@ -231,7 +234,7 @@ const handleSearch = () => {
 
 // 重置
 const handleReset = () => {
-  queryParams.schema_type = undefined
+  queryParams.datasource_type = undefined
   queryParams.datasource_name = ''
   queryParams.page_num = 1
   fetchData()
@@ -246,7 +249,6 @@ const handleAdd = () => {
 const handleView = (row: DataSource) => {
   router.push({
     path: `/datasource/detail/${row.datasource_id}`,
-    query: { schema_id: row.schema_id },
   })
 }
 
@@ -254,7 +256,6 @@ const handleView = (row: DataSource) => {
 const handleEdit = (row: DataSource) => {
   router.push({
     path: `/datasource/edit/${row.datasource_id}`,
-    query: { schema_id: row.schema_id },
   })
 }
 
@@ -302,7 +303,7 @@ const handleCurrentChange = (val: number) => {
 
 onMounted(() => {
   fetchData()
-  fetchSchemaList()
+  fetchDataSourceTypeList()
 })
 </script>
 

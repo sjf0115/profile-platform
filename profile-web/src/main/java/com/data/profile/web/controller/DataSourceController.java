@@ -12,6 +12,8 @@ import com.data.profile.manager.domain.Table;
 import com.data.profile.model.DataSource;
 import com.data.profile.service.DataSourceService;
 import com.data.profile.vo.Item;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -32,12 +34,15 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/datasource", produces = MediaType.APPLICATION_JSON_VALUE)
 public class DataSourceController {
+    private final static Gson gson = new GsonBuilder().create();
 
     @Autowired
     private DataSourceService dataSourceService;
 
     @PostMapping(value = "/test", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Response testConnection(@RequestBody TestConnectionRequestParam param)  {
+        log.info("数据源请求测试连接: {}", gson.toJson(param));
+
         ConnectorResponse response = dataSourceService.testConnect(param);
 
         if (response == null) {
@@ -76,6 +81,7 @@ public class DataSourceController {
 
     @PostMapping(value = "/save")
     public Response save(@RequestBody DataSource datasource) {
+        log.info("请求创建/修改数据源: {}", gson.toJson(datasource));
         int result = dataSourceService.save(datasource);
         if (result > 0) {
             return Response.success(result);

@@ -202,8 +202,8 @@ const router = useRouter()
 // 是否编辑模式
 const isEdit = computed(() => !!route.params.id)
 
-// 数据源类型（从 URL 参数获取）
-const dataSourceType = computed(() => route.query.type as string)
+// 数据源类型（从 URL 参数获取，编辑模式从数据源详情获取）
+const dataSourceType = ref('')
 
 // 数据源类型名称
 const dataSourceTypeName = ref('')
@@ -236,6 +236,24 @@ const formData = reactive<{
   datasourceDesc: '',
   config: {},
 })
+
+// config 工具函数
+const configUtils = {
+  // 将后端 config 字符串解析为对象（用于编辑时回填）
+  parse(config: string | undefined): Record<string, any> {
+    if (!config) return {}
+    try {
+      return JSON.parse(config)
+    } catch (e) {
+      console.error('解析 config 失败:', e)
+      return {}
+    }
+  },
+  // 将表单 config 对象序列化为字符串（用于保存）
+  stringify(config: Record<string, any>): string {
+    return JSON.stringify(config)
+  },
+}
 
 // 表单校验规则
 const formRules = reactive<FormRules>({
@@ -275,7 +293,7 @@ const fetchDataSourceConfig = async () => {
     
     if (configData && Array.isArray(configData)) {
       pluginParams.value = configData
-      dataSourceTypeName.value = dataSourceType.value.toUpperCase()
+      dataSourceTypeName.value = dataSourceType.value?.toUpperCase() || ''
       
       // 初始化配置项默认值
       configData.forEach((param) => {
@@ -306,21 +324,19 @@ const fetchDataSourceDetail = async () => {
       return
     }
     
+    // 设置数据源类型（用于加载配置）
+    dataSourceType.value = data.datasource_type || ''
+    
     // 回填表单数据
     formData.datasourceName = data.datasource_name
     formData.datasourceDesc = data.datasource_desc || ''
+        
+    // 解析 config 并回填
+    const configObj = configUtils.parse(data.config)
+    Object.assign(formData.config, configObj)
     
-    // 解析 config
-    if (data.config) {
-      try {
-        const config = typeof data.config === 'string' 
-          ? JSON.parse(data.config) 
-          : data.config
-        Object.assign(formData.config, config)
-      } catch (e) {
-        console.error('解析配置失败:', e)
-      }
-    }
+    // 加载配置表单
+    await fetchDataSourceConfig()
   } catch (error) {
     console.error('获取数据源详情失败:', error)
     ElMessage.error('获取数据源信息失败')
@@ -393,9 +409,8 @@ const handleSubmit = async () => {
       const params: DataSource = {
         datasource_name: formData.datasourceName,
         datasource_desc: formData.datasourceDesc,
-        schema_id: dataSourceType.value,
-        schema_name: dataSourceTypeName.value,
-        config: formData.config,
+        datasource_type: dataSourceType.value,
+        config: configUtils.stringify(formData.config),
       }
       
       // 编辑时传入数据源ID
@@ -428,7 +443,7 @@ const handleTestConnection = async () => {
   try {
     const res = await dataSourceApi.testConnection({
       type: dataSourceType.value,
-      config: formData.config,
+      data_source_param: JSON.stringify(formData.config),
     })
     
     if (res.data.code === 0) {
@@ -445,9 +460,16 @@ const handleTestConnection = async () => {
 }
 
 onMounted(() => {
-  fetchDataSourceConfig()
   if (isEdit.value) {
+    // 编辑模式：先获取详情，详情中会加载配置
     fetchDataSourceDetail()
+  } else {
+    // 创建模式：从 URL 获取类型并加载配置
+    const typeFromQuery = route.query.type as string
+    if (typeFromQuery) {
+      dataSourceType.value = typeFromQuery
+      fetchDataSourceConfig()
+    }
   }
 })
 </script>

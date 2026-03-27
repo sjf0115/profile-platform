@@ -62,6 +62,15 @@ public class MysqlConfigBuilder extends JdbcConfigBuilder {
                 null);
     }
 
+    @Override
+    protected InputParam getPortInput(boolean isEn) {
+        return getInputParam("port",
+                isEn ? "port" : "端口",
+                isEn ? "please enter port" : "请填入端口号", 1,
+                Validate.newBuilder().setRequired(true).setMessage(isEn ? "please enter port" : "请填入端口号").build(),
+                3306);
+    }
+
     protected InputParam getErrorDataStorageDatabaseInput(boolean isEn) {
         return getInputParam("database",
                 isEn ? "database" : "数据库",

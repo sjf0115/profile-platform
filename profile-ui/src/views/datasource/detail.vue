@@ -11,7 +11,7 @@
 
     <el-card v-loading="loading" class="detail-card">
       <template v-if="dataSource">
-        <!-- 基本信息 -->
+        <!-- 基础信息 -->
         <div class="detail-section">
           <h3 class="section-title">基本信息</h3>
           <el-descriptions :column="2" border>
@@ -19,7 +19,7 @@
               {{ dataSource.datasource_name }}
             </el-descriptions-item>
             <el-descriptions-item label="数据源类型">
-              <el-tag size="small" type="info">{{ dataSource.schema_name }}</el-tag>
+              <el-tag size="small" type="info">{{ dataSource.datasource_type?.toUpperCase() }}</el-tag>
             </el-descriptions-item>
             <el-descriptions-item label="数据源ID">
               {{ dataSource.datasource_id }}
@@ -42,18 +42,19 @@
           </el-descriptions>
         </div>
 
-        <!-- 连接信息 -->
+        <!-- 连接信息 - 根据配置动态渲染 -->
         <div class="detail-section">
           <h3 class="section-title">连接信息</h3>
-          <el-descriptions :column="2" border v-if="configData.length > 0">
+          <el-descriptions :column="2" border v-if="pluginParams.length > 0">
             <el-descriptions-item 
-              v-for="item in configData" 
-              :key="item.key"
-              :label="item.label"
+              v-for="param in pluginParams" 
+              :key="param.field"
+              :label="param.title"
             >
-              {{ item.value }}
+              {{ getConfigValue(param) }}
             </el-descriptions-item>
           </el-descriptions>
+          <el-empty v-else-if="loadingConfig" description="加载配置中..." />
           <el-empty v-else description="暂无连接信息" />
         </div>
       </template>
@@ -73,42 +74,60 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import type { DataSource } from '@/types'
-import { dataSourceApi } from '@/api/datasource'
+import type { DataSource, PluginParam } from '@/types'
+import { dataSourceApi, dataSourceTypeApi } from '@/api/datasource'
 
 const route = useRoute()
 const router = useRouter()
 
 // 数据源ID
 const datasourceId = computed(() => route.params.id as string)
-const schemaId = computed(() => route.query.schema_id as string)
 
 // 加载状态
 const loading = ref(false)
+const loadingConfig = ref(false)
 
 // 数据源详情
 const dataSource = ref<DataSource | null>(null)
 
-// 配置数据
-const configData = computed(() => {
-  if (!dataSource.value?.config) return []
-  const keyMap: Record<string, string> = {
-    host: '主机地址',
-    port: '端口',
-    database: '数据库名',
-    user_name: '用户名',
-    instance: '实例名',
-    endpoint: 'Endpoint',
-    ak: 'Access Key',
-    sk: 'Secret Key',
-    bucket: 'Bucket',
+// 插件参数列表（动态表单配置）
+const pluginParams = ref<PluginParam[]>([])
+
+// 解析后的配置对象
+const parsedConfig = computed(() => {
+  if (!dataSource.value?.config) return {}
+  try {
+    return typeof dataSource.value.config === 'string'
+      ? JSON.parse(dataSource.value.config)
+      : dataSource.value.config
+  } catch (e) {
+    console.error('解析 config 失败:', e)
+    return {}
   }
-  return Object.entries(dataSource.value.config).map(([key, value]) => ({
-    key,
-    label: keyMap[key] || key,
-    value: String(value),
-  }))
 })
+
+// 获取配置项的显示值
+const getConfigValue = (param: PluginParam): string => {
+  const value = parsedConfig.value[param.field]
+  if (value === undefined || value === null || value === '') {
+    return '-'
+  }
+  // 密码字段脱敏显示
+  if (isPasswordField(param)) {
+    return '******'
+  }
+  return String(value)
+}
+
+// 判断是否为密码字段
+const isPasswordField = (param: PluginParam): boolean => {
+  if (param.props && 'type' in param.props) {
+    return param.props.type === 'password'
+  }
+  // 根据字段名判断
+  const passwordFields = ['password', 'pwd', 'secret', 'sk', 'accesskey', 'secret_key']
+  return passwordFields.some(field => param.field.toLowerCase().includes(field))
+}
 
 // 格式化日期时间
 const formatDateTime = (dateStr?: string) => {
@@ -131,10 +150,41 @@ const fetchDataSourceDetail = async () => {
   try {
     const res = await dataSourceApi.getDetail(datasourceId.value)
     dataSource.value = res.data.data
+    // 获取到数据源后，加载对应的配置
+    if (dataSource.value?.datasource_type) {
+      await fetchDataSourceConfig(dataSource.value.datasource_type)
+    }
   } catch (error) {
     console.error('获取数据源详情失败:', error)
   } finally {
     loading.value = false
+  }
+}
+
+// 获取数据源类型配置（动态表单配置）
+const fetchDataSourceConfig = async (type: string) => {
+  loadingConfig.value = true
+  try {
+    const res = await dataSourceTypeApi.getConfig(type)
+    let configData = res.data.data
+    
+    // 后端返回的是 JSON 字符串，需要解析
+    if (typeof configData === 'string') {
+      try {
+        configData = JSON.parse(configData)
+      } catch (e) {
+        console.error('解析配置数据失败:', e)
+        return
+      }
+    }
+    
+    if (configData && Array.isArray(configData)) {
+      pluginParams.value = configData
+    }
+  } catch (error) {
+    console.error('获取数据源配置失败:', error)
+  } finally {
+    loadingConfig.value = false
   }
 }
 
@@ -147,7 +197,6 @@ const handleBack = () => {
 const handleEdit = () => {
   router.push({
     path: `/datasource/edit/${datasourceId.value}`,
-    query: { schema_id: schemaId.value },
   })
 }
 

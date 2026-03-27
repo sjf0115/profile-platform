@@ -17,5 +17,11 @@
             <artifactId>profile-connector-clickhouse</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.data</groupId>
+            <artifactId>profile-connector-mysql</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>

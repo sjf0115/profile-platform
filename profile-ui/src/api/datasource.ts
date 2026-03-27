@@ -2,14 +2,11 @@ import request from '@/utils/request'
 import type { 
   ApiResponse, 
   DataSource, 
-  DataSourceSchema, 
   DataSourceQueryParams,
-  DataSourceSchemaQueryParams,
-  SchemaCategory,
   DataSourceTypeItem,
   DataSourceConfigResponse
 } from '@/types'
-import { mockDataSources, mockSchemas, mockResponse } from './mock'
+import { mockDataSources, mockResponse } from './mock'
 
 // 是否使用 Mock 数据
 const USE_MOCK = false
@@ -21,8 +18,8 @@ export const dataSourceApi = {
     // 过滤掉空值，只传递有值的参数
     const filteredParams: any = {}
     if (params) {
-      if (params.schema_type !== undefined && params.schema_type !== null) {
-        filteredParams.schema_type = params.schema_type
+      if (params.datasource_type) {
+        filteredParams.datasource_type = params.datasource_type
       }
       if (params.datasource_name) {
         filteredParams.datasource_name = params.datasource_name
@@ -57,40 +54,8 @@ export const dataSourceApi = {
   },
 
   // 测试连接
-  testConnection: (data: { type: string; config: Record<string, any> }) => {
+  testConnection: (data: { type: string; data_source_param: string }) => {
     return request.post<ApiResponse<boolean>>('/datasource/test', data)
-  },
-}
-
-// 数据源 Schema 相关接口
-export const dataSourceSchemaApi = {
-  // 获取 Schema 分类列表
-  getCategories: () => {
-    return request.get<ApiResponse<SchemaCategory[]>>('/datasource/schema/category')
-  },
-
-  // 获取 Schema 列表
-  getList: (params?: DataSourceSchemaQueryParams) => {
-    return request.post<ApiResponse<DataSourceSchema[]>>('/datasource/schema/list', params || {})
-  },
-
-  // 获取 Schema 详情
-  getDetail: (schema_id: string) => {
-    return request.get<ApiResponse<DataSourceSchema>>('/datasource/schema/detail', {
-      params: { schema_id }
-    })
-  },
-
-  // 保存 Schema
-  save: (data: DataSourceSchema) => {
-    return request.post<ApiResponse<number>>('/datasource/schema/save', data)
-  },
-
-  // 删除 Schema
-  delete: (schemaId: string) => {
-    return request.delete<ApiResponse<number>>('/datasource/schema/delete', {
-      params: { schemaId }
-    })
   },
 }
 
