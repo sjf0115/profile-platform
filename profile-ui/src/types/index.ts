@@ -240,3 +240,75 @@ export interface GroupQueryParams extends PageParams {
   group_status?: number
   group_type?: number
 }
+
+// ==================== Connector Plugin Params 类型定义 ====================
+
+// 表单类型
+export type FormType = 'input' | 'radio' | 'select' | 'checkbox' | 'cascader' | 'textarea' | 'group'
+
+// 验证规则
+export interface ValidateRule {
+  required?: boolean
+  message?: string
+  trigger?: string
+  min?: number
+  max?: number
+  pattern?: string
+}
+
+// 选项
+export interface ParamOption {
+  label: string
+  value: string | number | boolean
+  disabled?: boolean
+}
+
+// 输入框属性
+export interface InputProps {
+  placeholder?: string
+  size?: 'large' | 'default' | 'small'
+  type?: 'text' | 'password' | 'number'
+  rows?: number
+  clearable?: boolean
+  disabled?: boolean
+}
+
+// 选择框属性
+export interface SelectProps {
+  placeholder?: string
+  size?: 'large' | 'default' | 'small'
+  clearable?: boolean
+  multiple?: boolean
+  filterable?: boolean
+}
+
+// 单选框属性
+export interface RadioProps {
+  size?: 'large' | 'default' | 'small'
+}
+
+// 参数属性（根据类型不同而变化）
+export type ParamProps = InputProps | SelectProps | RadioProps
+
+// 插件参数定义（对应后端 PluginParams）
+export interface PluginParam {
+  field: string
+  type: FormType
+  title: string
+  value?: any
+  props?: ParamProps
+  validate?: ValidateRule[]
+  options?: ParamOption[]
+  emit?: string[]
+}
+
+// 数据源类型项
+export interface DataSourceTypeItem {
+  key: string
+  value: string
+}
+
+// 数据源配置响应
+export interface DataSourceConfigResponse {
+  params: PluginParam[]
+}

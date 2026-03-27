@@ -199,9 +199,9 @@ public class DatasetService {
      * @param datasetId 数据集ID
      */
     // Todo 完善
-    public List<DatasetField> refresh(String datasourceId, String datasetId, String tableName) {
+    /*public List<DatasetField> refresh(String datasourceId, String datasetId, String tableName) {
         // 原始表列
-        List<Column> columns = getTableColumns(datasourceId, tableName);
+        List<Column> columns = dataSourceService.getColumnList(datasourceId, tableName);
         Set<String> columnNames = columns.stream().map(Column::getColumnName).collect(Collectors.toSet()); // 原始列名称集合
         // 数据集字段
         List<DatasetField> fields = Lists.newArrayList();
@@ -235,7 +235,7 @@ public class DatasetService {
             }
         }
         return fields;
-    }
+    }*/
 
     /**
      * 获取表列信息
@@ -243,69 +243,69 @@ public class DatasetService {
      * @param tableName
      * @return
      */
-    @Deprecated
-    private List<Column> getTableColumns(String datasourceId, String tableName) {
-        List<Column> columns = Lists.newArrayList();
-        if (StringUtils.isBlank(tableName)) {
-            return columns;
-        }
-        try {
-            ConnectionParam connectionParam = getConnectionParam(datasourceId);
-            columns = metaService.getColumns(connectionParam, tableName);
-        } catch (SQLException e) {
-            throw new RuntimeException("获取数据表失败: [" + e.getMessage() + "]");
-        }
-        return columns;
-    }
+//    @Deprecated
+//    private List<Column> getTableColumns(String datasourceId, String tableName) {
+//        List<Column> columns = Lists.newArrayList();
+//        if (StringUtils.isBlank(tableName)) {
+//            return columns;
+//        }
+//        try {
+//            ConnectionParam connectionParam = getConnectionParam(datasourceId);
+//            columns = metaService.getColumns(connectionParam, tableName);
+//        } catch (SQLException e) {
+//            throw new RuntimeException("获取数据表失败: [" + e.getMessage() + "]");
+//        }
+//        return columns;
+//    }
 
     /**
      * 获取数据源链接信息
      * @param datasourceId
      * @return
      */
-    @Deprecated
-    private ConnectionParam getConnectionParam(String datasourceId) {
-        // 数据源
-        Optional<DataSource> dataSourceOptional = dataSourceService.getDetail(datasourceId);
-        if (!dataSourceOptional.isPresent()) {
-            throw new RuntimeException("数据源[" + datasourceId + "]不存在，请联系管理员");
-        }
-        DataSource dataSource = dataSourceOptional.get();
-
-        /*// 只支持 Source 类型数据源
-        String schemaName = dataSource.getSchemaName();
-        Integer schemaType = dataSource.getSchemaType();
-        if (Objects.equals(schemaType, DataSourceSchemaType.SINK)) {
-            throw new RuntimeException("不支持数据源类型[" + schemaName + "]，请重新选择");
-        }*/
-
-        // 获取 JDBC 协议
-        String schemaId = dataSource.getSchemaId();
-        Optional<DataSourceSchema> schemaOptional = schemaService.getDetail(schemaId);
-        if (!schemaOptional.isPresent()) {
-            throw new RuntimeException("数据源Schema[" + schemaId + "]不存在，请联系管理员");
-        }
-        DataSourceSchema schema = schemaOptional.get();
-        String jdbcProtocol = schema.getJdbcProtocol();
-
-        // 生成 ConnectionParam
-        // Todo 不同类型解析不一样
-        // String config = dataSource.getConfig();
-        // ConnectionParam connectionParam = gson.fromJson(config, ConnectionParam.class);
-        ConnectionParam connectionParam = null;
-        connectionParam.setProtocol(jdbcProtocol);
-
-        // JDBC URL
-        String url;
-        try {
-            url = JdbcUtil.buildUrl(connectionParam);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("获取数据表构建连接失败: [" + e.getMessage() + "]");
-        }
-        connectionParam.setUrl(url);
-
-        return connectionParam;
-    }
+//    @Deprecated
+//    private ConnectionParam getConnectionParam(String datasourceId) {
+//        // 数据源
+//        Optional<DataSource> dataSourceOptional = dataSourceService.getDetail(datasourceId);
+//        if (!dataSourceOptional.isPresent()) {
+//            throw new RuntimeException("数据源[" + datasourceId + "]不存在，请联系管理员");
+//        }
+//        DataSource dataSource = dataSourceOptional.get();
+//
+//        /*// 只支持 Source 类型数据源
+//        String schemaName = dataSource.getSchemaName();
+//        Integer schemaType = dataSource.getSchemaType();
+//        if (Objects.equals(schemaType, DataSourceSchemaType.SINK)) {
+//            throw new RuntimeException("不支持数据源类型[" + schemaName + "]，请重新选择");
+//        }*/
+//
+//        // 获取 JDBC 协议
+//        String schemaId = dataSource.getSchemaId();
+//        Optional<DataSourceSchema> schemaOptional = schemaService.getDetail(schemaId);
+//        if (!schemaOptional.isPresent()) {
+//            throw new RuntimeException("数据源Schema[" + schemaId + "]不存在，请联系管理员");
+//        }
+//        DataSourceSchema schema = schemaOptional.get();
+//        String jdbcProtocol = schema.getJdbcProtocol();
+//
+//        // 生成 ConnectionParam
+//        // Todo 不同类型解析不一样
+//        // String config = dataSource.getConfig();
+//        // ConnectionParam connectionParam = gson.fromJson(config, ConnectionParam.class);
+//        ConnectionParam connectionParam = null;
+//        connectionParam.setProtocol(jdbcProtocol);
+//
+//        // JDBC URL
+//        String url;
+//        try {
+//            url = JdbcUtil.buildUrl(connectionParam);
+//        } catch (URISyntaxException e) {
+//            throw new RuntimeException("获取数据表构建连接失败: [" + e.getMessage() + "]");
+//        }
+//        connectionParam.setUrl(url);
+//
+//        return connectionParam;
+//    }
 
     /**
      * 创建数据集对应的引擎表

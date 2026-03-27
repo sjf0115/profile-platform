@@ -1,26 +1,25 @@
 package com.data.profile.web.controller;
 
-import com.data.connector.api.ConnectorFactory;
 import com.data.profile.common.domain.Response;
+import com.data.profile.common.domain.connector.jdbc.DatabaseInfo;
+import com.data.profile.common.domain.connector.jdbc.TableColumnInfo;
+import com.data.profile.common.domain.connector.jdbc.TableInfo;
 import com.data.profile.common.domain.connector.request.ConnectorResponse;
 import com.data.profile.common.domain.connector.request.TestConnectionRequestParam;
 import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.common.utils.StringUtils;
 import com.data.profile.manager.domain.Table;
 import com.data.profile.model.DataSource;
 import com.data.profile.service.DataSourceService;
 import com.data.profile.vo.Item;
-import com.data.spi.PluginLoader;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * 功能：数据源
@@ -37,15 +36,12 @@ public class DataSourceController {
     @Autowired
     private DataSourceService dataSourceService;
 
-    /*@ApiOperation(value = "test connection")
     @PostMapping(value = "/test", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public Object testConnection(@RequestBody TestConnectionRequestParam param)  {
+    public Response testConnection(@RequestBody TestConnectionRequestParam param)  {
         ConnectorResponse response = dataSourceService.testConnect(param);
 
-        ResultMap resultMap = new ResultMap();
-
         if (response == null) {
-            return resultMap.fail().message("Connector response is null");
+            return Response.error("Connector response is null", ResponseCode.ERROR);
         }
 
         boolean isSuccess = response.getStatus() != null
@@ -53,18 +49,14 @@ public class DataSourceController {
                 && Boolean.TRUE.equals(response.getResult());
 
         if (isSuccess) {
-            return resultMap.success()
-                    .message("Connection test succeeded")
-                    .payload(true);
+            return Response.success("数据源测试连接成功");
         } else {
             String errorMsg = StringUtils.isEmpty(response.getErrorMsg())
-                    ? "Connection failed"
+                    ? "数据源测试连接失败"
                     : response.getErrorMsg();
-            return resultMap.fail()
-                    .message(errorMsg)
-                    .payload(false);
+            return Response.error(errorMsg, ResponseCode.ERROR);
         }
-    }*/
+    }
 
     @PostMapping(value = "/list")
     public Response getList(@RequestBody DataSource dataSource) {
@@ -74,9 +66,9 @@ public class DataSourceController {
 
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam(name = "datasource_id") String datasourceId) {
-        Optional<DataSource> optional = dataSourceService.getDetail(datasourceId);
-        if (optional.isPresent()) {
-            return Response.success(optional.get());
+        DataSource dataSource = dataSourceService.getDetail(datasourceId);
+        if (!Objects.equals(dataSource, null)) {
+            return Response.success(dataSource);
         } else {
             return Response.error("请求的数据源不存在", ResponseCode.DATASOURCE_NO_ERROR);
         }
@@ -116,9 +108,33 @@ public class DataSourceController {
         return Response.success(connectors);
     }
 
-    @GetMapping(value = "/tables")
-    public Response getTables(@RequestParam(name = "datasource_id") String datasourceId) {
-        List<Table> tables = dataSourceService.getTables(datasourceId);
-        return Response.success(tables);
+    @GetMapping(value = "/{id}/databases")
+    public Object getDatabases(@PathVariable String id) {
+        List<DatabaseInfo> databases = dataSourceService.getDatabaseList(id);
+        if (Objects.equals(databases, null) || databases.isEmpty()) {
+            return Response.error("没有获取到数据库", ResponseCode.ERROR);
+        } else {
+            return Response.success(databases);
+        }
+    }
+
+    @GetMapping(value = "/{id}/{database}/tables")
+    public Response getTables(@PathVariable String id, @PathVariable String database) {
+        List<TableInfo> tables = dataSourceService.getTableList(id, database);
+        if (Objects.equals(tables, null) || tables.isEmpty()) {
+            return Response.error("没有获取到数据表", ResponseCode.ERROR);
+        } else {
+            return Response.success(tables);
+        }
+    }
+
+    @GetMapping(value = "/{id}/{database}/{table}/columns")
+    public Response getTables(@PathVariable String id, @PathVariable String database, @PathVariable String table) {
+        TableColumnInfo columns = dataSourceService.getColumnList(id, database, table);
+        if (Objects.equals(columns, null) || columns.getColumns().isEmpty()) {
+            return Response.error("没有获取到数据列", ResponseCode.ERROR);
+        } else {
+            return Response.success(columns);
+        }
     }
 }

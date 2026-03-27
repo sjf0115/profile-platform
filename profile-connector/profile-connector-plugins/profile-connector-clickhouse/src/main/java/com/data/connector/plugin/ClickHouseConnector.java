@@ -13,6 +13,7 @@ public class ClickHouseConnector extends JdbcConnector {
     public ClickHouseConnector(DataSourceClient dataSourceClient) {
         super(dataSourceClient);
     }
+
     @Override
     public BaseJdbcDataSourceInfo getDatasourceInfo(Map<String,String> param) {
         return new ClickHouseDataSourceInfo(param);

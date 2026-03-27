@@ -12,6 +12,7 @@ import java.util.Map;
  * 公众号：大数据生态
  * 日期：2025/3/8 23:43
  */
+@Deprecated
 @Data
 public class DataSourceConfig {
     // 对象存储

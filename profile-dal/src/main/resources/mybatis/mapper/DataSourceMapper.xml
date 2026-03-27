@@ -7,8 +7,7 @@
         <result column="datasource_id" jdbcType="VARCHAR" property="datasourceId" />
         <result column="datasource_name" jdbcType="VARCHAR" property="datasourceName" />
         <result column="datasource_desc" jdbcType="VARCHAR" property="datasourceDesc" />
-        <result column="schema_id" jdbcType="VARCHAR" property="schemaId" />
-        <result column="schema_name" jdbcType="VARCHAR" property="schemaName" />
+        <result column="datasource_type" jdbcType="VARCHAR" property="datasourceType" />
         <result column="source_type" jdbcType="INTEGER" property="sourceType" />
         <result column="owner" jdbcType="VARCHAR" property="owner" />
         <result column="creator" jdbcType="VARCHAR" property="creator" />
@@ -18,71 +17,55 @@
         <result column="config" property="config" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.handler.DataSourceConfigHandler"/>
     </resultMap>
 
-    <resultMap extends="BaseResultMap" id="ResultMapWithSchema" type="com.data.profile.model.DataSource">
-        <result column="schema_name" jdbcType="VARCHAR" property="schemaName" />
-        <result column="schema_type" jdbcType="VARCHAR" property="schemaType" />
-        <result column="config_template" property="configTemplate" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.handler.SchemaConfigHandler"/>
-    </resultMap>
-
     <sql id="Base_Column_List">
-        t1.id, t1.status, t1.datasource_id, t1.datasource_name, t1.datasource_desc, t1.schema_id,
-        t1.source_type, t1.owner, t1.creator, t1.modifier, t1.gmt_create, t1.gmt_modified, t1.config
-    </sql>
-
-    <sql id="DataSource_Schema_Column_List">
-        t2.schema_name, t2.schema_type, t2.config_template
+        id, status, datasource_id, datasource_name, datasource_desc, datasource_type,
+        source_type, owner, creator, modifier, gmt_create, gmt_modified, config
     </sql>
 
     <select id="selectSimpleByDatasourceId" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List" />
-        from profile_meta_datasource AS t1
+        from profile_meta_datasource
         where datasource_id = #{datasourceId,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByDatasourceId" parameterType="java.lang.String" resultMap="ResultMapWithSchema">
+    <select id="selectByDatasourceId" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
-            <include refid="Base_Column_List" />
-            ,<include refid="DataSource_Schema_Column_List" />
-        from profile_meta_datasource as t1
-        left outer join profile_meta_datasource_schema as t2
-        on t1.schema_id = t2.schema_id
+        <include refid="Base_Column_List" />
+        from profile_meta_datasource
         where datasource_id = #{datasourceId,jdbcType=VARCHAR}
     </select>
 
     <select id="selectSimpleByDatasourceName" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List" />
-        from profile_meta_datasource AS t1
+        from profile_meta_datasource
         where datasource_name = #{datasourceName,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByDatasourceName" parameterType="java.lang.String" resultMap="ResultMapWithSchema">
+    <select id="selectByDatasourceName" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
-            <include refid="Base_Column_List" />
-            ,<include refid="DataSource_Schema_Column_List" />
-        from profile_meta_datasource as t1
-        left outer join profile_meta_datasource_schema as t2
-        on t1.schema_id = t2.schema_id
+        <include refid="Base_Column_List" />
+        from profile_meta_datasource
         where datasource_name = #{datasourceName,jdbcType=VARCHAR}
     </select>
 
     <select id="selectSimpleByParams" parameterType="com.data.profile.model.DataSource" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List" />
-        from profile_meta_datasource as t1
+        from profile_meta_datasource
         where 1 = 1
         <if test="status != null">
             and status = #{status,jdbcType=INTEGER}
         </if>
-        <if test="dataSourceName != null">
+        <if test="datasourceName != null">
             and datasource_name = #{datasourceName,jdbcType=VARCHAR}
         </if>
-        <if test="dataSourceDesc != null">
+        <if test="datasourceDesc != null">
             and datasource_desc = #{datasourceDesc,jdbcType=VARCHAR}
         </if>
-        <if test="schemaId != null">
-            and schema_id = #{schemaId,jdbcType=VARCHAR}
+        <if test="datasourceType != null">
+            and datasource_type = #{datasourceType,jdbcType=VARCHAR}
         </if>
         <if test="sourceType != null">
             and source_type = #{sourceType,jdbcType=INTEGER}
@@ -98,70 +81,58 @@
         </if>
     </select>
 
-    <select id="selectByParams" parameterType="com.data.profile.model.DataSource" resultMap="ResultMapWithSchema">
+    <select id="selectByParams" parameterType="com.data.profile.model.DataSource" resultMap="BaseResultMap">
         select
-            <include refid="Base_Column_List" />
-            ,<include refid="DataSource_Schema_Column_List" />
-        from profile_meta_datasource as t1
-        left outer join profile_meta_datasource_schema as t2
-        on t1.schema_id = t2.schema_id
+        <include refid="Base_Column_List" />
+        from profile_meta_datasource
         where 1 = 1
         <if test="status != null">
-            and t1.status = #{status,jdbcType=INTEGER}
+            and status = #{status,jdbcType=INTEGER}
         </if>
         <if test="datasourceName != null">
-            and t1.datasource_name = #{datasourceName,jdbcType=VARCHAR}
+            and datasource_name = #{datasourceName,jdbcType=VARCHAR}
         </if>
         <if test="datasourceDesc != null">
-            and t1.datasource_desc = #{datasourceDesc,jdbcType=VARCHAR}
+            and datasource_desc = #{datasourceDesc,jdbcType=VARCHAR}
         </if>
-        <if test="schemaId != null">
-            and t1.schema_id = #{schemaId,jdbcType=VARCHAR}
+        <if test="datasourceType != null">
+            and datasource_type = #{datasourceType,jdbcType=VARCHAR}
         </if>
         <if test="sourceType != null">
-            and t1.source_type = #{sourceType,jdbcType=INTEGER}
+            and source_type = #{sourceType,jdbcType=INTEGER}
         </if>
         <if test="owner != null">
-            and t1.owner = #{owner,jdbcType=VARCHAR}
+            and owner = #{owner,jdbcType=VARCHAR}
         </if>
         <if test="creator != null">
-            and t1.creator = #{creator,jdbcType=VARCHAR}
+            and creator = #{creator,jdbcType=VARCHAR}
         </if>
         <if test="modifier != null">
-            and t1.modifier = #{modifier,jdbcType=VARCHAR}
-        </if>
-        <if test="schemaName != null">
-            and t2.schema_name = #{schemaName,jdbcType=VARCHAR}
-        </if>
-        <if test="schemaType != null">
-            and t2.schema_type = #{schemaType,jdbcType=VARCHAR}
+            and modifier = #{modifier,jdbcType=VARCHAR}
         </if>
     </select>
 
     <select id="selectSimpleByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List" />
-        from profile_meta_datasource AS t1
+        from profile_meta_datasource
         where datasource_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
     </select>
 
-    <select id="selectByKeyword" parameterType="java.lang.String" resultMap="ResultMapWithSchema">
+    <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
-            <include refid="Base_Column_List" />
-            ,<include refid="DataSource_Schema_Column_List" />
-        from profile_meta_datasource as t1
-        left outer join profile_meta_datasource_schema as t2
-        on t1.schema_id = t2.schema_id
-        WHERE t1.datasource_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+        <include refid="Base_Column_List" />
+        from profile_meta_datasource
+        where datasource_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
     </select>
 
     <insert id="insert" parameterType="com.data.profile.model.DataSource">
         insert into profile_meta_datasource (status, datasource_id,
-             datasource_name, datasource_desc, schema_id,
+             datasource_name, datasource_desc, datasource_type,
              source_type, owner, creator, modifier, config
         )
         values (#{status,jdbcType=INTEGER}, #{datasourceId,jdbcType=VARCHAR},
-                #{datasourceName,jdbcType=VARCHAR}, #{datasourceDesc,jdbcType=VARCHAR}, #{schemaId,jdbcType=VARCHAR},
+                #{datasourceName,jdbcType=VARCHAR}, #{datasourceDesc,jdbcType=VARCHAR}, #{datasourceType,jdbcType=VARCHAR},
                 #{sourceType,jdbcType=INTEGER}, #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR},
                 #{modifier,jdbcType=VARCHAR}, #{config,jdbcType=LONGVARCHAR}
                )
@@ -182,8 +153,8 @@
             <if test="datasourceDesc != null">
                 datasource_desc,
             </if>
-            <if test="schemaId != null">
-                schema_id,
+            <if test="datasourceType != null">
+                datasource_type,
             </if>
             <if test="sourceType != null">
                 source_type,
@@ -214,8 +185,8 @@
             <if test="datasourceDesc != null">
                 #{datasourceDesc,jdbcType=VARCHAR},
             </if>
-            <if test="schemaId != null">
-                #{schemaId,jdbcType=VARCHAR},
+            <if test="datasourceType != null">
+                #{datasourceType,jdbcType=VARCHAR},
             </if>
             <if test="sourceType != null">
                 #{sourceType,jdbcType=INTEGER},
@@ -247,8 +218,8 @@
             <if test="datasourceDesc != null">
                 datasource_desc = #{datasourceDesc,jdbcType=VARCHAR},
             </if>
-            <if test="schemaId != null">
-                schema_id = #{schemaId,jdbcType=VARCHAR},
+            <if test="datasourceType != null">
+                datasource_type = #{datasourceType,jdbcType=VARCHAR},
             </if>
             <if test="sourceType != null">
                 source_type = #{sourceType,jdbcType=INTEGER},
@@ -274,7 +245,7 @@
         set status = #{status,jdbcType=INTEGER},
             datasource_name = #{datasourceName,jdbcType=VARCHAR},
             datasource_desc = #{datasourceDesc,jdbcType=VARCHAR},
-            schema_id = #{schemaId,jdbcType=VARCHAR},
+            datasource_type = #{datasourceType,jdbcType=VARCHAR},
             source_type = #{sourceType,jdbcType=INTEGER},
             owner = #{owner,jdbcType=VARCHAR},
             creator = #{creator,jdbcType=VARCHAR},

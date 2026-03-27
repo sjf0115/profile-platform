@@ -55,6 +55,7 @@
         <lombok.version>1.18.26</lombok.version>
         <slf4j.api.version>1.7.25</slf4j.api.version>
         <jsqlparser.version>4.9</jsqlparser.version>
+        <swagger.version>3.0.0</swagger.version>
     </properties>
 
     <dependencyManagement>
@@ -213,6 +214,8 @@
                 <artifactId>jsqlparser</artifactId>
                 <version>${jsqlparser.version}</version>
             </dependency>
+
+
 
             <!-- 工具类 end -->
 

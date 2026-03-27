@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
-import java.util.List;
 
 @Data
 @Builder
@@ -22,12 +21,10 @@ public class DataSource {
     private String datasourceName;
     // 数据源描述信息
     private String datasourceDesc;
-    // 数据源类型ID
-    private String schemaId;
-    // 数据源类型名称
-    private String schemaName;
-    // 数据源类型分类
-    private Integer schemaType;
+    // 数据源类型
+    private String datasourceType;
+    // 数据源配置信息
+    private String config;
     // 数据源创建方式：内置/自定义
     private Integer sourceType;
     // 数据源负责人
@@ -40,8 +37,4 @@ public class DataSource {
     private Date gmtCreate;
     // 数据源修改时间
     private Date gmtModified;
-    // 数据源配置信息
-    private DataSourceConfig config;
-    // 数据源样式信息
-    private List<SchemaConfig> configTemplate;
 }

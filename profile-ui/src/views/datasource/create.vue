@@ -7,7 +7,7 @@
         <span>返回</span>
       </div>
       <h2 class="page-title">
-        {{ isEdit ? '编辑' : '创建' }}{{ schemaInfo?.schema_name || '' }}数据源
+        {{ isEdit ? '编辑' : '创建' }}{{ dataSourceTypeName }}数据源
       </h2>
     </div>
 
@@ -44,49 +44,133 @@
           </el-form-item>
         </div>
 
-        <!-- 连接信息 -->
-        <div class="form-section">
+        <!-- 连接信息 - 动态渲染 -->
+        <div class="form-section" v-if="pluginParams.length > 0">
           <h3 class="section-title">连接信息</h3>
           
-          <template v-if="schemaInfo?.config_template">
+          <template v-for="param in pluginParams" :key="param.field">
+            <!-- 输入框类型 -->
             <el-form-item
-              v-for="item in schemaInfo.config_template"
-              :key="item.key"
-              :label="item.show_name"
-              :prop="`config.${item.key}`"
-              :rules="{
-                required: item.required === 1,
-                message: `请输入${item.show_name}`,
-                trigger: 'blur',
-              }"
+              v-if="param.type === 'input'"
+              :label="param.title"
+              :prop="`config.${param.field}`"
+              :rules="buildValidationRules(param)"
             >
-              <!-- 密码类型 -->
               <el-input
-                v-if="item.encrypt === 1"
-                v-model="formData.config[item.key]"
-                type="password"
-                show-password
-                :placeholder="item.tip || `请输入${item.show_name}`"
+                v-model="formData.config[param.field]"
+                :placeholder="getPlaceholder(param)"
+                :type="getInputType(param)"
+                :show-password="isPasswordField(param)"
+                clearable
               />
-              <!-- 普通输入 -->
+            </el-form-item>
+
+            <!-- 文本域类型 -->
+            <el-form-item
+              v-else-if="param.type === 'textarea'"
+              :label="param.title"
+              :prop="`config.${param.field}`"
+              :rules="buildValidationRules(param)"
+            >
               <el-input
-                v-else
-                v-model="formData.config[item.key]"
-                :placeholder="item.tip || `请输入${item.show_name}`"
+                v-model="formData.config[param.field]"
+                type="textarea"
+                :rows="getTextareaRows(param)"
+                :placeholder="getPlaceholder(param)"
+                clearable
+              />
+            </el-form-item>
+
+            <!-- 选择框类型 -->
+            <el-form-item
+              v-else-if="param.type === 'select'"
+              :label="param.title"
+              :prop="`config.${param.field}`"
+              :rules="buildValidationRules(param)"
+            >
+              <el-select
+                v-model="formData.config[param.field]"
+                :placeholder="getPlaceholder(param)"
+                clearable
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="option in param.options"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
+            </el-form-item>
+
+            <!-- 单选框类型 -->
+            <el-form-item
+              v-else-if="param.type === 'radio'"
+              :label="param.title"
+              :prop="`config.${param.field}`"
+              :rules="buildValidationRules(param)"
+            >
+              <el-radio-group v-model="formData.config[param.field]">
+                <el-radio
+                  v-for="option in param.options"
+                  :key="option.value"
+                  :label="option.value"
+                >
+                  {{ option.label }}
+                </el-radio>
+              </el-radio-group>
+            </el-form-item>
+
+            <!-- 开关类型 -->
+            <el-form-item
+              v-else-if="param.type === 'checkbox'"
+              :label="param.title"
+              :prop="`config.${param.field}`"
+            >
+              <el-switch
+                v-model="formData.config[param.field]"
+                :active-value="true"
+                :inactive-value="false"
+              />
+            </el-form-item>
+
+            <!-- 级联选择类型 -->
+            <el-form-item
+              v-else-if="param.type === 'cascader'"
+              :label="param.title"
+              :prop="`config.${param.field}`"
+              :rules="buildValidationRules(param)"
+            >
+              <el-cascader
+                v-model="formData.config[param.field]"
+                :options="param.options"
+                :placeholder="getPlaceholder(param)"
+                clearable
+                style="width: 100%"
+              />
+            </el-form-item>
+
+            <!-- 默认输入框（未知类型） -->
+            <el-form-item
+              v-else
+              :label="param.title"
+              :prop="`config.${param.field}`"
+              :rules="buildValidationRules(param)"
+            >
+              <el-input
+                v-model="formData.config[param.field]"
+                :placeholder="getPlaceholder(param)"
+                clearable
               />
             </el-form-item>
           </template>
-
-          <!-- 认证选项 -->
-          <el-form-item label="认证选项" prop="authType">
-            <el-radio-group v-model="formData.authType">
-              <el-radio label="none">无认证</el-radio>
-              <el-radio label="ssl">SSL认证</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          
         </div>
 
+        <!-- 加载中 -->
+        <el-skeleton v-else-if="loadingConfig" :rows="4" animated />
+
+        <!-- 空状态 -->
+        <el-empty v-else description="暂无配置信息" />
       </el-form>
 
       <!-- 操作按钮 -->
@@ -107,10 +191,10 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, QuestionFilled } from '@element-plus/icons-vue'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import type { DataSource, DataSourceSchema } from '@/types'
-import { dataSourceApi, dataSourceSchemaApi } from '@/api/datasource'
+import type { DataSource, PluginParam } from '@/types'
+import { dataSourceApi, dataSourceTypeApi } from '@/api/datasource'
 
 const route = useRoute()
 const router = useRouter()
@@ -118,14 +202,14 @@ const router = useRouter()
 // 是否编辑模式
 const isEdit = computed(() => !!route.params.id)
 
-// Schema ID
-const schemaId = computed(() => route.query.schema_id as string)
+// 数据源类型（从 URL 参数获取）
+const dataSourceType = computed(() => route.query.type as string)
+
+// 数据源类型名称
+const dataSourceTypeName = ref('')
 
 // 数据源 ID
 const datasourceId = computed(() => route.params.id as string)
-
-// Schema 信息
-const schemaInfo = ref<DataSourceSchema | null>(null)
 
 // 表单引用
 const formRef = ref<FormInstance>()
@@ -136,29 +220,20 @@ const submitting = ref(false)
 // 测试连接状态
 const testing = ref(false)
 
-// 显示高级设置
-const showAdvanced = ref(false)
+// 加载配置状态
+const loadingConfig = ref(false)
+
+// 插件参数列表（动态表单配置）
+const pluginParams = ref<PluginParam[]>([])
 
 // 表单数据
 const formData = reactive<{
   datasourceName: string
   datasourceDesc: string
-  envType: string
-  authType: string
-  version: string
-  connectTimeout: number
-  readTimeout: number
-  maxConnections: number
-  config: Record<string, string>
+  config: Record<string, any>
 }>({
   datasourceName: '',
   datasourceDesc: '',
-  envType: 'prod',
-  authType: 'none',
-  version: 'auto',
-  connectTimeout: 30,
-  readTimeout: 30,
-  maxConnections: 10,
   config: {},
 })
 
@@ -173,37 +248,53 @@ const formRules = reactive<FormRules>({
     },
     { min: 2, max: 64, message: '长度在 2 到 64 个字符', trigger: 'blur' },
   ],
-  authType: [{ required: true, message: '请选择认证选项', trigger: 'change' }],
 })
 
-// 获取 Schema 详情（根据 schema_id 获取 config_template）
-const fetchSchemaDetail = async () => {
-  if (!schemaId.value) return
+// 获取数据源类型配置（动态表单）
+const fetchDataSourceConfig = async () => {
+  if (!dataSourceType.value) {
+    ElMessage.error('未指定数据源类型')
+    return
+  }
+  
+  loadingConfig.value = true
   try {
-    // 调用 /datasource/schema/detail 接口获取具体的 config_template
-    const res = await dataSourceSchemaApi.getDetail(schemaId.value)
-    schemaInfo.value = res.data.data
+    const res = await dataSourceTypeApi.getConfig(dataSourceType.value)
+    let configData = res.data.data
     
-    if (!schemaInfo.value) {
-      ElMessage.error('未找到该数据源类型的配置信息')
-      return
+    // 后端返回的是 JSON 字符串，需要解析
+    if (typeof configData === 'string') {
+      try {
+        configData = JSON.parse(configData)
+      } catch (e) {
+        console.error('解析配置数据失败:', e)
+        ElMessage.error('配置数据格式错误')
+        return
+      }
     }
     
-    // 初始化配置项
-    if (schemaInfo.value?.config_template) {
-      schemaInfo.value.config_template.forEach((item) => {
-        if (!formData.config[item.key]) {
-          formData.config[item.key] = item.value || ''
+    if (configData && Array.isArray(configData)) {
+      pluginParams.value = configData
+      dataSourceTypeName.value = dataSourceType.value.toUpperCase()
+      
+      // 初始化配置项默认值
+      configData.forEach((param) => {
+        if (formData.config[param.field] === undefined) {
+          formData.config[param.field] = param.value ?? ''
         }
       })
+    } else {
+      ElMessage.error('获取数据源配置失败')
     }
   } catch (error) {
-    console.error('获取 Schema 详情失败:', error)
-    ElMessage.error('获取数据源类型信息失败')
+    console.error('获取数据源配置失败:', error)
+    ElMessage.error('获取数据源配置失败')
+  } finally {
+    loadingConfig.value = false
   }
 }
 
-// 获取数据源详情
+// 获取数据源详情（编辑模式）
 const fetchDataSourceDetail = async () => {
   if (!isEdit.value || !datasourceId.value) return
   try {
@@ -222,7 +313,9 @@ const fetchDataSourceDetail = async () => {
     // 解析 config
     if (data.config) {
       try {
-        const config = JSON.parse(data.config)
+        const config = typeof data.config === 'string' 
+          ? JSON.parse(data.config) 
+          : data.config
         Object.assign(formData.config, config)
       } catch (e) {
         console.error('解析配置失败:', e)
@@ -232,6 +325,55 @@ const fetchDataSourceDetail = async () => {
     console.error('获取数据源详情失败:', error)
     ElMessage.error('获取数据源信息失败')
   }
+}
+
+// 构建验证规则
+const buildValidationRules = (param: PluginParam) => {
+  const rules: any[] = []
+  
+  if (param.validate) {
+    param.validate.forEach((v) => {
+      rules.push({
+        required: v.required,
+        message: v.message || `请输入${param.title}`,
+        trigger: v.trigger || 'blur',
+        min: v.min,
+        max: v.max,
+        pattern: v.pattern ? new RegExp(v.pattern) : undefined,
+      })
+    })
+  }
+  
+  return rules
+}
+
+// 获取占位符文本
+const getPlaceholder = (param: PluginParam) => {
+  if (param.props && 'placeholder' in param.props) {
+    return param.props.placeholder
+  }
+  return `请输入${param.title}`
+}
+
+// 获取输入框类型
+const getInputType = (param: PluginParam) => {
+  if (param.props && 'type' in param.props) {
+    return param.props.type
+  }
+  return 'text'
+}
+
+// 判断是否为密码字段
+const isPasswordField = (param: PluginParam) => {
+  return getInputType(param) === 'password'
+}
+
+// 获取文本域行数
+const getTextareaRows = (param: PluginParam) => {
+  if (param.props && 'rows' in param.props) {
+    return param.props.rows
+  }
+  return 3
 }
 
 // 返回
@@ -251,9 +393,8 @@ const handleSubmit = async () => {
       const params: DataSource = {
         datasource_name: formData.datasourceName,
         datasource_desc: formData.datasourceDesc,
-        schema_id: schemaId.value,
-        schema_name: schemaInfo.value?.schema_name,
-        schema_type: schemaInfo.value?.schema_type,
+        schema_id: dataSourceType.value,
+        schema_name: dataSourceTypeName.value,
         config: formData.config,
       }
       
@@ -275,25 +416,36 @@ const handleSubmit = async () => {
 
 // 测试连接
 const handleTestConnection = async () => {
+  if (!formRef.value) return
+  
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) {
+    ElMessage.warning('请完善表单信息后再测试连接')
+    return
+  }
+  
   testing.value = true
   try {
-    // 这里可以调用测试连接 API
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    ElMessage.success('连接成功')
+    const res = await dataSourceApi.testConnection({
+      type: dataSourceType.value,
+      config: formData.config,
+    })
+    
+    if (res.data.code === 0) {
+      ElMessage.success('连接成功')
+    } else {
+      ElMessage.error(res.data.message || '连接失败')
+    }
   } catch (error) {
+    console.error('测试连接失败:', error)
     ElMessage.error('连接失败')
   } finally {
     testing.value = false
   }
 }
 
-// 生成 ID
-const generateId = () => {
-  return 'ds_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5)
-}
-
 onMounted(() => {
-  fetchSchemaDetail()
+  fetchDataSourceConfig()
   if (isEdit.value) {
     fetchDataSourceDetail()
   }

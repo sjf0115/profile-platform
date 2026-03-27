@@ -80,7 +80,7 @@ public class DatasetController {
         }
     }
 
-    @GetMapping(value = "/refresh")
+    /*@GetMapping(value = "/refresh")
     public Response refresh(@RequestParam(name = "datasource_id") String datasourceId,
                             @RequestParam(name = "dataset_id") String datasetId,
                             @RequestParam(name = "table_name") String tableName) {
@@ -91,5 +91,5 @@ public class DatasetController {
         } else {
             return Response.error("刷新数据集字段失败", ResponseCode.ERROR);
         }
-    }
+    }*/
 }

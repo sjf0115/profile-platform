@@ -5,7 +5,9 @@ import type {
   DataSourceSchema, 
   DataSourceQueryParams,
   DataSourceSchemaQueryParams,
-  SchemaCategory 
+  SchemaCategory,
+  DataSourceTypeItem,
+  DataSourceConfigResponse
 } from '@/types'
 import { mockDataSources, mockSchemas, mockResponse } from './mock'
 
@@ -53,6 +55,11 @@ export const dataSourceApi = {
       params: { datasource_id }
     })
   },
+
+  // 测试连接
+  testConnection: (data: { type: string; config: Record<string, any> }) => {
+    return request.post<ApiResponse<boolean>>('/datasource/test', data)
+  },
 }
 
 // 数据源 Schema 相关接口
@@ -84,5 +91,18 @@ export const dataSourceSchemaApi = {
     return request.delete<ApiResponse<number>>('/datasource/schema/delete', {
       params: { schemaId }
     })
+  },
+}
+
+// 数据源类型相关接口（通过 Connector 插件）
+export const dataSourceTypeApi = {
+  // 获取所有支持的数据源类型
+  getList: () => {
+    return request.get<ApiResponse<DataSourceTypeItem[]>>('/datasource/type/list')
+  },
+
+  // 获取指定类型的配置表单
+  getConfig: (type: string) => {
+    return request.get<ApiResponse<DataSourceConfigResponse>>(`/datasource/config/${type}`)
   },
 }
