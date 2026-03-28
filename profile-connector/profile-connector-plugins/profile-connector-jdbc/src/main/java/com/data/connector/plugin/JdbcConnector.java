@@ -74,23 +74,24 @@ public abstract class JdbcConnector implements Connector, IJdbcDataSourceInfo {
     @Override
     public ConnectorResponse getTables(GetTablesRequestParam param) throws SQLException {
         ConnectorResponse.ConnectorResponseBuilder builder = ConnectorResponse.builder();
+        // 解析数据源参数
         String dataSourceParam = param.getDataSourceParam();
-
         Map<String,String> paramMap = JSONUtils.toMap(dataSourceParam);
         if (MapUtils.isEmpty(paramMap)) {
             throw new SQLException("jdbc datasource param is no validate");
         }
 
+        // 获取连接
         Connection connection = getConnection(dataSourceParam, paramMap);
 
+        // 获取数据元信息
         List<TableInfo> tableList = null;
         ResultSet tables;
-
         try {
             DatabaseMetaData metaData = connection.getMetaData();
             String catalog;
             String schema;
-
+            // TODO 数据库是否可以直接从数据源参数中获取
             if (StringUtils.isNotEmpty(paramMap.get(CATALOG))) {
                 catalog = paramMap.get(CATALOG);
                 schema = param.getDatabase();

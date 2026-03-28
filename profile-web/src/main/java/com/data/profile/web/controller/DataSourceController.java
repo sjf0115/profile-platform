@@ -108,14 +108,14 @@ public class DataSourceController {
     }
 
     @GetMapping(value = "/type/list")
-    public Object getConnectorTypeList() {
+    public Response getConnectorTypeList() {
         log.info("请求获取插件类型");
         List<Item> connectors = dataSourceService.getConnectorTypeList();
         return Response.success(connectors);
     }
 
     @GetMapping(value = "/{id}/databases")
-    public Object getDatabases(@PathVariable String id) {
+    public Response getDatabases(@PathVariable String id) {
         List<DatabaseInfo> databases = dataSourceService.getDatabaseList(id);
         if (Objects.equals(databases, null) || databases.isEmpty()) {
             return Response.error("没有获取到数据库", ResponseCode.ERROR);
@@ -135,7 +135,7 @@ public class DataSourceController {
     }
 
     @GetMapping(value = "/{id}/{database}/{table}/columns")
-    public Response getTables(@PathVariable String id, @PathVariable String database, @PathVariable String table) {
+    public Response getColumns(@PathVariable String id, @PathVariable String database, @PathVariable String table) {
         TableColumnInfo columns = dataSourceService.getColumnList(id, database, table);
         if (Objects.equals(columns, null) || columns.getColumns().isEmpty()) {
             return Response.error("没有获取到数据列", ResponseCode.ERROR);

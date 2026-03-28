@@ -4,7 +4,10 @@ import type {
   DataSource, 
   DataSourceQueryParams,
   DataSourceTypeItem,
-  DataSourceConfigResponse
+  DataSourceConfigResponse,
+  DatabaseInfo,
+  TableInfo,
+  TableColumnInfo
 } from '@/types'
 import { mockDataSources, mockResponse } from './mock'
 
@@ -56,6 +59,21 @@ export const dataSourceApi = {
   // 测试连接
   testConnection: (data: { type: string; data_source_param: string }) => {
     return request.post<ApiResponse<boolean>>('/datasource/test', data)
+  },
+
+  // 获取数据库列表
+  getDatabases: (id: string) => {
+    return request.get<ApiResponse<DatabaseInfo[]>>(`/datasource/${id}/databases`)
+  },
+
+  // 获取数据表列表
+  getTables: (id: string, database: string) => {
+    return request.get<ApiResponse<TableInfo[]>>(`/datasource/${id}/${database}/tables`)
+  },
+
+  // 获取数据表列信息
+  getColumns: (id: string, database: string, table: string) => {
+    return request.get<ApiResponse<TableColumnInfo>>(`/datasource/${id}/${database}/${table}/columns`)
   },
 }
 

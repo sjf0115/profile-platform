@@ -37,20 +37,38 @@
             </el-select>
           </el-form-item>
 
+          <el-form-item label="数据库" required>
+            <el-select
+              v-model="formData.database"
+              placeholder="请选择数据库"
+              clearable
+              style="width: 300px"
+              :disabled="!formData.datasource_id"
+              @change="handleDatabaseChange"
+            >
+              <el-option
+                v-for="(item, index) in databaseList"
+                :key="index"
+                :label="item.name"
+                :value="item.name"
+              />
+            </el-select>
+          </el-form-item>
+
           <el-form-item label="数据表" required>
             <el-select
               v-model="formData.table_name"
               placeholder="请选择数据表"
               clearable
               style="width: 300px"
-              :disabled="!formData.datasource_id"
+              :disabled="!formData.database"
               @change="handleTableChange"
             >
               <el-option
                 v-for="(item, index) in tableList"
                 :key="index"
-                :label="item.table_name + (item.table_comment ? ' (' + item.table_comment + ')' : '')"
-                :value="item.table_name"
+                :label="item.name + (item.comment ? ' (' + item.comment + ')' : '')"
+                :value="item.name"
               />
             </el-select>
           </el-form-item>
@@ -66,20 +84,34 @@
 
           <template v-if="formData.has_partition === 1">
             <el-form-item label="时间分区字段" required>
-              <el-input
+              <el-select
                 v-model="formData.partition_field"
-                placeholder="请输入时间分区字段"
+                placeholder="请选择时间分区字段"
                 clearable
                 style="width: 300px"
-              />
+              >
+                <el-option
+                  v-for="(field, index) in fieldList"
+                  :key="index"
+                  :label="field.field_name"
+                  :value="field.field_name"
+                />
+              </el-select>
             </el-form-item>
 
             <el-form-item label="分区值格式" required>
-              <el-input
+              <el-select
                 v-model="formData.partition_format"
-                placeholder="请输入分区值格式，如：${yyyyMMdd}"
+                placeholder="请选择分区值格式"
                 style="width: 300px"
-              />
+              >
+                <el-option label="${yyyyMMdd}" value="${yyyyMMdd}" />
+                <el-option label="${yyyy-MM-dd}" value="${yyyy-MM-dd}" />
+                <el-option label="${yyyy/MM/dd}" value="${yyyy/MM/dd}" />
+                <el-option label="${yyyyMM}" value="${yyyyMM}" />
+                <el-option label="${yyyy-MM}" value="${yyyy-MM}" />
+                <el-option label="${yyyy}" value="${yyyy}" />
+              </el-select>
               <el-tooltip content="支持的时间格式：yyyy(年)、MM(月)、dd(日)、HH(时)、mm(分)、ss(秒)" placement="top">
                 <el-icon class="help-icon"><QuestionFilled /></el-icon>
               </el-tooltip>
@@ -232,8 +264,9 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, QuestionFilled, Search, InfoFilled } from '@element-plus/icons-vue'
-import type { Dataset, DatasetField } from '@/types'
+import type { Dataset } from '@/types'
 import { datasetApi } from '@/api/dataset'
+import { dataSourceApi } from '@/api/datasource'
 import { entityIdentifierApi, type EntityIdentifier } from '@/api/entity'
 import { labelApi } from '@/api/label'
 
@@ -250,14 +283,11 @@ const activeStep = ref(0)
 // 数据源列表
 const datasourceList = ref<any[]>([])
 
+// 数据库列表
+const databaseList = ref<any[]>([])
+
 // 数据表列表
-interface TableItem {
-  table_name: string
-  table_comment?: string
-  is_partition_table?: boolean
-  columns?: any[]  // 表字段列表
-}
-const tableList = ref<TableItem[]>([])
+const tableList = ref<any[]>([])
 
 // 字段列表（使用后端字段命名 - 下划线命名）
 interface DatasetFieldItem {
@@ -282,6 +312,7 @@ const labelList = ref<any[]>([])
 // 表单数据
 const formData = reactive({
   datasource_id: '',
+  database: '',
   table_name: '',
   dataset_name: '',
   dataset_desc: '',
@@ -290,7 +321,7 @@ const formData = reactive({
   partition_format: '${yyyyMMdd}',
   entity_field: '',
   entity_id: '',
-  fields: [] as DatasetField[]
+  fields: [] as DatasetFieldItem[]
 })
 
 // 过滤后的字段列表
@@ -305,7 +336,7 @@ const filteredFieldList = computed(() => {
 
 // 是否可以进入下一步
 const canGoNext = computed(() => {
-  if (!formData.datasource_id || !formData.table_name) return false
+  if (!formData.datasource_id || !formData.database || !formData.table_name) return false
   if (formData.has_partition === 1) {
     return !!formData.partition_field && !!formData.partition_format
   }
@@ -325,15 +356,53 @@ const fetchDatasourceList = async () => {
   }
 }
 
-// 获取数据表列表
-const fetchTableList = async (datasourceId: string) => {
+// 获取数据库列表
+const fetchDatabaseList = async (datasourceId: string) => {
   try {
-    const res = await datasetApi.getTables(datasourceId)
+    const res = await dataSourceApi.getDatabases(datasourceId)
+    console.log('数据库列表响应:', res)
+    databaseList.value = res.data.data || []
+  } catch (error) {
+    console.error('获取数据库列表失败:', error)
+    ElMessage.error('获取数据库列表失败')
+  }
+}
+
+// 获取数据表列表
+const fetchTableList = async (datasourceId: string, database: string) => {
+  try {
+    const res = await dataSourceApi.getTables(datasourceId, database)
     console.log('数据表列表响应:', res)
     tableList.value = res.data.data || []
   } catch (error) {
     console.error('获取数据表列表失败:', error)
     ElMessage.error('获取数据表列表失败')
+  }
+}
+
+// 获取数据表字段列表
+const fetchColumnList = async (datasourceId: string, database: string, table: string) => {
+  try {
+    const res = await dataSourceApi.getColumns(datasourceId, database, table)
+    console.log('字段列表响应:', res)
+    const columnInfo = res.data.data
+    if (columnInfo && columnInfo.columns) {
+      fieldList.value = columnInfo.columns.map((col: any) => ({
+        field_name: col.name,
+        field_desc: col.comment || '',
+        field_type: col.type,
+        import_status: 1,
+        field_status: 1,  // 1-新增字段
+        related_id: undefined  // 关联标签ID
+      }))
+      console.log('字段列表数据:', fieldList.value)
+    } else {
+      fieldList.value = []
+    }
+  } catch (error) {
+    console.error('获取字段列表失败:', error)
+    ElMessage.error('获取字段列表失败')
+    fieldList.value = []
   }
 }
 
@@ -377,32 +446,31 @@ const handleEntityIdentifierChange = (entityIdentifierId: string) => {
 
 // 数据源变更
 const handleDatasourceChange = (datasourceId: string) => {
+  formData.database = ''
+  formData.table_name = ''
+  fieldList.value = []
+  databaseList.value = []
+  tableList.value = []
+  if (!datasourceId) return
+  fetchDatabaseList(datasourceId)
+}
+
+// 数据库变更
+const handleDatabaseChange = (database: string) => {
   formData.table_name = ''
   fieldList.value = []
   tableList.value = []
-  if (!datasourceId) return
-  fetchTableList(datasourceId)
+  if (!database || !formData.datasource_id) return
+  fetchTableList(formData.datasource_id, database)
 }
 
 // 数据表变更
 const handleTableChange = (tableName: string) => {
-  if (!tableName || !formData.datasource_id) return
+  fieldList.value = []
+  if (!tableName || !formData.datasource_id || !formData.database) return
   
-  // 从已加载的表列表中找到选中的表，获取其 columns 字段
-  const selectedTable = tableList.value.find(t => t.table_name === tableName)
-  if (selectedTable && selectedTable.columns) {
-    fieldList.value = selectedTable.columns.map((col: any) => ({
-      field_name: col.column_name,
-      field_desc: col.column_comment || '',
-      field_type: col.column_type,
-      import_status: 1,
-      field_status: 1,  // 1-新增字段
-      related_id: undefined  // 关联标签ID
-    }))
-    console.log('字段列表数据:', fieldList.value)
-  } else {
-    fieldList.value = []
-  }
+  // 调用接口获取字段列表
+  fetchColumnList(formData.datasource_id, formData.database, tableName)
 }
 
 // 下一步
@@ -440,12 +508,15 @@ const handleSubmit = async () => {
   }
 
   try {
+    // 组合 database 和 table_name
+    const fullTableName = formData.database ? `${formData.database}.${formData.table_name}` : formData.table_name
+    
     const submitData: Partial<Dataset> = {
       dataset_name: formData.dataset_name,
       dataset_desc: formData.dataset_desc,
       dataset_type: 1, // 标签数据集
       datasource_id: formData.datasource_id,
-      table_name: formData.table_name,
+      table_name: fullTableName,
       partition_field: formData.has_partition === 1 ? formData.partition_field : undefined,
       partition_format: formData.has_partition === 1 ? formData.partition_format : undefined,
       entity_field: formData.entity_field,
@@ -479,7 +550,18 @@ const fetchDatasetDetail = async () => {
     if (dataset) {
       // 填充表单数据
       formData.datasource_id = dataset.datasource_id || ''
-      formData.table_name = dataset.table_name || ''
+      
+      // 解析 table_name，分离 database 和 table
+      const tableName = dataset.table_name || ''
+      if (tableName.includes('.')) {
+        const parts = tableName.split('.')
+        formData.database = parts[0]
+        formData.table_name = parts[1]
+      } else {
+        formData.database = ''
+        formData.table_name = tableName
+      }
+      
       formData.dataset_name = dataset.dataset_name || ''
       formData.dataset_desc = dataset.dataset_desc || ''
       formData.has_partition = dataset.partition_field ? 1 : 0

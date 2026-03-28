@@ -121,12 +121,8 @@ const getConfigValue = (param: PluginParam): string => {
 
 // 判断是否为密码字段
 const isPasswordField = (param: PluginParam): boolean => {
-  if (param.props && 'type' in param.props) {
-    return param.props.type === 'password'
-  }
-  // 根据字段名判断
-  const passwordFields = ['password', 'pwd', 'secret', 'sk', 'accesskey', 'secret_key']
-  return passwordFields.some(field => param.field.toLowerCase().includes(field))
+  // 根据 field 名称判断（后端 config 中 field=password 标识密码字段）
+  return param.field === 'password'
 }
 
 // 格式化日期时间

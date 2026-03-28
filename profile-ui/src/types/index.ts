@@ -270,3 +270,35 @@ export interface DataSourceTypeItem {
 export interface DataSourceConfigResponse {
   params: PluginParam[]
 }
+
+// 数据库信息
+export interface DatabaseInfo {
+  name: string
+  type?: string
+}
+
+// 数据表信息
+export interface TableInfo {
+  database: string
+  name: string
+  type?: string
+  comment?: string
+  owner?: string
+  create_time?: string
+}
+
+// 列信息
+export interface ColumnInfo {
+  name: string
+  type: string
+  comment?: string
+  primary_key?: boolean
+}
+
+// 数据表列信息
+export interface TableColumnInfo {
+  database?: string
+  table: string
+  primary_keys?: string[]
+  columns: ColumnInfo[]
+}
