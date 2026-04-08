@@ -25,6 +25,7 @@
         <module>profile-manager</module>
         <module>profile-connector</module>
         <module>profile-spi</module>
+        <module>profile-engine</module>
     </modules>
 
     <name>profile-platform</name>
@@ -253,6 +254,12 @@
             <dependency>
                 <groupId>com.data</groupId>
                 <artifactId>profile-connector-jdbc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-engine-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
