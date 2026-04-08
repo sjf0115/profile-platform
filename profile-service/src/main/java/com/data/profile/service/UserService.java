@@ -1,22 +1,33 @@
 package com.data.profile.service;
 
+import com.clickhouse.client.internal.com.google.common.collect.Maps;
+import com.data.profile.common.config.AuthenticationProvidersConfig;
+import com.data.profile.common.domain.Constant;
 import com.data.profile.common.domain.RequestContext;
+import com.data.profile.common.domain.request.UserLoginRequest;
+import com.data.profile.common.domain.security.IAuthenticationStrategy;
+import com.data.profile.common.domain.security.LDAPAuthenticationStrategy;
+import com.data.profile.common.domain.security.PasswdAuthenticationStrategy;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
+import com.data.profile.common.enums.UserTokenStatus;
+import com.data.profile.common.exception.ProfileException;
 import com.data.profile.common.utils.IDGenerator;
+import com.data.profile.common.utils.JwtUtil;
 import com.data.profile.dao.UserMapper;
 import com.data.profile.model.User;
+import com.data.profile.model.UserLogin;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+
+import static com.data.profile.common.enums.ResponseCode.INVALID_AUTHENTICATION_PROVIDER;
 
 /**
  * 功能：用户服务
@@ -28,10 +39,32 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class UserService {
-    private static Logger LOG = LoggerFactory.getLogger(UserService.class);
+    private final Map<String, IAuthenticationStrategy> strategies = new HashMap<>();
+    @Autowired
+    private PasswdAuthenticationStrategy passwdAuthenticationStrategy;
+    @Autowired
+    private AuthenticationProvidersConfig authenticationProvidersConfig;
+    @Autowired
+    private LDAPAuthenticationStrategy ldapAuthenticationStrategy;
 
-    @Resource
+    @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private UserLoginService userLoginService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @PostConstruct
+    public void init() {
+        List<String> providers = authenticationProvidersConfig.getProviders();
+        if (providers.isEmpty() || providers.contains(Constant.AUTHENTICATION_PROVIDER_PASSWORD)) {
+            strategies.put(Constant.AUTHENTICATION_PROVIDER_PASSWORD, passwdAuthenticationStrategy);
+        }
+        if (providers.contains(Constant.AUTHENTICATION_PROVIDER_LDAP)) {
+            strategies.put(Constant.AUTHENTICATION_PROVIDER_LDAP, ldapAuthenticationStrategy);
+        }
+    }
 
     /**
      * 根据查询条件获取用户列表
@@ -67,26 +100,6 @@ public class UserService {
             return Optional.empty();
         }
         return Optional.of(user);
-    }
-
-    /**
-     * 登录
-     * @param userId
-     * @param password
-     * @return
-     */
-    public boolean login(String userId, String password) {
-        User user = userMapper.selectByUserId(userId);
-        if (Objects.equals(user, null)) {
-            throw new RuntimeException("账号不存在, 请先注册");
-        }
-        // 验证密码
-        if (Objects.equals(password, user.getPassword())) {
-            RequestContext.setUser(user);
-        } else {
-            throw new RuntimeException("密码错误，请重新输入");
-        }
-        return true;
     }
 
     /**
@@ -142,5 +155,31 @@ public class UserService {
         user.setModifier(RequestContext.currentUserId());
         int result = userMapper.updateByUserIdSelective(user);
         return result;
+    }
+
+    /**
+     * 登录
+     */
+    public User login(UserLoginRequest userLoinRequest, String authType) {
+        // 登录验证
+        authType = StringUtils.isEmpty(authType) ? Constant.AUTHENTICATION_PROVIDER_PASSWORD : authType;
+        if (!strategies.containsKey(authType)) {
+            throw new ProfileException(INVALID_AUTHENTICATION_PROVIDER, authType);
+        }
+        IAuthenticationStrategy strategy = strategies.get(authType);
+        User user = strategy.authenticate(userLoinRequest);
+
+        // TODO
+        Map<String, Object> map = Maps.newConcurrentMap();
+        final String token = jwtUtil.genToken(map);
+
+        // 保存登录记录
+        UserLogin userLogin = UserLogin.builder()
+                .token(token)
+                .tokenStatus(UserTokenStatus.ENABLE.getCode())
+                .userId(user.getUserId())
+                .build();
+        userLoginService.save(userLogin);
+        return user;
     }
 }

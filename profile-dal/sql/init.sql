@@ -375,8 +375,8 @@ DROP Table `profile_meta_user_login`;
 CREATE TABLE IF NOT EXISTS `profile_meta_user_login`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
     `user_id` VARCHAR(40) NOT NULL COMMENT '用户ID',
-    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
-    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `token` mediumtext NOT NULL,
+    `token_status` tinyint(1) NOT NULL,
     `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`)

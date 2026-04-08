@@ -24,9 +24,16 @@ spring:
     url: jdbc:ch:http://localhost:8123/default
     username: test
     password: test
-
+  authentication:
+    providers:
+      - passwd
 mybatis:
   mapper-locations: classpath:mybatis/mapper/*.xml
   type-aliases-package: com.data.profile.model
   configuration:
     map-underscore-to-camel-case: true
+
+jwt:
+  expireTime: 86400
+  secretKey:
+  algorithm: HS256

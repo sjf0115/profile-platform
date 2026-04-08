@@ -9,4 +9,9 @@ package com.data.profile.common.domain;
  */
 public class Constant {
     public static String DEFAULT_LABEL_CATEGORY = "未分类";
+
+    public static final String SESSION_USER_CONTEXT = "session.user.context";
+
+    public static final String AUTHENTICATION_PROVIDER_PASSWORD = "PASSWD";
+    public static final String AUTHENTICATION_PROVIDER_LDAP = "LDAP";
 }

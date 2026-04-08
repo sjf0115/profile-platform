@@ -1,9 +1,22 @@
 package com.data.profile.common.exception;
 
+import com.data.profile.common.enums.ResponseCode;
+
 public class ProfileException extends RuntimeException {
+    private ResponseCode responseCode;
 
     public ProfileException() {
         super();
+    }
+
+    public ProfileException(ResponseCode responseCode) {
+        super(responseCode.getMessage());
+        this.responseCode = responseCode;
+    }
+
+    public ProfileException(ResponseCode responseCode, Object... msg) {
+        super(String.format(responseCode.getTemplate(), msg));
+        this.responseCode = responseCode;
     }
 
     public ProfileException(String message) {
@@ -23,5 +36,4 @@ public class ProfileException extends RuntimeException {
                                boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
-
 }
