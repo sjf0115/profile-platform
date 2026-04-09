@@ -16,14 +16,14 @@ import java.util.UUID;
 
 @Component
 public class JwtUtil implements InitializingBean {
-    @Value("${jwt.expireTime}")
+//    @Value("${jwt.expireTime}")
     private int expireTime;
 
-    @Value("${jwt.secretKey}")
-    private String secretKey;
+//    @Value("${jwt.secretKey}")
+    private String secretKey = "";
 
-    @Value("${jwt.algorithm}")
-    private String algorithmString;
+//    @Value("${jwt.algorithm}")
+    private String algorithmString = "HS256";
 
     private SignatureAlgorithm algorithm = null;
 

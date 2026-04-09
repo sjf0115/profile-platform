@@ -19,12 +19,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 @Slf4j
 public class ControllerExceptionAspect {
-
-    private static Logger LOG = LoggerFactory.getLogger(ControllerExceptionAspect.class);
-
     @ExceptionHandler(Exception.class)
     public Response handleException(Exception e) {
-        LOG.error(e.getMessage(), e);
+        log.error(e.getMessage(), e);
         String message = e.getMessage();
         return Response.error(StringUtils.isBlank(message) ? "操作失败" : message, ResponseCode.ERROR);
     }

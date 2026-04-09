@@ -21,9 +21,9 @@ public interface UserLoginMapper {
 
     int deleteByUserId(String userId);
 
-    int updateByIdSelective(UserLogin userLogin);
+    int updateByUserIdSelective(UserLogin userLogin);
 
-    int updateById(UserLogin userLogin);
+    int updateByUserId(UserLogin userLogin);
 
     int updateTokenStatusByUserId(String userId, Integer tokenStatus);
 }

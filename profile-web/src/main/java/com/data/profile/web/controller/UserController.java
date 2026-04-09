@@ -67,4 +67,9 @@ public class UserController {
         User user = userService.login(userLoinRequest, authType);
         return Response.success(user);
     }
+
+    @PatchMapping("/logout")
+    public Response logout() {
+        return Response.success(null);
+    }
 }

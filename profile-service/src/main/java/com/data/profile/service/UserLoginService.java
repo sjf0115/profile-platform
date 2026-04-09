@@ -101,6 +101,14 @@ public class UserLoginService {
     }
 
     /**
+     * 用户 Token 失效
+     * @param userId 用户ID
+     */
+    public void disableToken(String userId) {
+        updateTokenStatus(userId, UserTokenStatus.DISABLE.getCode());
+    }
+
+    /**
      * 删除用户登录记录
      * @param id ID
      */

@@ -91,20 +91,17 @@
     where user_id = #{userId,jdbcType=VARCHAR}
   </delete>
 
-  <update id="updateById" parameterType="com.data.profile.model.UserLogin">
+  <update id="updateByUserId" parameterType="com.data.profile.model.UserLogin">
     update profile_meta_user_login
-    set user_id = #{userId,jdbcType=VARCHAR},
+    set
         token = #{token,jdbcType=LONGVARCHAR},
         token_status = #{tokenStatus,jdbcType=TINYINT}
-    where id = #{id,jdbcType=BIGINT}
+    where user_id = #{userId,jdbcType=VARCHAR}
   </update>
 
-  <update id="updateByIdSelective" parameterType="com.data.profile.model.UserLogin">
+  <update id="updateByUserIdSelective" parameterType="com.data.profile.model.UserLogin">
     update profile_meta_user_login
     <set>
-      <if test="userId != null and userId != ''">
-        user_id = #{userId,jdbcType=VARCHAR},
-      </if>
       <if test="token != null and token != ''">
         token = #{token,jdbcType=LONGVARCHAR},
       </if>
@@ -112,7 +109,7 @@
         token_status = #{tokenStatus,jdbcType=TINYINT},
       </if>
     </set>
-    where id = #{id,jdbcType=BIGINT}
+    where user_id = #{userId,jdbcType=VARCHAR}
   </update>
 
   <update id="updateTokenStatusByUserId">

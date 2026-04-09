@@ -24,7 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import java.util.*;
 
 import static com.data.profile.common.enums.ResponseCode.INVALID_AUTHENTICATION_PROVIDER;
@@ -169,9 +168,12 @@ public class UserService {
         IAuthenticationStrategy strategy = strategies.get(authType);
         User user = strategy.authenticate(userLoinRequest);
 
-        // TODO
-        Map<String, Object> map = Maps.newConcurrentMap();
-        final String token = jwtUtil.genToken(map);
+        Map<String, Object> userMap = Maps.newConcurrentMap();
+        userMap.put("id", user.getUserId());
+        userMap.put("name", user.getUserName());
+        userMap.put("status", user.getStatus());
+        userMap.put("type", user.getUserType());
+        final String token = jwtUtil.genToken(userMap);
 
         // 保存登录记录
         UserLogin userLogin = UserLogin.builder()

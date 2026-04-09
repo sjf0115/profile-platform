@@ -8,6 +8,7 @@ import com.data.profile.dao.UserMapper;
 import com.data.profile.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
@@ -20,6 +21,7 @@ import static com.data.profile.common.enums.ResponseCode.USERNAME_PASSWORD_NO_MA
  * 公众号：大数据生态
  * 日期：2026/4/8 22:54
  */
+@Component
 public class PasswdAuthenticationStrategy implements IAuthenticationStrategy {
 
     @Autowired
@@ -32,7 +34,7 @@ public class PasswdAuthenticationStrategy implements IAuthenticationStrategy {
     @Override
     public User authenticate(UserLoginRequest request) {
         final String password = PasswordUtil.encryptWithSalt(defaultSalt, request.getPassword());
-        final User user = userMapper.checkPassword(request.getUserName(), password, Constant.AUTHENTICATION_PROVIDER_PASSWORD);
+        final User user = null; // userMapper.checkPassword(request.getUserName(), password, Constant.AUTHENTICATION_PROVIDER_PASSWORD);
         if (Objects.isNull(user)) {
             throw new ProfileException(USERNAME_PASSWORD_NO_MATCHED);
         }
