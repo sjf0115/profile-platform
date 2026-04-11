@@ -2,8 +2,8 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.model.Entity;
-import com.data.profile.service.EntityService;
+import com.data.profile.web.model.Entity;
+import com.data.profile.web.service.EntityService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;

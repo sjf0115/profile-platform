@@ -2,10 +2,9 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.*;
-import com.data.profile.model.Group;
-import com.data.profile.model.LabelOperator;
-import com.data.profile.service.GroupService;
-import com.google.common.collect.ImmutableMap;
+import com.data.profile.web.model.Group;
+import com.data.profile.web.model.LabelOperator;
+import com.data.profile.web.service.GroupService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -13,11 +12,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * 功能：群组

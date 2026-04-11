@@ -13,12 +13,10 @@ spring:
   application:
     name: profile-web
   datasource:
-    driver-class-name: com.mysql.jdbc.Driver
+    driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/profile?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true
     username: root
     password: root
-#    type-aliases-package: com.data.profile.model
-#    mapperLocations: classpath:mybatis/mapper/*.xml
   clickhouse:
     driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
     url: jdbc:ch:http://localhost:8123/default
@@ -27,12 +25,15 @@ spring:
   authentication:
     providers:
       - passwd
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
 mybatis:
   mapper-locations: classpath:mybatis/mapper/*.xml
-  type-aliases-package: com.data.profile.model
+  type-aliases-package: com.data.profile.web.model
   configuration:
     map-underscore-to-camel-case: true
-
+  type-handlers-package: com.data.profile.web.handler
 jwt:
   expireTime: 86400
   secretKey:

@@ -2,8 +2,8 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.model.Attribute;
-import com.data.profile.service.AttributeService;
+import com.data.profile.web.model.Attribute;
+import com.data.profile.web.service.AttributeService;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

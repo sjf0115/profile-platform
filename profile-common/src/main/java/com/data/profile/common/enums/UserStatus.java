@@ -6,8 +6,8 @@ public enum UserStatus {
     REGISTER(1, "未激活"),
     // 激活
     ACTIVATED(2, "激活"),
-    // 禁用
-    DISABLE(3, "停用");
+    // 停用
+    DISABLE(0, "停用");
 
     private Integer code;
     private String message;

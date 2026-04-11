@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.web.dao.DataSourceMapper">
+    <resultMap id="BaseResultMap" type="com.data.profile.web.model.DataSource">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="status" jdbcType="INTEGER" property="status" />
+        <result column="datasource_id" jdbcType="VARCHAR" property="datasourceId" />
+        <result column="datasource_name" jdbcType="VARCHAR" property="datasourceName" />
+        <result column="datasource_desc" jdbcType="VARCHAR" property="datasourceDesc" />
+        <result column="datasource_type" jdbcType="VARCHAR" property="datasourceType" />
+        <result column="config" jdbcType="VARCHAR" property="config" />
+        <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+        <result column="owner" jdbcType="VARCHAR" property="owner" />
+        <result column="creator" jdbcType="VARCHAR" property="creator" />
+        <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, status, datasource_id, datasource_name, datasource_desc, datasource_type,
+        source_type, owner, creator, modifier, gmt_create, gmt_modified, config
+    </sql>
+
+    <select id="selectSimpleByDatasourceId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_datasource
+        where datasource_id = #{datasourceId,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByDatasourceId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_datasource
+        where datasource_id = #{datasourceId,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectSimpleByDatasourceName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_datasource
+        where datasource_name = #{datasourceName,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByDatasourceName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_datasource
+        where datasource_name = #{datasourceName,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectSimpleByParams" parameterType="com.data.profile.web.model.DataSource" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_datasource
+        where 1 = 1
+        <if test="status != null">
+            and status = #{status,jdbcType=INTEGER}
+        </if>
+        <if test="datasourceName != null">
+            and datasource_name = #{datasourceName,jdbcType=VARCHAR}
+        </if>
+        <if test="datasourceDesc != null">
+            and datasource_desc = #{datasourceDesc,jdbcType=VARCHAR}
+        </if>
+        <if test="datasourceType != null">
+            and datasource_type = #{datasourceType,jdbcType=VARCHAR}
+        </if>
+        <if test="sourceType != null">
+            and source_type = #{sourceType,jdbcType=INTEGER}
+        </if>
+        <if test="owner != null">
+            and owner = #{owner,jdbcType=VARCHAR}
+        </if>
+        <if test="creator != null">
+            and creator = #{creator,jdbcType=VARCHAR}
+        </if>
+        <if test="modifier != null">
+            and modifier = #{modifier,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <select id="selectByParams" parameterType="com.data.profile.web.model.DataSource" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_datasource
+        where 1 = 1
+        <if test="status != null">
+            and status = #{status,jdbcType=INTEGER}
+        </if>
+        <if test="datasourceName != null">
+            and datasource_name = #{datasourceName,jdbcType=VARCHAR}
+        </if>
+        <if test="datasourceDesc != null">
+            and datasource_desc = #{datasourceDesc,jdbcType=VARCHAR}
+        </if>
+        <if test="datasourceType != null">
+            and datasource_type = #{datasourceType,jdbcType=VARCHAR}
+        </if>
+        <if test="sourceType != null">
+            and source_type = #{sourceType,jdbcType=INTEGER}
+        </if>
+        <if test="owner != null">
+            and owner = #{owner,jdbcType=VARCHAR}
+        </if>
+        <if test="creator != null">
+            and creator = #{creator,jdbcType=VARCHAR}
+        </if>
+        <if test="modifier != null">
+            and modifier = #{modifier,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <select id="selectSimpleByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_datasource
+        where datasource_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+    </select>
+
+    <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_datasource
+        where datasource_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+    </select>
+
+    <insert id="insert" parameterType="com.data.profile.web.model.DataSource">
+        insert into profile_meta_datasource (status, datasource_id,
+             datasource_name, datasource_desc, datasource_type,
+             source_type, owner, creator, modifier, config
+        )
+        values (#{status,jdbcType=INTEGER}, #{datasourceId,jdbcType=VARCHAR},
+                #{datasourceName,jdbcType=VARCHAR}, #{datasourceDesc,jdbcType=VARCHAR}, #{datasourceType,jdbcType=VARCHAR},
+                #{sourceType,jdbcType=INTEGER}, #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR},
+                #{modifier,jdbcType=VARCHAR}, #{config,jdbcType=LONGVARCHAR}
+               )
+    </insert>
+
+    <insert id="insertSelective" parameterType="com.data.profile.web.model.DataSource">
+        insert into profile_meta_datasource
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="status != null">
+                status,
+            </if>
+            <if test="datasourceId != null">
+                datasource_id,
+            </if>
+            <if test="datasourceName != null">
+                datasource_name,
+            </if>
+            <if test="datasourceDesc != null">
+                datasource_desc,
+            </if>
+            <if test="datasourceType != null">
+                datasource_type,
+            </if>
+            <if test="sourceType != null">
+                source_type,
+            </if>
+            <if test="owner != null">
+                `owner`,
+            </if>
+            <if test="creator != null">
+                creator,
+            </if>
+            <if test="modifier != null">
+                modifier,
+            </if>
+            <if test="config != null">
+                config,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="status != null">
+                #{status,jdbcType=INTEGER},
+            </if>
+            <if test="datasourceId != null">
+                #{datasourceId,jdbcType=VARCHAR},
+            </if>
+            <if test="datasourceName != null">
+                #{datasourceName,jdbcType=VARCHAR},
+            </if>
+            <if test="datasourceDesc != null">
+                #{datasourceDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="datasourceType != null">
+                #{datasourceType,jdbcType=VARCHAR},
+            </if>
+            <if test="sourceType != null">
+                #{sourceType,jdbcType=INTEGER},
+            </if>
+            <if test="owner != null">
+                #{owner,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null">
+                #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="modifier != null">
+                #{modifier,jdbcType=VARCHAR},
+            </if>
+            <if test="config != null">
+                #{config,jdbcType=LONGVARCHAR},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updateByDataSourceIdSelective" parameterType="com.data.profile.web.model.DataSource">
+        update profile_meta_datasource
+        <set>
+            <if test="status != null">
+                status = #{status,jdbcType=INTEGER},
+            </if>
+            <if test="datasourceName != null">
+                datasource_name = #{datasourceName,jdbcType=VARCHAR},
+            </if>
+            <if test="datasourceDesc != null">
+                datasource_desc = #{datasourceDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="datasourceType != null">
+                datasource_type = #{datasourceType,jdbcType=VARCHAR},
+            </if>
+            <if test="sourceType != null">
+                source_type = #{sourceType,jdbcType=INTEGER},
+            </if>
+            <if test="owner != null">
+                owner = #{owner,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null">
+                creator = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="modifier != null">
+                modifier = #{modifier,jdbcType=VARCHAR},
+            </if>
+            <if test="config != null">
+                config = #{config,jdbcType=LONGVARCHAR},
+            </if>
+        </set>
+        where datasource_id = #{datasourceId,jdbcType=VARCHAR}
+    </update>
+
+    <update id="updateByDataSourceId" parameterType="com.data.profile.web.model.DataSource">
+        update profile_meta_datasource
+        set status = #{status,jdbcType=INTEGER},
+            datasource_name = #{datasourceName,jdbcType=VARCHAR},
+            datasource_desc = #{datasourceDesc,jdbcType=VARCHAR},
+            datasource_type = #{datasourceType,jdbcType=VARCHAR},
+            source_type = #{sourceType,jdbcType=INTEGER},
+            owner = #{owner,jdbcType=VARCHAR},
+            creator = #{creator,jdbcType=VARCHAR},
+            modifier = #{modifier,jdbcType=VARCHAR},
+            config = #{config,jdbcType=LONGVARCHAR}
+        where datasource_id = #{datasourceId,jdbcType=VARCHAR}
+    </update>
+
+    <delete id="deleteByDatasourceId" parameterType="java.lang.String">
+        delete from profile_meta_datasource
+        where datasource_id = #{datasourceId,jdbcType=VARCHAR}
+    </delete>
+</mapper>

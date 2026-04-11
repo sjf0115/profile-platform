@@ -2,8 +2,8 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.model.Task;
-import com.data.profile.service.TaskService;
+import com.data.profile.web.model.Task;
+import com.data.profile.web.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;

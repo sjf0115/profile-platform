@@ -21,10 +21,10 @@
     <dependencies>
         <dependency>
             <groupId>com.data</groupId>
-            <artifactId>profile-service</artifactId>
-            <version>1.0</version>
+            <artifactId>profile-common</artifactId>
         </dependency>
 
+        <!-- Spring Boot -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -65,6 +65,12 @@
             <groupId>com.data</groupId>
             <artifactId>profile-connector-all</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.xmlbeans</groupId>
+            <artifactId>xmlbeans</artifactId>
+            <version>5.3.0</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <profiles>
@@ -73,9 +79,7 @@
             <properties>
                 <profiles.active>dev</profiles.active>
             </properties>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
+
         </profile>
 
         <profile>
@@ -83,6 +87,9 @@
             <properties>
                 <profiles.active>prod</profiles.active>
             </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
         </profile>
     </profiles>
 
@@ -95,10 +102,6 @@
             </resource>
             <resource>
                 <directory>src/main/resources</directory>
-                <!-- 资源根目录排除各环境的配置，使用单独的资源目录来指定 -->
-<!--                                <excludes>-->
-<!--                                    <exclude>config/**</exclude>-->
-<!--                                </excludes>-->
             </resource>
         </resources>
     </build>

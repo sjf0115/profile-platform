@@ -2,10 +2,8 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.model.Task;
-import com.data.profile.model.TaskInstance;
-import com.data.profile.service.TaskInstanceService;
-import com.data.profile.service.TaskService;
+import com.data.profile.web.model.TaskInstance;
+import com.data.profile.web.service.TaskInstanceService;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

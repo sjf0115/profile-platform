@@ -2,9 +2,9 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.model.DataSourceCategory;
-import com.data.profile.model.DataSourceSchema;
-import com.data.profile.service.DataSourceSchemaService;
+import com.data.profile.web.model.DataSourceCategory;
+import com.data.profile.web.model.DataSourceSchema;
+import com.data.profile.web.service.DataSourceSchemaService;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

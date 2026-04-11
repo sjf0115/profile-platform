@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.web.dao.AttributeMapper">
+  <resultMap id="BaseResultMap" type="com.data.profile.web.model.Attribute">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+    <result column="attr_id" jdbcType="VARCHAR" property="attrId" />
+    <result column="attr_name" jdbcType="VARCHAR" property="attrName" />
+    <result column="attr_desc" jdbcType="VARCHAR" property="attrDesc" />
+    <result column="attr_type" jdbcType="INTEGER" property="attrType" />
+    <result column="dataset_id" jdbcType="VARCHAR" property="datasetId" />
+    <result column="event_id" jdbcType="VARCHAR" property="eventId" />
+    <result column="entity_id" jdbcType="VARCHAR" property="entityId" />
+    <result column="attr_field" jdbcType="VARCHAR" property="attrField" />
+    <result column="attr_path" jdbcType="VARCHAR" property="attrPath" />
+    <result column="attr_data_type" jdbcType="INTEGER" property="attrDataType" />
+    <result column="attr_dist_type" jdbcType="INTEGER" property="attrDistType" />
+    <result column="attr_organize_type" jdbcType="INTEGER" property="attrOrganizeType" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    id, status, attr_id, attr_name, attr_desc, attr_type, dataset_id, event_id, entity_id, 
+    attr_field, attr_path, attr_data_type, attr_dist_type, attr_organize_type, creator, 
+    modifier, gmt_create, gmt_modified
+  </sql>
+
+  <select id="selectByAttrId" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from profile_meta_attribute
+    where attr_id = #{attrId,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectByAttrName" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_attribute
+    where attr_name = #{attrName,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectByParams" parameterType="com.data.profile.web.model.Event" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_attribute
+    where 1 = 1
+    <if test="status != null">
+      AND status = #{status,jdbcType=INTEGER},
+    </if>
+    <if test="attrName != null">
+      AND attr_name = #{attrName,jdbcType=VARCHAR},
+    </if>
+    <if test="attrDesc != null">
+      AND attr_desc = #{attrDesc,jdbcType=VARCHAR},
+    </if>
+    <if test="attrType != null">
+      AND attr_type = #{attrType,jdbcType=INTEGER},
+    </if>
+    <if test="datasetId != null">
+      AND dataset_id = #{datasetId,jdbcType=VARCHAR},
+    </if>
+    <if test="eventId != null">
+      AND event_id = #{eventId,jdbcType=VARCHAR},
+    </if>
+    <if test="entityId != null">
+      AND entity_id = #{entityId,jdbcType=VARCHAR},
+    </if>
+    <if test="attrField != null">
+      AND attr_field = #{attrField,jdbcType=VARCHAR},
+    </if>
+    <if test="attrPath != null">
+      AND attr_path = #{attrPath,jdbcType=VARCHAR},
+    </if>
+    <if test="attrDataType != null">
+      AND attr_data_type = #{attrDataType,jdbcType=INTEGER},
+    </if>
+    <if test="attrDistType != null">
+      AND attr_dist_type = #{attrDistType,jdbcType=INTEGER},
+    </if>
+    <if test="attrOrganizeType != null">
+      AND attr_organize_type = #{attrOrganizeType,jdbcType=INTEGER},
+    </if>
+    <if test="creator != null">
+      AND creator = #{creator,jdbcType=VARCHAR},
+    </if>
+    <if test="modifier != null">
+      AND modifier = #{modifier,jdbcType=VARCHAR},
+    </if>
+    <if test="gmtCreate != null">
+      AND gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}
+    </if>
+    <if test="gmtModified != null">
+      AND gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
+    </if>
+  </select>
+
+  <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_attribute
+    where attr_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+  </select>
+
+  <insert id="insert" parameterType="com.data.profile.web.model.Attribute">
+    insert into profile_meta_attribute (status, attr_id,
+      attr_name, attr_desc, attr_type, 
+      dataset_id, event_id, entity_id, 
+      attr_field, attr_path, attr_data_type, 
+      attr_dist_type, attr_organize_type, creator, 
+      modifier
+      )
+    values (#{status,jdbcType=INTEGER}, #{attrId,jdbcType=VARCHAR},
+      #{attrName,jdbcType=VARCHAR}, #{attrDesc,jdbcType=VARCHAR}, #{attrType,jdbcType=INTEGER}, 
+      #{datasetId,jdbcType=VARCHAR}, #{eventId,jdbcType=VARCHAR}, #{entityId,jdbcType=VARCHAR}, 
+      #{attrField,jdbcType=VARCHAR}, #{attrPath,jdbcType=VARCHAR}, #{attrDataType,jdbcType=INTEGER}, 
+      #{attrDistType,jdbcType=INTEGER}, #{attrOrganizeType,jdbcType=INTEGER}, #{creator,jdbcType=VARCHAR}, 
+      #{modifier,jdbcType=VARCHAR}
+      )
+  </insert>
+
+  <insert id="insertSelective" parameterType="com.data.profile.web.model.Attribute">
+    insert into profile_meta_attribute
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="status != null">
+        status,
+      </if>
+      <if test="attrId != null">
+        attr_id,
+      </if>
+      <if test="attrName != null">
+        attr_name,
+      </if>
+      <if test="attrDesc != null">
+        attr_desc,
+      </if>
+      <if test="attrType != null">
+        attr_type,
+      </if>
+      <if test="datasetId != null">
+        dataset_id,
+      </if>
+      <if test="eventId != null">
+        event_id,
+      </if>
+      <if test="entityId != null">
+        entity_id,
+      </if>
+      <if test="attrField != null">
+        attr_field,
+      </if>
+      <if test="attrPath != null">
+        attr_path,
+      </if>
+      <if test="attrDataType != null">
+        attr_data_type,
+      </if>
+      <if test="attrDistType != null">
+        attr_dist_type,
+      </if>
+      <if test="attrOrganizeType != null">
+        attr_organize_type,
+      </if>
+      <if test="creator != null">
+        creator,
+      </if>
+      <if test="modifier != null">
+        modifier,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="status != null">
+        #{status,jdbcType=INTEGER},
+      </if>
+      <if test="attrId != null">
+        #{attrId,jdbcType=VARCHAR},
+      </if>
+      <if test="attrName != null">
+        #{attrName,jdbcType=VARCHAR},
+      </if>
+      <if test="attrDesc != null">
+        #{attrDesc,jdbcType=VARCHAR},
+      </if>
+      <if test="attrType != null">
+        #{attrType,jdbcType=INTEGER},
+      </if>
+      <if test="datasetId != null">
+        #{datasetId,jdbcType=VARCHAR},
+      </if>
+      <if test="eventId != null">
+        #{eventId,jdbcType=VARCHAR},
+      </if>
+      <if test="entityId != null">
+        #{entityId,jdbcType=VARCHAR},
+      </if>
+      <if test="attrField != null">
+        #{attrField,jdbcType=VARCHAR},
+      </if>
+      <if test="attrPath != null">
+        #{attrPath,jdbcType=VARCHAR},
+      </if>
+      <if test="attrDataType != null">
+        #{attrDataType,jdbcType=INTEGER},
+      </if>
+      <if test="attrDistType != null">
+        #{attrDistType,jdbcType=INTEGER},
+      </if>
+      <if test="attrOrganizeType != null">
+        #{attrOrganizeType,jdbcType=INTEGER},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="modifier != null">
+        #{modifier,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    delete from profile_meta_attribute
+    where attr_id = #{attrId,jdbcType=VARCHAR}
+  </delete>
+
+  <update id="updateByAttrId" parameterType="com.data.profile.web.model.Attribute">
+    update profile_meta_attribute
+    set status = #{status,jdbcType=INTEGER},
+        attr_name = #{attrName,jdbcType=VARCHAR},
+        attr_desc = #{attrDesc,jdbcType=VARCHAR},
+        attr_type = #{attrType,jdbcType=INTEGER},
+        dataset_id = #{datasetId,jdbcType=VARCHAR},
+        event_id = #{eventId,jdbcType=VARCHAR},
+        entity_id = #{entityId,jdbcType=VARCHAR},
+        attr_field = #{attrField,jdbcType=VARCHAR},
+        attr_path = #{attrPath,jdbcType=VARCHAR},
+        attr_data_type = #{attrDataType,jdbcType=INTEGER},
+        attr_dist_type = #{attrDistType,jdbcType=INTEGER},
+        attr_organize_type = #{attrOrganizeType,jdbcType=INTEGER},
+        creator = #{creator,jdbcType=VARCHAR},
+        modifier = #{modifier,jdbcType=VARCHAR}
+    where attr_id = #{attrId,jdbcType=VARCHAR}
+  </update>
+
+  <update id="updateByAttrIdSelective" parameterType="com.data.profile.web.model.Attribute">
+    update profile_meta_attribute
+    <set>
+      <if test="status != null">
+        status = #{status,jdbcType=INTEGER},
+      </if>
+      <if test="attrName != null">
+        attr_name = #{attrName,jdbcType=VARCHAR},
+      </if>
+      <if test="attrDesc != null">
+        attr_desc = #{attrDesc,jdbcType=VARCHAR},
+      </if>
+      <if test="attrType != null">
+        attr_type = #{attrType,jdbcType=INTEGER},
+      </if>
+      <if test="datasetId != null">
+        dataset_id = #{datasetId,jdbcType=VARCHAR},
+      </if>
+      <if test="eventId != null">
+        event_id = #{eventId,jdbcType=VARCHAR},
+      </if>
+      <if test="entityId != null">
+        entity_id = #{entityId,jdbcType=VARCHAR},
+      </if>
+      <if test="attrField != null">
+        attr_field = #{attrField,jdbcType=VARCHAR},
+      </if>
+      <if test="attrPath != null">
+        attr_path = #{attrPath,jdbcType=VARCHAR},
+      </if>
+      <if test="attrDataType != null">
+        attr_data_type = #{attrDataType,jdbcType=INTEGER},
+      </if>
+      <if test="attrDistType != null">
+        attr_dist_type = #{attrDistType,jdbcType=INTEGER},
+      </if>
+      <if test="attrOrganizeType != null">
+        attr_organize_type = #{attrOrganizeType,jdbcType=INTEGER},
+      </if>
+      <if test="creator != null">
+        creator = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="modifier != null">
+        modifier = #{modifier,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where attr_id = #{attrId,jdbcType=VARCHAR}
+  </update>
+
+</mapper>

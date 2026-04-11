@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.web.dao.DatasetFieldMapper">
+    <resultMap id="BaseResultMap" type="com.data.profile.web.model.DatasetField">
+        <result column="id" jdbcType="BIGINT" property="id" />
+        <result column="dataset_id" jdbcType="VARCHAR" property="datasetId" />
+        <result column="field_status" jdbcType="INTEGER" property="fieldStatus" />
+        <result column="field_name" jdbcType="VARCHAR" property="fieldName" />
+        <result column="field_desc" jdbcType="VARCHAR" property="fieldDesc" />
+        <result column="field_type" jdbcType="VARCHAR" property="fieldType" />
+        <result column="import_status" jdbcType="INTEGER" property="importStatus" />
+        <result column="related_id" jdbcType="VARCHAR" property="relatedId" />
+        <result column="creator" jdbcType="VARCHAR" property="creator" />
+        <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, dataset_id, field_status, field_name, field_desc, field_type, import_status,
+        related_id, creator, modifier, gmt_create, gmt_modified
+    </sql>
+
+    <select id="selectByDatasetId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_dataset_field
+        where dataset_id = #{datasetId,jdbcType=VARCHAR}
+        order by gmt_modified desc
+    </select>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_dataset_field
+        where id = #{id,jdbcType=BIGINT}
+        order by gmt_modified desc
+    </select>
+
+    <select id="selectByDatasetIdAndFieldName" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_dataset_field
+        where dataset_id = #{datasetId,jdbcType=VARCHAR}
+        and field_name = #{fieldName,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByRelatedId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_dataset_field
+        where related_id = #{relatedId,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByParams" parameterType="com.data.profile.web.model.DatasetField" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_dataset_field
+        where 1 = 1
+        <if test="datasetId != null and datasetId != ''">
+            and dataset_id = #{datasetId,jdbcType=VARCHAR}
+        </if>
+        <if test="fieldStatus != null">
+            and field_status = #{fieldStatus,jdbcType=INTEGER}
+        </if>
+        <if test="fieldName != null and fieldName != ''">
+            and field_name = #{fieldName,jdbcType=VARCHAR}
+        </if>
+        <if test="importStatus != null">
+            and import_status = #{importStatus,jdbcType=INTEGER}
+        </if>
+        <if test="relatedId != null and relatedId != ''">
+            and related_id = #{relatedId,jdbcType=VARCHAR}
+        </if>
+        order by field_name
+    </select>
+
+    <delete id="deleteByDatasetId" parameterType="java.lang.String">
+        delete from profile_meta_dataset_field
+        where dataset_id = #{datasetId,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="deleteByDatasetIdAndFieldName">
+        delete from profile_meta_dataset_field
+        where dataset_id = #{datasetId,jdbcType=VARCHAR}
+        and field_name = #{fieldName,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="deleteById" parameterType="java.lang.Long">
+        delete from profile_meta_dataset_field
+        where id = #{id,jdbcType=BIGINT}
+    </delete>
+
+    <insert id="insert" parameterType="com.data.profile.web.model.DatasetField">
+        insert into profile_meta_dataset_field (
+        dataset_id, field_status, field_name, field_desc, field_type,
+        import_status, related_id, creator, modifier
+        ) values (
+        #{datasetId,jdbcType=VARCHAR}, #{fieldStatus,jdbcType=INTEGER}, #{fieldName,jdbcType=VARCHAR},
+        #{fieldDesc,jdbcType=VARCHAR}, #{fieldType,jdbcType=VARCHAR}, #{importStatus,jdbcType=INTEGER},
+        #{relatedId,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR}
+        )
+    </insert>
+
+    <insert id="insertSelective" parameterType="com.data.profile.web.model.DatasetField">
+        insert into profile_meta_dataset_field
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="datasetId != null and datasetId != ''">
+                dataset_id,
+            </if>
+            <if test="fieldStatus != null">
+                field_status,
+            </if>
+            <if test="fieldName != null and fieldName != ''">
+                field_name,
+            </if>
+            <if test="fieldDesc != null and fieldDesc != ''">
+                field_desc,
+            </if>
+            <if test="fieldType != null and fieldType != ''">
+                field_type,
+            </if>
+            <if test="importStatus != null">
+                import_status,
+            </if>
+            <if test="relatedId != null and relatedId != ''">
+                related_id,
+            </if>
+            <if test="creator != null and creator != ''">
+                creator,
+            </if>
+            <if test="modifier != null and modifier != ''">
+                modifier,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="datasetId != null and datasetId != ''">
+                #{datasetId,jdbcType=VARCHAR},
+            </if>
+            <if test="fieldStatus != null">
+                #{fieldStatus,jdbcType=INTEGER},
+            </if>
+            <if test="fieldName != null and fieldName != ''">
+                #{fieldName,jdbcType=VARCHAR},
+            </if>
+            <if test="fieldDesc != null and fieldDesc != ''">
+                #{fieldDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="fieldType != null and fieldType != ''">
+                #{fieldType,jdbcType=VARCHAR},
+            </if>
+            <if test="importStatus != null">
+                #{importStatus,jdbcType=INTEGER},
+            </if>
+            <if test="relatedId != null and relatedId != ''">
+                #{relatedId,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null and creator != ''">
+                #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="modifier != null and modifier != ''">
+                #{modifier,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updateByIdSelective" parameterType="com.data.profile.web.model.DatasetField">
+        update profile_meta_dataset_field
+        <set>
+            <if test="fieldStatus != null">
+                field_status = #{fieldStatus,jdbcType=INTEGER},
+            </if>
+            <if test="fieldName != null and fieldName != ''">
+                field_name = #{fieldName,jdbcType=VARCHAR},
+            </if>
+            <if test="fieldDesc != null and fieldDesc != ''">
+                field_desc = #{fieldDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="fieldType != null and fieldType != ''">
+                field_type = #{fieldType,jdbcType=VARCHAR},
+            </if>
+            <if test="importStatus != null">
+                import_status = #{importStatus,jdbcType=INTEGER},
+            </if>
+            <if test="relatedId != null and relatedId != ''">
+                related_id = #{relatedId,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null and creator != ''">
+                creator = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="modifier != null and modifier != ''">
+                modifier = #{modifier,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <update id="updateById" parameterType="com.data.profile.web.model.DatasetField">
+        update profile_meta_dataset_field
+        set
+        field_status = #{fieldStatus,jdbcType=INTEGER},
+        field_name = #{fieldName,jdbcType=VARCHAR},
+        field_desc = #{fieldDesc,jdbcType=VARCHAR},
+        field_type = #{fieldType,jdbcType=VARCHAR},
+        import_status = #{importStatus,jdbcType=INTEGER},
+        related_id = #{relatedId,jdbcType=VARCHAR},
+        creator = #{creator,jdbcType=VARCHAR},
+        modifier = #{modifier,jdbcType=VARCHAR}
+        where id = #{id,jdbcType=BIGINT}
+    </update>
+</mapper>

@@ -2,8 +2,8 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.model.DatasetField;
-import com.data.profile.service.DatasetFieldService;
+import com.data.profile.web.model.DatasetField;
+import com.data.profile.web.service.DatasetFieldService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;

@@ -1,8 +1,7 @@
 package com.data.profile.web.interceptor;
 
-import com.data.profile.common.domain.RequestContext;
-import com.data.profile.common.domain.security.UserContext;
-import com.data.profile.common.domain.security.UserContextHolder;
+import com.data.profile.web.security.UserContext;
+import com.data.profile.web.security.UserContextHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.servlet.HandlerInterceptor;
 

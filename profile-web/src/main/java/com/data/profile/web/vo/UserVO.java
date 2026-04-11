@@ -1,8 +1,7 @@
 package com.data.profile.web.vo;
 
-import com.data.profile.model.Role;
+import com.data.profile.web.model.Role;
 import lombok.Data;
-
 import java.util.Date;
 import java.util.List;
 

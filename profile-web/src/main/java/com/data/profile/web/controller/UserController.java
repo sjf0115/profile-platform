@@ -4,17 +4,16 @@ import com.data.profile.common.domain.Response;
 import com.data.profile.common.domain.request.UserLoginRequest;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.common.utils.JSONUtils;
-import com.data.profile.model.User;
-import com.data.profile.service.UserService;
 import com.data.profile.web.dto.UserRequest;
+import com.data.profile.web.model.User;
+import com.data.profile.web.vo.UserOverviewVO;
+import com.data.profile.web.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -68,7 +67,6 @@ public class UserController {
     @PutMapping("/{userId}")
     public Response update(@PathVariable(value = "userId") String userId, @RequestBody UserRequest request) {
         log.info("请求更新用户：{}", JSONUtils.toJsonString(request));
-        
         // 构建 User 对象
         User user = new User();
         user.setUserId(userId);
@@ -97,11 +95,7 @@ public class UserController {
     @GetMapping(value = "/overview")
     public Response getOverview() {
         log.info("请求查询用户概览统计");
-        Map<String, Object> overview = new HashMap<>();
-        overview.put("total_count", 0);
-        overview.put("admin_count", 0);
-        overview.put("member_count", 0);
-        overview.put("no_permission_count", 0);
+        UserOverviewVO overview = userService.getOverview();
         return Response.success(overview);
     }
 

@@ -18,7 +18,6 @@
 
     <modules>
         <module>profile-web</module>
-        <module>profile-service</module>
         <module>profile-common</module>
         <module>mybatis-generator</module>
         <module>profile-dal</module>
@@ -275,6 +274,24 @@
             </dependency>
 
             <!-- 内部模块 -->
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-dal</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-service</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>com.data</groupId>
                 <artifactId>profile-connector-all</artifactId>

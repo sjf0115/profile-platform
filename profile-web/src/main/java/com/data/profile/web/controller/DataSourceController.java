@@ -8,10 +8,9 @@ import com.data.profile.common.domain.connector.request.ConnectorResponse;
 import com.data.profile.common.domain.connector.request.TestConnectionRequestParam;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.common.utils.StringUtils;
-import com.data.profile.manager.domain.Table;
-import com.data.profile.model.DataSource;
-import com.data.profile.service.DataSourceService;
-import com.data.profile.vo.Item;
+import com.data.profile.web.model.DataSource;
+import com.data.profile.web.service.DataSourceService;
+import com.data.profile.web.vo.Item;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * 功能：数据源

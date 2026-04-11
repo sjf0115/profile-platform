@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication(scanBasePackages = "com.data.profile")
-@MapperScan({"com.data.profile.dao"})
+@MapperScan({"com.data.profile.web"})
 @EnableTransactionManagement
 @EnableAspectJAutoProxy
 @EnableScheduling

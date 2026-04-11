@@ -1,0 +1,21 @@
+package com.data.profile.web.model;
+
+import com.google.gson.annotations.SerializedName;
+import lombok.Data;
+
+/**
+ * 功能：标签配置
+ * 作者：@SmartSi
+ * 博客：https://smartsi.blog.csdn.net/
+ * 公众号：大数据生态
+ * 日期：2026/3/17 23:21
+ */
+@Data
+public class LabelConfig {
+    // 文件上传-原始上传路径
+    @SerializedName("origin_path")
+    private String originPath;
+    // 文件上传-实际存储路径
+    @SerializedName("physical_path")
+    private String physicalPath;
+}
