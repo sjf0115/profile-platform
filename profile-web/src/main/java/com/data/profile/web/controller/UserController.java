@@ -6,6 +6,7 @@ import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.model.User;
 import com.data.profile.service.UserService;
+import com.data.profile.web.dto.UserRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -48,9 +49,15 @@ public class UserController {
     }
 
     @PostMapping
-    public Response create(@RequestBody User user) {
-        log.info("请求创建用户：{}", JSONUtils.toJsonString(user));
-        int result = userService.create(user);
+    public Response create(@RequestBody UserRequest request) {
+        log.info("请求创建用户：{}", JSONUtils.toJsonString(request));
+        // 构建 User 对象
+        User user = new User();
+        user.setUserName(request.getUserName());
+        user.setEmail(request.getEmail());
+        user.setPassword(request.getPassword());
+        
+        int result = userService.create(user, request.getRoles());
         if (result > 0) {
             return Response.success(result);
         } else {
@@ -59,10 +66,16 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
-    public Response update(@PathVariable(value = "userId") String userId, @RequestBody User user) {
+    public Response update(@PathVariable(value = "userId") String userId, @RequestBody UserRequest request) {
+        log.info("请求更新用户：{}", JSONUtils.toJsonString(request));
+        
+        // 构建 User 对象
+        User user = new User();
         user.setUserId(userId);
-        log.info("请求更新用户：{}", JSONUtils.toJsonString(user));
-        int result = userService.update(user);
+        user.setUserName(request.getUserName());
+        user.setEmail(request.getEmail());
+        
+        int result = userService.update(user, request.getRoles());
         if (result > 0) {
             return Response.success(result);
         } else {

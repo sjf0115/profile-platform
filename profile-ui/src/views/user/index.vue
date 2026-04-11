@@ -408,7 +408,8 @@ const handleEdit = (row: User) => {
   formData.user_id = row.user_id
   formData.user_name = row.user_name || ''
   formData.email = row.email || ''
-  formData.roles = row.roles || []
+  // 后端返回的是 Role 对象列表，提取 role_id
+  formData.roles = row.roles ? row.roles.map((r: any) => r.role_id || r) : []
   dialogVisible.value = true
 }
 

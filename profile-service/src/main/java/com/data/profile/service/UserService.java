@@ -15,10 +15,7 @@ import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.common.utils.JwtUtil;
 import com.data.profile.common.utils.UserUtil;
 import com.data.profile.dao.UserMapper;
-import com.data.profile.model.User;
-import com.data.profile.model.UserLogin;
-import com.data.profile.model.UserOverview;
-import com.data.profile.model.UserRole;
+import com.data.profile.model.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -59,6 +56,8 @@ public class UserService {
     private UserLoginService userLoginService;
     @Autowired
     private UserRoleService userRoleService;
+    @Autowired
+    private RoleService roleService;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -80,8 +79,28 @@ public class UserService {
      */
     public List<User> getList(User user) {
         List<User> users = userMapper.selectByParams(user);
-        log.info("根据查询条件获取 {} 个角色", users.size());
+        // 为每个用户加载角色信息
+        for (User u : users) {
+            List<Role> roles = getUserRoles(u.getUserId());
+            u.setRoles(roles);
+        }
+        log.info("根据查询条件获取 {} 个用户", users.size());
         return users;
+    }
+
+    /**
+     * 根据用户ID获取用户角色列表
+     * @param userId 用户ID
+     * @return 角色列表
+     */
+    private List<Role> getUserRoles(String userId) {
+        List<UserRole> userRoles = userRoleService.getRolesByUserId(userId);
+        List<Role> roles = new ArrayList<>();
+        for (UserRole userRole : userRoles) {
+            Optional<Role> roleOptional = roleService.getDetail(userRole.getRoleId());
+            roleOptional.ifPresent(roles::add);
+        }
+        return roles;
     }
 
     /**
@@ -93,18 +112,19 @@ public class UserService {
         if (user == null) {
             return Optional.empty();
         }
-        List<String> roles = userRoleService.getRolesByUserId(userId).stream().map(UserRole::getRoleId).collect(Collectors.toList());
+        List<Role> roles = getUserRoles(userId);
         user.setRoles(roles);
-        log.info("根据角色ID {} 获取角色详细信息: {}", userId, JSONUtils.toJsonString(user));
+        log.info("根据用户ID {} 获取用户详细信息: {}", userId, JSONUtils.toJsonString(user));
         return Optional.of(user);
     }
 
     /**
      * 注册用户
      * @param user 用户
+     * @param roleIds 角色ID列表
      */
     @Transactional
-    public int create(User user) {
+    public int create(User user, List<String> roleIds) {
         List<User> users = userMapper.selectByUserName(user.getUserName());
         if (!users.isEmpty()) {
             throw new RuntimeException("用户名已被占用");
@@ -124,21 +144,26 @@ public class UserService {
         int result = userMapper.insertSelective(user);
         log.info("新增用户: {}", JSONUtils.toJsonString(user));
         // 为用户设置角色
-        userRoleService.addRolesToUser(userId, user.getRoles());
+        if (roleIds != null && !roleIds.isEmpty()) {
+            userRoleService.addRolesToUser(userId, roleIds);
+        }
         return result;
     }
 
     /**
      * 修改用户
      * @param user 用户
+     * @param roleIds 角色ID列表
      */
-    public int update(User user) {
+    public int update(User user, List<String> roleIds) {
         // 修改用户信息
         user.setModifier(RequestContext.currentUserId());
         int result = userMapper.updateByUserIdSelective(user);
         log.info("更新用户: {}", JSONUtils.toJsonString(user));
         // 修改用户角色
-        userRoleService.setUserRoles(user.getUserId(), user.getRoles());
+        if (roleIds != null) {
+            userRoleService.setUserRoles(user.getUserId(), roleIds);
+        }
         return result;
     }
 
