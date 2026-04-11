@@ -25,6 +25,12 @@ public class Role {
     private String roleName;
     // 角色描述
     private String roleDesc;
+    // 创建方式: 1-系统内置,2-自定义
+    private Integer sourceType;
+    // 创建者
+    private String creator;
+    // 修改者
+    private String modifier;
     // 创建时间
     private Date gmtCreate;
     // 修改时间

@@ -306,6 +306,24 @@
               <span>任务管理</span>
             </el-menu-item>
           </template>
+
+          <!-- 设置子菜单 -->
+          <template v-if="activeTopNav === '/settings'">
+            <div class="menu-group-title">项目管理</div>
+            <el-menu-item index="/settings/general">
+              <el-icon><Grid /></el-icon>
+              <span>通用配置</span>
+            </el-menu-item>
+            <div class="menu-group-title" style="margin-top: 16px;">权限管理</div>
+            <el-menu-item index="/settings/users">
+              <el-icon><User /></el-icon>
+              <span>用户管理</span>
+            </el-menu-item>
+            <el-menu-item index="/settings/roles">
+              <el-icon><UserFilled /></el-icon>
+              <span>角色管理</span>
+            </el-menu-item>
+          </template>
         </el-menu>
       </el-aside>
       
@@ -340,6 +358,7 @@ const activeTopNav = computed(() => {
   if (path.startsWith('/group')) return '/group'
   if (path.startsWith('/analysis')) return '/analysis'
   if (path.startsWith('/project')) return '/project'
+  if (path.startsWith('/settings')) return '/settings'
   return '/home'
 })
 
@@ -347,6 +366,11 @@ const activeTopNav = computed(() => {
 const showSidebar = computed(() => {
   // 首页和标签市场不显示侧边栏，其他页面显示
   return !route.path.startsWith('/home') && !route.path.startsWith('/label-market')
+})
+
+// 当前是否是设置页面
+const isSettingsPage = computed(() => {
+  return route.path.startsWith('/settings')
 })
 
 // 打开帮助文档

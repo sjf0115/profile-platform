@@ -7,11 +7,14 @@
     <result column="role_type" jdbcType="INTEGER" property="roleType" />
     <result column="role_name" jdbcType="VARCHAR" property="roleName" />
     <result column="role_desc" jdbcType="VARCHAR" property="roleDesc" />
+    <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="modifier" jdbcType="VARCHAR" property="modifier" />
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
     <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
   </resultMap>
   <sql id="Base_Column_List">
-    id, role_id, role_type, role_name, role_desc, gmt_create, gmt_modified
+    id, role_id, role_type, role_name, role_desc, source_type, creator, modifier, gmt_create, gmt_modified
   </sql>
 
   <select id="selectByRoleId" parameterType="java.lang.String" resultMap="BaseResultMap">
@@ -39,10 +42,10 @@
 
   <insert id="insert" parameterType="com.data.profile.model.Role">
     insert into profile_meta_role (id, role_id, role_type, role_name,
-        role_desc, gmt_create, gmt_modified
+        role_desc, source_type, creator, modifier, gmt_create, gmt_modified
     )
     values (#{id,jdbcType=INTEGER}, #{roleId,jdbcType=VARCHAR}, #{roleType,jdbcType=INTEGER}, #{roleName,jdbcType=VARCHAR},
-            #{roleDesc,jdbcType=VARCHAR}, #{gmtCreate,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP}
+            #{roleDesc,jdbcType=VARCHAR}, #{sourceType,jdbcType=INTEGER}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR}, #{gmtCreate,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP}
            )
   </insert>
 
@@ -64,6 +67,15 @@
       <if test="roleDesc != null and roleDesc != ''">
         role_desc,
       </if>
+      <if test="sourceType != null">
+        source_type,
+      </if>
+      <if test="creator != null and creator != ''">
+        creator,
+      </if>
+      <if test="modifier != null and modifier != ''">
+        modifier,
+      </if>
     </trim>
     <trim prefix="values (" suffix=")" suffixOverrides=",">
       <if test="id != null">
@@ -81,6 +93,15 @@
       <if test="roleDesc != null and roleDesc != ''">
         #{roleDesc,jdbcType=VARCHAR},
       </if>
+      <if test="sourceType != null">
+        #{sourceType,jdbcType=INTEGER},
+      </if>
+      <if test="creator != null and creator != ''">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="modifier != null and modifier != ''">
+        #{modifier,jdbcType=VARCHAR},
+      </if>
     </trim>
   </insert>
 
@@ -93,7 +114,9 @@
     update profile_meta_role
     set role_type = #{roleType,jdbcType=INTEGER},
         role_name = #{roleName,jdbcType=VARCHAR},
-        role_desc = #{roleDesc,jdbcType=VARCHAR}
+        role_desc = #{roleDesc,jdbcType=VARCHAR},
+        source_type = #{sourceType,jdbcType=INTEGER},
+        modifier = #{modifier,jdbcType=VARCHAR}
     where role_id = #{roleId,jdbcType=VARCHAR}
   </update>
 
@@ -108,6 +131,12 @@
       </if>
       <if test="roleDesc != null and roleDesc != ''">
         role_desc = #{roleDesc,jdbcType=VARCHAR},
+      </if>
+      <if test="sourceType != null">
+        source_type = #{sourceType,jdbcType=INTEGER},
+      </if>
+      <if test="modifier != null and modifier != ''">
+        modifier = #{modifier,jdbcType=VARCHAR},
       </if>
     </set>
     where role_id = #{roleId,jdbcType=VARCHAR}

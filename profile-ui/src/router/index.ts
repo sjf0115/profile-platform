@@ -128,6 +128,27 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/entity/index.vue'),
         meta: { title: '实体管理' },
       },
+      // 设置 - 角色管理
+      {
+        path: 'settings/roles',
+        name: 'RoleManagement',
+        component: () => import('@/views/role/index.vue'),
+        meta: { title: '角色管理' },
+      },
+      // 设置 - 用户管理
+      {
+        path: 'settings/users',
+        name: 'UserManagement',
+        component: () => import('@/views/role/index.vue'),
+        meta: { title: '用户管理' },
+      },
+      // 设置 - 通用配置
+      {
+        path: 'settings/general',
+        name: 'GeneralSettings',
+        component: () => import('@/views/role/index.vue'),
+        meta: { title: '通用配置' },
+      },
       // 群组洞察
       {
         path: 'group/detail/:id',

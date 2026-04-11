@@ -2,6 +2,7 @@ package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.Response;
 import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.model.Role;
 import com.data.profile.service.RoleService;
 import lombok.extern.slf4j.Slf4j;
@@ -29,12 +30,14 @@ public class RoleController {
 
     @PostMapping(value = "/list")
     public Response getList(@RequestBody Role role) {
+        log.info("请求查询角色：{}", JSONUtils.toJsonString(role));
         List<Role> roles = roleService.getList(role);
         return Response.success(roles);
     }
 
     @GetMapping(value = "/{roleId}/detail")
     public Response getDetail(@PathVariable(value = "roleId") String roleId) {
+        log.info("请求查询角色 {} 详细信息", roleId);
         Optional<Role> optional = roleService.getDetail(roleId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -45,6 +48,7 @@ public class RoleController {
 
     @PostMapping
     public Response create(@RequestBody Role role) {
+        log.info("请求创建角色：{}", JSONUtils.toJsonString(role));
         int result = roleService.create(role);
         if (result > 0) {
             return Response.success(result);
@@ -53,9 +57,10 @@ public class RoleController {
         }
     }
 
-    @PutMapping("/{userId}")
+    @PutMapping("/{roleId}")
     public Response update(@PathVariable(value = "roleId") String roleId, @RequestBody Role role) {
         role.setRoleId(roleId);
+        log.info("请求更新角色：{}", JSONUtils.toJsonString(role));
         int result = roleService.update(role);
         if (result > 0) {
             return Response.success(result);
@@ -66,6 +71,7 @@ public class RoleController {
 
     @DeleteMapping(value = "/{roleId}")
     public Response delete(@PathVariable(value = "roleId") String roleId) {
+        log.info("请求删除角色：{}", roleId);
         int result = roleService.delete(roleId);
         if (result > 0) {
             return Response.success(result);

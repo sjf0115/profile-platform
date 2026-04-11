@@ -1,6 +1,8 @@
 package com.data.profile.service;
 
+import com.data.profile.common.domain.RequestContext;
 import com.data.profile.common.enums.ModelType;
+import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.dao.RoleMapper;
@@ -68,6 +70,9 @@ public class RoleService {
         }
         String roleId = IDGenerator.getInstance().generate(ModelType.ROLE);
         role.setRoleId(roleId);
+        role.setSourceType(SourceType.CUSTOM.getCode());
+        role.setCreator(RequestContext.currentUserId());
+        role.setModifier(RequestContext.currentUserId());
         log.info("新增角色: {}", JSONUtils.toJsonString(role));
         return roleMapper.insertSelective(role);
     }
@@ -77,6 +82,7 @@ public class RoleService {
      * @param role 角色
      */
     public int update(Role role) {
+        role.setModifier(RequestContext.currentUserId());
         log.info("更新角色: {}", JSONUtils.toJsonString(role));
         return roleMapper.updateByRoleIdSelective(role);
     }
@@ -94,6 +100,11 @@ public class RoleService {
         if (Objects.equals(role, null)) {
             log.error("角色 {} 不存在，无法删除", roleId);
             throw new RuntimeException("角色不存在，无法删除");
+        }
+        // 系统内置角色不允许删除
+        if (Objects.equals(role.getSourceType(), SourceType.BUILT_IN.getCode())) {
+            log.error("内置角色 {} 不允许删除", roleId);
+            throw new RuntimeException("内置角色不允许删除");
         }
 
         // 删除角色下的用户关系
