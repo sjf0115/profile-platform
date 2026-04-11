@@ -139,7 +139,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'settings/users',
         name: 'UserManagement',
-        component: () => import('@/views/role/index.vue'),
+        component: () => import('@/views/user/index.vue'),
         meta: { title: '用户管理' },
       },
       // 设置 - 通用配置

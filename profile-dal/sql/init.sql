@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS `profile_meta_user`(
     `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
     `user_id` VARCHAR(40) NOT NULL COMMENT '用户ID',
     `user_name` VARCHAR(100) NOT NULL COMMENT '用户名称',
+    `email` VARCHAR(100) COMMENT '邮箱',
     `password` VARCHAR(100) NOT NULL COMMENT '密码',
     `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',

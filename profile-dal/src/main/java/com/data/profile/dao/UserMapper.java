@@ -12,6 +12,9 @@ public interface UserMapper {
     List<User> selectByUserName(String UserName); // 根据名字查询
     List<User> selectByParams(User User); //根据参数查询
     List<User> selectByKeyword(String keyword); // 模糊查询
+    // 统计
+    int countTotal(); // 统计总用户数
+    int countByStatus(Integer status); // 根据状态统计
     // 插入
     int insert(User User); // 插入全部
     int insertSelective(User User); // 选择性插入

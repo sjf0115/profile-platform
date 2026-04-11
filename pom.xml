@@ -26,6 +26,7 @@
         <module>profile-connector</module>
         <module>profile-spi</module>
         <module>profile-engine</module>
+        <module>profile-notification</module>
     </modules>
 
     <name>profile-platform</name>
@@ -58,6 +59,9 @@
         <jsqlparser.version>4.9</jsqlparser.version>
         <swagger.version>3.0.0</swagger.version>
         <jwt.version>0.10.7</jwt.version>
+        <commons.email.version>1.5</commons.email.version>
+        <poi.version>4.1.2</poi.version>
+        <javax.mail.version>1.6.2</javax.mail.version>
     </properties>
 
     <dependencyManagement>
@@ -240,6 +244,30 @@
 
             <!-- 工具类 end -->
 
+            <!-- 邮件 -->
+            <dependency>
+                <groupId>com.sun.mail</groupId>
+                <artifactId>javax.mail</artifactId>
+                <version>${javax.mail.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-email</artifactId>
+                <version>${commons.email.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
@@ -280,6 +308,18 @@
             <dependency>
                 <groupId>com.data</groupId>
                 <artifactId>profile-engine-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-notification-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-notification-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

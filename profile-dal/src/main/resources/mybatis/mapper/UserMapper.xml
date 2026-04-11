@@ -7,6 +7,7 @@
     <result column="status" jdbcType="INTEGER" property="status" />
     <result column="user_id" jdbcType="VARCHAR" property="userId" />
     <result column="user_name" jdbcType="VARCHAR" property="userName" />
+    <result column="email" jdbcType="VARCHAR" property="email" />
     <result column="password" jdbcType="VARCHAR" property="password" />
     <result column="source_type" jdbcType="INTEGER" property="sourceType" />
     <result column="creator" jdbcType="VARCHAR" property="creator" />
@@ -16,7 +17,7 @@
   </resultMap>
 
   <sql id="Base_Column_List">
-    id, status, user_id, user_name, source_type, creator, modifier, gmt_create, gmt_modified
+    id, status, user_id, user_name, email, source_type, creator, modifier, gmt_create, gmt_modified
   </sql>
 
   <select id="selectByUserName" parameterType="java.lang.String" resultMap="BaseResultMap">
@@ -41,26 +42,20 @@
     <if test="status != null">
       AND status = #{status,jdbcType=BIGINT},
     </if>
-    <if test="userId != null">
+    <if test="userId != null and userId != ''">
       AND user_id = #{userId,jdbcType=VARCHAR},
     </if>
-    <if test="userName != null">
+    <if test="userName != null and userName != ''">
       AND user_name = #{userName,jdbcType=VARCHAR},
     </if>
-    <if test="sourceType != null">
+    <if test="sourceType != null and sourceType != ''">
       AND source_type = #{sourceType,jdbcType=BIGINT},
     </if>
-    <if test="creator != null">
+    <if test="creator != null and creator != ''">
       AND creator = #{creator,jdbcType=VARCHAR},
     </if>
-    <if test="modifier != null">
+    <if test="modifier != null and modifier != ''">
       AND modifier = #{modifier,jdbcType=VARCHAR},
-    </if>
-    <if test="gmtCreate != null">
-      AND gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
-    </if>
-    <if test="gmtModified != null">
-      AND gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
     </if>
   </select>
 
@@ -71,13 +66,21 @@
     where user_name LIKE CONCAT('%', #{userName,jdbcType=VARCHAR}, '%')
   </select>
 
+  <select id="countTotal" resultType="java.lang.Integer">
+    select count(*) from profile_meta_user
+  </select>
+
+  <select id="countByStatus" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+    select count(*) from profile_meta_user where status = #{status,jdbcType=INTEGER}
+  </select>
+
   <insert id="insert" parameterType="com.data.profile.model.User">
     insert into profile_meta_user (id, status, user_id,
-                                   user_name, source_type, creator,
+                                   user_name, email, source_type, creator,
                                    modifier, gmt_create, gmt_modified
     )
     values (#{id,jdbcType=BIGINT}, #{status,jdbcType=BIGINT}, #{userId,jdbcType=VARCHAR},
-            #{userName,jdbcType=VARCHAR}, #{sourceType,jdbcType=BIGINT}, #{creator,jdbcType=VARCHAR},
+            #{userName,jdbcType=VARCHAR}, #{email,jdbcType=VARCHAR}, #{sourceType,jdbcType=BIGINT}, #{creator,jdbcType=VARCHAR},
             #{modifier,jdbcType=VARCHAR}, #{gmtCreate,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP}
            )
   </insert>
@@ -93,6 +96,9 @@
       </if>
       <if test="userName != null">
         user_name,
+      </if>
+      <if test="email != null">
+        email,
       </if>
       <if test="password != null">
         password,
@@ -116,6 +122,9 @@
       </if>
       <if test="userName != null">
         #{userName,jdbcType=VARCHAR},
+      </if>
+      <if test="email != null">
+        #{email,jdbcType=VARCHAR},
       </if>
       <if test="password != null">
         #{password,jdbcType=VARCHAR},
@@ -141,6 +150,7 @@
     update profile_meta_user
     set status = #{status,jdbcType=BIGINT},
         user_name = #{userName,jdbcType=VARCHAR},
+        email = #{email,jdbcType=VARCHAR},
         source_type = #{sourceType,jdbcType=BIGINT},
         creator = #{creator,jdbcType=VARCHAR},
         modifier = #{modifier,jdbcType=VARCHAR},
@@ -157,6 +167,9 @@
       </if>
       <if test="userName != null">
         user_name = #{userName,jdbcType=VARCHAR},
+      </if>
+      <if test="email != null">
+        email = #{email,jdbcType=VARCHAR},
       </if>
       <if test="password != null">
         password = #{password,jdbcType=VARCHAR},
