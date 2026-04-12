@@ -1,6 +1,6 @@
 package com.data.profile.web.controller;
 
-import com.data.profile.common.domain.Response;
+import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.model.EntityIdentifier;
 import com.data.profile.web.service.EntityIdentifierService;

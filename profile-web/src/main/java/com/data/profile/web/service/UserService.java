@@ -1,6 +1,6 @@
 package com.data.profile.web.service;
 
-import com.data.profile.common.config.AuthenticationProvidersConfig;
+import com.data.profile.web.config.AuthenticationProvidersConfig;
 import com.data.profile.common.domain.Constant;
 import com.data.profile.web.dao.UserMapper;
 import com.data.profile.web.model.*;
@@ -8,12 +8,12 @@ import com.data.profile.web.security.IAuthenticationStrategy;
 import com.data.profile.web.security.LDAPAuthenticationStrategy;
 import com.data.profile.web.security.PasswdAuthenticationStrategy;
 import com.data.profile.web.security.RequestContext;
-import com.data.profile.common.domain.request.UserLoginRequest;
+import com.data.profile.web.dto.UserLoginRequest;
 import com.data.profile.common.enums.*;
 import com.data.profile.common.exception.ProfileException;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.common.utils.JSONUtils;
-import com.data.profile.common.utils.JwtUtil;
+import com.data.profile.web.utils.JwtUtil;
 import com.data.profile.common.utils.UserUtil;
 import com.data.profile.web.vo.UserOverviewVO;
 import com.google.common.collect.Maps;
@@ -25,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.data.profile.common.enums.ResponseCode.INVALID_AUTHENTICATION_PROVIDER;
 

@@ -15,6 +15,7 @@
     <modules>
         <module>profile-engine-api</module>
         <module>profile-engine-plugins</module>
+        <module>profile-engine-common</module>
     </modules>
 
     <dependencies>

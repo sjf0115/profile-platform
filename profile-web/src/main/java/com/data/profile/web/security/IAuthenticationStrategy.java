@@ -1,6 +1,6 @@
 package com.data.profile.web.security;
 
-import com.data.profile.common.domain.request.UserLoginRequest;
+import com.data.profile.web.dto.UserLoginRequest;
 import com.data.profile.web.model.User;
 
 /**

@@ -16,5 +16,6 @@
         <module>profile-engine-clickhouse</module>
         <module>profile-engine-seatunnel</module>
         <module>profile-engine-datax</module>
+        <module>profile-engine-all</module>
     </modules>
 </project>

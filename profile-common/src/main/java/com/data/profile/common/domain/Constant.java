@@ -13,6 +13,9 @@ public class Constant {
     public static final String USER_ID = "id";
     public static final String SESSION_USER_CONTEXT = "session.user.context";
 
+    public static final String ENGINE_SEATUNNEL = "seatunnel";
+    public static final String ENGINE_CLICKHOUSW = "clickhouse";
+
     public static final String AUTHENTICATION_PROVIDER_PASSWORD = "PASSWD";
     public static final String AUTHENTICATION_PROVIDER_LDAP = "LDAP";
 }

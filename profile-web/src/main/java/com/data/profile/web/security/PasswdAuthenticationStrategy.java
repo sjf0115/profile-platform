@@ -1,8 +1,8 @@
 package com.data.profile.web.security;
 
-import com.data.profile.common.domain.request.UserLoginRequest;
+import com.data.profile.web.dto.UserLoginRequest;
 import com.data.profile.common.exception.ProfileException;
-import com.data.profile.common.utils.PasswordUtil;
+import com.data.profile.web.utils.PasswordUtil;
 import com.data.profile.web.dao.UserMapper;
 import com.data.profile.web.model.User;
 import org.springframework.beans.factory.annotation.Autowired;

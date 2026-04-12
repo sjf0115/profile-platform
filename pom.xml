@@ -17,10 +17,9 @@
     <version>1.0</version>
 
     <modules>
+        <module>mybatis-generator</module>
         <module>profile-web</module>
         <module>profile-common</module>
-        <module>mybatis-generator</module>
-        <module>profile-dal</module>
         <module>profile-manager</module>
         <module>profile-connector</module>
         <module>profile-spi</module>
@@ -48,7 +47,6 @@
         <gson.version>2.8.5</gson.version>
         <jackson.version>2.12.5</jackson.version>
         <httpclient.version>4.5.14</httpclient.version>
-        <seatunnel.version>2.3.8</seatunnel.version>
         <freemarker.version>2.3.31</freemarker.version>
         <csv.version>3.8</csv.version>
         <druid.version>1.2.27</druid.version>
@@ -61,6 +59,7 @@
         <commons.email.version>1.5</commons.email.version>
         <poi.version>4.1.2</poi.version>
         <javax.mail.version>1.6.2</javax.mail.version>
+        <seatunnel.version>2.3.8</seatunnel.version>
     </properties>
 
     <dependencyManagement>
@@ -87,18 +86,24 @@
                 <version>${spring.quartz.version}</version>
             </dependency>
 
-            <!--&lt;!&ndash; SeaTunnel 引擎 &ndash;&gt;
+            <!-- 集成 Seatunnel -->
+            <dependency>
+                <groupId>org.apache.seatunnel</groupId>
+                <artifactId>seatunnel-engine-core</artifactId>
+                <version>${seatunnel.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.seatunnel</groupId>
+                <artifactId>seatunnel-common</artifactId>
+                <version>${seatunnel.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.apache.seatunnel</groupId>
                 <artifactId>seatunnel-engine-client</artifactId>
                 <version>${seatunnel.version}</version>
-                <exclusions>
-                  <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-slf4j-impl</artifactId>
-                  </exclusion>
-                </exclusions>
-            </dependency>-->
+            </dependency>
 
             <!-- MySQL 驱动 -->
             <dependency>
@@ -282,18 +287,6 @@
 
             <dependency>
                 <groupId>com.data</groupId>
-                <artifactId>profile-dal</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.data</groupId>
-                <artifactId>profile-service</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.data</groupId>
                 <artifactId>profile-connector-all</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -310,6 +303,7 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- 内部模块 - Connector -->
             <dependency>
                 <groupId>com.data</groupId>
                 <artifactId>profile-connector-api</artifactId>
@@ -322,12 +316,26 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- 内部模块 - Engine -->
             <dependency>
                 <groupId>com.data</groupId>
                 <artifactId>profile-engine-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-engine-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-engine-all</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- 内部模块 - 消息 -->
             <dependency>
                 <groupId>com.data</groupId>
                 <artifactId>profile-notification-api</artifactId>

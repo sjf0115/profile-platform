@@ -1,6 +1,6 @@
 package com.data.profile.web.controller;
 
-import com.data.profile.common.domain.Response;
+import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.*;
 import com.data.profile.web.model.Group;
 import com.data.profile.web.model.LabelOperator;

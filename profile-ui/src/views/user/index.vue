@@ -102,8 +102,8 @@
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'info'">
-              {{ row.status === 1 ? '已加入' : '未加入' }}
+            <el-tag :type="getStatusType(row.status)">
+              {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -342,6 +342,34 @@ const fetchRoleOptions = async () => {
 const formatRoles = (roles: any[]) => {
   if (!roles || roles.length === 0) return '-'
   return roles.map((r) => r.role_name || r).join('、')
+}
+
+// 获取状态类型（用于标签颜色）
+const getStatusType = (status: number) => {
+  switch (status) {
+    case 2:
+      return 'success' // 已激活-绿色
+    case 1:
+      return 'warning' // 未激活-黄色
+    case 0:
+      return 'danger' // 已禁用-红色
+    default:
+      return 'info'
+  }
+}
+
+// 获取状态文本
+const getStatusText = (status: number) => {
+  switch (status) {
+    case 2:
+      return '已激活'
+    case 1:
+      return '未激活'
+    case 0:
+      return '已禁用'
+    default:
+      return '未知'
+  }
 }
 
 // 搜索

@@ -16,5 +16,10 @@
             <groupId>com.data</groupId>
             <artifactId>profile-spi</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.data</groupId>
+            <artifactId>profile-engine-common</artifactId>
+        </dependency>
     </dependencies>
 </project>
