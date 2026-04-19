@@ -27,7 +27,7 @@ public class EngineController {
     @Resource
     private EngineService engineService;
 
-    @PostMapping(value = "/test", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/connect", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Response testConnection(@RequestBody TestConnectionRequestParam param)  {
         engineService.testConnect(param);
         return Response.success(null);
@@ -36,6 +36,12 @@ public class EngineController {
     @PostMapping(value = "/di/execute", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Response executeDiJob(@RequestBody TestConnectionRequestParam param)  {
         engineService.executeDiTask(null);
+        return Response.success(null);
+    }
+
+    @PostMapping(value = "/test", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Response test(@RequestBody TestConnectionRequestParam param)  {
+        engineService.test();
         return Response.success(null);
     }
 }
