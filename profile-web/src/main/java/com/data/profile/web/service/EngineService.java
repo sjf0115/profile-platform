@@ -5,6 +5,7 @@ import com.data.engine.api.EngineFactory;
 import com.data.engine.common.ExecutorRequest;
 import com.data.engine.plugin.SeaTunnelEngineFactory;
 import com.data.engine.plugin.bean.JobTask;
+import com.data.engine.plugin.core.SeaTunnelEngineProxy;
 import com.data.engine.plugin.executor.SeaTunnelEngineExecutor;
 import com.data.engine.plugin.utils.SeaTunnelConfigUtil;
 import com.data.profile.common.domain.Constant;
@@ -38,32 +39,34 @@ public class EngineService {
 
     /**
      * 测试引擎连通性
-     * @param param 参数
+     * 连接 SeaTunnel 引擎集群，获取集群健康指标，验证连通性
+     *
+     * @param param 请求参数（预留，当前未使用）
+     * @return 连通性检测结果
      */
-    public void testConnect(TestConnectionRequestParam param) {
-        EngineFactory engineFactory = PluginLoader.getPluginLoader(EngineFactory.class).getOrCreatePlugin(Constant.ENGINE_SEATUNNEL);
-        try {
-            engineFactory.getExecutor().execute();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public Map<String, String> testConnect(TestConnectionRequestParam param) {
+        log.info("开始测试 SeaTunnel 引擎连通性");
+        return SeaTunnelEngineProxy.getInstance().testConnection();
     }
 
+    /**
+     * 提交作业执行
+     * @param jobId
+     */
     public void executeDiTask(String jobId) {
-        // 1. 生成作业配置
+        /*// 1. 生成作业配置
         String config = "";
 
         // 2. 生成配置文件
         String projectRoot = System.getProperty("user.dir");
         String filePath = projectRoot + File.separator + "config" + File.separator + jobId + ".conf";
-        FileUtil.writeFile(config, filePath);
+        FileUtil.writeFile(config, filePath);*/
 
-        filePath = "/opt/workspace/seatunnel/profile/mysql_to_mysql.conf";
+        String filePath = "/opt/workspace/apache-seatunnel-web-1.0.2-bin/profile/21343715957248.conf";
 
         // 3. 提交集群执行
         EngineFactory engineFactory = PluginLoader.getPluginLoader(EngineFactory.class).getOrCreatePlugin(Constant.ENGINE_SEATUNNEL);
         try {
-            // 执行器
             EngineExecutor executor = engineFactory.getExecutor();
             ExecutorRequest request = ExecutorRequest.builder()
                     .configPath(filePath)
@@ -83,8 +86,6 @@ public class EngineService {
 
     /**
      * 提交 SeaTunnel 任务
-     *
-     * @param jobConfig 任务配置内容
      * @return 任务ID
      */
     public String submitJob(String jobConfig) {

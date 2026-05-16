@@ -1,6 +1,7 @@
 package com.data.profile.web.controller;
 
 import com.data.profile.common.domain.connector.request.TestConnectionRequestParam;
+import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.service.DatasetSyncService;
 import com.data.profile.web.service.EngineService;
 import com.data.profile.web.vo.Response;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * 功能：Engine 测试
@@ -32,10 +35,17 @@ public class EngineController {
     @Resource
     private DatasetSyncService datasetSyncService;
 
+    // 连通性测试
     @PostMapping(value = "/connect", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Response testConnection(@RequestBody TestConnectionRequestParam param)  {
-        engineService.testConnect(param);
-        return Response.success(null);
+        Map<String, String> result = engineService.testConnect(param);
+        String connected = result.get("connected");
+        if (Objects.equals(connected, "true")) {
+            return Response.success(result);
+        } else {
+            String errorMsg = result.get("error") != null ? result.get("error").toString() : "SeaTunnel 引擎连接失败";
+            return Response.error(errorMsg, ResponseCode.ERROR);
+        }
     }
 
     @PostMapping(value = "/di/execute", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -46,8 +56,8 @@ public class EngineController {
 
     @PostMapping(value = "/test", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Response test(@RequestBody TestConnectionRequestParam param)  {
-        engineService.testConnect(null);
-        return Response.success(null);
+        Map<String, String> result = engineService.testConnect(null);
+        return Response.success(result);
     }
 
     /**

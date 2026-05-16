@@ -103,6 +103,32 @@ public class SeaTunnelEngineProxy {
         }
     }
 
+    /**
+     * 测试引擎连通性
+     * 通过连接 SeaTunnel 集群并获取健康指标来验证连通性
+     *
+     * @return 连通性检测结果，包含集群健康信息
+     */
+    public Map<String, String> testConnection() {
+        Map<String, String> healthMetrics = new java.util.LinkedHashMap<>();
+        long startTime = System.currentTimeMillis();
+        try (SeaTunnelClient seaTunnelClient = new SeaTunnelClient(clientConfig)){
+            // 获取集群健康指标验证连通性
+            healthMetrics = seaTunnelClient.getClusterHealthMetrics();
+            long duration = System.currentTimeMillis() - startTime;
+            healthMetrics.put("connected", "true");
+            healthMetrics.put("duration", duration + "ms");
+            log.info("SeaTunnel 引擎连通性测试成功, 耗时: {}ms", duration);
+        } catch (Exception e) {
+            long duration = System.currentTimeMillis() - startTime;
+            healthMetrics.put("connected", "false");
+            healthMetrics.put("duration", duration + "ms");
+            healthMetrics.put("error", e.getMessage());
+            log.error("SeaTunnel 引擎连通性测试失败, 耗时: {}ms", duration, e);
+        }
+        return healthMetrics;
+    }
+
     //------------------------------------------------------------------------------------------------------------------
 
     public String getMetricsContent(@NonNull String jobEngineId) {
