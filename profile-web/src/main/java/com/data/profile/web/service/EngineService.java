@@ -81,6 +81,49 @@ public class EngineService {
 
     }
 
+    /**
+     * 提交 SeaTunnel 任务
+     *
+     * @param jobConfig 任务配置内容
+     * @return 任务ID
+     */
+    public String submitJob(String jobConfig) {
+        // 1. 生成任务ID
+        String jobId = "JOB_" + System.currentTimeMillis();
+
+        // 2. 生成配置文件
+        String projectRoot = System.getProperty("user.dir");
+        String filePath = projectRoot + File.separator + "config" + File.separator + jobId + ".conf";
+        FileUtil.writeFile(jobConfig, filePath);
+
+        // 3. 提交集群执行
+        EngineFactory engineFactory = PluginLoader.getPluginLoader(EngineFactory.class).getOrCreatePlugin(Constant.ENGINE_SEATUNNEL);
+        try {
+            // 执行器
+            EngineExecutor executor = engineFactory.getExecutor();
+            ExecutorRequest request = ExecutorRequest.builder()
+                    .configPath(filePath)
+                    .jobId(jobId)
+                    .build();
+            executor.init(request, log, null);
+
+            // 异步执行任务
+            new Thread(() -> {
+                try {
+                    executor.execute();
+                    log.info("Job executed successfully: {}", jobId);
+                } catch (Exception e) {
+                    log.error("Job execution failed: {}", jobId, e);
+                }
+            }).start();
+
+            return jobId;
+
+        } catch (Exception e) {
+            throw new RuntimeException("提交任务失败: " + e.getMessage(), e);
+        }
+    }
+
     public void test() {
         JobTask task = JobTask.builder()
                 .type("source")

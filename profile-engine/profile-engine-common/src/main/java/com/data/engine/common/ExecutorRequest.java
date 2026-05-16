@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 /**
  * 功能：ExecutorRequest
  * 作者：@SmartSi
@@ -19,4 +21,5 @@ import lombok.NoArgsConstructor;
 public class ExecutorRequest {
     private String jobId;
     private String configPath;
+    private Map<String, Object> config;
 }

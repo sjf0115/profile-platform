@@ -12,15 +12,29 @@ public class ProcessResult {
 
     private Integer processId;
 
+    private boolean success;
+
+    private String errorMsg;
+
+    private long recordCount;
+
+    private long duration;
+
     public ProcessResult(){
         this.exitStatusCode = ExecutionStatus.FAILURE.getCode();
         this.processId = -1;
         this.applicationId = "-1";
+        this.success = false;
+        this.recordCount = 0;
+        this.duration = 0;
     }
 
     public ProcessResult(Integer exitStatusCode){
         this.exitStatusCode = exitStatusCode;
         this.processId = -1;
         this.applicationId = "-1";
+        this.success = false;
+        this.recordCount = 0;
+        this.duration = 0;
     }
 }

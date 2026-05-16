@@ -16,5 +16,19 @@
             <groupId>com.data</groupId>
             <artifactId>profile-engine-api</artifactId>
         </dependency>
+
+        <!-- ClickHouse JDBC Driver -->
+        <dependency>
+            <groupId>com.clickhouse</groupId>
+            <artifactId>clickhouse-jdbc</artifactId>
+            <version>0.4.6</version>
+            <classifier>http</classifier>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
     </dependencies>
 </project>
