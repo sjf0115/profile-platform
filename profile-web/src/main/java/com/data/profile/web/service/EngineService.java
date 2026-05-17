@@ -1,151 +1,185 @@
 package com.data.profile.web.service;
 
-import com.data.engine.api.EngineExecutor;
-import com.data.engine.api.EngineFactory;
-import com.data.engine.common.ExecutorRequest;
-import com.data.engine.plugin.SeaTunnelEngineFactory;
-import com.data.engine.plugin.bean.JobTask;
-import com.data.engine.plugin.core.SeaTunnelEngineProxy;
-import com.data.engine.plugin.executor.SeaTunnelEngineExecutor;
-import com.data.engine.plugin.utils.SeaTunnelConfigUtil;
-import com.data.profile.common.domain.Constant;
-import com.data.profile.common.domain.connector.request.TestConnectionRequestParam;
-import com.data.profile.common.utils.FileUtil;
-import com.data.profile.web.model.DataSource;
-import com.data.profile.web.model.Task;
-import com.data.spi.PluginLoader;
-import com.google.common.collect.Maps;
+import com.data.profile.common.enums.ModelType;
+import com.data.profile.common.enums.SourceType;
+import com.data.profile.common.enums.Status;
+import com.data.profile.common.utils.IDGenerator;
+import com.data.profile.common.utils.StringUtils;
+import com.data.profile.web.dao.EngineMapper;
+import com.data.profile.web.model.Engine;
+import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.vo.Item;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
- * 功能：Engine 测试
- * 作者：@SmartSi
+ * 功能：计算引擎服务
+ * 作者：@Smartsi
  * 博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
- * 日期：2026/4/12 13:00
  */
 @Slf4j
 @Service
 public class EngineService {
+    private static final Gson gson = new GsonBuilder().create();
 
     @Resource
-    private DataSourceService dataSourceService;
+    private EngineMapper engineMapper;
 
     /**
-     * 测试引擎连通性
-     * 连接 SeaTunnel 引擎集群，获取集群健康指标，验证连通性
-     *
-     * @param param 请求参数（预留，当前未使用）
-     * @return 连通性检测结果
+     * 根据查询条件获取引擎列表
+     * @param engine 查询条件
      */
-    public Map<String, String> testConnect(TestConnectionRequestParam param) {
-        log.info("开始测试 SeaTunnel 引擎连通性");
-        return SeaTunnelEngineProxy.getInstance().testConnection();
+    public List<Engine> getList(Engine engine) {
+        List<Engine> engines = engineMapper.selectByParams(engine);
+        log.info("根据查询条件获取 {} 个引擎: {}", engines.size(), gson.toJson(engines));
+        return engines;
     }
 
     /**
-     * 提交作业执行
-     * @param jobId
+     * 根据引擎ID获取引擎详细信息
+     * @param engineId 引擎ID
      */
-    public void executeDiTask(String jobId) {
-        /*// 1. 生成作业配置
-        String config = "";
-
-        // 2. 生成配置文件
-        String projectRoot = System.getProperty("user.dir");
-        String filePath = projectRoot + File.separator + "config" + File.separator + jobId + ".conf";
-        FileUtil.writeFile(config, filePath);*/
-
-        String filePath = "/opt/workspace/apache-seatunnel-web-1.0.2-bin/profile/21343715957248.conf";
-
-        // 3. 提交集群执行
-        EngineFactory engineFactory = PluginLoader.getPluginLoader(EngineFactory.class).getOrCreatePlugin(Constant.ENGINE_SEATUNNEL);
-        try {
-            EngineExecutor executor = engineFactory.getExecutor();
-            ExecutorRequest request = ExecutorRequest.builder()
-                    .configPath(filePath)
-                    .jobId("1222")
-                    .build();
-            executor.init(request, log, null);
-            // 执行任务
-            executor.execute();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void executeGroupTask() {
-
+    public Engine getDetail(String engineId) {
+        Engine engine = engineMapper.selectByEngineId(engineId);
+        log.info("根据引擎ID {} 获取引擎详细信息: {}", engineId, gson.toJson(engine));
+        return engine;
     }
 
     /**
-     * 提交 SeaTunnel 任务
-     * @return 任务ID
+     * 获取默认引擎
      */
-    public String submitJob(String jobConfig) {
-        // 1. 生成任务ID
-        String jobId = "JOB_" + System.currentTimeMillis();
+    public Engine getDefaultEngine() {
+        Engine engine = engineMapper.selectDefaultEngine();
+        log.info("获取默认引擎: {}", gson.toJson(engine));
+        return engine;
+    }
 
-        // 2. 生成配置文件
-        String projectRoot = System.getProperty("user.dir");
-        String filePath = projectRoot + File.separator + "config" + File.separator + jobId + ".conf";
-        FileUtil.writeFile(jobConfig, filePath);
+    /**
+     * 根据引擎ID获取引擎，如果为空则返回默认引擎
+     * @param engineId 引擎ID（可为空）
+     */
+    public Engine getEngineOrDefault(String engineId) {
+        if (StringUtils.isEmpty(engineId)) {
+            return getDefaultEngine();
+        }
+        Engine engine = engineMapper.selectByEngineId(engineId);
+        return engine != null ? engine : getDefaultEngine();
+    }
 
-        // 3. 提交集群执行
-        EngineFactory engineFactory = PluginLoader.getPluginLoader(EngineFactory.class).getOrCreatePlugin(Constant.ENGINE_SEATUNNEL);
-        try {
-            // 执行器
-            EngineExecutor executor = engineFactory.getExecutor();
-            ExecutorRequest request = ExecutorRequest.builder()
-                    .configPath(filePath)
-                    .jobId(jobId)
-                    .build();
-            executor.init(request, log, null);
+    /**
+     * 保存引擎 新增/修改
+     * @param engine 引擎
+     */
+    @Transactional
+    public int save(Engine engine) throws RuntimeException {
+        if (StringUtils.isEmpty(engine.getEngineId())) {
+            // 新增
+            List<Engine> engines = engineMapper.selectSimpleByEngineName(engine.getEngineName());
+            if (!engines.isEmpty()) {
+                throw new RuntimeException("引擎名称已经存在，不允许重复添加");
+            }
 
-            // 异步执行任务
-            new Thread(() -> {
-                try {
-                    executor.execute();
-                    log.info("Job executed successfully: {}", jobId);
-                } catch (Exception e) {
-                    log.error("Job execution failed: {}", jobId, e);
-                }
-            }).start();
+            String engineId = IDGenerator.getInstance().generate(ModelType.ENGINE);
+            Engine target = engineMapper.selectSimpleByEngineId(engineId);
+            if (!Objects.equals(target, null)) {
+                throw new RuntimeException("引擎ID已经存在，不允许重复添加");
+            }
 
-            return jobId;
+            // 检查引擎类型
+            String engineType = engine.getEngineType();
+            if (StringUtils.isEmpty(engineType)) {
+                throw new RuntimeException("引擎类型不能为空");
+            }
 
-        } catch (Exception e) {
-            throw new RuntimeException("提交任务失败: " + e.getMessage(), e);
+            engine.setStatus(Status.ENABLE.getCode());
+            engine.setEngineId(engineId);
+            engine.setSourceType(SourceType.CUSTOM.getCode());
+
+            // 如果设置为默认，先将其他引擎的默认标志取消
+            if (engine.getIsDefault() != null && engine.getIsDefault() == 1) {
+                engineMapper.clearAllDefault();
+            } else {
+                engine.setIsDefault(0);
+            }
+
+            engine.setCreator(RequestContext.currentUserId());
+            engine.setModifier(RequestContext.currentUserId());
+
+            log.info("新增引擎: {}", gson.toJson(engine));
+            return engineMapper.insertSelective(engine);
+        } else {
+            // 修改
+            // 如果设置为默认，先将其他引擎的默认标志取消
+            if (engine.getIsDefault() != null && engine.getIsDefault() == 1) {
+                engineMapper.clearAllDefault();
+            }
+
+            engine.setModifier(RequestContext.currentUserId());
+            log.info("更新引擎: {}", gson.toJson(engine));
+            return engineMapper.updateByEngineIdSelective(engine);
         }
     }
 
-    public void test() {
-        JobTask task = JobTask.builder()
-                .type("source")
-                .connectorType("jdbc")
-                .name("test-source-job")
-                .config("{\"schema_save_mode\":\"CREATE_SCHEMA_WHEN_NOT_EXIST\",\"data_save_mode\":\"APPEND_DATA\",\"create_index\":\"true\",\"connection_check_timeout_sec\":\"30\",\"batch_size\":\"1000\",\"is_exactly_once\":\"false\",\"xa_data_source_class_name\":\"\",\"max_commit_attempts\":\"3\",\"transaction_timeout_sec\":\"-1\",\"max_retries\":\"0\",\"auto_commit\":\"true\",\"support_upsert_by_query_primary_key_exist\":\"false\",\"primary_keys\":\"\",\"compatible_mode\":\"\",\"multi_table_sink_replica\":\"1\"}")
-                .selectTableFields("{\"tableFields\":[\"id\",\"name\",\"age\",\"email\"],\"all\":true}")
-                .dataSourceOption("")
-                .outputSchema("[{\"fields\":[{\"type\":\"BIGINT\",\"name\":\"id\",\"comment\":\"主键ID\",\"primaryKey\":true,\"defaultValue\":null,\"nullable\":false,\"properties\":null,\"unSupport\":false,\"outputDataType\":\"BIGINT\"},{\"type\":\"VARCHAR\",\"name\":\"name\",\"comment\":\"姓名\",\"primaryKey\":false,\"defaultValue\":null,\"nullable\":false,\"properties\":null,\"unSupport\":false,\"outputDataType\":\"STRING\"},{\"type\":\"INT\",\"name\":\"age\",\"comment\":\"年龄\",\"primaryKey\":false,\"defaultValue\":null,\"nullable\":false,\"properties\":null,\"unSupport\":false,\"outputDataType\":\"INT\"},{\"type\":\"VARCHAR\",\"name\":\"email\",\"comment\":\"邮箱\",\"primaryKey\":false,\"defaultValue\":null,\"nullable\":false,\"properties\":null,\"unSupport\":false,\"outputDataType\":\"STRING\"}],\"tableName\":\"tb_user\",\"database\":\"test\"}]")
-                .dataSourceId(11212L)
-                .build();
-
-        DataSource dataSource = dataSourceService.getDetail("");
-        String config = dataSource.getConfig();
-
-
-        try {
-            String result = SeaTunnelConfigUtil.generateJobConfig(task);
-            log.info("---------------------------{}", result);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    /**
+     * 删除引擎
+     * @param engineId 引擎ID
+     */
+    public int delete(String engineId) {
+        Engine engine = engineMapper.selectByEngineId(engineId);
+        if (Objects.equals(engine, null)) {
+            log.error("引擎 {} 不存在，无法删除", engineId);
+            throw new RuntimeException("引擎不存在，无法删除");
         }
+
+        if (Objects.equals(engine.getSourceType(), SourceType.BUILT_IN.getCode())) {
+            log.error("内置引擎 {} 不允许删除", engineId);
+            throw new RuntimeException("内置引擎不允许删除");
+        }
+
+        // TODO: 检查是否有数据集使用该引擎
+
+        log.info("删除引擎: {}", engineId);
+        return engineMapper.deleteByEngineId(engineId);
+    }
+
+    /**
+     * 设置默认引擎
+     * @param engineId 引擎ID
+     */
+    @Transactional
+    public void setDefaultEngine(String engineId) {
+        Engine engine = engineMapper.selectByEngineId(engineId);
+        if (Objects.equals(engine, null)) {
+            throw new RuntimeException("引擎不存在");
+        }
+
+        // 清除所有默认标志
+        engineMapper.clearAllDefault();
+
+        // 设置新的默认引擎
+        engineMapper.setDefaultByEngineId(engineId);
+
+        log.info("设置默认引擎: {}", engineId);
+    }
+
+    /**
+     * 获取所有支持的引擎类型
+     * 当前只支持 ClickHouse
+     */
+    public List<Item> getEngineTypeList() {
+        List<Item> items = new ArrayList<>();
+        // 目前只支持 ClickHouse
+        items.add(new Item("clickhouse", "ClickHouse"));
+        log.info("获取所有支持的引擎类型: {}", gson.toJson(items));
+        return items;
     }
 }

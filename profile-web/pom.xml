@@ -86,13 +86,13 @@
 
         <dependency>
             <groupId>com.data</groupId>
-            <artifactId>profile-engine-common</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.data</groupId>
             <artifactId>profile-engine-all</artifactId>
         </dependency>
+
+        <!--<dependency>
+            <groupId>com.data</groupId>
+            <artifactId>profile-engine-common</artifactId>
+        </dependency>-->
 
         <dependency>
             <groupId>org.apache.xmlbeans</groupId>

@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.web.dao.EngineMapper">
+    <resultMap id="BaseResultMap" type="com.data.profile.web.model.Engine">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="status" jdbcType="INTEGER" property="status" />
+        <result column="engine_id" jdbcType="VARCHAR" property="engineId" />
+        <result column="engine_name" jdbcType="VARCHAR" property="engineName" />
+        <result column="engine_type" jdbcType="VARCHAR" property="engineType" />
+        <result column="engine_desc" jdbcType="VARCHAR" property="engineDesc" />
+        <result column="is_default" jdbcType="TINYINT" property="isDefault" />
+        <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+        <result column="config" jdbcType="VARCHAR" property="config" />
+        <result column="creator" jdbcType="VARCHAR" property="creator" />
+        <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, status, engine_id, engine_name, engine_type, engine_desc, is_default,
+        source_type, creator, modifier, gmt_create, gmt_modified, config
+    </sql>
+
+    <select id="selectSimpleByEngineId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_engine
+        where engine_id = #{engineId,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByEngineId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_engine
+        where engine_id = #{engineId,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectSimpleByEngineName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_engine
+        where engine_name = #{engineName,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByEngineName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_engine
+        where engine_name = #{engineName,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectDefaultEngine" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_engine
+        where is_default = 1 and status = 1
+        limit 1
+    </select>
+
+    <select id="selectSimpleByParams" parameterType="com.data.profile.web.model.Engine" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_engine
+        where 1 = 1
+        <if test="status != null">
+            and status = #{status,jdbcType=INTEGER}
+        </if>
+        <if test="engineName != null">
+            and engine_name = #{engineName,jdbcType=VARCHAR}
+        </if>
+        <if test="engineType != null">
+            and engine_type = #{engineType,jdbcType=VARCHAR}
+        </if>
+        <if test="isDefault != null">
+            and is_default = #{isDefault,jdbcType=TINYINT}
+        </if>
+        <if test="sourceType != null">
+            and source_type = #{sourceType,jdbcType=INTEGER}
+        </if>
+        <if test="creator != null">
+            and creator = #{creator,jdbcType=VARCHAR}
+        </if>
+        <if test="modifier != null">
+            and modifier = #{modifier,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <select id="selectByParams" parameterType="com.data.profile.web.model.Engine" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_engine
+        where 1 = 1
+        <if test="status != null">
+            and status = #{status,jdbcType=INTEGER}
+        </if>
+        <if test="engineName != null">
+            and engine_name = #{engineName,jdbcType=VARCHAR}
+        </if>
+        <if test="engineType != null">
+            and engine_type = #{engineType,jdbcType=VARCHAR}
+        </if>
+        <if test="isDefault != null">
+            and is_default = #{isDefault,jdbcType=TINYINT}
+        </if>
+        <if test="sourceType != null">
+            and source_type = #{sourceType,jdbcType=INTEGER}
+        </if>
+        <if test="creator != null">
+            and creator = #{creator,jdbcType=VARCHAR}
+        </if>
+        <if test="modifier != null">
+            and modifier = #{modifier,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+    <select id="selectSimpleByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_engine
+        where engine_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+    </select>
+
+    <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_engine
+        where engine_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+    </select>
+
+    <insert id="insert" parameterType="com.data.profile.web.model.Engine">
+        insert into profile_meta_engine (status, engine_id,
+             engine_name, engine_type, engine_desc, is_default,
+             source_type, creator, modifier, config
+        )
+        values (#{status,jdbcType=INTEGER}, #{engineId,jdbcType=VARCHAR},
+                #{engineName,jdbcType=VARCHAR}, #{engineType,jdbcType=VARCHAR}, #{engineDesc,jdbcType=VARCHAR},
+                #{isDefault,jdbcType=TINYINT},
+                #{sourceType,jdbcType=INTEGER}, #{creator,jdbcType=VARCHAR},
+                #{modifier,jdbcType=VARCHAR}, #{config,jdbcType=LONGVARCHAR}
+               )
+    </insert>
+
+    <insert id="insertSelective" parameterType="com.data.profile.web.model.Engine">
+        insert into profile_meta_engine
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="status != null">
+                status,
+            </if>
+            <if test="engineId != null">
+                engine_id,
+            </if>
+            <if test="engineName != null">
+                engine_name,
+            </if>
+            <if test="engineType != null">
+                engine_type,
+            </if>
+            <if test="engineDesc != null">
+                engine_desc,
+            </if>
+            <if test="isDefault != null">
+                is_default,
+            </if>
+            <if test="sourceType != null">
+                source_type,
+            </if>
+            <if test="creator != null">
+                creator,
+            </if>
+            <if test="modifier != null">
+                modifier,
+            </if>
+            <if test="config != null">
+                config,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="status != null">
+                #{status,jdbcType=INTEGER},
+            </if>
+            <if test="engineId != null">
+                #{engineId,jdbcType=VARCHAR},
+            </if>
+            <if test="engineName != null">
+                #{engineName,jdbcType=VARCHAR},
+            </if>
+            <if test="engineType != null">
+                #{engineType,jdbcType=VARCHAR},
+            </if>
+            <if test="engineDesc != null">
+                #{engineDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="isDefault != null">
+                #{isDefault,jdbcType=TINYINT},
+            </if>
+            <if test="sourceType != null">
+                #{sourceType,jdbcType=INTEGER},
+            </if>
+            <if test="creator != null">
+                #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="modifier != null">
+                #{modifier,jdbcType=VARCHAR},
+            </if>
+            <if test="config != null">
+                #{config,jdbcType=LONGVARCHAR},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updateByEngineIdSelective" parameterType="com.data.profile.web.model.Engine">
+        update profile_meta_engine
+        <set>
+            <if test="status != null">
+                status = #{status,jdbcType=INTEGER},
+            </if>
+            <if test="engineName != null">
+                engine_name = #{engineName,jdbcType=VARCHAR},
+            </if>
+            <if test="engineType != null">
+                engine_type = #{engineType,jdbcType=VARCHAR},
+            </if>
+            <if test="engineDesc != null">
+                engine_desc = #{engineDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="isDefault != null">
+                is_default = #{isDefault,jdbcType=TINYINT},
+            </if>
+            <if test="sourceType != null">
+                source_type = #{sourceType,jdbcType=INTEGER},
+            </if>
+            <if test="creator != null">
+                creator = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="modifier != null">
+                modifier = #{modifier,jdbcType=VARCHAR},
+            </if>
+            <if test="config != null">
+                config = #{config,jdbcType=LONGVARCHAR},
+            </if>
+        </set>
+        where engine_id = #{engineId,jdbcType=VARCHAR}
+    </update>
+
+    <update id="updateByEngineId" parameterType="com.data.profile.web.model.Engine">
+        update profile_meta_engine
+        set status = #{status,jdbcType=INTEGER},
+            engine_name = #{engineName,jdbcType=VARCHAR},
+            engine_type = #{engineType,jdbcType=VARCHAR},
+            engine_desc = #{engineDesc,jdbcType=VARCHAR},
+            is_default = #{isDefault,jdbcType=TINYINT},
+            source_type = #{sourceType,jdbcType=INTEGER},
+            creator = #{creator,jdbcType=VARCHAR},
+            modifier = #{modifier,jdbcType=VARCHAR},
+            config = #{config,jdbcType=LONGVARCHAR}
+        where engine_id = #{engineId,jdbcType=VARCHAR}
+    </update>
+
+    <update id="clearAllDefault">
+        update profile_meta_engine
+        set is_default = 0
+        where is_default = 1
+    </update>
+
+    <update id="setDefaultByEngineId">
+        update profile_meta_engine
+        set is_default = 1
+        where engine_id = #{engineId,jdbcType=VARCHAR}
+    </update>
+
+    <delete id="deleteByEngineId" parameterType="java.lang.String">
+        delete from profile_meta_engine
+        where engine_id = #{engineId,jdbcType=VARCHAR}
+    </delete>
+</mapper>

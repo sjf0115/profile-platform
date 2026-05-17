@@ -3,18 +3,15 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.data</groupId>
-        <artifactId>profile-engine</artifactId>
+        <artifactId>profile-engine-plugins</artifactId>
         <version>1.0</version>
     </parent>
 
-    <artifactId>profile-engine-plugins</artifactId>
+    <artifactId>profile-engine-analysis</artifactId>
     <packaging>pom</packaging>
-
-    <name>profile-engine-plugins</name>
+    <name>profile-engine-analysis</name>
 
     <modules>
-        <module>profile-engine-all</module>
-        <module>profile-engine-di</module>
-        <module>profile-engine-analysis</module>
+        <module>profile-engine-clickhouse</module>
     </modules>
 </project>

@@ -34,6 +34,35 @@ export interface DataSourceQueryParams extends PageParams {
   datasource_name?: string
 }
 
+// 计算引擎（后端 Gson 序列化为下划线命名）
+export interface Engine {
+  id?: number
+  status?: number
+  engine_id?: string
+  engine_name: string
+  engine_type: string  // 引擎类型：clickhouse, doris, spark, flink
+  engine_desc?: string
+  is_default?: number  // 是否默认引擎：0-否, 1-是
+  source_type?: number  // 创建方式：1-系统内置, 2-自定义
+  config?: string  // 引擎配置，JSON字符串
+  creator?: string
+  modifier?: string
+  gmt_create?: string
+  gmt_modified?: string
+}
+
+// 计算引擎查询参数
+export interface EngineQueryParams extends PageParams {
+  engine_type?: string
+  engine_name?: string
+}
+
+// 引擎类型项
+export interface EngineTypeItem {
+  key: string
+  value: string
+}
+
 // 标签类目
 export interface LabelCategory {
   id?: number

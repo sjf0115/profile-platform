@@ -174,6 +174,10 @@
                   <el-icon><Grid /></el-icon>
                   <span>通用配置</span>
                 </el-dropdown-item>
+                <el-dropdown-item @click="router.push('/settings/engine')">
+                  <el-icon><Cpu /></el-icon>
+                  <span>计算引擎</span>
+                </el-dropdown-item>
               </div>
               <el-dropdown-item divided />
               <div class="settings-group">
@@ -314,6 +318,10 @@
               <el-icon><Grid /></el-icon>
               <span>通用配置</span>
             </el-menu-item>
+            <el-menu-item index="/settings/engine">
+              <el-icon><Cpu /></el-icon>
+              <span>计算引擎</span>
+            </el-menu-item>
             <div class="menu-group-title" style="margin-top: 16px;">权限管理</div>
             <el-menu-item index="/settings/users">
               <el-icon><User /></el-icon>
@@ -342,7 +350,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { 
   DataLine, ArrowDown, Bell, QuestionFilled, Setting, Grid, User, UserFilled,
   View, Filter, DataAnalysis, Promotion, TrendCharts, Timer, Switch, PieChart, Share, Connection,
-  Coin, FolderOpened, CollectionTag
+  Coin, FolderOpened, CollectionTag, Cpu
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

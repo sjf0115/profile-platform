@@ -149,6 +149,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/role/index.vue'),
         meta: { title: '通用配置' },
       },
+      // 设置 - 计算引擎（单例，直接显示编辑页面）
+      {
+        path: 'settings/engine',
+        name: 'EngineManagement',
+        component: () => import('@/views/engine/create.vue'),
+        meta: { title: '计算引擎' },
+      },
       // 群组洞察
       {
         path: 'group/detail/:id',

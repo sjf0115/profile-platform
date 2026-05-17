@@ -38,7 +38,9 @@ public enum ModelType {
     // 角色
     ROLE("18", "角色"),
     // 权限
-    PERMISSION("19", "权限")
+    PERMISSION("19", "权限"),
+    // 计算引擎
+    ENGINE("20", "分析引擎"),
     ;
 
     private String code;

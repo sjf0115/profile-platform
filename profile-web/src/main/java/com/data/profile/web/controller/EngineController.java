@@ -1,86 +1,129 @@
 package com.data.profile.web.controller;
 
-import com.data.profile.common.domain.connector.request.TestConnectionRequestParam;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.web.service.DatasetSyncService;
+import com.data.profile.web.model.Engine;
 import com.data.profile.web.service.EngineService;
+import com.data.profile.web.vo.Item;
 import com.data.profile.web.vo.Response;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 
 /**
- * 功能：Engine 测试
- * 作者：@SmartSi
+ * 功能：计算引擎管理
+ * 作者：@Smartsi
  * 博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
- * 日期：2026/4/12 12:59
  */
 @Slf4j
 @RestController
 @RequestMapping(value = "/engine", produces = MediaType.APPLICATION_JSON_VALUE)
 public class EngineController {
+    private static final Gson gson = new GsonBuilder().create();
 
-    @Resource
+    @Autowired
     private EngineService engineService;
 
-    @Resource
-    private DatasetSyncService datasetSyncService;
+   /**
+     * 获取引擎列表
+     */
+    @PostMapping(value = "/list")
+    public Response getList(@RequestBody Engine engine) {
+        log.info("请求查询引擎列表: {}", gson.toJson(engine));
+        List<Engine> engines = engineService.getList(engine);
+        return Response.success(engines);
+    }
 
-    // 连通性测试
-    @PostMapping(value = "/connect", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public Response testConnection(@RequestBody TestConnectionRequestParam param)  {
-        Map<String, String> result = engineService.testConnect(param);
-        String connected = result.get("connected");
-        if (Objects.equals(connected, "true")) {
-            return Response.success(result);
+    /**
+     * 获取引擎详情
+     */
+    @GetMapping(value = "/detail")
+    public Response getDetail(@RequestParam(name = "engine_id") String engineId) {
+        log.info("根据引擎ID {} 请求查看引擎信息", engineId);
+        Engine engine = engineService.getDetail(engineId);
+        if (!Objects.equals(engine, null)) {
+            return Response.success(engine);
         } else {
-            String errorMsg = result.get("error") != null ? result.get("error").toString() : "SeaTunnel 引擎连接失败";
-            return Response.error(errorMsg, ResponseCode.ERROR);
+            return Response.error("请求的引擎不存在", ResponseCode.ERROR);
         }
     }
 
-    @PostMapping(value = "/di/execute", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public Response executeDiJob(@RequestBody TestConnectionRequestParam param)  {
-        engineService.executeDiTask(null);
-        return Response.success(null);
-    }
-
-    @PostMapping(value = "/test", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public Response test(@RequestBody TestConnectionRequestParam param)  {
-        Map<String, String> result = engineService.testConnect(null);
-        return Response.success(result);
+    /**
+     * 获取默认引擎（如果不存在则返回null）
+     */
+    @GetMapping(value = "/default")
+    public Response getDefaultEngine() {
+        log.info("请求获取默认引擎");
+        Engine engine = engineService.getDefaultEngine();
+        return Response.success(engine);
     }
 
     /**
-     * 提交数据集同步任务（SeaTunnel 引擎）
-     *
-     * @param datasetId 数据集ID
-     * @return 任务ID
+     * 保存引擎（新增/修改）
      */
-    @PostMapping(value = "/dataset/{datasetId}/sync")
-    public Response submitDatasetSyncJob(@PathVariable String datasetId) {
-        String jobId = datasetSyncService.submitSyncJob(datasetId);
-        return Response.success(jobId);
+    @PostMapping(value = "/save")
+    public Response save(@RequestBody Engine engine) {
+        log.info("请求创建/修改引擎: {}", gson.toJson(engine));
+        try {
+            int result = engineService.save(engine);
+            if (result > 0) {
+                return Response.success(result);
+            } else {
+                return Response.error("保存引擎失败", ResponseCode.ERROR);
+            }
+        } catch (RuntimeException e) {
+            log.error("保存引擎失败: {}", e.getMessage(), e);
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
+        }
     }
 
     /**
-     * 提交数据集同步任务（ClickHouse 引擎，小批量）
-     *
-     * @param datasetId 数据集ID
-     * @return 任务ID
+     * 删除引擎
      */
-    @PostMapping(value = "/dataset/{datasetId}/sync-clickhouse")
-    public Response submitClickHouseSyncJob(@PathVariable String datasetId) {
-        String jobId = datasetSyncService.submitClickHouseSyncJob(datasetId);
-        return Response.success(jobId);
+    @DeleteMapping(value = "/delete")
+    public Response delete(@RequestParam(name = "engine_id") String engineId) {
+        log.info("根据引擎ID {} 请求删除引擎", engineId);
+        try {
+            int result = engineService.delete(engineId);
+            if (result > 0) {
+                return Response.success(result);
+            } else {
+                return Response.error("删除引擎失败", ResponseCode.ERROR);
+            }
+        } catch (RuntimeException e) {
+            log.error("删除引擎失败: {}", e.getMessage(), e);
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
+        }
+    }
+
+    /**
+     * 设置默认引擎
+     */
+    @PostMapping(value = "/{engineId}/set-default")
+    public Response setDefaultEngine(@PathVariable String engineId) {
+        log.info("设置引擎 {} 为默认引擎", engineId);
+        try {
+            engineService.setDefaultEngine(engineId);
+            return Response.success("设置默认引擎成功");
+        } catch (RuntimeException e) {
+            log.error("设置默认引擎失败: {}", e.getMessage(), e);
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
+        }
+    }
+
+    /**
+     * 获取所有支持的引擎类型
+     */
+    @GetMapping(value = "/type/list")
+    public Response getEngineTypeList() {
+        log.info("请求获取引擎类型列表");
+        List<Item> engineTypes = engineService.getEngineTypeList();
+        return Response.success(engineTypes);
     }
 }

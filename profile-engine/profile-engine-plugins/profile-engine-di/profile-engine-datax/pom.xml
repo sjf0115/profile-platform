@@ -3,18 +3,18 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.data</groupId>
-        <artifactId>profile-engine</artifactId>
+        <artifactId>profile-engine-di</artifactId>
         <version>1.0</version>
     </parent>
 
-    <artifactId>profile-engine-plugins</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>profile-engine-datax</artifactId>
 
-    <name>profile-engine-plugins</name>
+    <name>profile-engine-datax</name>
 
-    <modules>
-        <module>profile-engine-all</module>
-        <module>profile-engine-di</module>
-        <module>profile-engine-analysis</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>com.data</groupId>
+            <artifactId>profile-engine-api</artifactId>
+        </dependency>
+    </dependencies>
 </project>

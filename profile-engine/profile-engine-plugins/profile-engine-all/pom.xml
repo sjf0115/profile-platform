@@ -8,8 +8,6 @@
     </parent>
 
     <artifactId>profile-engine-all</artifactId>
-    <packaging>jar</packaging>
-
     <name>profile-engine-all</name>
 
     <properties>
@@ -17,10 +15,18 @@
     </properties>
 
     <dependencies>
+        <!-- 同步引擎 -->
         <dependency>
             <groupId>com.data</groupId>
             <artifactId>profile-engine-seatunnel</artifactId>
-            <version>${project.version}</version>
+            <version>1.0</version>
+        </dependency>
+
+        <!-- 分析引擎 -->
+        <dependency>
+            <groupId>com.data</groupId>
+            <artifactId>profile-engine-clickhouse</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
 </project>

@@ -20,7 +20,6 @@
         <module>mybatis-generator</module>
         <module>profile-web</module>
         <module>profile-common</module>
-        <module>profile-manager</module>
         <module>profile-connector</module>
         <module>profile-spi</module>
         <module>profile-engine</module>
@@ -332,6 +331,18 @@
             <dependency>
                 <groupId>com.data</groupId>
                 <artifactId>profile-engine-all</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-engine-clickhouse</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-engine-seatunnel</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

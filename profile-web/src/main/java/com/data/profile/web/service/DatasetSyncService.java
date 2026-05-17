@@ -5,7 +5,6 @@ import com.data.engine.api.EngineFactory;
 import com.data.engine.common.ExecutorRequest;
 import com.data.engine.plugin.bean.JobTask;
 import com.data.engine.plugin.utils.SeaTunnelConfigUtil;
-import com.data.profile.common.domain.Constant;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
@@ -42,9 +41,9 @@ public class DatasetSyncService {
     private DataSourceService dataSourceService;
 
     @Resource
-    private EngineService engineService;
+    private PluginEngineService pluginEngineService;
 
-    // 默认 ClickHouse 配置（写死）
+    // 默认 ClickHouse TODO
     private static final String DEFAULT_CLICKHOUSE_HOST = "localhost";
     private static final int DEFAULT_CLICKHOUSE_PORT = 8123;
     private static final String DEFAULT_CLICKHOUSE_DATABASE = "profile";
@@ -57,7 +56,7 @@ public class DatasetSyncService {
     private static final String ENGINE_CLICKHOUSE = "clickhouse";
 
     /**
-     * 提交数据集同步任务（使用 SeaTunnel 引擎）
+     * 提交数据集导入任务（使用 SeaTunnel 引擎）
      *
      * @param datasetId 数据集ID
      * @return 任务ID
@@ -84,7 +83,7 @@ public class DatasetSyncService {
             log.info("Generated SeaTunnel config: {}", jobConfig);
 
             // 4. 提交任务到引擎
-            String jobId = engineService.submitJob(jobConfig);
+            String jobId = pluginEngineService.submitJob(jobConfig);
             log.info("Sync job submitted, jobId: {}", jobId);
 
             return jobId;
@@ -96,31 +95,29 @@ public class DatasetSyncService {
     }
 
     /**
-     * 使用 ClickHouse 引擎直接同步（小批量数据）
+     * 提交 ClickHouse SQL 执行任务
+     * ClickHouse 引擎用于执行 SQL 语句（圈选人群、数据查询等）
      *
-     * @param datasetId 数据集ID
+     * @param sql SQL 语句
      * @return 任务ID
      */
-    public String submitClickHouseSyncJob(String datasetId) {
-        log.info("Submitting ClickHouse sync job for dataset: {}", datasetId);
+    public String executeClickHouseSql(String sql) {
+        log.info("Submitting ClickHouse SQL execution, sql: {}", sql);
+
+        if (StringUtils.isBlank(sql)) {
+            throw new IllegalArgumentException("SQL 语句不能为空");
+        }
 
         try {
-            // 1. 查询数据集信息
-            Optional<Dataset> datasetOpt = datasetService.getDetail(datasetId);
-            if (!datasetOpt.isPresent()) {
-                throw new RuntimeException("Dataset not found: " + datasetId);
-            }
-            Dataset dataset = datasetOpt.get();
+            // 1. 构建执行请求
+            ExecutorRequest request = buildClickHouseRequest(sql);
 
-            // 2. 构建执行请求
-            ExecutorRequest request = buildClickHouseRequest(dataset);
-
-            // 3. 获取 ClickHouse 引擎执行器
+            // 2. 获取 ClickHouse 引擎执行器
             EngineFactory engineFactory = PluginLoader.getPluginLoader(EngineFactory.class)
                     .getOrCreatePlugin(ENGINE_CLICKHOUSE);
             EngineExecutor executor = engineFactory.getExecutor();
 
-            // 4. 初始化并执行任务
+            // 3. 初始化并执行任务
             String jobId = generateJobId();
             request.setJobId(jobId);
             executor.init(request, log, null);
@@ -129,17 +126,18 @@ public class DatasetSyncService {
             new Thread(() -> {
                 try {
                     executor.execute();
+                    log.info("ClickHouse SQL executed successfully, jobId: {}", jobId);
                 } catch (Exception e) {
-                    log.error("ClickHouse sync job failed: {}", jobId, e);
+                    log.error("ClickHouse SQL execution failed, jobId: {}", jobId, e);
                 }
             }).start();
 
-            log.info("ClickHouse sync job submitted, jobId: {}", jobId);
+            log.info("ClickHouse SQL execution submitted, jobId: {}", jobId);
             return jobId;
 
         } catch (Exception e) {
-            log.error("Failed to submit ClickHouse sync job for dataset: {}", datasetId, e);
-            throw new RuntimeException("提交 ClickHouse 同步任务失败: " + e.getMessage(), e);
+            log.error("Failed to submit ClickHouse SQL execution", e);
+            throw new RuntimeException("提交 ClickHouse SQL 执行任务失败: " + e.getMessage(), e);
         }
     }
 
@@ -216,19 +214,17 @@ public class DatasetSyncService {
     }
 
     /**
-     * 构建 ClickHouse 执行请求
+     * 构建 ClickHouse SQL 执行请求
+     * ClickHouse 引擎用于执行 SQL 语句（圈选人群、数据查询等）
      */
-    private ExecutorRequest buildClickHouseRequest(Dataset dataset) {
+    private ExecutorRequest buildClickHouseRequest(String sql) {
         Map<String, Object> config = new HashMap<>();
         config.put("host", DEFAULT_CLICKHOUSE_HOST);
         config.put("port", DEFAULT_CLICKHOUSE_PORT);
         config.put("database", DEFAULT_CLICKHOUSE_DATABASE);
         config.put("username", DEFAULT_CLICKHOUSE_USERNAME);
         config.put("password", DEFAULT_CLICKHOUSE_PASSWORD);
-        config.put("sourceTable", dataset.getTableName());
-        config.put("targetTable", dataset.getDatasetId());
-        config.put("columns", buildColumnList(dataset.getFields()));
-        config.put("batchSize", 1000);
+        config.put("sql", sql);
 
         return ExecutorRequest.builder()
                 .config(config)

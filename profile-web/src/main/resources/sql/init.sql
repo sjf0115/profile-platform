@@ -86,22 +86,22 @@ CREATE TABLE `profile_meta_datasource_schema` (
 -- 5. 数据源
 DROP Table `profile_meta_datasource`;
 CREATE TABLE `profile_meta_datasource` (
-    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
-    `status` int NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
-    `datasource_id` varchar(40) NOT NULL COMMENT '数据源ID',
-    `datasource_name` varchar(100) NOT NULL COMMENT '数据源名称',
-    `datasource_desc` varchar(100) NOT NULL COMMENT '数据源描述',
-    `schema_id` varchar(100) NOT NULL COMMENT '数据源SchemaID',
-    `source_type` int NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
-    `config` text NOT NULL COMMENT '数据源配置',
-    `owner` varchar(100) NOT NULL COMMENT '负责人',
-    `creator` varchar(100) NOT NULL COMMENT '创建者',
-    `modifier` varchar(100) NOT NULL COMMENT '修改者',
-    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`),
-    UNIQUE(`datasource_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-数据源';
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+  `status` int NOT NULL DEFAULT '1' COMMENT '状态:1-启用,2-停用',
+  `datasource_id` varchar(40) NOT NULL COMMENT '数据源ID',
+  `datasource_name` varchar(100) NOT NULL COMMENT '数据源名称',
+  `datasource_desc` varchar(100) NOT NULL COMMENT '数据源描述',
+  `datasource_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '数据源类型',
+  `source_type` int NOT NULL DEFAULT '1' COMMENT '创建方式: 1-系统内置,2-自定义',
+  `config` text NOT NULL COMMENT '数据源配置',
+  `owner` varchar(100) NOT NULL COMMENT '负责人',
+  `creator` varchar(100) NOT NULL COMMENT '创建者',
+  `modifier` varchar(100) NOT NULL COMMENT '修改者',
+  `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `datasource_id` (`datasource_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='画像-数据源'
 
 -- 6. 数据集
 DROP Table `profile_meta_dataset`;
@@ -382,3 +382,29 @@ CREATE TABLE IF NOT EXISTS `profile_meta_user_login`(
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-用户登录';
+
+-- 20. 计算引擎表
+DROP Table `profile_meta_engine`;
+CREATE TABLE `profile_meta_engine` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+    `status` int NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+    `engine_id` varchar(40) NOT NULL COMMENT '引擎ID',
+    `engine_name` varchar(100) NOT NULL COMMENT '引擎名称',
+    `engine_type` VARCHAR(50) NOT NULL COMMENT '引擎类型:clickhouse,doris,spark,flink',
+    `engine_desc` varchar(100) NOT NULL COMMENT '引擎描述',
+    `is_default` TINYINT NOT NULL DEFAULT 0 COMMENT '是否默认引擎:0-否,1-是',
+    `source_type` int NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
+    `config` text NOT NULL COMMENT '引擎配置',
+    `creator` varchar(100) NOT NULL COMMENT '创建者',
+    `modifier` varchar(100) NOT NULL COMMENT '修改者',
+    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`engine_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-计算分析引擎';
+
+-- 插入默认 ClickHouse 引擎
+--INSERT INTO `profile_meta_engine` (`status`, `engine_id`, `engine_name`, `engine_type`, `is_default`, `config`, `creator`, `modifier`)
+--VALUES (1, 'default_clickhouse', 'ClickHouse', 'clickhouse', 1,
+-- '{"host":"localhost","port":8123,"database":"profile","username":"default","password":""}',
+-- '100000', '100000');
