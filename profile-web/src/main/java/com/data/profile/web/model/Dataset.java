@@ -22,6 +22,8 @@ public class Dataset {
     private Integer sourceType;
     // 数据源ID
     private String datasourceId;
+    // 引擎ID
+    private String engineId;
     // 表名
     private String tableName;
     // 分区字段

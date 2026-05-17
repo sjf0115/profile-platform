@@ -7,7 +7,7 @@ import com.data.spi.SPI;
 import org.slf4j.Logger;
 
 @SPI
-public interface EngineExecutor {
+public interface DiEngineExecutor {
 
     // 初始化
     void init(ExecutorRequest jobExecutionRequest, Logger logger, Configurations configurations) throws Exception;

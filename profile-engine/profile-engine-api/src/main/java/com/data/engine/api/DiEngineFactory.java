@@ -5,11 +5,11 @@ import com.data.profile.common.config.Config;
 import com.data.spi.SPI;
 
 @SPI
-public interface EngineFactory {
+public interface DiEngineFactory {
     void prepare(RuntimeEnvironment env) throws Exception;
     void setConfig(Config config);
     Config getConfig();
     CheckResult checkConfig();
     String getCategory();
-    EngineExecutor getExecutor();
+    DiEngineExecutor getExecutor();
 }

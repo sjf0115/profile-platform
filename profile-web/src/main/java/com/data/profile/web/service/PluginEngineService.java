@@ -1,7 +1,7 @@
 package com.data.profile.web.service;
 
-import com.data.engine.api.EngineExecutor;
-import com.data.engine.api.EngineFactory;
+import com.data.engine.api.DiEngineExecutor;
+import com.data.engine.api.DiEngineFactory;
 import com.data.engine.common.ExecutorRequest;
 import com.data.engine.plugin.bean.JobTask;
 import com.data.engine.plugin.core.SeaTunnelEngineProxy;
@@ -61,9 +61,9 @@ public class PluginEngineService {
         String filePath = "/opt/workspace/apache-seatunnel-web-1.0.2-bin/profile/21343715957248.conf";
 
         // 3. 提交集群执行
-        EngineFactory engineFactory = PluginLoader.getPluginLoader(EngineFactory.class).getOrCreatePlugin(Constant.ENGINE_SEATUNNEL);
+        DiEngineFactory diEngineFactory = PluginLoader.getPluginLoader(DiEngineFactory.class).getOrCreatePlugin(Constant.ENGINE_SEATUNNEL);
         try {
-            EngineExecutor executor = engineFactory.getExecutor();
+            DiEngineExecutor executor = diEngineFactory.getExecutor();
             ExecutorRequest request = ExecutorRequest.builder()
                     .configPath(filePath)
                     .jobId("1222")
@@ -90,10 +90,10 @@ public class PluginEngineService {
         FileUtil.writeFile(jobConfig, filePath);
 
         // 3. 提交集群执行
-        EngineFactory engineFactory = PluginLoader.getPluginLoader(EngineFactory.class).getOrCreatePlugin(Constant.ENGINE_SEATUNNEL);
+        DiEngineFactory diEngineFactory = PluginLoader.getPluginLoader(DiEngineFactory.class).getOrCreatePlugin(Constant.ENGINE_SEATUNNEL);
         try {
             // 执行器
-            EngineExecutor executor = engineFactory.getExecutor();
+            DiEngineExecutor executor = diEngineFactory.getExecutor();
             ExecutorRequest request = ExecutorRequest.builder()
                     .configPath(filePath)
                     .jobId(jobId)

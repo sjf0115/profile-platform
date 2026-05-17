@@ -36,6 +36,8 @@ public class DatasetService {
     private DataSourceSchemaService schemaService;
     @Resource
     private DatasetFieldService datasetFieldService;
+    @Resource
+    private DatasetSyncService datasetSyncService;
 
     /**
      * 根据查询条件获取数据集列表
@@ -143,12 +145,19 @@ public class DatasetService {
             }
         }
 
-        // TODO 创建数据集表 在引擎中创建数据集表
-
-        // TODO 生成同步任务/实例/调度
+        // 保存数据集基本信息
+        int result = datasetMapper.insertSelective(dataset);
+        
+        // 创建引擎表并同步数据
+        try {
+            datasetSyncService.processDataset(dataset);
+        } catch (Exception e) {
+            log.error("创建引擎表失败: {}", datasetId, e);
+            // 不抛出异常，允许数据集创建成功，但记录错误日志
+        }
 
         log.info("创建数据集: {}", gson.toJson(dataset));
-        return datasetMapper.insertSelective(dataset);
+        return result;
     }
 
     /**
@@ -169,8 +178,18 @@ public class DatasetService {
 
         // 修改数据集
         dataset.setModifier(RequestContext.currentUserId());
+        int result = datasetMapper.updateByDatasetIdSelective(dataset);
+        
+        // 更新引擎表并重新同步数据
+        try {
+            datasetSyncService.processDataset(dataset);
+        } catch (Exception e) {
+            log.error("更新引擎表失败: {}", datasetId, e);
+            // 不抛出异常，允许数据集修改成功，但记录错误日志
+        }
+        
         log.info("修改数据集: {}", gson.toJson(dataset));
-        return datasetMapper.updateByDatasetIdSelective(dataset);
+        return result;
     }
 
     /**

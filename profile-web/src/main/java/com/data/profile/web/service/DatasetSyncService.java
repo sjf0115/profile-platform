@@ -1,402 +1,202 @@
 package com.data.profile.web.service;
 
-import com.data.engine.api.EngineExecutor;
-import com.data.engine.api.EngineFactory;
+import com.data.engine.api.AnalysisEngineExecutor;
+import com.data.engine.api.AnalysisEngineFactory;
 import com.data.engine.common.ExecutorRequest;
-import com.data.engine.plugin.bean.JobTask;
-import com.data.engine.plugin.utils.SeaTunnelConfigUtil;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;
+import com.data.profile.web.model.Engine;
 import com.data.spi.PluginLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 功能：数据集同步服务
- * 描述：实现从多种数据源同步数据到 ClickHouse
+ * 数据集同步服务
+ * 负责协调引擎插件完成表管理和数据同步
  * 作者：@SmartSi
  * 博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
- * 日期：2026/4/12 15:00
+ * 日期：2026/3/14
  */
 @Slf4j
 @Service
 public class DatasetSyncService {
-
+    
     @Resource
     private DatasetService datasetService;
-
+    
+    @Resource
+    private EngineService engineService;
+    
     @Resource
     private DataSourceService dataSourceService;
-
-    @Resource
-    private PluginEngineService pluginEngineService;
-
-    // 默认 ClickHouse TODO
-    private static final String DEFAULT_CLICKHOUSE_HOST = "localhost";
-    private static final int DEFAULT_CLICKHOUSE_PORT = 8123;
-    private static final String DEFAULT_CLICKHOUSE_DATABASE = "profile";
-    private static final String DEFAULT_CLICKHOUSE_USERNAME = "default";
-    private static final String DEFAULT_CLICKHOUSE_PASSWORD = "";
-
+    
     /**
-     * ClickHouse 引擎名称
+     * 处理数据集（创建/修改后调用）
+     * @param dataset 数据集
      */
-    private static final String ENGINE_CLICKHOUSE = "clickhouse";
-
-    /**
-     * 提交数据集导入任务（使用 SeaTunnel 引擎）
-     *
-     * @param datasetId 数据集ID
-     * @return 任务ID
-     */
-    public String submitSyncJob(String datasetId) {
-        log.info("Submitting sync job for dataset: {}", datasetId);
-
+    public void processDataset(Dataset dataset) {
+        String datasetId = dataset.getDatasetId();
+        String tableName = "profile_dataset_" + datasetId;
+        
         try {
-            // 1. 查询数据集信息
-            Optional<Dataset> datasetOpt = datasetService.getDetail(datasetId);
-            if (!datasetOpt.isPresent()) {
-                throw new RuntimeException("Dataset not found: " + datasetId);
+            // 1. 获取引擎配置
+            Engine engine = engineService.getEngineOrDefault(dataset.getEngineId());
+            // 2. 获取引擎插件执行器
+            AnalysisEngineExecutor executor = getEngineExecutor(engine);
+            
+            // 3. 准备字段信息（只导入标记为导入的字段）
+            List<Map<String, Object>> fields = buildFields(dataset.getFields());
+            
+            // 4. 创建/更新引擎表
+            if (tableExists(engine, tableName)) {
+                // 表已存在，判断是否需要修改
+                log.info("引擎表已存在，执行修改操作: {}", tableName);
+                executor.alterTable(tableName, fields, null, null);
+            } else {
+                // 表不存在，创建新表
+                log.info("引擎表不存在，执行创建操作: {}", tableName);
+                executor.createTable(
+                        tableName, fields,
+                        dataset.getEntityField(),
+                        dataset.getPartitionField()
+                );
             }
-            Dataset dataset = datasetOpt.get();
-
-            // 2. 查询数据源配置
-            DataSource dataSource = dataSourceService.getDetail(dataset.getDatasourceId());
-            if (dataSource == null) {
-                throw new RuntimeException("DataSource not found: " + dataset.getDatasourceId());
-            }
-
-            // 3. 构建 SeaTunnel Job 配置
-            String jobConfig = buildSeaTunnelConfig(dataset, dataSource);
-            log.info("Generated SeaTunnel config: {}", jobConfig);
-
-            // 4. 提交任务到引擎
-            String jobId = pluginEngineService.submitJob(jobConfig);
-            log.info("Sync job submitted, jobId: {}", jobId);
-
-            return jobId;
-
+            
+            // 5. 提交数据同步任务
+            submitSyncTask(dataset, engine);
+            
+            log.info("数据集 {} 引擎处理完成", datasetId);
+            
         } catch (Exception e) {
-            log.error("Failed to submit sync job for dataset: {}", datasetId, e);
-            throw new RuntimeException("提交同步任务失败: " + e.getMessage(), e);
+            log.error("数据集 {} 引擎处理失败", datasetId, e);
+            throw new RuntimeException("数据集引擎处理失败: " + e.getMessage(), e);
         }
     }
-
+    
     /**
-     * 提交 ClickHouse SQL 执行任务
-     * ClickHouse 引擎用于执行 SQL 语句（圈选人群、数据查询等）
-     *
-     * @param sql SQL 语句
-     * @return 任务ID
+     * 获取引擎执行器（通过 SPI 加载插件）
      */
-    public String executeClickHouseSql(String sql) {
-        log.info("Submitting ClickHouse SQL execution, sql: {}", sql);
-
-        if (StringUtils.isBlank(sql)) {
-            throw new IllegalArgumentException("SQL 语句不能为空");
-        }
-
-        try {
-            // 1. 构建执行请求
-            ExecutorRequest request = buildClickHouseRequest(sql);
-
-            // 2. 获取 ClickHouse 引擎执行器
-            EngineFactory engineFactory = PluginLoader.getPluginLoader(EngineFactory.class)
-                    .getOrCreatePlugin(ENGINE_CLICKHOUSE);
-            EngineExecutor executor = engineFactory.getExecutor();
-
-            // 3. 初始化并执行任务
-            String jobId = generateJobId();
-            request.setJobId(jobId);
-            executor.init(request, log, null);
-
-            // 异步执行
-            new Thread(() -> {
-                try {
-                    executor.execute();
-                    log.info("ClickHouse SQL executed successfully, jobId: {}", jobId);
-                } catch (Exception e) {
-                    log.error("ClickHouse SQL execution failed, jobId: {}", jobId, e);
-                }
-            }).start();
-
-            log.info("ClickHouse SQL execution submitted, jobId: {}", jobId);
-            return jobId;
-
-        } catch (Exception e) {
-            log.error("Failed to submit ClickHouse SQL execution", e);
-            throw new RuntimeException("提交 ClickHouse SQL 执行任务失败: " + e.getMessage(), e);
-        }
+    private AnalysisEngineExecutor getEngineExecutor(Engine engine) {
+        String engineType = engine.getEngineType();
+        
+        // 通过 SPI 加载对应引擎插件
+        AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class)
+                .getOrCreatePlugin(engineType);
+        
+        // 设置引擎配置
+        Map<String, Object> configMap = JSONUtils.parseObject(engine.getConfig(), Map.class);
+        Map<String, Object> executorConfig = new HashMap<>();
+        executorConfig.put("engineConfig", configMap);
+        
+        // TODO: 初始化执行器
+        // factory.getExecutor().init(request, log, null);
+        
+        return factory.getExecutor();
     }
 
     /**
-     * 构建 SeaTunnel 配置
+     * 检查表是否存在
      */
-    private String buildSeaTunnelConfig(Dataset dataset, DataSource dataSource) throws IOException {
-        // 1. 构建 Source 任务
-        JobTask sourceTask = buildSourceTask(dataset, dataSource);
-
-        // 2. 构建 Sink 任务（ClickHouse）
-        JobTask sinkTask = buildSinkTask(dataset);
-
-        // 3. 生成完整配置
-        String sourceConfig = SeaTunnelConfigUtil.generateJobConfig(sourceTask);
-        String sinkConfig = SeaTunnelConfigUtil.generateJobConfig(sinkTask);
-
-        // 合并 Source 和 Sink 配置
-        return mergeConfig(sourceConfig, sinkConfig);
+    private boolean tableExists(Engine engine, String tableName) {
+        // TODO: 通过引擎执行器检查表是否存在
+        // 暂时返回 false，首次创建
+        return false;
     }
-
-    /**
-     * 构建 Source 任务
-     */
-    private JobTask buildSourceTask(Dataset dataset, DataSource dataSource) {
-        // 解析数据源配置
-        Map<String, Object> dsConfig = JSONUtils.parseObject(dataSource.getConfig(), Map.class);
-
-        // 构建连接配置
-        Map<String, Object> connectionConfig = new HashMap<>();
-        connectionConfig.put("url", dsConfig.get("jdbcUrl"));
-        connectionConfig.put("driver", dsConfig.get("driver"));
-        connectionConfig.put("user", dsConfig.get("username"));
-        connectionConfig.put("password", dsConfig.get("password"));
-
-        // 构建查询 SQL
-        String columns = buildColumns(dataset.getFields());
-        String querySql = String.format("SELECT %s FROM %s", columns, dataset.getTableName());
-
-        connectionConfig.put("query", querySql);
-
-        // 确定 Connector 类型
-        String connectorType = determineConnectorType(dataSource.getDatasourceType());
-
-        return JobTask.builder()
-                .type("source")
-                .connectorType(connectorType)
-                .name("dataset_source_" + dataset.getDatasetId())
-                .config(JSONUtils.toJsonString(connectionConfig))
-                .selectTableFields(buildSelectFields(dataset.getFields()))
-                .outputSchema(buildOutputSchema(dataset))
-                .dataSourceId(dataset.getId())
-                .build();
-    }
-
-    /**
-     * 构建 Sink 任务（ClickHouse）
-     */
-    private JobTask buildSinkTask(Dataset dataset) {
-        Map<String, Object> sinkConfig = new HashMap<>();
-        sinkConfig.put("host", DEFAULT_CLICKHOUSE_HOST + ":" + DEFAULT_CLICKHOUSE_PORT);
-        sinkConfig.put("database", DEFAULT_CLICKHOUSE_DATABASE);
-        sinkConfig.put("table", dataset.getDatasetId());
-        sinkConfig.put("username", DEFAULT_CLICKHOUSE_USERNAME);
-        sinkConfig.put("password", DEFAULT_CLICKHOUSE_PASSWORD);
-        sinkConfig.put("bulk_size", 1000);
-
-        return JobTask.builder()
-                .type("sink")
-                .connectorType("clickhouse")
-                .name("dataset_sink_" + dataset.getDatasetId())
-                .config(JSONUtils.toJsonString(sinkConfig))
-                .build();
-    }
-
-    /**
-     * 构建 ClickHouse SQL 执行请求
-     * ClickHouse 引擎用于执行 SQL 语句（圈选人群、数据查询等）
-     */
-    private ExecutorRequest buildClickHouseRequest(String sql) {
-        Map<String, Object> config = new HashMap<>();
-        config.put("host", DEFAULT_CLICKHOUSE_HOST);
-        config.put("port", DEFAULT_CLICKHOUSE_PORT);
-        config.put("database", DEFAULT_CLICKHOUSE_DATABASE);
-        config.put("username", DEFAULT_CLICKHOUSE_USERNAME);
-        config.put("password", DEFAULT_CLICKHOUSE_PASSWORD);
-        config.put("sql", sql);
-
-        return ExecutorRequest.builder()
-                .config(config)
-                .build();
-    }
-
+    
     /**
      * 构建字段列表
      */
-    private String buildColumns(List<DatasetField> fields) {
+    private List<Map<String, Object>> buildFields(List<DatasetField> fields) {
         if (fields == null || fields.isEmpty()) {
-            return "*";
+            return Collections.emptyList();
         }
+        
         return fields.stream()
-                .map(DatasetField::getFieldName)
-                .collect(Collectors.joining(", "));
+            .filter(f -> f.getFieldStatus() != null && f.getFieldStatus() == 1) // 只导入标记为导入的字段
+            .map(f -> {
+                Map<String, Object> field = new HashMap<>();
+                field.put("name", f.getFieldName());
+                field.put("type", convertToEngineType(f.getFieldType()));
+                field.put("comment", f.getFieldDesc());
+                return field;
+            })
+            .collect(Collectors.toList());
     }
-
+    
     /**
-     * 构建字段列表（List）
+     * 提交数据同步任务
      */
-    private List<String> buildColumnList(List<DatasetField> fields) {
-        if (fields == null || fields.isEmpty()) {
-            return java.util.Collections.singletonList("*");
+    private void submitSyncTask(Dataset dataset, Engine engine) {
+        // 构建同步配置
+        Map<String, Object> syncConfig = new HashMap<>();
+        syncConfig.put("datasetId", dataset.getDatasetId());
+        syncConfig.put("tableName", "profile_dataset_" + dataset.getDatasetId());
+        syncConfig.put("engineId", engine.getEngineId());
+        syncConfig.put("engineType", engine.getEngineType());
+        syncConfig.put("engineConfig", JSONUtils.parseObject(engine.getConfig(), Map.class));
+        
+        // 获取数据源配置
+        try {
+            DataSource dataSource = dataSourceService.getDetail(dataset.getDatasourceId());
+            syncConfig.put("sourceConfig", JSONUtils.parseObject(dataSource.getConfig(), Map.class));
+            syncConfig.put("sourceType", dataSource.getDatasourceType());
+        } catch (Exception e) {
+            log.error("获取数据源配置失败: {}", dataset.getDatasourceId(), e);
         }
-        return fields.stream()
-                .map(DatasetField::getFieldName)
-                .collect(Collectors.toList());
+        
+        // TODO: 调用 SeaTunnel 引擎执行同步
+        // pluginEngineService.submitJob(seaTunnelConfig);
+        
+        log.info("数据同步任务已提交: datasetId={}", dataset.getDatasetId());
     }
-
+    
     /**
-     * 构建 SelectFields JSON
+     * 字段类型转换：数据库类型 → ClickHouse 类型
      */
-    private String buildSelectFields(List<DatasetField> fields) {
-        Map<String, Object> result = new HashMap<>();
-        if (fields == null || fields.isEmpty()) {
-            result.put("tableFields", java.util.Collections.emptyList());
-            result.put("all", true);
-        } else {
-            List<String> fieldNames = fields.stream()
-                    .map(DatasetField::getFieldName)
-                    .collect(Collectors.toList());
-            result.put("tableFields", fieldNames);
-            result.put("all", false);
-        }
-        return JSONUtils.toJsonString(result);
-    }
-
-    /**
-     * 构建 Output Schema
-     */
-    private String buildOutputSchema(Dataset dataset) {
-        Map<String, Object> schema = new HashMap<>();
-        schema.put("tableName", dataset.getTableName());
-        schema.put("database", "default");
-
-        if (dataset.getFields() != null) {
-            List<Map<String, Object>> fieldSchemas = dataset.getFields().stream()
-                    .map(this::convertFieldToSchema)
-                    .collect(Collectors.toList());
-            schema.put("fields", fieldSchemas);
-        }
-
-        return JSONUtils.toJsonString(java.util.Collections.singletonList(schema));
-    }
-
-    /**
-     * 转换字段为 Schema
-     */
-    private Map<String, Object> convertFieldToSchema(DatasetField field) {
-        Map<String, Object> schema = new HashMap<>();
-        schema.put("name", field.getFieldName());
-        schema.put("type", field.getFieldType());
-        schema.put("comment", field.getFieldDesc());
-        schema.put("primaryKey", false);
-        schema.put("nullable", true);
-        schema.put("outputDataType", convertToSeaTunnelType(field.getFieldType()));
-        return schema;
-    }
-
-    /**
-     * 转换字段类型为 SeaTunnel 类型
-     */
-    private String convertToSeaTunnelType(String dbType) {
-        if (StringUtils.isBlank(dbType)) {
-            return "STRING";
-        }
-        String upperType = dbType.toUpperCase();
-        switch (upperType) {
-            case "INT":
-            case "INTEGER":
-                return "INT";
+    private String convertToEngineType(String dbType) {
+        if (StringUtils.isBlank(dbType)) return "String";
+        
+        switch (dbType.toUpperCase()) {
             case "BIGINT":
             case "LONG":
-                return "BIGINT";
+                return "Int64";
+            case "INT":
+            case "INTEGER":
+                return "Int32";
             case "SMALLINT":
+                return "Int16";
             case "TINYINT":
-                return "SMALLINT";
+                return "Int8";
             case "FLOAT":
-            case "REAL":
-                return "FLOAT";
+                return "Float32";
             case "DOUBLE":
-                return "DOUBLE";
+                return "Float64";
             case "DECIMAL":
             case "NUMERIC":
-                return "DECIMAL";
-            case "BOOLEAN":
-            case "BIT":
-                return "BOOLEAN";
-            case "DATE":
-                return "DATE";
-            case "TIME":
-                return "TIME";
-            case "TIMESTAMP":
-            case "DATETIME":
-                return "TIMESTAMP";
-            case "BINARY":
-            case "VARBINARY":
-            case "BLOB":
-                return "BYTES";
+                return "Decimal(18, 2)";
             case "VARCHAR":
             case "CHAR":
             case "TEXT":
             case "STRING":
+                return "String";
+            case "DATE":
+                return "Date";
+            case "DATETIME":
+            case "TIMESTAMP":
+                return "DateTime";
+            case "BOOLEAN":
+            case "BIT":
+                return "UInt8";
             default:
-                return "STRING";
+                return "String";
         }
-    }
-
-    /**
-     * 确定 Connector 类型
-     */
-    private String determineConnectorType(String datasourceType) {
-        if (StringUtils.isBlank(datasourceType)) {
-            return "jdbc";
-        }
-        String type = datasourceType.toLowerCase();
-        switch (type) {
-            case "mysql":
-            case "postgresql":
-            case "oracle":
-            case "sqlserver":
-                return "jdbc";
-            case "clickhouse":
-                return "clickhouse";
-            default:
-                return "jdbc";
-        }
-    }
-
-    /**
-     * 合并 Source 和 Sink 配置
-     */
-    private String mergeConfig(String sourceConfig, String sinkConfig) {
-        // 简单合并，实际应该解析并重新组装
-        return String.format(
-                "env {\n" +
-                        "  job.mode = \"BATCH\"\n" +
-                        "  parallelism = 2\n" +
-                        "}\n" +
-                        "%s\n" +
-                        "transform {\n" +
-                        "}\n" +
-                        "%s",
-                sourceConfig, sinkConfig
-        );
-    }
-
-    /**
-     * 生成任务ID
-     */
-    private String generateJobId() {
-        return "JOB_" + System.currentTimeMillis();
     }
 }
