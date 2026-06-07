@@ -5,6 +5,7 @@ import com.data.profile.common.config.Config;
 
 import java.io.Serializable;
 
+@Deprecated
 public interface Plugin extends Serializable {
 
     void setConfig(Config config);

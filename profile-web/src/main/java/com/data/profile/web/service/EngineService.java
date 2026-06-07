@@ -55,11 +55,21 @@ public class EngineService {
     }
 
     /**
-     * 获取默认引擎
+     * 获取默认引擎（全表唯一，兼容旧逻辑）
      */
     public Engine getDefaultEngine() {
         Engine engine = engineMapper.selectDefaultEngine();
         log.info("获取默认引擎: {}", gson.toJson(engine));
+        return engine;
+    }
+
+    /**
+     * 按 category 获取默认引擎。
+     * @param engineCategory analysis | di
+     */
+    public Engine getDefaultEngineByCategory(String engineCategory) {
+        Engine engine = engineMapper.selectDefaultEngineByCategory(engineCategory);
+        log.info("按 category={} 获取默认引擎: {}", engineCategory, gson.toJson(engine));
         return engine;
     }
 
@@ -73,6 +83,17 @@ public class EngineService {
         }
         Engine engine = engineMapper.selectByEngineId(engineId);
         return engine != null ? engine : getDefaultEngine();
+    }
+
+    /**
+     * 根据引擎ID获取引擎，为空则返回指定 category 下的默认引擎。
+     */
+    public Engine getEngineOrDefault(String engineId, String fallbackCategory) {
+        if (StringUtils.isEmpty(engineId)) {
+            return getDefaultEngineByCategory(fallbackCategory);
+        }
+        Engine engine = engineMapper.selectByEngineId(engineId);
+        return engine != null ? engine : getDefaultEngineByCategory(fallbackCategory);
     }
 
     /**
@@ -104,9 +125,9 @@ public class EngineService {
             engine.setEngineId(engineId);
             engine.setSourceType(SourceType.CUSTOM.getCode());
 
-            // 如果设置为默认，先将其他引擎的默认标志取消
+            // 如果设置为默认，先将同 category 下其他引擎的默认标志取消
             if (engine.getIsDefault() != null && engine.getIsDefault() == 1) {
-                engineMapper.clearAllDefault();
+                clearDefaultRespectingCategory(engine.getEngineCategory());
             } else {
                 engine.setIsDefault(0);
             }
@@ -118,9 +139,9 @@ public class EngineService {
             return engineMapper.insertSelective(engine);
         } else {
             // 修改
-            // 如果设置为默认，先将其他引擎的默认标志取消
+            // 如果设置为默认，先将同 category 下其他引擎的默认标志取消
             if (engine.getIsDefault() != null && engine.getIsDefault() == 1) {
-                engineMapper.clearAllDefault();
+                clearDefaultRespectingCategory(engine.getEngineCategory());
             }
 
             engine.setModifier(RequestContext.currentUserId());
@@ -162,13 +183,24 @@ public class EngineService {
             throw new RuntimeException("引擎不存在");
         }
 
-        // 清除所有默认标志
-        engineMapper.clearAllDefault();
+        // 清除同 category 下的默认标志
+        clearDefaultRespectingCategory(engine.getEngineCategory());
 
         // 设置新的默认引擎
         engineMapper.setDefaultByEngineId(engineId);
 
-        log.info("设置默认引擎: {}", engineId);
+        log.info("设置默认引擎: {} (category={})", engineId, engine.getEngineCategory());
+    }
+
+    /**
+     * 清除默认标志：category 不空时按 category 清理，否则全表清理（兼容旧数据）。
+     */
+    private void clearDefaultRespectingCategory(String engineCategory) {
+        if (StringUtils.isEmpty(engineCategory)) {
+            engineMapper.clearAllDefault();
+        } else {
+            engineMapper.clearAllDefaultByCategory(engineCategory);
+        }
     }
 
     /**

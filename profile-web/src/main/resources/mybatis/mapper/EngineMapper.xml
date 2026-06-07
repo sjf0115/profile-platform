@@ -58,6 +58,14 @@
         limit 1
     </select>
 
+    <select id="selectDefaultEngineByCategory" parameterType = "java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_engine
+        where is_default = 1 and status = 1 and engine_category = #{engineCategory,jdbcType=VARCHAR}
+        limit 1
+    </select>
+
     <select id="selectSimpleByParams" parameterType="com.data.profile.web.model.Engine" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List" />
@@ -261,6 +269,12 @@
         update profile_meta_engine
         set is_default = 0
         where is_default = 1
+    </update>
+
+    <update id="clearAllDefaultByCategory" parameterType="java.lang.String">
+        update profile_meta_engine
+        set is_default = 0
+        where is_default = 1 and #{engineCategory,jdbcType=VARCHAR}
     </update>
 
     <update id="setDefaultByEngineId">

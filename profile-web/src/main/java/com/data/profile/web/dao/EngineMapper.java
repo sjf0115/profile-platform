@@ -39,8 +39,14 @@ public interface EngineMapper {
     // 查询默认引擎
     Engine selectDefaultEngine();
 
+    // 根据引擎分类查询当前使用的引擎
+    Engine selectDefaultEngineByCategory(@Param("engineCategory") String engineCategory);
+
     // 清除所有默认引擎标志
     int clearAllDefault();
+
+    // 根据引擎分类清除当前使用的引擎
+    int clearAllDefaultByCategory(@Param("engineCategory") String engineCategory);
 
     // 设置默认引擎
     int setDefaultByEngineId(@Param("engineId") String engineId);

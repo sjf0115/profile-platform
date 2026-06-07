@@ -12,4 +12,6 @@ public interface DiEngineFactory {
     CheckResult checkConfig();
     String getCategory();
     DiEngineExecutor getExecutor();
+    // 请求构建器 把中性 SyncContext 转换为引擎私有的 ExecutorRequest
+    DiRequestBuilder getRequestBuilder();
 }

@@ -38,3 +38,13 @@ jwt:
   expireTime: 86400
   secretKey:
   algorithm: HS256
+
+# 引擎全局配置参数
+profile:
+  engine:
+    default-analysis-category: clickhouse
+    default-di-category: DataX
+    sync-channel: 3
+    sync-error-record: 0
+    sync-batch-size: 1000
+    sync-write-mode: insert

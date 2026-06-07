@@ -1,5 +1,6 @@
 package com.data.engine.api;
 
+@Deprecated
 public class EngineConstants {
 
     public static final String OUTPUT_TABLE = "output_table";

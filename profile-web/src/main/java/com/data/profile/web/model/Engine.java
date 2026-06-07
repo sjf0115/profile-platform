@@ -19,6 +19,8 @@ public class Engine {
     private String engineId;
     // 引擎名称
     private String engineName;
+    // 引擎类别:analysis-分析引擎,di-数据集成引擎
+    private String engineCategory;
     // 引擎类型:clickhouse,doris,spark,flink
     private String engineType;
     // 引擎描述
