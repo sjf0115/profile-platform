@@ -79,8 +79,11 @@ public class DatasetSyncService {
         String tableName = "profile_dataset_" + datasetId;
 
         try {
-            // 1. 解析分析引擎（取 analysis category 默认）
-            Engine analysisEngine = resolveAnalysisEngine(dataset);
+            // 1. 获取分析引擎（取 analysis category 默认）
+            Engine analysisEngine = engineService.getDefaultEngineByCategory(CATEGORY_ANALYSIS);
+            if (analysisEngine == null) {
+                throw new IllegalStateException("未找到可用的分析引擎(analysis)，请在引擎管理中设置默认分析引擎");
+            }
 
             // 2. 取数据源（用于 Source 侧字段类型转换）
             DataSource dataSource = dataSourceService.getDetail(dataset.getDatasourceId());
@@ -88,14 +91,15 @@ public class DatasetSyncService {
                 throw new IllegalStateException("数据源不存在: " + dataset.getDatasourceId());
             }
 
-            // 3. 通过 Source TypeConverter 把字段原生类型转中性 DataType，构造目标 TableSchema
-            TableSchema target = buildTargetSchema(dataset, dataSource, tableName, analysisEngine);
+            // 3. 通过 Source TypeConverter 把字段原生类型转通用 DataType，构造目标 TableSchema
+            TableSchema tableSchema = buildTargetSchema(dataset, dataSource, tableName, analysisEngine);
 
             // 4. 通过 Sink TableManager 完成自动建表 / Schema 演进
-            applySchema(analysisEngine, target);
+            // TODO ClickHouse 还未实现
+            upsertAnalysisEngineTable(analysisEngine, tableSchema);
 
             // 5. 提交同步任务
-            submitSyncTask(dataset, dataSource, analysisEngine, target);
+            submitSyncTask(dataset, dataSource, analysisEngine, tableSchema);
 
             log.info("数据集 {} 引擎处理完成", datasetId);
         } catch (Exception e) {
@@ -103,35 +107,12 @@ public class DatasetSyncService {
             throw new RuntimeException("数据集引擎处理失败: " + e.getMessage(), e);
         }
     }
-
-    // -------------------------------------------------------------------------
-    // 引擎解析（三层兜底）
-    // -------------------------------------------------------------------------
-
-    /** 解析分析引擎：取引擎表 analysis category 默认引擎。 */
-    private Engine resolveAnalysisEngine(Dataset dataset) {
-        Engine engine = engineService.getDefaultEngineByCategory(CATEGORY_ANALYSIS);
-        if (engine == null) {
-            throw new IllegalStateException("未找到可用的分析引擎(analysis)，请在引擎管理中设置默认分析引擎");
-        }
-        return engine;
-    }
-
-    /** 解析同步引擎：取引擎表 di category 默认引擎。 */
-    private Engine resolveSyncEngine(Dataset dataset) {
-        Engine engine = engineService.getDefaultEngineByCategory(CATEGORY_DI);
-        if (engine == null) {
-            throw new IllegalStateException("未找到可用的集成引擎(di)，请在引擎管理中设置默认集成引擎");
-        }
-        return engine;
-    }
-
     // -------------------------------------------------------------------------
     // Schema 推断 & 自动建表
     // -------------------------------------------------------------------------
 
     /**
-     * 组装目标表中性 schema：
+     * 组装目标表通用 schema：
      * <ul>
      *   <li>列类型由 source TypeConverter 推断为中性 {@link DataType}；</li>
      *   <li>主键 + ORDER BY 均使用 dataset.entityField（单租户单引擎头画像场景下，
@@ -140,20 +121,27 @@ public class DatasetSyncService {
      *       以同时快速命中分区裁剪与主体点查。</li>
      * </ul>
      */
-    private TableSchema buildTargetSchema(Dataset dataset, DataSource dataSource,
-                                          String tableName, Engine analysisEngine) {
+    private TableSchema buildTargetSchema(Dataset dataset, DataSource dataSource, String tableName, Engine analysisEngine) {
+        // 数据源类型转换器
         TypeConverter sourceTypeConverter = loadSourceTypeConverter(dataSource);
+        // 实体对应的字段
         String entityField = StringUtils.trimToNull(dataset.getEntityField());
+        // 分区字段
         String partitionField = StringUtils.trimToNull(dataset.getPartitionField());
 
-        List<DatasetField> importFields = filterImportFields(dataset.getFields());
+        // 仅保留 importStatus=1 的字段（用于同步列名）
+        List<DatasetField> datasetFields = dataset.getFields();
+        // TODO 有问题 只选择importStatus=1的？修改字段怎么办
+        List<DatasetField> importFields = datasetFields.stream()
+                .filter(f -> f.getImportStatus() != null && f.getImportStatus() == 1)
+                .collect(Collectors.toList());
 
         List<Column> columns = importFields.stream()
                 .map(f -> {
                     boolean isEntity = entityField != null && entityField.equals(f.getFieldName());
                     return Column.builder()
                             .name(f.getFieldName())
-                            .dataType(safeConvert(sourceTypeConverter, f.getFieldType()))
+                            .dataType(dataTypeConvert(sourceTypeConverter, f.getFieldType()))
                             .comment(f.getFieldDesc())
                             .nullable(!isEntity)
                             .primaryKey(isEntity)
@@ -164,6 +152,7 @@ public class DatasetSyncService {
         List<String> orderBy = resolveOrderBy(entityField, partitionField);
 
         return TableSchema.builder()
+                // TODO 待优化 不是所有都 database ？
                 .database(getString(parseConfig(analysisEngine.getConfig()), "database"))
                 .tableName(tableName)
                 .columns(columns)
@@ -191,42 +180,32 @@ public class DatasetSyncService {
     }
 
     /**
-     * 加载 source 端 TypeConverter：按 dataSource.datasourceType 路由 ConnectorFactory SPI。
+     * 加载数据源 TypeConverter：按 dataSource.datasourceType 路由 ConnectorFactory SPI。
      * 若无注册插件，返回宽松降级 converter（避免阻断主流程）。
      */
     private TypeConverter loadSourceTypeConverter(DataSource dataSource) {
-        String category = StringUtils.lowerCase(StringUtils.trimToEmpty(dataSource.getDatasourceType()));
-        if (category.isEmpty()) {
+        String datasourceType = StringUtils.lowerCase(StringUtils.trimToEmpty(dataSource.getDatasourceType()));
+        if (datasourceType.isEmpty()) {
             log.warn("数据源 {} 未配置 datasourceType，字段类型将统一降级为 STRING_TYPE", dataSource.getDatasourceId());
-            return fallbackTypeConverter();
+            return defaultTypeConverter();
         }
         try {
-            ConnectorFactory factory = PluginLoader.getPluginLoader(ConnectorFactory.class)
-                    .getOrCreatePlugin(category);
-            TypeConverter tc = factory.getTypeConverter();
-            return tc != null ? tc : fallbackTypeConverter();
+            ConnectorFactory factory = PluginLoader.getPluginLoader(ConnectorFactory.class).getOrCreatePlugin(datasourceType);
+            TypeConverter typeConverter = factory.getTypeConverter();
+            if (typeConverter != null) {
+                return typeConverter;
+            } else {
+                // 找不到注册插件，返回宽松降级 converter（避免阻断主流程）。
+                return defaultTypeConverter();
+            }
         } catch (Throwable t) {
-            log.warn("加载 ConnectorFactory[{}] 失败，字段类型将统一降级为 STRING_TYPE: {}", category, t.getMessage());
-            return fallbackTypeConverter();
-        }
-    }
-
-    /** 安全调用 TypeConverter：不识别类型时降级 STRING_TYPE。 */
-    private DataType safeConvert(TypeConverter tc, String originType) {
-        if (StringUtils.isBlank(originType)) {
-            return DataType.STRING_TYPE;
-        }
-        try {
-            DataType dt = tc.convert(originType);
-            return dt != null ? dt : DataType.STRING_TYPE;
-        } catch (Throwable t) {
-            log.warn("字段类型 [{}] 在 source TypeConverter 不识别，降级 STRING_TYPE: {}", originType, t.getMessage());
-            return DataType.STRING_TYPE;
+            log.warn("加载 ConnectorFactory[{}] 失败，字段类型将统一降级为 STRING_TYPE: {}", datasourceType, t.getMessage());
+            return defaultTypeConverter();
         }
     }
 
     /** 兜底 TypeConverter：所有原生类型 → STRING_TYPE。 */
-    private TypeConverter fallbackTypeConverter() {
+    private TypeConverter defaultTypeConverter() {
         return new TypeConverter() {
             @Override
             public DataType convert(String originType) {
@@ -240,13 +219,28 @@ public class DatasetSyncService {
         };
     }
 
+    /** 安全调用 TypeConverter：不识别类型时降级 STRING_TYPE。 */
+    private DataType dataTypeConvert(TypeConverter typeConverter, String originType) {
+        if (StringUtils.isBlank(originType)) {
+            return DataType.STRING_TYPE;
+        }
+        try {
+            DataType dataType = typeConverter.convert(originType);
+            return dataType != null ? dataType : DataType.STRING_TYPE;
+        } catch (Throwable t) {
+            log.warn("字段类型 [{}] 在 source TypeConverter 不识别，降级 STRING_TYPE: {}", originType, t.getMessage());
+            return DataType.STRING_TYPE;
+        }
+    }
+
     /**
      * 应用 schema：通过 SPI 获取分析引擎 TableManager，自动 create / diff / alter。
      */
-    private void applySchema(Engine analysisEngine, TableSchema target) throws Exception {
-        String pluginName = normalizePluginName(analysisEngine.getEngineType());
-        AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class)
-                .getOrCreatePlugin(pluginName);
+    private void upsertAnalysisEngineTable(Engine analysisEngine, TableSchema target) throws Exception {
+        // 分析引擎插件名称
+        String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(analysisEngine.getEngineType()));
+        // 获取分析引擎
+        AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class).getOrCreatePlugin(pluginName);
         TableManager tm = factory.getTableManager();
         if (tm == null) {
             throw new IllegalStateException("分析引擎 [" + analysisEngine.getEngineType()
@@ -282,8 +276,7 @@ public class DatasetSyncService {
      * <p>通过 {@link DiEngineFactory#getRequestBuilder()} 与 {@link DiEngineFactory#getExecutor()}
      * 协作完成"构建 + 执行"两阶段。</p>
      */
-    private void submitSyncTask(Dataset dataset, DataSource dataSource,
-                                Engine analysisEngine, TableSchema target) throws Exception {
+    private void submitSyncTask(Dataset dataset, DataSource dataSource, Engine analysisEngine, TableSchema target) throws Exception {
         List<String> columns = target.columnNames();
         if (columns.isEmpty()) {
             log.warn("数据集 {} 无可导入字段，跳过同步", dataset.getDatasetId());
@@ -291,14 +284,17 @@ public class DatasetSyncService {
         }
 
         // 1. 解析同步引擎（di category）
-        Engine syncEngine = resolveSyncEngine(dataset);
+        Engine syncEngine = engineService.getDefaultEngineByCategory(CATEGORY_DI);
+        if (syncEngine == null) {
+            throw new IllegalStateException("未找到可用的集成引擎(di)，请在引擎管理中设置默认集成引擎");
+        }
 
         // 2. SPI 加载同步引擎工厂（一次查询，拿到 builder + executor）
-        DiEngineFactory factory = PluginLoader.getPluginLoader(DiEngineFactory.class)
-                .getOrCreatePlugin(normalizePluginName(syncEngine.getEngineType()));
+        String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(analysisEngine.getEngineType()));
+        DiEngineFactory factory = PluginLoader.getPluginLoader(DiEngineFactory.class).getOrCreatePlugin(pluginName);
 
-        // 3. 构建中性 SyncContext
-        String jobId = "sync-" + dataset.getDatasetId() + "-" + System.currentTimeMillis();
+        // 3. 构建通用 SyncContext
+        String jobId = "di_" + dataset.getDatasetId() + "_" + System.currentTimeMillis();
         SyncContext context = SyncContext.builder()
                 .jobId(jobId)
                 .source(buildSourceEndpoint(dataSource, dataset.getTableName(), columns))
@@ -366,14 +362,6 @@ public class DatasetSyncService {
     // 辅助方法
     // -------------------------------------------------------------------------
 
-    /**
-     * 将引擎/数据源类型规范化为 SPI 插件名：trim + 转小写。
-     * <p>避免用户在前端填写 "ClickHouse" / "Clickhouse" 等大小写不一致时找不到插件。</p>
-     */
-    private String normalizePluginName(String engineType) {
-        return StringUtils.lowerCase(StringUtils.trimToEmpty(engineType));
-    }
-
     /** JSON 配置解析为 Map。 */
     @SuppressWarnings("unchecked")
     private Map<String, Object> parseConfig(String json) {
@@ -395,15 +383,5 @@ public class DatasetSyncService {
             }
         }
         return null;
-    }
-
-    /** 仅保留 importStatus=1 的字段（用于同步列名）。 */
-    private List<DatasetField> filterImportFields(List<DatasetField> fields) {
-        if (fields == null || fields.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return fields.stream()
-                .filter(f -> f.getImportStatus() != null && f.getImportStatus() == 1)
-                .collect(Collectors.toList());
     }
 }
