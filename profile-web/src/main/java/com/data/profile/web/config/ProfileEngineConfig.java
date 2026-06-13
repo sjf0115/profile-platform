@@ -19,6 +19,9 @@ public class ProfileEngineConfig {
     /** 集成引擎类别（DataX/SeaTunnel/...）：默认 SeaTunnel */
     private String defaultDiCategory = "DataX";
 
+    /** 调度引擎类别（DolphinScheduler/Quartz/...）：默认 dolphinscheduler */
+    private String defaultScheduleCategory = "dolphinscheduler";
+
     /** 同步并发通道数 */
     private int syncChannel = 3;
 

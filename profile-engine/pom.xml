@@ -30,4 +30,14 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-engine-dolphinscheduler</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>

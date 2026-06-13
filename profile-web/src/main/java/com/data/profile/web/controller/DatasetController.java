@@ -4,6 +4,7 @@ import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
+import com.data.profile.web.model.Task;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.service.DatasetService;
 import com.data.profile.web.service.TaskExecutionService;
@@ -94,6 +95,39 @@ public class DatasetController {
         log.info("根据数据集类型 {} 请求查看支持的数据源", datasetType);
         List<DataSource> dataSources = datasetService.getDataSources(datasetType);
         return Response.success(dataSources);
+    }
+
+    // 获取数据集调度配置
+    @GetMapping(value = "/{datasetId}/scheduler")
+    public Response getSchedulerConfig(@PathVariable(value = "datasetId") String datasetId) {
+        log.info("获取数据集 {} 调度配置", datasetId);
+        Task task = datasetService.getSchedulerConfig(datasetId);
+        if (task != null) {
+            return Response.success(task);
+        } else {
+            return Response.error("数据集没有关联的调度任务", ResponseCode.ERROR);
+        }
+    }
+
+    // 配置数据集调度
+    @PutMapping(value = "/{datasetId}/scheduler")
+    public Response configureScheduler(@PathVariable(value = "datasetId") String datasetId,
+                                       @RequestBody Task schedulerConfig) {
+        log.info("配置数据集 {} 调度: triggerType={}, cron={}", datasetId,
+                schedulerConfig.getTriggerType(), schedulerConfig.getTriggerCron());
+        try {
+            datasetService.configureScheduler(
+                    datasetId,
+                    schedulerConfig.getTriggerType(),
+                    schedulerConfig.getTriggerCron(),
+                    schedulerConfig.getTriggerStartTime(),
+                    schedulerConfig.getTriggerEndTime()
+            );
+            return Response.success("配置成功");
+        } catch (Exception e) {
+            log.error("配置数据集调度失败: datasetId={}", datasetId, e);
+            return Response.error("配置调度失败: " + e.getMessage(), ResponseCode.ERROR);
+        }
     }
 
     /*@GetMapping(value = "/refresh")

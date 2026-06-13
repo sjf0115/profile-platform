@@ -5,6 +5,7 @@ import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.model.Task;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.service.TaskExecutionService;
+import com.data.profile.web.service.ScheduleEngineService;
 import com.data.profile.web.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,8 @@ public class TaskController {
     private TaskService taskService;
     @Autowired
     private TaskExecutionService taskExecutionService;
+    @Autowired
+    private ScheduleEngineService scheduleEngineService;
 
     // 任务列表
     @PostMapping(value = "/list")
@@ -109,6 +112,40 @@ public class TaskController {
         } catch (Exception e) {
             log.error("任务执行失败: relatedId={}", relatedId, e);
             return Response.error("任务执行失败: " + e.getMessage(), ResponseCode.ERROR);
+        }
+    }
+
+    /**
+     * 配置任务上游依赖
+     */
+    @PutMapping(value = "/{taskId}/upstream")
+    public Response configureUpstream(@PathVariable(value = "taskId") String taskId,
+                                      @RequestBody Task taskUpdate) {
+        log.info("配置任务上游依赖: taskId={}, upstreamTaskIds={}", taskId, taskUpdate.getUpstreamTaskIds());
+        try {
+            Task task = taskService.getDetail(taskId)
+                    .orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
+            task.setUpstreamTaskIds(taskUpdate.getUpstreamTaskIds());
+            taskService.update(task);
+            return Response.success("配置成功");
+        } catch (Exception e) {
+            log.error("配置上游依赖失败: taskId={}", taskId, e);
+            return Response.error("配置上游依赖失败: " + e.getMessage(), ResponseCode.ERROR);
+        }
+    }
+
+    /**
+     * 通过调度引擎触发任务执行
+     */
+    @PostMapping(value = "/{taskId}/schedule-trigger")
+    public Response scheduleTrigger(@PathVariable(value = "taskId") String taskId) {
+        log.info("通过调度引擎触发任务: taskId={}", taskId);
+        try {
+            scheduleEngineService.triggerSchedule(taskId);
+            return Response.success("触发成功");
+        } catch (Exception e) {
+            log.error("调度引擎触发失败: taskId={}", taskId, e);
+            return Response.error("调度引擎触发失败: " + e.getMessage(), ResponseCode.ERROR);
         }
     }
 }

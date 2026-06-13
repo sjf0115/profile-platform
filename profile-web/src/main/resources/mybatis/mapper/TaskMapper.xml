@@ -15,6 +15,8 @@
     <result column="trigger_url" jdbcType="VARCHAR" property="triggerUrl" />
     <result column="trigger_start_time" jdbcType="VARCHAR" property="triggerStartTime" />
     <result column="trigger_end_time" jdbcType="VARCHAR" property="triggerEndTime" />
+    <result column="schedule_id" jdbcType="VARCHAR" property="scheduleId" />
+    <result column="upstream_task_ids" jdbcType="VARCHAR" property="upstreamTaskIds" />
     <result column="source_type" jdbcType="INTEGER" property="sourceType" />
     <result column="owner" jdbcType="VARCHAR" property="owner" />
     <result column="creator" jdbcType="VARCHAR" property="creator" />
@@ -25,7 +27,8 @@
 
     <sql id="Base_Column_List">
         id, status, task_id, task_name, task_desc, task_type, task_related_id, trigger_target_id,
-        trigger_type, trigger_cron, trigger_url, trigger_start_time, trigger_end_time, source_type,
+        trigger_type, trigger_cron, trigger_url, trigger_start_time, trigger_end_time, schedule_id,
+        upstream_task_ids, source_type,
         owner, creator, modifier, gmt_create, gmt_modified
     </sql>
 
@@ -120,14 +123,14 @@
       task_name, task_desc, task_type,
       task_related_id, trigger_target_id, trigger_type,
       trigger_cron, trigger_url, trigger_start_time,
-      trigger_end_time, source_type, owner,
+      trigger_end_time, schedule_id, upstream_task_ids, source_type, owner,
       creator, modifier, gmt_create,
       gmt_modified)
     values (#{status,jdbcType=TINYINT}, #{taskId,jdbcType=VARCHAR},
       #{taskName,jdbcType=VARCHAR}, #{taskDesc,jdbcType=VARCHAR}, #{taskType,jdbcType=INTEGER},
       #{taskRelatedId,jdbcType=VARCHAR}, #{triggerTargetId,jdbcType=VARCHAR}, #{triggerType,jdbcType=INTEGER},
       #{triggerCron,jdbcType=VARCHAR}, #{triggerUrl,jdbcType=VARCHAR}, #{triggerStartTime,jdbcType=VARCHAR},
-      #{triggerEndTime,jdbcType=VARCHAR}, #{sourceType,jdbcType=INTEGER}, #{owner,jdbcType=VARCHAR},
+      #{triggerEndTime,jdbcType=VARCHAR}, #{scheduleId,jdbcType=VARCHAR}, #{upstreamTaskIds,jdbcType=VARCHAR}, #{sourceType,jdbcType=INTEGER}, #{owner,jdbcType=VARCHAR},
       #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR}, #{gmtCreate,jdbcType=TIMESTAMP},
       #{gmtModified,jdbcType=TIMESTAMP})
   </insert>
@@ -170,6 +173,12 @@
       </if>
       <if test="triggerEndTime != null">
         trigger_end_time,
+      </if>
+      <if test="scheduleId != null">
+        schedule_id,
+      </if>
+      <if test="upstreamTaskIds != null">
+        upstream_task_ids,
       </if>
       <if test="sourceType != null">
         source_type,
@@ -227,6 +236,12 @@
       <if test="triggerEndTime != null">
         #{triggerEndTime,jdbcType=VARCHAR},
       </if>
+      <if test="scheduleId != null">
+        #{scheduleId,jdbcType=VARCHAR},
+      </if>
+      <if test="upstreamTaskIds != null">
+        #{upstreamTaskIds,jdbcType=VARCHAR},
+      </if>
       <if test="sourceType != null">
         #{sourceType,jdbcType=INTEGER},
       </if>
@@ -261,6 +276,8 @@
         trigger_url = #{triggerUrl,jdbcType=VARCHAR},
         trigger_start_time = #{triggerStartTime,jdbcType=VARCHAR},
         trigger_end_time = #{triggerEndTime,jdbcType=VARCHAR},
+        schedule_id = #{scheduleId,jdbcType=VARCHAR},
+        upstream_task_ids = #{upstreamTaskIds,jdbcType=VARCHAR},
         source_type = #{sourceType,jdbcType=INTEGER},
         owner = #{owner,jdbcType=VARCHAR},
         creator = #{creator,jdbcType=VARCHAR},
@@ -305,6 +322,12 @@
       </if>
       <if test="triggerEndTime != null">
         trigger_end_time = #{triggerEndTime,jdbcType=VARCHAR},
+      </if>
+      <if test="scheduleId != null">
+        schedule_id = #{scheduleId,jdbcType=VARCHAR},
+      </if>
+      <if test="upstreamTaskIds != null">
+        upstream_task_ids = #{upstreamTaskIds,jdbcType=VARCHAR},
       </if>
       <if test="sourceType != null">
         source_type = #{sourceType,jdbcType=INTEGER},

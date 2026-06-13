@@ -37,5 +37,15 @@ export const taskApi = {
     return request.post<ApiResponse<any>>('/task/executeByRelatedId', null, {
       params: { related_id: relatedId }
     })
+  },
+
+  // 配置任务上游依赖
+  configureUpstream: (taskId: string, upstreamTaskIds: string) => {
+    return request.put<ApiResponse<any>>(`/task/${taskId}/upstream`, { upstream_task_ids: upstreamTaskIds })
+  },
+
+  // 通过调度引擎触发任务
+  scheduleTrigger: (taskId: string) => {
+    return request.post<ApiResponse<any>>(`/task/${taskId}/schedule-trigger`)
   }
 }

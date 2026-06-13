@@ -38,6 +38,10 @@ public class Task {
     private String triggerStartTime;
     // 触发调度有效结束时间:只有周期自动触发更新才有
     private String triggerEndTime;
+    // 调度引擎侧的调度标识(如 DS workflowCode)
+    private String scheduleId;
+    // 上游任务ID列表(逗号分隔)
+    private String upstreamTaskIds;
     // 创建方式: 1-系统内置,2-自定义
     private Integer sourceType;
     // 负责人

@@ -347,6 +347,8 @@ export interface Task {
   trigger_url?: string
   trigger_start_time?: string
   trigger_end_time?: string
+  schedule_id?: string
+  upstream_task_ids?: string
   source_type?: number
   owner?: string
   creator?: string

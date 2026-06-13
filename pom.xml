@@ -346,6 +346,13 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- 内部模块 - 调度引擎 -->
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-engine-dolphinscheduler</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- 内部模块 - 消息 -->
             <dependency>
                 <groupId>com.data</groupId>

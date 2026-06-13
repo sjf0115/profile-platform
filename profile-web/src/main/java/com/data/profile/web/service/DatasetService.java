@@ -41,6 +41,8 @@ public class DatasetService {
     private AnalysisEngineService analysisEngineService;
     @Resource
     private TaskService taskService;
+    @Resource
+    private ScheduleEngineService scheduleEngineService;
 
     /**
      * 根据查询条件获取数据集列表
@@ -247,5 +249,34 @@ public class DatasetService {
             dataset.setInstanceMsg(instanceMsg != null ? Integer.valueOf(instanceMsg.length()) : null);
             datasetMapper.updateByDatasetIdSelective(dataset);
         }
+    }
+
+    /**
+     * 配置数据集调度。
+     * <p>更新数据集关联的同步任务的调度配置（触发类型、Cron 表达式、生效时间）。</p>
+     *
+     * @param datasetId 数据集ID
+     * @param triggerType 调度类型: 1-手动触发, 3-日周期调度, 4-小时周期调度
+     * @param triggerCron Cron 表达式（周期调度时必填）
+     * @param triggerStartTime 生效开始时间
+     * @param triggerEndTime 生效结束时间
+     */
+    public void configureScheduler(String datasetId, Integer triggerType, String triggerCron,
+                                   String triggerStartTime, String triggerEndTime) {
+        Task task = taskService.getDetailByRelatedId(datasetId);
+        if (task == null) {
+            log.error("数据集 {} 没有关联的同步任务，无法配置调度", datasetId);
+            throw new RuntimeException("数据集没有关联的同步任务，请先创建数据集");
+        }
+        // 委托 ScheduleEngineService（同时更新元数据 + 同步调度引擎）
+        scheduleEngineService.configureSchedule(task.getTaskId(), triggerType, triggerCron,
+                                                triggerStartTime, triggerEndTime);
+    }
+
+    /**
+     * 获取数据集关联的调度任务配置。
+     */
+    public Task getSchedulerConfig(String datasetId) {
+        return taskService.getDetailByRelatedId(datasetId);
     }
 }

@@ -339,6 +339,8 @@ CREATE TABLE IF NOT EXISTS `profile_meta_task`(
     `trigger_url` VARCHAR(20) COMMENT '调度触发URL:只有API触发调度才有',
     `trigger_start_time` VARCHAR(20) COMMENT '触发调度有效开始时间:只有周期自动触发更新才有',
     `trigger_end_time` VARCHAR(20) COMMENT '触发调度有效结束时间:只有周期自动触发更新才有',
+    `schedule_id` VARCHAR(100) COMMENT '调度引擎侧的调度标识',
+    `upstream_task_ids` VARCHAR(500) COMMENT '上游任务ID列表(逗号分隔)',
     `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
     `owner` VARCHAR(100) NOT NULL COMMENT '任务负责人',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',

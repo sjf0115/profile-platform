@@ -34,5 +34,12 @@
             <artifactId>profile-engine-clickhouse</artifactId>
             <version>1.0</version>
         </dependency>
+
+        <!-- 调度引擎 -->
+        <dependency>
+            <groupId>com.data</groupId>
+            <artifactId>profile-engine-dolphinscheduler</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 </project>

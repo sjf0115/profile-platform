@@ -160,14 +160,99 @@
       </div>
     </div>
   </el-dialog>
+
+  <!-- 配置调度弹窗 -->
+  <el-dialog
+    v-model="scheduleDialogVisible"
+    title="配置调度"
+    width="600px"
+    destroy-on-close
+    :close-on-click-modal="false"
+  >
+    <el-form
+      ref="scheduleFormRef"
+      :model="scheduleForm"
+      label-width="100px"
+      label-position="left"
+      v-loading="scheduleLoading"
+    >
+      <el-form-item label="计算周期" required>
+        <el-radio-group v-model="scheduleForm.trigger_type" @change="() => { if (scheduleForm.trigger_type !== 1) updateCron() }">
+          <el-radio :value="1">手动触发</el-radio>
+          <el-radio :value="3">周期调度</el-radio>
+        </el-radio-group>
+      </el-form-item>
+
+      <template v-if="scheduleForm.trigger_type === 3">
+        <el-form-item label="调度周期" required>
+          <el-select v-model="scheduleForm.schedule_period" style="width: 200px" @change="updateCron">
+            <el-option label="日" value="day" />
+            <el-option label="小时" value="hour" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="计算时间" required>
+          <el-input
+            v-model="scheduleForm.schedule_time"
+            placeholder="请输入计算时间，如 22:30"
+            style="width: 200px"
+            @change="updateCron"
+          >
+            <template #prefix>
+              <el-icon><Clock /></el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
+
+        <el-form-item label="Cron 表达式">
+          <el-input
+            v-model="scheduleForm.trigger_cron"
+            readonly
+            placeholder="自动生成"
+            style="width: 200px"
+          />
+        </el-form-item>
+
+        <el-form-item label="生效日期" required>
+          <el-radio-group v-model="scheduleForm.effective_type">
+            <el-radio value="permanent">永久生效</el-radio>
+            <el-radio value="custom">指定日期</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item v-if="scheduleForm.effective_type === 'custom'" label="生效时间范围" required>
+          <el-date-picker
+            v-model="scheduleForm.trigger_start_time"
+            type="date"
+            placeholder="开始日期"
+            style="width: 160px"
+            value-format="YYYY-MM-DD"
+          />
+          <span style="margin: 0 8px">~</span>
+          <el-date-picker
+            v-model="scheduleForm.trigger_end_time"
+            type="date"
+            placeholder="结束日期"
+            style="width: 160px"
+            value-format="YYYY-MM-DD"
+          />
+        </el-form-item>
+      </template>
+    </el-form>
+
+    <template #footer>
+      <el-button @click="scheduleDialogVisible = false">取消</el-button>
+      <el-button type="primary" @click="handleScheduleSubmit">确定</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, More, CollectionTag, Mouse, DataAnalysis, Cpu } from '@element-plus/icons-vue'
-import type { Dataset, DatasetQueryParams } from '@/types'
+import { Plus, Search, More, CollectionTag, Mouse, DataAnalysis, Cpu, Clock } from '@element-plus/icons-vue'
+import type { Dataset, DatasetQueryParams, Task } from '@/types'
 import { datasetApi } from '@/api/dataset'
 
 const router = useRouter()
@@ -325,8 +410,106 @@ const handleRun = (row: Dataset) => {
 }
 
 // 调度
-const handleSchedule = (row: Dataset) => {
-  ElMessage.info(`配置调度功能开发中: ${row.dataset_name}`)
+const scheduleDialogVisible = ref(false)
+const scheduleFormRef = ref()
+const scheduleLoading = ref(false)
+const currentScheduleDataset = ref<Dataset | null>(null)
+const scheduleForm = reactive<{
+  trigger_type: number  // 1-手动触发, 3-日周期调度, 4-小时周期调度
+  schedule_period: string  // 'day' | 'hour'
+  schedule_time: string  // HH:mm
+  trigger_cron: string
+  effective_type: string  // 'permanent' | 'custom'
+  trigger_start_time: string
+  trigger_end_time: string
+}>({
+  trigger_type: 1,
+  schedule_period: 'day',
+  schedule_time: '22:30',
+  trigger_cron: '',
+  effective_type: 'permanent',
+  trigger_start_time: '',
+  trigger_end_time: ''
+})
+
+// 根据 调度周期+计算时间 生成 Cron 表达式
+const generateCron = (period: string, time: string): string => {
+  if (!time) return ''
+  const [hour, minute] = time.split(':')
+  if (period === 'day') {
+    return `0 ${minute} ${hour} * * ?`
+  } else if (period === 'hour') {
+    return `0 ${minute} * * * ?`
+  }
+  return ''
+}
+
+// 监听调度周期和计算时间变化，自动生成 Cron
+const updateCron = () => {
+  scheduleForm.trigger_cron = generateCron(scheduleForm.schedule_period, scheduleForm.schedule_time)
+}
+
+const handleSchedule = async (row: Dataset) => {
+  currentScheduleDataset.value = row
+  scheduleLoading.value = true
+  try {
+    const res = await datasetApi.getSchedulerConfig(row.dataset_id)
+    const task = res.data.data
+    if (task) {
+      scheduleForm.trigger_type = task.trigger_type || 1
+      scheduleForm.trigger_cron = task.trigger_cron || ''
+      scheduleForm.trigger_start_time = task.trigger_start_time || ''
+      scheduleForm.trigger_end_time = task.trigger_end_time || ''
+      // 从 cron 反推周期和时间
+      if (task.trigger_type === 3 || task.trigger_type === 4) {
+        scheduleForm.trigger_type = 3  // 选中"周期调度"
+        scheduleForm.schedule_period = task.trigger_type === 3 ? 'day' : 'hour'
+        if (task.trigger_cron) {
+          const parts = task.trigger_cron.split(' ')
+          if (parts.length >= 2) {
+            scheduleForm.schedule_time = `${parts[2].padStart(2, '0')}:${parts[1].padStart(2, '0')}`
+          }
+        }
+      } else {
+        scheduleForm.schedule_period = 'day'
+        scheduleForm.schedule_time = '22:30'
+      }
+      scheduleForm.effective_type = task.trigger_start_time ? 'custom' : 'permanent'
+    }
+  } catch (error) {
+    console.error('获取调度配置失败:', error)
+    // 没有配置过则用默认值
+    scheduleForm.trigger_type = 1
+    scheduleForm.schedule_period = 'day'
+    scheduleForm.schedule_time = '22:30'
+    scheduleForm.trigger_cron = ''
+    scheduleForm.effective_type = 'permanent'
+    scheduleForm.trigger_start_time = ''
+    scheduleForm.trigger_end_time = ''
+  } finally {
+    scheduleLoading.value = false
+  }
+  scheduleDialogVisible.value = true
+}
+
+const handleScheduleSubmit = async () => {
+  if (!currentScheduleDataset.value) return
+  const triggerType = scheduleForm.trigger_type === 3
+    ? (scheduleForm.schedule_period === 'day' ? 3 : 4)
+    : scheduleForm.trigger_type
+  try {
+    await datasetApi.configureScheduler(currentScheduleDataset.value.dataset_id, {
+      trigger_type: triggerType,
+      trigger_cron: triggerType === 1 ? '' : scheduleForm.trigger_cron,
+      trigger_start_time: scheduleForm.effective_type === 'custom' ? scheduleForm.trigger_start_time : '',
+      trigger_end_time: scheduleForm.effective_type === 'custom' ? scheduleForm.trigger_end_time : ''
+    })
+    ElMessage.success('调度配置成功')
+    scheduleDialogVisible.value = false
+  } catch (error) {
+    console.error('配置调度失败:', error)
+    ElMessage.error('配置调度失败')
+  }
 }
 
 // 历史

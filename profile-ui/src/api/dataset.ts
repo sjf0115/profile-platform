@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { Dataset, DatasetQueryParams, ApiResponse } from '@/types'
+import type { Dataset, DatasetQueryParams, Task, ApiResponse } from '@/types'
 
 export const datasetApi = {
   // 获取数据集列表
@@ -36,5 +36,15 @@ export const datasetApi = {
   // 立即执行数据同步
   execute: (datasetId: string) => {
     return request.post<ApiResponse<any>>(`/dataset/${datasetId}/execute`)
+  },
+
+  // 获取数据集调度配置
+  getSchedulerConfig: (datasetId: string) => {
+    return request.get<ApiResponse<Task>>(`/dataset/${datasetId}/scheduler`)
+  },
+
+  // 配置数据集调度
+  configureScheduler: (datasetId: string, data: Partial<Task>) => {
+    return request.put<ApiResponse<any>>(`/dataset/${datasetId}/scheduler`, data)
   }
 }
