@@ -180,7 +180,20 @@ const routes: RouteRecordRaw[] = [
         name: 'EditGroup',
         component: () => import('@/views/group/edit.vue'),
         meta: { title: '编辑群组' },
-      }
+      },
+      // 任务管理
+      {
+        path: 'task',
+        name: 'TaskManagement',
+        component: () => import('@/views/task/index.vue'),
+        meta: { title: '任务管理' },
+      },
+      {
+        path: 'task/instance',
+        name: 'TaskInstanceManagement',
+        component: () => import('@/views/task/instance.vue'),
+        meta: { title: '任务实例' },
+      },
     ],
   },
 ]

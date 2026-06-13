@@ -21,11 +21,16 @@ import java.util.Map;
 
 /**
  * 功能：Engine 服务
+ *
+ * @deprecated 已被 SPI 架构替代。分析引擎交互见 {@link AnalysisEngineService}，
+ * 同步引擎交互见 {@link DiEngineService}。保留仅供参考，请勿新增调用。
+ *
  * 作者：@SmartSi
  * 博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
  * 日期：2026/4/12 13:00
  */
+@Deprecated
 @Slf4j
 @Service
 public class PluginEngineService {

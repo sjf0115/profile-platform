@@ -1,11 +1,15 @@
 package com.data.profile.common.enums;
 
-// 通用状态
+// 任务实例状态
 public enum InstanceStatus {
-    // 启用
-    ENABLE(1, "enable"),
-    // 禁用
-    DISABLE(2, "disable");
+    // 未运行
+    PENDING(1, "pending"),
+    // 运行中
+    RUNNING(2, "running"),
+    // 运行失败
+    FAILED(3, "failed"),
+    // 运行成功
+    SUCCESS(4, "success");
 
     private Integer code;
     private String message;

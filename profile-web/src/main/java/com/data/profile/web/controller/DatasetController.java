@@ -4,7 +4,9 @@ import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
+import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.service.DatasetService;
+import com.data.profile.web.service.TaskExecutionService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +31,8 @@ public class DatasetController {
     private static final Gson gson = new GsonBuilder().create();
     @Autowired
     private DatasetService datasetService;
+    @Autowired
+    private TaskExecutionService taskExecutionService;
 
     @PostMapping(value = "/list")
     public Response getList(@RequestBody Dataset dataset) {
@@ -59,14 +63,7 @@ public class DatasetController {
         }
     }
 
-    // 获取支持数据集的数据源
-    @GetMapping(value = "/datasources")
-    public Response getDataSources(@RequestParam(name = "dataset_type") String datasetType) {
-        log.info("根据数据集类型 {} 请求查看支持的数据源", datasetType);
-        List<DataSource> dataSources = datasetService.getDataSources(datasetType);
-        return Response.success(dataSources);
-    }
-
+    // 删除数据集
     @DeleteMapping(value = "/delete")
     public Response delete(@RequestParam(name = "dataset_id") String datasetId) {
         log.info("根据数据集ID {} 请求删除数据集", datasetId);
@@ -76,6 +73,27 @@ public class DatasetController {
         } else {
             return Response.error("删除数据集失败", ResponseCode.ERROR);
         }
+    }
+
+    // 立即执行数据同步
+    @PostMapping(value = "/sync")
+    public Response sync(@RequestParam(name = "dataset_id") String datasetId) {
+        log.info("立即执行数据集 {} 同步", datasetId);
+        try {
+            TaskInstance instance = taskExecutionService.executeByRelatedId(datasetId);
+            return Response.success(instance);
+        } catch (Exception e) {
+            log.error("数据集同步失败: datasetId={}", datasetId, e);
+            return Response.error("数据集同步失败: " + e.getMessage(), ResponseCode.ERROR);
+        }
+    }
+
+    // 获取支持数据集的数据源
+    @GetMapping(value = "/datasources")
+    public Response getDataSources(@RequestParam(name = "dataset_type") String datasetType) {
+        log.info("根据数据集类型 {} 请求查看支持的数据源", datasetType);
+        List<DataSource> dataSources = datasetService.getDataSources(datasetType);
+        return Response.success(dataSources);
     }
 
     /*@GetMapping(value = "/refresh")

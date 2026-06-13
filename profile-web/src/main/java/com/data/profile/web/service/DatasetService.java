@@ -1,9 +1,11 @@
 package com.data.profile.web.service;
 
+import com.data.engine.api.schema.TableSchema;
 import com.data.profile.web.dao.DatasetMapper;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;
+import com.data.profile.web.model.Task;
 import com.data.profile.web.security.RequestContext;
 import com.data.profile.common.enums.*;
 import com.data.profile.common.utils.IDGenerator;
@@ -37,7 +39,9 @@ public class DatasetService {
     @Resource
     private DatasetFieldService datasetFieldService;
     @Resource
-    private DatasetSyncService datasetSyncService;
+    private AnalysisEngineService analysisEngineService;
+    @Resource
+    private TaskService taskService;
 
     /**
      * 根据查询条件获取数据集列表
@@ -106,9 +110,17 @@ public class DatasetService {
             log.error("内置数据集 {} 不允许删除", datasetId);
             throw new RuntimeException("内置数据集不允许删除");
         }
+        // TODO 检查依赖确保无下游使用
         // 删除关联数据集字段
         datasetFieldService.deleteByDatasetId(datasetId);
-        // TODO 检查依赖确保无下游使用
+        // 删除数据集对应的引擎表
+        try {
+            analysisEngineService.dropDatasetTable(datasetId);
+        } catch (Exception e) {
+            log.error("删除数据集 {} 引擎表失败，数据集已删除但引擎表可能残留", datasetId, e);
+            throw new RuntimeException("删除数据集引擎表失败，请连续管理员");
+        }
+
         log.info("删除数据集: {}", datasetId);
         return datasetMapper.deleteByDatasetId(datasetId);
     }
@@ -147,14 +159,20 @@ public class DatasetService {
 
         // 保存数据集基本信息
         int result = datasetMapper.insertSelective(dataset);
-        
-        // 创建引擎表并同步数据
+
+        // 创建引擎表（仅 Schema，不同步数据）
         try {
-            datasetSyncService.processDataset(dataset);
+            DataSource dataSource = dataSourceService.getDetail(dataset.getDatasourceId());
+            if (dataSource != null) {
+                String tableName = "profile_dataset_" + datasetId;
+                analysisEngineService.buildAndUpsertTable(dataset, dataSource, tableName);
+            }
         } catch (Exception e) {
             log.error("创建引擎表失败: {}", datasetId, e);
-            // 不抛出异常，允许数据集创建成功，但记录错误日志
         }
+
+        // 自动创建数据集同步任务
+        createDatasetSyncTask(datasetId, dataset.getDatasetName());
 
         log.info("创建数据集: {}", gson.toJson(dataset));
         return result;
@@ -179,15 +197,18 @@ public class DatasetService {
         // 修改数据集
         dataset.setModifier(RequestContext.currentUserId());
         int result = datasetMapper.updateByDatasetIdSelective(dataset);
-        
-        // 更新引擎表并重新同步数据
+
+        // 更新引擎表 Schema（不同步数据）
         try {
-            datasetSyncService.processDataset(dataset);
+            DataSource dataSource = dataSourceService.getDetail(dataset.getDatasourceId());
+            if (dataSource != null) {
+                String tableName = "profile_dataset_" + datasetId;
+                analysisEngineService.buildAndUpsertTable(dataset, dataSource, tableName);
+            }
         } catch (Exception e) {
             log.error("更新引擎表失败: {}", datasetId, e);
-            // 不抛出异常，允许数据集修改成功，但记录错误日志
         }
-        
+
         log.info("修改数据集: {}", gson.toJson(dataset));
         return result;
     }
@@ -197,11 +218,35 @@ public class DatasetService {
      * @param datasetType 数据集类型
      */
     public List<DataSource> getDataSources(String datasetType) {
-        // 模拟数据
-        //DataSource dataSource = DataSource.builder().sourceType(1).build();
         DataSource dataSource = null;
         List<DataSource> dataSources = dataSourceService.getList(dataSource);
         log.info("获取数据集类型 {} 支持的数据源: {}", datasetType, gson.toJson(dataSources));
         return dataSources;
+    }
+
+    /**
+     * 自动创建数据集同步任务（手动触发类型）。
+     */
+    private void createDatasetSyncTask(String datasetId, String datasetName) {
+        Task task = new Task();
+        task.setTaskName(datasetName + "-同步任务");
+        task.setTaskDesc("数据集[" + datasetName + "]的同步任务");
+        task.setTaskType(SchedulerJobType.DATASET_SYNC.getCode());
+        task.setTaskRelatedId(datasetId);
+        task.setTriggerType(SchedulerType.MANUAL.getCode());
+        taskService.create(task);
+        log.info("自动创建数据集同步任务: datasetId={}", datasetId);
+    }
+
+    /**
+     * 更新数据集的最新实例状态。
+     */
+    public void updateInstanceStatus(String datasetId, int instanceStatus, String instanceMsg) {
+        Dataset dataset = datasetMapper.selectByDatasetId(datasetId);
+        if (dataset != null) {
+            dataset.setInstanceStatus(instanceStatus);
+            dataset.setInstanceMsg(instanceMsg != null ? Integer.valueOf(instanceMsg.length()) : null);
+            datasetMapper.updateByDatasetIdSelective(dataset);
+        }
     }
 }

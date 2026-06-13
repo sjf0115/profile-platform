@@ -56,55 +56,55 @@
     from profile_meta_task
     where 1 = 1
     <if test="status != null">
-      and status = #{status,jdbcType=TINYINT},
+      and status = #{status,jdbcType=TINYINT}
     </if>
     <if test="taskName != null">
-      and task_name = #{taskName,jdbcType=VARCHAR},
+      and task_name = #{taskName,jdbcType=VARCHAR}
     </if>
     <if test="taskDesc != null">
-      and task_desc = #{taskDesc,jdbcType=VARCHAR},
+      and task_desc = #{taskDesc,jdbcType=VARCHAR}
     </if>
     <if test="taskType != null">
-      and task_type = #{taskType,jdbcType=INTEGER},
+      and task_type = #{taskType,jdbcType=INTEGER}
     </if>
     <if test="taskRelatedId != null">
-      and task_related_id = #{taskRelatedId,jdbcType=VARCHAR},
+      and task_related_id = #{taskRelatedId,jdbcType=VARCHAR}
     </if>
     <if test="triggerTargetId != null">
-      and trigger_target_id = #{triggerTargetId,jdbcType=VARCHAR},
+      and trigger_target_id = #{triggerTargetId,jdbcType=VARCHAR}
     </if>
     <if test="triggerType != null">
-      and trigger_type = #{triggerType,jdbcType=INTEGER},
+      and trigger_type = #{triggerType,jdbcType=INTEGER}
     </if>
     <if test="triggerCron != null">
-      and trigger_cron = #{triggerCron,jdbcType=VARCHAR},
+      and trigger_cron = #{triggerCron,jdbcType=VARCHAR}
     </if>
     <if test="triggerUrl != null">
-      and trigger_url = #{triggerUrl,jdbcType=VARCHAR},
+      and trigger_url = #{triggerUrl,jdbcType=VARCHAR}
     </if>
     <if test="triggerStartTime != null">
-      and trigger_start_time = #{triggerStartTime,jdbcType=VARCHAR},
+      and trigger_start_time = #{triggerStartTime,jdbcType=VARCHAR}
     </if>
     <if test="triggerEndTime != null">
-      and trigger_end_time = #{triggerEndTime,jdbcType=VARCHAR},
+      and trigger_end_time = #{triggerEndTime,jdbcType=VARCHAR}
     </if>
     <if test="sourceType != null">
-      and source_type = #{sourceType,jdbcType=INTEGER},
+      and source_type = #{sourceType,jdbcType=INTEGER}
     </if>
     <if test="owner != null">
-      and owner = #{owner,jdbcType=VARCHAR},
+      and owner = #{owner,jdbcType=VARCHAR}
     </if>
     <if test="creator != null">
-      and creator = #{creator,jdbcType=VARCHAR},
+      and creator = #{creator,jdbcType=VARCHAR}
     </if>
     <if test="modifier != null">
-      and modifier = #{modifier,jdbcType=VARCHAR},
+      and modifier = #{modifier,jdbcType=VARCHAR}
     </if>
     <if test="gmtCreate != null">
-      and gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+      and gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}
     </if>
     <if test="gmtModified != null">
-      and gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
+      and gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
     </if>
   </select>
 

@@ -383,7 +383,7 @@ CREATE TABLE IF NOT EXISTS `profile_meta_user_login`(
     PRIMARY KEY (`id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-用户登录';
 
--- 20. 计算引擎表
+-- 20. 引擎表
 DROP Table `profile_meta_engine`;
 CREATE TABLE `profile_meta_engine` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',

@@ -309,6 +309,10 @@
               <el-icon><Timer /></el-icon>
               <span>任务管理</span>
             </el-menu-item>
+            <el-menu-item index="/task/instance">
+              <el-icon><List /></el-icon>
+              <span>任务实例</span>
+            </el-menu-item>
           </template>
 
           <!-- 设置子菜单 -->
@@ -350,7 +354,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { 
   DataLine, ArrowDown, Bell, QuestionFilled, Setting, Grid, User, UserFilled,
   View, Filter, DataAnalysis, Promotion, TrendCharts, Timer, Switch, PieChart, Share, Connection,
-  Coin, FolderOpened, CollectionTag, Cpu
+  Coin, FolderOpened, CollectionTag, Cpu, List
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -366,6 +370,7 @@ const activeTopNav = computed(() => {
   if (path.startsWith('/group')) return '/group'
   if (path.startsWith('/analysis')) return '/analysis'
   if (path.startsWith('/project')) return '/project'
+  if (path.startsWith('/task')) return '/project'
   if (path.startsWith('/settings')) return '/settings'
   return '/home'
 })

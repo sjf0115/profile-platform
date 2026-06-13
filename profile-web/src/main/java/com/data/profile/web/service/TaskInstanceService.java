@@ -1,7 +1,11 @@
 package com.data.profile.web.service;
 
+import com.data.profile.common.enums.InstanceStatus;
+import com.data.profile.common.enums.ModelType;
+import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.web.dao.TaskInstanceMapper;
 import com.data.profile.web.model.TaskInstance;
+import com.data.profile.web.security.RequestContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -10,13 +14,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 功能：任务服务
+ * 功能：任务实例服务
  * 作者：SmartSi
  * CSDN博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
- * 日期：2024/7/7 15:44
  */
-
 @Slf4j
 @Service
 public class TaskInstanceService {
@@ -25,18 +27,13 @@ public class TaskInstanceService {
 
     /**
      * 根据查询条件获取任务实例列表
-     * @param instance
-     * @return
      */
     public List<TaskInstance> getList(TaskInstance instance) {
-        List<TaskInstance> instances = instanceMapper.selectByParams(instance);
-        return instances;
+        return instanceMapper.selectByParams(instance);
     }
 
     /**
      * 根据任务实例ID获取任务实例详细信息
-     * @param instanceId
-     * @return
      */
     public Optional<TaskInstance> getDetail(String instanceId) {
         TaskInstance instance = instanceMapper.selectByInstanceId(instanceId);
@@ -47,20 +44,83 @@ public class TaskInstanceService {
     }
 
     /**
-     * 创建任务实例
-     * @param instanceName
-     * @return
+     * 创建任务实例（运行中状态）。
+     *
+     * @param taskId           关联的任务ID
+     * @param instanceName     实例名称
+     * @param instanceRelatedId 实例关联ID（如 datasetId）
+     * @return 创建后的实例
      */
-    public int add(String instanceName) {
-        return -1;
+    public TaskInstance createInstance(String taskId, String instanceName, String instanceRelatedId) {
+        String instanceId = IDGenerator.getInstance().generate(ModelType.INSTANCE);
+        long startTime = System.currentTimeMillis();
+
+        TaskInstance instance = new TaskInstance();
+        instance.setInstanceId(instanceId);
+        instance.setInstanceName(instanceName);
+        instance.setTaskId(taskId);
+        instance.setInstanceRelatedId(instanceRelatedId);
+        instance.setStatus(InstanceStatus.RUNNING.getCode());
+        instance.setStartTime(startTime);
+        instance.setEndTime(0L);
+        instance.setDuration(0L);
+        instance.setMessage("");
+        instance.setCreator(RequestContext.currentUserId());
+        instance.setModifier(RequestContext.currentUserId());
+
+        instanceMapper.insertSelective(instance);
+        log.info("创建任务实例: instanceId={}, taskId={}, relatedId={}", instanceId, taskId, instanceRelatedId);
+        return instance;
     }
 
     /**
-     * 根据任务实例ID删除任务实例
-     * @param instanceId
-     * @return
+     * 更新任务实例为成功状态。
      */
-    public int delete(String instanceId) {
-        return -1;
+    public void markSuccess(String instanceId, String message) {
+        TaskInstance instance = instanceMapper.selectByInstanceId(instanceId);
+        if (instance == null) {
+            return;
+        }
+        long endTime = System.currentTimeMillis();
+        instance.setStatus(InstanceStatus.SUCCESS.getCode());
+        instance.setEndTime(endTime);
+        instance.setDuration(endTime - instance.getStartTime());
+        instance.setMessage(message != null ? message : "");
+        instance.setModifier(RequestContext.currentUserId());
+        instanceMapper.updateByInstanceIdSelective(instance);
+        log.info("任务实例成功: instanceId={}, duration={}ms", instanceId, instance.getDuration());
+    }
+
+    /**
+     * 更新任务实例为失败状态。
+     */
+    public void markFailed(String instanceId, String errorMsg) {
+        TaskInstance instance = instanceMapper.selectByInstanceId(instanceId);
+        if (instance == null) {
+            return;
+        }
+        long endTime = System.currentTimeMillis();
+        instance.setStatus(InstanceStatus.FAILED.getCode());
+        instance.setEndTime(endTime);
+        instance.setDuration(endTime - instance.getStartTime());
+        instance.setMessage(errorMsg != null ? errorMsg : "");
+        instance.setModifier(RequestContext.currentUserId());
+        instanceMapper.updateByInstanceIdSelective(instance);
+        log.info("任务实例失败: instanceId={}, duration={}ms, error={}", instanceId, instance.getDuration(), errorMsg);
+    }
+
+    /**
+     * 根据任务ID删除所有实例。
+     */
+    public int deleteByTaskId(String taskId) {
+        TaskInstance query = new TaskInstance();
+        query.setTaskId(taskId);
+        List<TaskInstance> instances = instanceMapper.selectByParams(query);
+        int count = 0;
+        for (TaskInstance instance : instances) {
+            count += instanceMapper.deleteByInstanceId(instance.getInstanceId());
+        }
+        log.info("删除任务 {} 的所有实例: count={}", taskId, count);
+        return count;
     }
 }

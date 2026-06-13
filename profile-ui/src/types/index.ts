@@ -331,3 +331,58 @@ export interface TableColumnInfo {
   primary_keys?: string[]
   columns: ColumnInfo[]
 }
+
+// 调度任务
+export interface Task {
+  id?: number
+  status?: number
+  task_id: string
+  task_name: string
+  task_desc?: string
+  task_type?: number
+  task_related_id?: string
+  trigger_target_id?: string
+  trigger_type?: number
+  trigger_cron?: string
+  trigger_url?: string
+  trigger_start_time?: string
+  trigger_end_time?: string
+  source_type?: number
+  owner?: string
+  creator?: string
+  modifier?: string
+  gmt_create?: string
+  gmt_modified?: string
+}
+
+// 调度任务查询参数
+export interface TaskQueryParams extends PageParams {
+  task_name?: string
+  task_type?: number
+  owner?: string
+}
+
+// 任务实例
+export interface TaskInstance {
+  id?: number
+  status?: number
+  instance_id: string
+  instance_name: string
+  task_id: string
+  instance_related_id?: string
+  start_time?: number
+  end_time?: number
+  duration?: number
+  message?: string
+  creator?: string
+  modifier?: string
+  gmt_create?: string
+  gmt_modified?: string
+}
+
+// 任务实例查询参数
+export interface TaskInstanceQueryParams extends PageParams {
+  task_id?: string
+  instance_name?: string
+  status?: number
+}

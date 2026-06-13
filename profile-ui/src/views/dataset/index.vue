@@ -87,6 +87,7 @@
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
+                  <el-dropdown-item @click="handleRun(row)">立即执行</el-dropdown-item>
                   <el-dropdown-item @click="handleSchedule(row)">配置调度</el-dropdown-item>
                   <el-dropdown-item @click="handleBindLabel(row)">绑定标签</el-dropdown-item>
                   <el-dropdown-item @click="handleHistory(row)">调度历史</el-dropdown-item>
@@ -318,14 +319,19 @@ const handleBindLabel = (row: Dataset) => {
   ElMessage.info(`绑定标签功能开发中: ${row.dataset_name}`)
 }
 
+// 立即执行
+const handleRun = (row: Dataset) => {
+  ElMessage.info(`立即执行功能开发中: ${row.dataset_name}`)
+}
+
 // 调度
 const handleSchedule = (row: Dataset) => {
-  ElMessage.info(`调度功能开发中: ${row.dataset_name}`)
+  ElMessage.info(`配置调度功能开发中: ${row.dataset_name}`)
 }
 
 // 历史
 const handleHistory = (row: Dataset) => {
-  ElMessage.info(`历史功能开发中: ${row.dataset_name}`)
+  ElMessage.info(`执行历史功能开发中: ${row.dataset_name}`)
 }
 
 // 删除数据集

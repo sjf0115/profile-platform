@@ -3,15 +3,15 @@ package com.data.profile.web.controller;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.model.Task;
+import com.data.profile.web.model.TaskInstance;
+import com.data.profile.web.service.TaskExecutionService;
 import com.data.profile.web.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -27,15 +27,19 @@ import java.util.Optional;
 public class TaskController {
     @Autowired
     private TaskService taskService;
+    @Autowired
+    private TaskExecutionService taskExecutionService;
 
+    // 任务列表
     @PostMapping(value = "/list")
     public Response getList(@RequestBody Task task) {
         List<Task> tasks = taskService.getList(task);
         return Response.success(tasks);
     }
 
-    @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam(name = "task_id") String taskId) {
+    // 任务详情
+    @GetMapping(value = "/{taskId}/detail")
+    public Response getDetail(@PathVariable(value = "taskId") String taskId) {
         Optional<Task> optional = taskService.getDetail(taskId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -44,45 +48,67 @@ public class TaskController {
         }
     }
 
-    @GetMapping(value = "/detailByRelatedId")
-    public Response getDetailByRelatedId(@RequestParam(name = "related_id") String relatedId) {
-        Task task = taskService.getDetailByRelatedId(relatedId);
-        if (!Objects.equals(task, null)) {
-            return Response.success(task);
+    // 创建调度任务
+    @PostMapping
+    public Response create(@RequestBody Task task) {
+        int result = taskService.create(task);
+        if (result > 0) {
+            return Response.success(result);
         } else {
-            return Response.error("请求的任务不存在", ResponseCode.ERROR);
+            return Response.error("创建调度任务失败", ResponseCode.ERROR);
         }
     }
 
-    @PostMapping(value = "/save")
-    public Response save(@RequestBody Task task) {
-        String taskId = task.getTaskId();
-        if (StringUtils.isEmpty(taskId)) {
-            // 创建调度任务
-            int result = taskService.create(task);
-            if (result > 0) {
-                return Response.success(result);
-            } else {
-                return Response.error("创建调度任务失败", ResponseCode.ERROR);
-            }
+    // 修改调度任务
+    @PutMapping("/{taskId}")
+    public Response update(@PathVariable(value = "taskId") String taskId, @RequestBody Task task) {
+        task.setTaskId(taskId);
+        int result = taskService.update(task);
+        if (result > 0) {
+            return Response.success(result);
         } else {
-            // 修改调度任务
-            int result = taskService.update(task);
-            if (result > 0) {
-                return Response.success(result);
-            } else {
-                return Response.error("修改调度任务失败", ResponseCode.ERROR);
-            }
+            return Response.error("修改调度任务失败", ResponseCode.ERROR);
         }
     }
 
-    @DeleteMapping(value = "/delete")
-    public Response delete(@RequestParam(name = "task_id") String taskId) {
+    // 删除调度任务
+    @DeleteMapping(value = "/{taskId}")
+    public Response delete(@PathVariable(value = "taskId") String taskId) {
         int result = taskService.delete(taskId);
         if (result > 0) {
             return Response.success(result);
         } else {
             return Response.error("删除调度任务失败", ResponseCode.ERROR);
+        }
+    }
+
+    // 手动触发调度任务 TODO 是否放在这
+    @GetMapping(value = "/{taskId}/execute")
+    public Response execute(@PathVariable(value = "taskId") String taskId) {
+        log.info("手动触发任务 {} 执行", taskId);
+        try {
+            TaskInstance instance = taskExecutionService.executeTask(taskId);
+            return Response.success(instance);
+        } catch (Exception e) {
+            log.error("任务执行 {} 失败", taskId, e);
+            return Response.error("任务执行失败: " + e.getMessage(), ResponseCode.ERROR);
+        }
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 通过关联ID触发任务执行
+     */
+    @PostMapping(value = "/executeByRelatedId")
+    public Response executeByRelatedId(@RequestParam(name = "related_id") String relatedId) {
+        log.info("通过关联ID触发任务执行: relatedId={}", relatedId);
+        try {
+            TaskInstance instance = taskExecutionService.executeByRelatedId(relatedId);
+            return Response.success(instance);
+        } catch (Exception e) {
+            log.error("任务执行失败: relatedId={}", relatedId, e);
+            return Response.error("任务执行失败: " + e.getMessage(), ResponseCode.ERROR);
         }
     }
 }

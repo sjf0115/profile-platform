@@ -25,19 +25,17 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/instance", produces = MediaType.APPLICATION_JSON_VALUE)
 public class TaskInstanceController {
-    private static Logger LOG = LoggerFactory.getLogger(TaskInstanceController.class);
-
     @Autowired
     private TaskInstanceService instanceService;
 
-    @GetMapping(value = "/list")
+    @PostMapping(value = "/list")
     public Response getList(@RequestBody TaskInstance instance) {
         List<TaskInstance> tasks = instanceService.getList(instance);
         return Response.success(tasks);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam String instanceId) {
+    public Response getDetail(@RequestParam(name = "instance_id") String instanceId) {
         Optional<TaskInstance> optional = instanceService.getDetail(instanceId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -46,23 +44,14 @@ public class TaskInstanceController {
         }
     }
 
-    @GetMapping(value = "/add")
-    public Response add(@RequestParam String instanceName) {
-        int result = instanceService.add(instanceName);
-        if (result > 0) {
-            return Response.success(result);
-        } else {
-            return Response.error("创建任务实例失败", ResponseCode.ERROR);
-        }
-    }
-
-    @GetMapping(value = "/delete")
-    public Response delete(@RequestParam String instanceId) {
-        int result = instanceService.delete(instanceId);
-        if (result > 0) {
-            return Response.success(result);
-        } else {
-            return Response.error("删除任务实例失败", ResponseCode.ERROR);
-        }
+    /**
+     * 根据任务ID查询实例列表
+     */
+    @GetMapping(value = "/listByTaskId")
+    public Response listByTaskId(@RequestParam(name = "task_id") String taskId) {
+        TaskInstance query = new TaskInstance();
+        query.setTaskId(taskId);
+        List<TaskInstance> instances = instanceService.getList(query);
+        return Response.success(instances);
     }
 }
