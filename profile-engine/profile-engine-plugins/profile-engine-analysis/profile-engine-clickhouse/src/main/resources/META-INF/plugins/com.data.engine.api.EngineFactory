@@ -1,1 +1,1 @@
-clickhouse=com.data.engine.plugin.ClickHouseEngineFactory
+clickhouse=com.data.engine.plugin.clickhouse.ClickHouseEngineFactory

@@ -272,7 +272,6 @@ public class DatasetSyncService {
 
     /**
      * 提交数据同步任务：业务库 → 分析引擎表（如 ClickHouse）。
-     *
      * <p>通过 {@link DiEngineFactory#getRequestBuilder()} 与 {@link DiEngineFactory#getExecutor()}
      * 协作完成"构建 + 执行"两阶段。</p>
      */
