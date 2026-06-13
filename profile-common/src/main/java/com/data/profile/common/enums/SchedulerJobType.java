@@ -7,7 +7,7 @@ public enum SchedulerJobType {
     // 群组投递
     EXPORT(2, "ExportJob"),
     // 数据集同步
-    DATASET_SYNC(3, "DatasetSyncJob")
+    IMPORT(3, "ImportJob")
     ;
 
     private Integer code;

@@ -28,11 +28,12 @@ public class TaskExecutionService {
     @Resource
     private DiEngineService diEngineService;
     @Resource
+    private AnalysisEngineService analysisEngineService;
+    @Resource
     private DatasetService datasetService;
 
     /**
      * 执行任务：创建实例并根据任务类型分发执行逻辑。
-     *
      * @param taskId 任务ID
      * @return 创建的任务实例
      */
@@ -45,8 +46,7 @@ public class TaskExecutionService {
 
         // 创建实例
         String instanceName = task.getTaskName() + "-" + System.currentTimeMillis();
-        TaskInstance instance = taskInstanceService.createInstance(
-                taskId, instanceName, task.getTaskRelatedId());
+        TaskInstance instance = taskInstanceService.createInstance(taskId, instanceName, task.getTaskRelatedId());
 
         // 执行并更新状态
         try {
@@ -74,16 +74,21 @@ public class TaskExecutionService {
         return executeTask(task.getTaskId());
     }
 
+    //------------------------------------------------------------------------------------------------------------------
+
     /**
      * 根据任务类型分发执行逻辑。
      */
     private void dispatch(Task task) throws Exception {
         int taskType = task.getTaskType();
-        if (taskType == SchedulerJobType.DATASET_SYNC.getCode()) {
+        if (taskType == SchedulerJobType.IMPORT.getCode()) {
+            // 数据集同步
             diEngineService.executeDatasetSync(task.getTaskRelatedId());
         } else if (taskType == SchedulerJobType.GROUP.getCode()) {
+            // 群组计算
             throw new UnsupportedOperationException("群组计算任务暂未实现");
         } else if (taskType == SchedulerJobType.EXPORT.getCode()) {
+            // 群组投递
             throw new UnsupportedOperationException("群组投递任务暂未实现");
         } else {
             throw new IllegalStateException("未知的任务类型: " + taskType);
@@ -95,7 +100,7 @@ public class TaskExecutionService {
      */
     private void updateRelatedInstanceStatus(Task task, int status, String msg) {
         int taskType = task.getTaskType();
-        if (taskType == SchedulerJobType.DATASET_SYNC.getCode()) {
+        if (taskType == SchedulerJobType.IMPORT.getCode()) {
             datasetService.updateInstanceStatus(task.getTaskRelatedId(), status, msg);
         }
         // 其他类型后续扩展

@@ -76,8 +76,8 @@ public class DatasetController {
     }
 
     // 立即执行数据同步
-    @PostMapping(value = "/sync")
-    public Response sync(@RequestParam(name = "dataset_id") String datasetId) {
+    @PostMapping(value = "/{datasetId}/execute")
+    public Response execute(@RequestParam(name = "datasetId") String datasetId) {
         log.info("立即执行数据集 {} 同步", datasetId);
         try {
             TaskInstance instance = taskExecutionService.executeByRelatedId(datasetId);

@@ -31,5 +31,10 @@ export const datasetApi = {
     return request.delete<ApiResponse<number>>('/dataset/delete', {
       params: { dataset_id }
     })
+  },
+
+  // 立即执行数据同步
+  execute: (datasetId: string) => {
+    return request.post<ApiResponse<any>>(`/dataset/${datasetId}/execute`)
   }
 }

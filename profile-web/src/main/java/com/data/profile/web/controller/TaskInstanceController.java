@@ -28,14 +28,16 @@ public class TaskInstanceController {
     @Autowired
     private TaskInstanceService instanceService;
 
+    // 实例列表
     @PostMapping(value = "/list")
     public Response getList(@RequestBody TaskInstance instance) {
         List<TaskInstance> tasks = instanceService.getList(instance);
         return Response.success(tasks);
     }
 
-    @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam(name = "instance_id") String instanceId) {
+    // 实例详情
+    @GetMapping(value = "/{instanceId}/detail")
+    public Response getDetail(@PathVariable(value = "instanceId") String instanceId) {
         Optional<TaskInstance> optional = instanceService.getDetail(instanceId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -44,11 +46,9 @@ public class TaskInstanceController {
         }
     }
 
-    /**
-     * 根据任务ID查询实例列表
-     */
-    @GetMapping(value = "/listByTaskId")
-    public Response listByTaskId(@RequestParam(name = "task_id") String taskId) {
+    // 根据任务ID查询实例列表
+    @GetMapping(value = "/{taskId}/list")
+    public Response listByTaskId(@RequestParam(name = "taskId") String taskId) {
         TaskInstance query = new TaskInstance();
         query.setTaskId(taskId);
         List<TaskInstance> instances = instanceService.getList(query);

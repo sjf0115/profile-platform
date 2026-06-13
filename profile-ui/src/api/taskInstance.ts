@@ -9,15 +9,11 @@ export const taskInstanceApi = {
 
   // 获取实例详情
   detail: (instanceId: string) => {
-    return request.get<ApiResponse<TaskInstance>>('/instance/detail', {
-      params: { instance_id: instanceId }
-    })
+    return request.get<ApiResponse<TaskInstance>>(`/instance/${instanceId}/detail`)
   },
 
   // 根据任务ID查询实例列表
   listByTaskId: (taskId: string) => {
-    return request.get<ApiResponse<TaskInstance[]>>('/instance/listByTaskId', {
-      params: { task_id: taskId }
-    })
+    return request.get<ApiResponse<TaskInstance[]>>(`/instance/${taskId}/list`)
   }
 }

@@ -1,6 +1,5 @@
 package com.data.profile.web.service;
 
-import com.data.engine.api.schema.TableSchema;
 import com.data.profile.web.dao.DatasetMapper;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
@@ -231,7 +230,7 @@ public class DatasetService {
         Task task = new Task();
         task.setTaskName(datasetName + "-同步任务");
         task.setTaskDesc("数据集[" + datasetName + "]的同步任务");
-        task.setTaskType(SchedulerJobType.DATASET_SYNC.getCode());
+        task.setTaskType(SchedulerJobType.IMPORT.getCode());
         task.setTaskRelatedId(datasetId);
         task.setTriggerType(SchedulerType.MANUAL.getCode());
         taskService.create(task);
