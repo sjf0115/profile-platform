@@ -131,7 +131,6 @@ public class EngineService {
             } else {
                 engine.setIsDefault(0);
             }
-
             engine.setCreator(RequestContext.currentUserId());
             engine.setModifier(RequestContext.currentUserId());
 

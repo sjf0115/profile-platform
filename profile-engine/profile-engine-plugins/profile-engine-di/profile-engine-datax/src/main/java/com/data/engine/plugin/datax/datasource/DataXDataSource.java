@@ -1,5 +1,8 @@
 package com.data.engine.plugin.datax.datasource;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import java.util.Map;
 
 /**
@@ -17,6 +20,12 @@ import java.util.Map;
  * @see com.data.engine.plugin.datax.plugin.DataXReaderBuilder
  * @see com.data.engine.plugin.datax.plugin.DataXWriterBuilder
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = JdbcDataXDataSource.class, name = "jdbc"),
+        @JsonSubTypes.Type(value = HiveDataXDataSource.class, name = "hive"),
+        @JsonSubTypes.Type(value = HdfsDataXDataSource.class, name = "hdfs")
+})
 public interface DataXDataSource {
 
     /**

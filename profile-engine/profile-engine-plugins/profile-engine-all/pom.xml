@@ -18,6 +18,12 @@
         <!-- 同步引擎 -->
         <dependency>
             <groupId>com.data</groupId>
+            <artifactId>profile-engine-datax</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.data</groupId>
             <artifactId>profile-engine-seatunnel</artifactId>
             <version>1.0</version>
         </dependency>

@@ -66,7 +66,7 @@ public class DataXRequestBuilder implements DiRequestBuilder {
 
         // 4. 序列化为 Map 放入 ExecutorRequest.config
         @SuppressWarnings("unchecked")
-        Map<String, Object> configMap = DataxJsonHelper.sharedMapper()
+        Map<String, Object> configMap = DataXJsonHelper.sharedMapper()
                 .convertValue(buildReq, Map.class);
 
         return ExecutorRequest.builder()

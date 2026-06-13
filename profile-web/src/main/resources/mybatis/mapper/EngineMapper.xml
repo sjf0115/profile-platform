@@ -10,7 +10,7 @@
         <result column="engine_desc" jdbcType="VARCHAR" property="engineDesc" />
         <result column="is_default" jdbcType="TINYINT" property="isDefault" />
         <result column="source_type" jdbcType="INTEGER" property="sourceType" />
-        <result column="config" jdbcType="VARCHAR" property="config" />
+        <result column="engine_category" jdbcType="VARCHAR" property="engineCategory" />
         <result column="creator" jdbcType="VARCHAR" property="creator" />
         <result column="modifier" jdbcType="VARCHAR" property="modifier" />
         <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
@@ -18,7 +18,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, status, engine_id, engine_name, engine_type, engine_desc, is_default,
+        id, status, engine_id, engine_name, engine_category, engine_type, engine_desc, is_default,
         source_type, creator, modifier, gmt_create, gmt_modified, config
     </sql>
 
@@ -77,6 +77,9 @@
         <if test="engineName != null">
             and engine_name = #{engineName,jdbcType=VARCHAR}
         </if>
+        <if test="engineCategory != null">
+            and engine_category = #{engineCategory,jdbcType=VARCHAR}
+        </if>
         <if test="engineType != null">
             and engine_type = #{engineType,jdbcType=VARCHAR}
         </if>
@@ -104,6 +107,9 @@
         </if>
         <if test="engineName != null">
             and engine_name = #{engineName,jdbcType=VARCHAR}
+        </if>
+        <if test="engineCategory != null">
+            and engine_category = #{engineCategory,jdbcType=VARCHAR}
         </if>
         <if test="engineType != null">
             and engine_type = #{engineType,jdbcType=VARCHAR}
@@ -138,11 +144,11 @@
 
     <insert id="insert" parameterType="com.data.profile.web.model.Engine">
         insert into profile_meta_engine (status, engine_id,
-             engine_name, engine_type, engine_desc, is_default,
+             engine_name, engine_category, engine_type, engine_desc, is_default,
              source_type, creator, modifier, config
         )
         values (#{status,jdbcType=INTEGER}, #{engineId,jdbcType=VARCHAR},
-                #{engineName,jdbcType=VARCHAR}, #{engineType,jdbcType=VARCHAR}, #{engineDesc,jdbcType=VARCHAR},
+                #{engineName,jdbcType=VARCHAR}, #{engineCategory,jdbcType=VARCHAR}, #{engineType,jdbcType=VARCHAR}, #{engineDesc,jdbcType=VARCHAR},
                 #{isDefault,jdbcType=TINYINT},
                 #{sourceType,jdbcType=INTEGER}, #{creator,jdbcType=VARCHAR},
                 #{modifier,jdbcType=VARCHAR}, #{config,jdbcType=LONGVARCHAR}
@@ -160,6 +166,9 @@
             </if>
             <if test="engineName != null">
                 engine_name,
+            </if>
+            <if test="engineCategory != null">
+                engine_category,
             </if>
             <if test="engineType != null">
                 engine_type,
@@ -192,6 +201,9 @@
             </if>
             <if test="engineName != null">
                 #{engineName,jdbcType=VARCHAR},
+            </if>
+            <if test="engineCategory != null">
+                #{engineCategory,jdbcType=VARCHAR},
             </if>
             <if test="engineType != null">
                 #{engineType,jdbcType=VARCHAR},
@@ -226,6 +238,9 @@
             <if test="engineName != null">
                 engine_name = #{engineName,jdbcType=VARCHAR},
             </if>
+            <if test="engineCategory != null">
+                engine_category = #{engineCategory,jdbcType=VARCHAR},
+            </if>
             <if test="engineType != null">
                 engine_type = #{engineType,jdbcType=VARCHAR},
             </if>
@@ -255,6 +270,7 @@
         update profile_meta_engine
         set status = #{status,jdbcType=INTEGER},
             engine_name = #{engineName,jdbcType=VARCHAR},
+            engine_category = #{engineCategory,jdbcType=VARCHAR},
             engine_type = #{engineType,jdbcType=VARCHAR},
             engine_desc = #{engineDesc,jdbcType=VARCHAR},
             is_default = #{isDefault,jdbcType=TINYINT},
@@ -274,7 +290,7 @@
     <update id="clearAllDefaultByCategory" parameterType="java.lang.String">
         update profile_meta_engine
         set is_default = 0
-        where is_default = 1 and #{engineCategory,jdbcType=VARCHAR}
+        where is_default = 1 and engine_category = #{engineCategory,jdbcType=VARCHAR}
     </update>
 
     <update id="setDefaultByEngineId">

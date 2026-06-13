@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
 @Slf4j
 public class SeaTunnelEngineProxy {
 
-    private ClientConfig clientConfig = null;
+    private volatile ClientConfig clientConfig = null;
 
     private static class SeaTunnelEngineProxyHolder {
         private static final SeaTunnelEngineProxy INSTANCE = new SeaTunnelEngineProxy();
@@ -34,7 +34,28 @@ public class SeaTunnelEngineProxy {
     }
 
     private SeaTunnelEngineProxy() {
-        clientConfig = ConfigProvider.locateAndGetClientConfig();
+        // 延迟初始化，不在构造函数中加载配置
+    }
+    
+    /**
+     * 懒加载获取 ClientConfig
+     */
+    private ClientConfig getClientConfig() {
+        if (clientConfig == null) {
+            synchronized (this) {
+                if (clientConfig == null) {
+                    try {
+                        clientConfig = ConfigProvider.locateAndGetClientConfig();
+                        log.info("SeaTunnel 客户端配置加载成功");
+                    } catch (Exception e) {
+                        log.warn("SeaTunnel 客户端配置加载失败: {}", e.getMessage());
+                        // 返回 null，后续使用时再做错误处理
+                        clientConfig = null;
+                    }
+                }
+            }
+        }
+        return clientConfig;
     }
 
     /**
@@ -43,10 +64,14 @@ public class SeaTunnelEngineProxy {
      * @param jobId 作业ID
      */
     public void executeJob(@NonNull String filePath, @NonNull String jobId) {
+        ClientConfig config = getClientConfig();
+        if (config == null) {
+            throw new RuntimeException("SeaTunnel 客户端配置未加载，无法执行作业");
+        }
         JobConfig jobConfig = new JobConfig();
         jobConfig.setName(jobId + "_job");
         SeaTunnelConfig seaTunnelConfig = new YamlSeaTunnelConfigBuilder().build();
-        try (SeaTunnelClient seaTunnelClient = new SeaTunnelClient(clientConfig)) {
+        try (SeaTunnelClient seaTunnelClient = new SeaTunnelClient(config)) {
             ClientJobExecutionEnvironment environment = seaTunnelClient.createExecutionContext(filePath, jobConfig, seaTunnelConfig);
             ClientJobProxy clientJobProxy = environment.execute();
             long jobInstanceId = clientJobProxy.getJobId();
@@ -66,7 +91,11 @@ public class SeaTunnelEngineProxy {
      * @param jobId 作业ID
      */
     public void pauseJob(@NonNull String jobId) {
-        try (SeaTunnelClient seaTunnelClient = new SeaTunnelClient(clientConfig)) {
+        ClientConfig config = getClientConfig();
+        if (config == null) {
+            throw new RuntimeException("SeaTunnel 客户端配置未加载，无法暂停作业");
+        }
+        try (SeaTunnelClient seaTunnelClient = new SeaTunnelClient(config)) {
             seaTunnelClient.getJobClient().savePointJob(Long.valueOf(jobId));
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -80,10 +109,14 @@ public class SeaTunnelEngineProxy {
      * @param jobId 作业ID
      */
     public void restoreJob(@NonNull String filePath, @NonNull Long jobInstanceId, @NonNull Long jobId) {
+        ClientConfig config = getClientConfig();
+        if (config == null) {
+            throw new RuntimeException("SeaTunnel 客户端配置未加载，无法恢复作业");
+        }
         JobConfig jobConfig = new JobConfig();
         jobConfig.setName(jobInstanceId + "_job");
         SeaTunnelConfig seaTunnelConfig = new YamlSeaTunnelConfigBuilder().build();
-        try (SeaTunnelClient seaTunnelClient = new SeaTunnelClient(clientConfig)) {
+        try (SeaTunnelClient seaTunnelClient = new SeaTunnelClient(config)) {
             ClientJobExecutionEnvironment environment = seaTunnelClient.restoreExecutionContext(filePath, jobConfig, seaTunnelConfig, jobId);
             environment.execute();
         } catch (ExecutionException | InterruptedException e) {
@@ -96,7 +129,11 @@ public class SeaTunnelEngineProxy {
      * @param jobId 作业ID
      */
     public JobDAGInfo getJobInfo(@NonNull String jobId) {
-        try (SeaTunnelClient seaTunnelClient = new SeaTunnelClient(clientConfig)){
+        ClientConfig config = getClientConfig();
+        if (config == null) {
+            throw new RuntimeException("SeaTunnel 客户端配置未加载，无法获取作业信息");
+        }
+        try (SeaTunnelClient seaTunnelClient = new SeaTunnelClient(config)){
             return seaTunnelClient.getJobInfo(Long.valueOf(jobId));
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -112,7 +149,13 @@ public class SeaTunnelEngineProxy {
     public Map<String, String> testConnection() {
         Map<String, String> healthMetrics = new java.util.LinkedHashMap<>();
         long startTime = System.currentTimeMillis();
-        try (SeaTunnelClient seaTunnelClient = new SeaTunnelClient(clientConfig)){
+        ClientConfig config = getClientConfig();
+        if (config == null) {
+            healthMetrics.put("connected", "false");
+            healthMetrics.put("error", "SeaTunnel 客户端配置未加载");
+            return healthMetrics;
+        }
+        try (SeaTunnelClient seaTunnelClient = new SeaTunnelClient(config)){
             // 获取集群健康指标验证连通性
             healthMetrics = seaTunnelClient.getClusterHealthMetrics();
             long duration = System.currentTimeMillis() - startTime;
@@ -132,7 +175,11 @@ public class SeaTunnelEngineProxy {
     //------------------------------------------------------------------------------------------------------------------
 
     public String getMetricsContent(@NonNull String jobEngineId) {
-        SeaTunnelClient seaTunnelClient = new SeaTunnelClient(clientConfig);
+        ClientConfig config = getClientConfig();
+        if (config == null) {
+            throw new RuntimeException("SeaTunnel 客户端配置未加载");
+        }
+        SeaTunnelClient seaTunnelClient = new SeaTunnelClient(config);
         try {
             return seaTunnelClient.getJobMetrics(Long.valueOf(jobEngineId));
         } finally {
@@ -141,7 +188,11 @@ public class SeaTunnelEngineProxy {
     }
 
     public String getJobPipelineStatusStr(@NonNull String jobEngineId) {
-        SeaTunnelClient seaTunnelClient = new SeaTunnelClient(clientConfig);
+        ClientConfig config = getClientConfig();
+        if (config == null) {
+            throw new RuntimeException("SeaTunnel 客户端配置未加载");
+        }
+        SeaTunnelClient seaTunnelClient = new SeaTunnelClient(config);
         try {
             return seaTunnelClient.getJobDetailStatus(Long.valueOf(jobEngineId));
         } finally {
@@ -150,7 +201,12 @@ public class SeaTunnelEngineProxy {
     }
 
     public JobStatus getJobStatus(@NonNull String jobEngineId) {
-        SeaTunnelClient seaTunnelClient = new SeaTunnelClient(clientConfig);
+        ClientConfig config = getClientConfig();
+        if (config == null) {
+            log.warn("SeaTunnel 客户端配置未加载");
+            return null;
+        }
+        SeaTunnelClient seaTunnelClient = new SeaTunnelClient(config);
         try {
             return JobStatus.valueOf(seaTunnelClient.getJobStatus(Long.valueOf(jobEngineId)));
         } catch (Exception e) {
@@ -162,7 +218,11 @@ public class SeaTunnelEngineProxy {
     }
 
     public Map<String, String> getClusterHealthMetrics() {
-        SeaTunnelClient seaTunnelClient = new SeaTunnelClient(clientConfig);
+        ClientConfig config = getClientConfig();
+        if (config == null) {
+            throw new RuntimeException("SeaTunnel 客户端配置未加载");
+        }
+        SeaTunnelClient seaTunnelClient = new SeaTunnelClient(config);
         try {
             return seaTunnelClient.getClusterHealthMetrics();
         } finally {
@@ -171,7 +231,11 @@ public class SeaTunnelEngineProxy {
     }
 
     public String getAllRunningJobMetricsContent() {
-        SeaTunnelClient seaTunnelClient = new SeaTunnelClient(clientConfig);
+        ClientConfig config = getClientConfig();
+        if (config == null) {
+            throw new RuntimeException("SeaTunnel 客户端配置未加载");
+        }
+        SeaTunnelClient seaTunnelClient = new SeaTunnelClient(config);
         try {
             return seaTunnelClient.getJobClient().getRunningJobMetrics();
         } finally {

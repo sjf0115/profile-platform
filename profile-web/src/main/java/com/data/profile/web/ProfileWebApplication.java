@@ -7,7 +7,14 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-@SpringBootApplication(scanBasePackages = "com.data.profile")
+@SpringBootApplication(
+        scanBasePackages = "com.data.profile",
+        excludeName = {
+                "com.hazelcast.spring.boot.HazelcastAutoConfiguration",
+                "com.hazelcast.spring.boot.HazelcastClientAutoConfiguration",
+                "org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration"
+        }
+)
 @MapperScan({"com.data.profile.web"})
 @EnableTransactionManagement
 @EnableAspectJAutoProxy

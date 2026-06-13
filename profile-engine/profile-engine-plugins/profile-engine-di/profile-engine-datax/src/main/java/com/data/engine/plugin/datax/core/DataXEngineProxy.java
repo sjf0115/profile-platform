@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * DataX 进程模式执行代理（datax-web 同款）。
+ * DataX 进程模式执行代理
  *
  * <p>核心机制：</p>
  * <ol>
@@ -189,7 +189,14 @@ public class DataXEngineProxy {
             } else {
                 result.setExitStatusCode(ExecutionStatus.FAILURE.getCode());
                 result.setSuccess(false);
-                result.setErrorMsg("DataX 子进程 exitCode=" + exitCode);
+                String errorMsg = "DataX 子进程 exitCode=" + exitCode;
+                // 附加捕获的 DataX 日志末尾信息，便于定位问题
+                String capturedLog = task.getCapturedLog().toString();
+                if (!capturedLog.isEmpty()) {
+                    int tailLen = Math.min(capturedLog.length(), 500);
+                    errorMsg += ", 日志: " + capturedLog.substring(capturedLog.length() - tailLen);
+                }
+                result.setErrorMsg(errorMsg);
                 log.error("[DataX] 任务失败, jobId={}, exitCode={}", task.getJobId(), exitCode);
             }
         } catch (InterruptedException ie) {
@@ -239,7 +246,7 @@ public class DataXEngineProxy {
             throw new IllegalStateException("DataX 启动脚本不存在: " + pyPath
                     + "，请检查 DATAX_HOME 配置是否指向有效的 DataX 安装目录");
         }
-        String python = System.getProperty(PYTHON_CMD_PROP, "python");
+        String python = System.getProperty(PYTHON_CMD_PROP, "python3");
 
         List<String> cmd = new ArrayList<>(3);
         cmd.add(python);

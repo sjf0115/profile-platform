@@ -95,7 +95,6 @@ public class DatasetSyncService {
             TableSchema tableSchema = buildTargetSchema(dataset, dataSource, tableName, analysisEngine);
 
             // 4. 通过 Sink TableManager 完成自动建表 / Schema 演进
-            // TODO ClickHouse 还未实现
             upsertAnalysisEngineTable(analysisEngine, tableSchema);
 
             // 5. 提交同步任务
@@ -282,14 +281,12 @@ public class DatasetSyncService {
             return;
         }
 
-        // 1. 解析同步引擎（di category）
-        Engine syncEngine = engineService.getDefaultEngineByCategory(CATEGORY_DI);
-        if (syncEngine == null) {
-            throw new IllegalStateException("未找到可用的集成引擎(di)，请在引擎管理中设置默认集成引擎");
+        // 1. 解析同步引擎
+        Engine diEngine = engineService.getDefaultEngineByCategory(CATEGORY_DI);
+        if (diEngine == null) {
+            throw new IllegalStateException("未找到可用的集成引擎，请在引擎管理中设置默认集成引擎");
         }
-
-        // 2. SPI 加载同步引擎工厂（一次查询，拿到 builder + executor）
-        String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(analysisEngine.getEngineType()));
+        String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(diEngine.getEngineType()));
         DiEngineFactory factory = PluginLoader.getPluginLoader(DiEngineFactory.class).getOrCreatePlugin(pluginName);
 
         // 3. 构建通用 SyncContext
@@ -310,14 +307,14 @@ public class DatasetSyncService {
         DiEngineExecutor executor = factory.getExecutor();
         executor.init(execReq, log, null);
         log.info("同步任务开始执行: jobId={}, datasetId={}, syncEngine={}",
-                jobId, dataset.getDatasetId(), syncEngine.getEngineType());
+                jobId, dataset.getDatasetId(), diEngine.getEngineType());
         executor.execute();
 
         // 6. 检查执行结果
         ProcessResult result = executor.getProcessResult();
         if (result == null || !result.isSuccess()) {
             String errMsg = result == null ? "无结果返回" : result.getErrorMsg();
-            throw new RuntimeException("同步失败 [" + syncEngine.getEngineType() + "]: " + errMsg);
+            throw new RuntimeException("同步失败 [" + diEngine.getEngineType() + "]: " + errMsg);
         }
         log.info("同步任务完成: jobId={}, recordCount={}, duration={}ms",
                 jobId, result.getRecordCount(), result.getDuration());

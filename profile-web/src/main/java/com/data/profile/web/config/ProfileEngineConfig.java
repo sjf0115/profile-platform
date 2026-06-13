@@ -16,7 +16,7 @@ public class ProfileEngineConfig {
     /** 分析引擎类别（小写，等同 EngineFactory.getCategory()）：默认 ClickHouse */
     private String defaultAnalysisCategory = "clickhouse";
 
-    /** 集成引擎类别（DataX/SeaTunnel/...）：默认 DataX */
+    /** 集成引擎类别（DataX/SeaTunnel/...）：默认 SeaTunnel */
     private String defaultDiCategory = "DataX";
 
     /** 同步并发通道数 */

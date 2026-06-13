@@ -1,0 +1,2 @@
+mysql=com.data.engine.plugin.datax.plugin.jdbc.MysqlWriterBuilder
+clickhouse=com.data.engine.plugin.datax.plugin.jdbc.ClickHouseWriterBuilder
