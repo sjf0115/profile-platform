@@ -3,6 +3,7 @@ package com.data.profile.web.controller;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.model.Engine;
 import com.data.profile.web.service.EngineService;
+import com.data.profile.web.service.ScheduleEngineService;
 import com.data.profile.web.vo.Item;
 import com.data.profile.web.vo.Response;
 import com.google.gson.Gson;
@@ -29,6 +30,9 @@ public class EngineController {
 
     @Autowired
     private EngineService engineService;
+
+    @Autowired
+    private ScheduleEngineService scheduleEngineService;
 
    /**
      * 获取引擎列表
@@ -125,5 +129,26 @@ public class EngineController {
         log.info("请求获取引擎类型列表");
         List<Item> engineTypes = engineService.getEngineTypeList();
         return Response.success(engineTypes);
+    }
+
+    /**
+     * 调度引擎联通测试
+     * 测试指定引擎（category=schedule）与 DolphinScheduler 服务的连通性
+     */
+    @PostMapping(value = "/{engineId}/schedule-connect")
+    public Response testScheduleConnection(@PathVariable String engineId) {
+        log.info("测试调度引擎联通性: engineId={}", engineId);
+        try {
+            java.util.Map<String, Object> result = scheduleEngineService.testConnection(engineId);
+            Boolean connected = (Boolean) result.get("connected");
+            if (Boolean.TRUE.equals(connected)) {
+                return Response.success(result);
+            } else {
+                return Response.error("调度引擎连通失败", ResponseCode.ERROR);
+            }
+        } catch (RuntimeException e) {
+            log.error("调度引擎联通测试异常: {}", e.getMessage(), e);
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
+        }
     }
 }

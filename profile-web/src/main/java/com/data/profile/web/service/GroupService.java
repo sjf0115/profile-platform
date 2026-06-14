@@ -1,26 +1,26 @@
 package com.data.profile.web.service;
 
+import com.beust.jcommander.internal.Lists;
+import com.data.profile.common.enums.*;
 import com.data.profile.web.dao.GroupMapper;
 import com.data.profile.web.model.EntityIdentifier;
 import com.data.profile.web.model.Group;
+import com.data.profile.web.model.GroupRule;
 import com.data.profile.web.model.Task;
 import com.data.profile.web.security.RequestContext;
-import com.data.profile.common.enums.ModelType;
-import com.data.profile.common.enums.SourceType;
-import com.data.profile.common.enums.Status;
-import com.data.profile.common.enums.TaskType;
 import com.data.profile.common.utils.IDGenerator;
+import com.data.profile.web.vo.Response;
+import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -43,6 +43,8 @@ public class GroupService {
     private TaskInstanceService taskInstanceService;
     @Autowired
     private EntityIdentifierService entityIdentifierService;
+    @Autowired
+    private MinioService minioService;
 
     /**
      * 根据查询条件获取群组列表
@@ -130,6 +132,18 @@ public class GroupService {
         group.setCreator(RequestContext.currentUserId());
         group.setModifier(RequestContext.currentUserId());
 
+
+        // TODO 群组执行逻辑
+
+        // 处理上传文件类型群组
+        if (group.getGroupType() != null && group.getGroupType() == 2) {
+            GroupRule groupRule = group.getGroupRule();
+            if (groupRule != null && "upload".equals(groupRule.getType())) {
+                // TODO: 解析 MinIO 中的 CSV 文件，将 entity_id 保存到群组对应的表中
+                log.info("上传文件类型群组，MinIO 文件路径: {}", groupRule.getUuidFileKey());
+            }
+        }
+
         // 创建调度任务
         Task task = Task.builder()
                 .taskName(groupName + "调度任务")
@@ -198,5 +212,48 @@ public class GroupService {
         // TODO 检查依赖确保无下游使用
         log.info("删除群组: {}", groupId);
         return groupMapper.deleteByGroupId(groupId);
+    }
+
+    /**
+     * 上传文件到 MinIO
+     * @param file 文件
+     */
+    public GroupRule upload (MultipartFile file) {
+        log.info("请求上传文件: {}", file.getOriginalFilename());
+        // 1. 验证文件
+        if (file.isEmpty()) {
+            log.error("上传文件不能为空");
+            throw new RuntimeException("上传文件不能为空");
+        }
+        String filename = file.getOriginalFilename();
+        if (filename == null || !filename.toLowerCase().endsWith(".csv")) {
+            log.error("仅支持 CSV 格式的文件");
+            throw new RuntimeException("仅支持 CSV 格式的文件");
+        }
+        if (file.getSize() > 200 * 1024 * 1024L) {
+            log.error("文件大小不能超过 200M");
+            throw new RuntimeException("文件大小不能超过 200M");
+        }
+        // 2. 上传到 MinIO
+        String objectName = minioService.uploadFile(file, "upload_group");
+        // 3. 构建返回结果
+        GroupRule rule = GroupRule.builder()
+                .uuidFileKey(objectName)
+                .fileList(Lists.newArrayList(filename))
+                .build();
+        log.info("文件上传成功: {}", objectName);
+        return rule;
+    }
+
+    /**
+     * 取消上传
+     */
+    public void cancelUpload (String fileKey) {
+        try {
+            minioService.deleteFile(fileKey);
+        } catch (Exception e) {
+            log.error("取消上传删除文件失败: {}", e.getMessage());
+            throw new RuntimeException("取消上传删除文件失败");
+        }
     }
 }

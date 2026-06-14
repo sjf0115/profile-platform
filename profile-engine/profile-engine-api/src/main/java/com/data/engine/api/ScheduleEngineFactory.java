@@ -3,6 +3,8 @@ package com.data.engine.api;
 import com.data.profile.common.config.Config;
 import com.data.spi.SPI;
 
+import java.util.Map;
+
 /**
  * 调度引擎工厂 SPI 接口。
  *
@@ -37,4 +39,12 @@ public interface ScheduleEngineFactory {
      * 调度触发执行器。
      */
     ScheduleExecutor getScheduler();
+
+    /**
+     * 测试调度引擎连通性。
+     *
+     * @param config 引擎配置（来自 Engine 表的 config 字段）
+     * @return 连通性结果，包含 connected(boolean)、duration(long ms)、detail(String)、error(String)
+     */
+    Map<String, Object> testConnection(Map<String, Object> config);
 }

@@ -48,3 +48,11 @@ profile:
     sync-error-record: 0
     sync-batch-size: 1000
     sync-write-mode: insert
+
+# MinIO 配置
+minio:
+  # 默认端口号 9000 冲突改为 8000
+  endpoint: http://localhost:8000
+  access-key: EYA66D4zqFm6mWx9v15l
+  secret-key: CwmmfKe4hzZsIXdUruwInIrvCVcat4UnWqYPJT1F
+  bucket: profile

@@ -59,6 +59,7 @@
         <poi.version>4.1.2</poi.version>
         <javax.mail.version>1.6.2</javax.mail.version>
         <seatunnel.version>2.3.8</seatunnel.version>
+        <minio.version>8.5.14</minio.version>
     </properties>
 
     <dependencyManagement>
@@ -351,6 +352,13 @@
                 <groupId>com.data</groupId>
                 <artifactId>profile-engine-dolphinscheduler</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
+            <!-- MinIO -->
+            <dependency>
+                <groupId>io.minio</groupId>
+                <artifactId>minio</artifactId>
+                <version>${minio.version}</version>
             </dependency>
 
             <!-- 内部模块 - 消息 -->

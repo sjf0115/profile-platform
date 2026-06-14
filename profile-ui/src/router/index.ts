@@ -176,6 +176,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '规则创建群组' },
       },
       {
+        path: 'group/create/upload',
+        name: 'CreateGroupUpload',
+        component: () => import('@/views/group/create-upload.vue'),
+        meta: { title: '上传文件创建群组' },
+      },
+      {
         path: 'group/edit/:id',
         name: 'EditGroup',
         component: () => import('@/views/group/edit.vue'),

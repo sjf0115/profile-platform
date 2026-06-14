@@ -3,8 +3,10 @@ package com.data.profile.web.controller;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.*;
 import com.data.profile.web.model.Group;
+import com.data.profile.web.model.GroupRule;
 import com.data.profile.web.model.LabelOperator;
 import com.data.profile.web.service.GroupService;
+import com.data.profile.web.service.MinioService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +14,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 
 /**
@@ -81,6 +87,40 @@ public class GroupController {
         } else {
             return Response.error("删除群组失败", ResponseCode.ERROR);
         }
+    }
+
+    // 上传 CSV 文件到 MinIO
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Response upload(@RequestPart("file") MultipartFile file) {
+        GroupRule groupRule = groupService.upload(file);
+        if (!Objects.equals(groupRule, null)) {
+            return Response.success(groupRule);
+        } else {
+            return Response.error("上传 CSV 文件到 MinIO", ResponseCode.ERROR);
+        }
+    }
+
+    // 取消上传 TODO
+    @DeleteMapping(value = "/upload/delete")
+    public Response cancelUploaded(@RequestParam(name = "file_key") String fileKey) {
+        log.info("删除已上传文件: {}", fileKey);
+        groupService.cancelUpload(fileKey);
+        return Response.success(null);
+    }
+
+    // 下载 CSV 上传模板
+    @GetMapping(value = "/template/download")
+    public void downloadTemplate(HttpServletResponse response) throws IOException {
+        response.setContentType("text/csv;charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=group_upload_template.csv");
+        response.setCharacterEncoding("UTF-8");
+        PrintWriter writer = response.getWriter();
+        writer.println("unique_id");
+        writer.println("1234567890");
+        writer.println("1234567891");
+        writer.println("1234567892");
+        writer.println("1234567893");
+        writer.flush();
     }
 
     @GetMapping(value = "/config/label")

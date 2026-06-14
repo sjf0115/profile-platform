@@ -18,11 +18,8 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * 调度引擎服务。
- *
- * <p>参照 {@link AnalysisEngineService} / {@link DiEngineService} 的模式，
+ * 调度引擎服务
  * 通过 Engine 表 + SPI 插件实现调度能力的可插拔。</p>
- *
  * <p>职责：调度配置的完整流程（Task 元数据更新 + 调度引擎同步）。</p>
  *
  * 作者：@SmartSi
@@ -41,8 +38,7 @@ public class ScheduleEngineService {
     private TaskService taskService;
 
     /**
-     * 配置调度（一站式业务方法）。
-     *
+     * 配置调度
      * <p>完整流程：获取调度引擎 → 加载 SPI 插件 → 注册/更新调度 → 上线/下线 → 更新 Task 元数据。</p>
      *
      * @param taskId 任务ID
@@ -51,8 +47,7 @@ public class ScheduleEngineService {
      * @param startTime 生效开始时间
      * @param endTime 生效结束时间
      */
-    public void configureSchedule(String taskId, int triggerType, String cron,
-                                   String startTime, String endTime) {
+    public void configureSchedule(String taskId, int triggerType, String cron, String startTime, String endTime) {
         Task task = taskService.getDetail(taskId)
                 .orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
 
@@ -61,8 +56,7 @@ public class ScheduleEngineService {
 
         // 2. 加载 SPI 插件
         String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(scheduleEngine.getEngineType()));
-        ScheduleEngineFactory factory = PluginLoader
-                .getPluginLoader(ScheduleEngineFactory.class)
+        ScheduleEngineFactory factory = PluginLoader.getPluginLoader(ScheduleEngineFactory.class)
                 .getOrCreatePlugin(pluginName);
 
         // 3. 构建 ScheduleContext
@@ -148,6 +142,31 @@ public class ScheduleEngineService {
         registrar.init(parseConfig(scheduleEngine.getConfig()));
         registrar.delete(task.getScheduleId());
         log.info("调度引擎删除调度: taskId={}, scheduleId={}", taskId, task.getScheduleId());
+    }
+
+    /**
+     * 测试调度引擎连通性。
+     *
+     * @param engineId 引擎 ID，为空时使用默认调度引擎
+     * @return 连通性结果 Map，包含 connected/duration/detail/error 字段
+     */
+    public Map<String, Object> testConnection(String engineId) {
+        Engine scheduleEngine;
+        if (StringUtils.isBlank(engineId)) {
+            scheduleEngine = getDefaultScheduleEngine();
+        } else {
+            scheduleEngine = engineService.getDetail(engineId);
+            if (scheduleEngine == null) {
+                throw new RuntimeException("引擎不存在: " + engineId);
+            }
+        }
+
+        String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(scheduleEngine.getEngineType()));
+        ScheduleEngineFactory factory = PluginLoader.getPluginLoader(ScheduleEngineFactory.class).getOrCreatePlugin(pluginName);
+
+        Map<String, Object> config = parseConfig(scheduleEngine.getConfig());
+        log.info("测试调度引擎连通性: engineId={}, pluginName={}", scheduleEngine.getEngineId(), pluginName);
+        return factory.testConnection(config);
     }
 
     // -----------------------------------------------------------------

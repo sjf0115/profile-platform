@@ -34,5 +34,24 @@ export const groupApi = {
   // 获取标签操作符配置
   getLabelConfig: () => {
     return request.get<ApiResponse<any[]>>('/group/config/label')
+  },
+
+  // 上传 CSV 文件到 MinIO
+  uploadFile: (formData: FormData) => {
+    return request.post<ApiResponse<{ uuid_file_key: string; file_list: string[] }>>('/group/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+
+  // 删除 MinIO 中已上传的文件
+  deleteUploadedFile: (file_key: string) => {
+    return request.delete<ApiResponse<null>>('/group/upload/delete', {
+      params: { file_key }
+    })
+  },
+
+  // 下载 CSV 上传模板
+  downloadTemplate: () => {
+    return request.get('/group/template/download', { responseType: 'blob' })
   }
 }

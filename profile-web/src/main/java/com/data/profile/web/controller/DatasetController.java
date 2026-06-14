@@ -111,18 +111,10 @@ public class DatasetController {
 
     // 配置数据集调度
     @PutMapping(value = "/{datasetId}/scheduler")
-    public Response configureScheduler(@PathVariable(value = "datasetId") String datasetId,
-                                       @RequestBody Task schedulerConfig) {
-        log.info("配置数据集 {} 调度: triggerType={}, cron={}", datasetId,
-                schedulerConfig.getTriggerType(), schedulerConfig.getTriggerCron());
+    public Response configureScheduler(@PathVariable(value = "datasetId") String datasetId, @RequestBody Task schedulerConfig) {
+        log.info("配置数据集 {} 调度: {}", datasetId, gson.toJson(schedulerConfig));
         try {
-            datasetService.configureScheduler(
-                    datasetId,
-                    schedulerConfig.getTriggerType(),
-                    schedulerConfig.getTriggerCron(),
-                    schedulerConfig.getTriggerStartTime(),
-                    schedulerConfig.getTriggerEndTime()
-            );
+            datasetService.configureScheduler(datasetId,schedulerConfig);
             return Response.success("配置成功");
         } catch (Exception e) {
             log.error("配置数据集调度失败: datasetId={}", datasetId, e);

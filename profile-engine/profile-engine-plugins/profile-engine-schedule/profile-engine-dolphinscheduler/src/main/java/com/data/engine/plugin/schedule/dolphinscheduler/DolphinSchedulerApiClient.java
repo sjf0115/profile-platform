@@ -105,6 +105,22 @@ public class DolphinSchedulerApiClient {
         return doGet(url);
     }
 
+    /**
+     * 测试连通性。
+     * 调用 DolphinScheduler 的 /actuator/health 端点，返回服务健康信息。
+     * 如果该端点不可用，则尝试访问登录页面以验证服务可达。
+     *
+     * @return 健康信息 JSON 字符串
+     * @throws IOException 连接失败时抛出
+     */
+    public String testConnection() throws IOException {
+        // 尝试访问 DolphinScheduler actuator 健康检查端点
+        // DS 地址格式如： http://ds-host:12345/dolphinscheduler，健康端点在其上走 /actuator/health
+        String baseUrl = apiUrl.replaceAll("/dolphinscheduler.*", "");
+        String healthUrl = baseUrl + "/dolphinscheduler/actuator/health";
+        return doGetNoAuth(healthUrl);
+    }
+
     // -----------------------------------------------------------------
     // HTTP 方法
     // -----------------------------------------------------------------
@@ -113,6 +129,15 @@ public class DolphinSchedulerApiClient {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpGet request = new HttpGet(url);
             request.setHeader("token", token);
+            request.setHeader("Content-Type", "application/json");
+            HttpResponse response = client.execute(request);
+            return EntityUtils.toString(response.getEntity());
+        }
+    }
+
+    private String doGetNoAuth(String url) throws IOException {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpGet request = new HttpGet(url);
             request.setHeader("Content-Type", "application/json");
             HttpResponse response = client.execute(request);
             return EntityUtils.toString(response.getEntity());
