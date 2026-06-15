@@ -342,4 +342,17 @@
       modifier = #{modifier,jdbcType=VARCHAR}
     where group_id = #{groupId,jdbcType=VARCHAR}
   </update>
+
+    <update id="updateGroupCount">
+        update profile_meta_group
+        set group_count = #{groupCount,jdbcType=INTEGER}
+        where group_id = #{groupId,jdbcType=VARCHAR}
+    </update>
+
+    <update id="updateInstanceStatus">
+        update profile_meta_group
+        set instance_status = #{instanceStatus,jdbcType=INTEGER},
+        instance_msg = #{instanceMsg,jdbcType=VARCHAR}
+        where group_id = #{groupId,jdbcType=VARCHAR}
+    </update>
 </mapper>

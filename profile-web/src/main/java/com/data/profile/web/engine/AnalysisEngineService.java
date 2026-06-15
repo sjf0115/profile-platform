@@ -1,4 +1,4 @@
-package com.data.profile.web.service;
+package com.data.profile.web.engine;
 
 import com.data.connector.api.ConnectorFactory;
 import com.data.connector.api.TypeConverter;
@@ -13,12 +13,18 @@ import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;
 import com.data.profile.web.model.Engine;
+import com.data.profile.web.service.DataSourceService;
+import com.data.profile.web.service.EngineService;
 import com.data.spi.PluginLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -42,6 +48,52 @@ public class AnalysisEngineService {
 
     @Resource
     private DataSourceService dataSourceService;
+
+    // -------------------------------------------------------------------------
+    // SQL 执行能力（群组圈选、预估等场景使用）
+    // -------------------------------------------------------------------------
+
+    /**
+     * 执行 COUNT 查询并返回结果数。
+     */
+    public long executeCountQuery(String sql) throws Exception {
+        Engine analysisEngine = getDefaultAnalysisEngine();
+        Map<String, Object> config = parseConfig(analysisEngine.getConfig());
+        try (Connection conn = getAnalysisConnection(config);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+            return 0L;
+        }
+    }
+
+    /**
+     * 执行 DDL/DML（建表、TRUNCATE、INSERT INTO ... SELECT 等）。
+     */
+    public void executeStatement(String sql) throws Exception {
+        Engine analysisEngine = getDefaultAnalysisEngine();
+        Map<String, Object> config = parseConfig(analysisEngine.getConfig());
+        try (Connection conn = getAnalysisConnection(config);
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+        }
+    }
+
+    /**
+     * 通过分析引擎配置建立 JDBC 连接。
+     */
+    private Connection getAnalysisConnection(Map<String, Object> config) throws Exception {
+        String host = getString(config, "host");
+        Object portObj = config.get("port");
+        int port = portObj instanceof Number ? ((Number) portObj).intValue() : Integer.parseInt(String.valueOf(portObj));
+        String database = getString(config, "database");
+        String username = getString(config, "username");
+        String password = getString(config, "password");
+        String url = String.format("jdbc:clickhouse://%s:%d/%s", host, port, database);
+        return DriverManager.getConnection(url, username, password);
+    }
 
     /**
      * 构建目标 Schema 并在分析引擎上建表/演进（一站式业务方法）。
@@ -92,10 +144,10 @@ public class AnalysisEngineService {
     }
 
     // -----------------------------------------------------------------
-        // 以下方法保留 Engine 参数，供需要指定引擎的高级场景使用
-        // -----------------------------------------------------------------
+    // 以下方法保留 Engine 参数，供需要指定引擎的高级场景使用
+    // -----------------------------------------------------------------
 
-        /**
+    /**
      * 组装目标表通用 schema：
      * <ul>
      *   <li>列类型由 source TypeConverter 推断为中性 {@link DataType}；</li>

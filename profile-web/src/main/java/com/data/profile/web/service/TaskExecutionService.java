@@ -3,8 +3,11 @@ package com.data.profile.web.service;
 import com.data.profile.common.enums.InstanceStatus;
 import com.data.profile.common.enums.SchedulerJobType;
 import com.data.profile.common.enums.Status;
+import com.data.profile.web.engine.AnalysisEngineService;
+import com.data.profile.web.engine.DiEngineService;
 import com.data.profile.web.model.Task;
 import com.data.profile.web.model.TaskInstance;
+import com.data.profile.web.task.GroupTask;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +34,10 @@ public class TaskExecutionService {
     private AnalysisEngineService analysisEngineService;
     @Resource
     private DatasetService datasetService;
+    @Resource
+    private GroupTask groupTask;
+    @Resource
+    private GroupService groupService;
 
     /**
      * 执行任务：创建实例并根据任务类型分发执行逻辑。
@@ -85,8 +92,8 @@ public class TaskExecutionService {
             // 数据集同步
             diEngineService.executeDatasetSync(task.getTaskRelatedId());
         } else if (taskType == SchedulerJobType.GROUP.getCode()) {
-            // 群组计算
-            throw new UnsupportedOperationException("群组计算任务暂未实现");
+            // 群组圈选
+            groupTask.executeGroupSelection(task.getTaskRelatedId());
         } else if (taskType == SchedulerJobType.EXPORT.getCode()) {
             // 群组投递
             throw new UnsupportedOperationException("群组投递任务暂未实现");
@@ -102,6 +109,8 @@ public class TaskExecutionService {
         int taskType = task.getTaskType();
         if (taskType == SchedulerJobType.IMPORT.getCode()) {
             datasetService.updateInstanceStatus(task.getTaskRelatedId(), status, msg);
+        } else if (taskType == SchedulerJobType.GROUP.getCode()) {
+            groupService.updateInstanceStatus(task.getTaskRelatedId(), status, msg);
         }
         // 其他类型后续扩展
     }

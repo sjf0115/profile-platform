@@ -110,8 +110,6 @@ public class GroupService {
     @Transactional
     public int create(Group group) throws RuntimeException {
         String groupName = group.getGroupName();
-        // Todo 保存时执行一次预估人数
-        group.setGroupCount(100);
 
         // 群组处理
         List<Group> groups = groupMapper.selectSimpleByGroupName(groupName);
@@ -147,7 +145,7 @@ public class GroupService {
         // 创建调度任务
         Task task = Task.builder()
                 .taskName(groupName + "调度任务")
-                .taskType(TaskType.GROUP_CREATE.getCode())
+                .taskType(SchedulerJobType.GROUP.getCode())
                 .taskRelatedId(groupId)
                 .triggerType(group.getTriggerType())
                 .triggerCron(group.getTriggerCron())
@@ -167,8 +165,6 @@ public class GroupService {
     @Transactional
     public int update(Group group) {
         String groupId = group.getGroupId();
-        // Todo 保存时执行一次预估人数
-        group.setGroupCount(100);
 
         // 修改群组
         group.setModifier(RequestContext.currentUserId());
@@ -177,7 +173,7 @@ public class GroupService {
         Task task = Task.builder()
                 .taskId(group.getTaskId()) // 根据TaskId修改
                 .taskName(group.getGroupName() + "调度任务")
-                .taskType(TaskType.GROUP_CREATE.getCode())
+                .taskType(SchedulerJobType.GROUP.getCode())
                 .taskRelatedId(groupId)
                 .triggerType(group.getTriggerType())
                 .triggerCron(group.getTriggerCron())
@@ -255,5 +251,24 @@ public class GroupService {
             log.error("取消上传删除文件失败: {}", e.getMessage());
             throw new RuntimeException("取消上传删除文件失败");
         }
+    }
+
+    /**
+     * 更新群组人数
+     * @param groupId 群组ID
+     * @param count   圈选人数
+     */
+    public void updateGroupCount(String groupId, int count) {
+        groupMapper.updateGroupCount(groupId, count);
+    }
+
+    /**
+     * 更新群组实例状态
+     * @param groupId 群组ID
+     * @param status  实例状态
+     * @param msg     实例消息
+     */
+    public void updateInstanceStatus(String groupId, int status, String msg) {
+        groupMapper.updateInstanceStatus(groupId, status, msg);
     }
 }

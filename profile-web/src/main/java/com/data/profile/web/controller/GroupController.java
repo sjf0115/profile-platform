@@ -1,5 +1,6 @@
 package com.data.profile.web.controller;
 
+import com.data.profile.web.task.GroupTask;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.*;
 import com.data.profile.web.model.Group;
@@ -35,6 +36,8 @@ public class GroupController {
     private static final Gson gson = new GsonBuilder().create();
     @Autowired
     private GroupService groupService;
+    @Autowired
+    private GroupTask groupTask;
 
     @PostMapping(value = "/list")
     public Response getList(@RequestBody Group group) {
@@ -121,6 +124,22 @@ public class GroupController {
         writer.println("1234567892");
         writer.println("1234567893");
         writer.flush();
+    }
+
+    // 预估群组人数
+    @PostMapping(value = "/estimate")
+    public Response estimate(@RequestBody Group group) {
+        log.info("请求预估群组人数");
+        try {
+            GroupRule groupRule = group.getGroupRule();
+            String entityIdentifierId = group.getEntityIdentifierId();
+            // TODO 是否直接使用 groupTask
+            long count = groupTask.estimateGroupCount(groupRule, entityIdentifierId);
+            return Response.success(count);
+        } catch (Exception e) {
+            log.error("群组预估失败", e);
+            return Response.error("群组预估失败: " + e.getMessage(), ResponseCode.ERROR);
+        }
     }
 
     @GetMapping(value = "/config/label")

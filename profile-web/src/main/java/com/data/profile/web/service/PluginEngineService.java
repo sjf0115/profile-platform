@@ -9,6 +9,8 @@ import com.data.engine.plugin.utils.SeaTunnelConfigUtil;
 import com.data.profile.common.domain.Constant;
 import com.data.profile.common.domain.connector.request.TestConnectionRequestParam;
 import com.data.profile.common.utils.FileUtil;
+import com.data.profile.web.engine.AnalysisEngineService;
+import com.data.profile.web.engine.DiEngineService;
 import com.data.profile.web.model.DataSource;
 import com.data.spi.PluginLoader;
 import lombok.extern.slf4j.Slf4j;

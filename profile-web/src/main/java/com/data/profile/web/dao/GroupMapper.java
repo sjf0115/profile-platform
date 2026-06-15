@@ -2,6 +2,7 @@ package com.data.profile.web.dao;
 
 import com.data.profile.web.model.Group;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -37,4 +38,10 @@ public interface GroupMapper {
     int updateByGroupIdSelective(Group row);
 
     int updateByGroupId(Group group);
+
+    // 更新群组人数
+    int updateGroupCount(@Param("groupId") String groupId, @Param("groupCount") int groupCount);
+
+    // 更新实例状态
+    int updateInstanceStatus(@Param("groupId") String groupId, @Param("instanceStatus") int instanceStatus, @Param("instanceMsg") String instanceMsg);
 }
