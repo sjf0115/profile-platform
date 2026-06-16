@@ -55,8 +55,8 @@ public class Label {
     private Date gmtCreate;
     // 标签最后修改时间
     private Date gmtModified;
-    // 数据集ID
+    // TODO 展示用 VO 绑定的数据集ID
     private String datasetId;
-    // 数据集字段名称
+    // TODO 展示用 VO 绑定的数据集字段名称
     private String datasetFieldName;
 }

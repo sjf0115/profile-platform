@@ -7,7 +7,6 @@ import com.data.profile.web.model.Group;
 import com.data.profile.web.model.GroupRule;
 import com.data.profile.web.model.LabelOperator;
 import com.data.profile.web.service.GroupService;
-import com.data.profile.web.service.MinioService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;

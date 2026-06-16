@@ -48,16 +48,7 @@ public class DatasetFieldService {
         return datasetFields;
     }
 
-    /**
-     * 根据数据集ID和字段名称获取数据集字段信息
-     * @param datasetId 数据集ID
-     * @param fieldName 字段名称
-     */
-    public DatasetField getListByDatasetIdAndFieldName(String datasetId, String fieldName) {
-        DatasetField field = datasetFieldMapper.selectByDatasetIdAndFieldName(datasetId, fieldName);
-        log.info("根据数据集ID {} 和字段名称 {} 获取数据集字段信息: {}", datasetId, fieldName, gson.toJson(field));
-        return field;
-    }
+
 
     /**
      * 根据关联ID获取数据集字段
@@ -151,5 +142,16 @@ public class DatasetFieldService {
         }
         log.info("根据数据集ID {} 和字段名称 {} 删除字段", datasetId, fieldName);
         return datasetFieldMapper.deleteByDatasetId(datasetId);
+    }
+
+    /**
+     * 根据数据集ID和字段名称获取数据集字段信息
+     * @param datasetId 数据集ID
+     * @param fieldName 字段名称
+     */
+    public DatasetField getListByDatasetIdAndFieldName(String datasetId, String fieldName) {
+        DatasetField field = datasetFieldMapper.selectByDatasetIdAndFieldName(datasetId, fieldName);
+        log.info("根据数据集ID {} 和字段名称 {} 获取数据集字段信息: {}", datasetId, fieldName, gson.toJson(field));
+        return field;
     }
 }

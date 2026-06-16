@@ -18,10 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 功能：标签服务
@@ -103,11 +101,11 @@ public class LabelService {
             label.setModifier(RequestContext.currentUserId());
             log.info("新增标签: {}", gson.toJson(label));
 
-            // TODO 通过数据集绑定字段方式：标签绑定数据集
+            // 是否跳过数据集配置
             String fieldName = label.getDatasetFieldName();
             if (StringUtils.isNotEmpty(fieldName) && Objects.equals(label.getSourceType(), 2)) {
+                // 只能选择已经创建好的数据集
                 String datasetId = label.getDatasetId();
-                // 只有选择数据集字段才可以绑定
                 DatasetField field = datasetFieldService.getListByDatasetIdAndFieldName(datasetId, fieldName);
                 field.setRelatedId(labelId);
                 field.setGmtModified(new Date());
@@ -116,12 +114,12 @@ public class LabelService {
             }
             return labelMapper.insertSelective(label);
         } else {
-            // TODO 通过数据集绑定字段方式：标签绑定数据集
+            // 是否跳过数据集配置
             String fieldName = label.getDatasetFieldName();
+            // TODO 是否能取消配置数据集
             if (StringUtils.isNotEmpty(fieldName) && Objects.equals(label.getSourceType(), 2)) {
                 String datasetId = label.getDatasetId();
                 String labelId = label.getLabelId();
-                // 只有选择数据集字段才可以绑定
                 DatasetField field = datasetFieldService.getListByDatasetIdAndFieldName(datasetId, fieldName);
                 field.setRelatedId(labelId);
                 field.setGmtModified(new Date());
@@ -165,6 +163,40 @@ public class LabelService {
         // TODO 检查依赖确保无下游使用
         log.info("删除标签：{}({})", label.getLabelName(), labelId);
         return labelMapper.deleteByLabelId(labelId);
+    }
+
+
+    /**
+     * 获取可用标签列表，未被其他数据集绑定的标签
+     * @param entityIdentifierId 实体标识ID
+     * @param datasetId 数据集ID（编辑数据集必填，创建数据集为 null）
+     */
+    public List<Label> getAvailableList(String entityIdentifierId, String datasetId) {
+        // 如果有 datasetId 表示是编辑数据集获取可用标签，则获取未被其他数据集绑定的标签，本数据集绑定的标签可以返回
+        // 如果没有 datasetId 表示创建数据集获取可用标签，则获取所有未被绑定的标签
+
+        // 1. 查询该实体标识下的所有标签
+        Label query = new Label();
+        query.setEntityIdentifierId(entityIdentifierId);
+        List<Label> allLabels = labelMapper.selectByParams(query);
+
+        // 2. 查询所有已绑定标签的数据集字段
+        List<DatasetField> datasetFields = datasetFieldService.getList(new DatasetField());
+
+        // 3. 被其他数据集绑定的标签ID集合
+        Set<String> relatedLabelIds = datasetFields.stream()
+                .filter(f -> f.getRelatedId() != null && !f.getRelatedId().isEmpty())
+                .filter(f -> datasetId == null || !datasetId.equals(f.getDatasetId()))
+                .map(DatasetField::getRelatedId)
+                .collect(Collectors.toSet());
+
+        // 4. 过滤掉被其他数据集绑定的标签的标签
+        List<Label> availableLabels = allLabels.stream()
+                .filter(label -> !relatedLabelIds.contains(label.getLabelId()))
+                .collect(Collectors.toList());
+
+        log.info("获取实体 [{}] 下未被 [{}] 之外数据集绑定的可用标签：{}", entityIdentifierId, datasetId, gson.toJson(availableLabels));
+        return availableLabels;
     }
 
     /**

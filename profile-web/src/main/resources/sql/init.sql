@@ -415,3 +415,11 @@ VALUES (1, '2000000000000001', 'ClickHouse默认计算引擎', 'clickhouse', 'an
  (1, '2000000000000003', 'DolphinScheduler默认调度引擎', 'dolphinscheduler', 'schedule', 1,
  '{"apiUrl":"http://localhost:12345/dolphinscheduler","token":"2414ea93cbc65f55497da84a1e1b1973","projectCode":"22012166559808","callbackBaseUrl":"http://localhost:8080"}',
  '100000', '100000');
+
+
+
+ INSERT INTO `profile_meta_engine` (`status`, `engine_id`, `engine_name`, `engine_type`, `engine_category`, `is_default`, `config`, `creator`, `modifier`)
+VALUES 
+ (1, '2000000000000003', 'DolphinScheduler默认调度引擎', 'dolphinscheduler', 'schedule', 1,
+ '{"apiUrl":"http://localhost:12345/dolphinscheduler","token":"2414ea93cbc65f55497da84a1e1b1973","projectCode":"22012166559808","callbackBaseUrl":"http://localhost:8080"}',
+ '100000', '100000');

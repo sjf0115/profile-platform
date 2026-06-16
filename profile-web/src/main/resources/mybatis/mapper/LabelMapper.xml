@@ -61,88 +61,88 @@
         where label_id = #{labelId,jdbcType=VARCHAR}
     </select>
 
-  <select id="selectByLabelName" parameterType="java.lang.String" resultMap="BaseResultMap">
-    select
-        <include refid="Base_Column_List" />
-    from profile_meta_label as t1
-    where label_name = #{labelName,jdbcType=VARCHAR}
-  </select>
+    <select id="selectByLabelName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+            <include refid="Base_Column_List" />
+        from profile_meta_label as t1
+        where label_name = #{labelName,jdbcType=VARCHAR}
+    </select>
 
-  <select id="selectByParams" parameterType="com.data.profile.web.model.Label" resultMap="ResultMapWithEntity">
-    select
-        <include refid="Base_Column_List" />
-      ,<include refid="Entity_Column_List" />
-    from profile_meta_label as t1
-    left outer join profile_meta_entity_identifier as t2
-    on t1.entity_identifier_id = t2.entity_identifier_id
-    left outer join profile_meta_entity as t3
-    on t2.entity_id = t3.entity_id
-    where 1 = 1
-    <if test="isValid != null">
-      AND t1.is_valid = #{isValid,jdbcType=INTEGER}
-    </if>
-    <if test="labelId != null">
-      AND t1.label_id = #{labelId,jdbcType=VARCHAR}
-    </if>
-    <if test="labelName != null">
-      AND t1.label_name = #{labelName,jdbcType=VARCHAR}
-    </if>
-    <if test="labelStatus != null">
-      AND t1.label_status = #{labelStatus,jdbcType=INTEGER}
-    </if>
-    <if test="labelType != null">
-      AND t1.label_type = #{labelType,jdbcType=VARCHAR}
-    </if>
-    <if test="labelCategoryId != null">
-      AND t1.label_category_id = #{labelCategoryId,jdbcType=VARCHAR}
-    </if>
-    <if test="labelDataType != null">
-      AND t1.label_data_type = #{labelDataType,jdbcType=INTEGER}
-    </if>
-    <if test="labelDistType != null">
-      AND t1.label_dist_type = #{labelDistType,jdbcType=INTEGER}
-    </if>
-    <if test="labelOrganizeType != null">
-      AND t1.label_organize_type = #{labelOrganizeType,jdbcType=INTEGER}
-    </if>
-    <if test="labelProduceType != null">
-      AND t1.label_produce_type = #{labelProduceType,jdbcType=INTEGER}
-    </if>
-    <if test="labelTimeType != null">
-      AND t1.label_time_type = #{labelTimeType,jdbcType=INTEGER}
-    </if>
-    <if test="entityIdentifierId != null">
-      AND t1.entity_identifier_id = #{entityIdentifierId,jdbcType=VARCHAR}
-    </if>
-    <if test="sourceType != null">
-      AND t1.source_type = #{sourceType,jdbcType=INTEGER}
-    </if>
-    <if test="isOffice != null">
-      AND t1.is_office = #{isOffice,jdbcType=INTEGER}
-    </if>
-    <if test="owner != null">
-      AND t1.owner = #{owner,jdbcType=VARCHAR}
-    </if>
-    <if test="creator != null">
-      AND t1.creator = #{creator,jdbcType=VARCHAR}
-    </if>
-    <if test="modifier != null">
-      AND t1.modifier = #{modifier,jdbcType=VARCHAR}
-    </if>
-    <if test="gmtCreate != null">
-      AND t1.gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}
-    </if>
-    <if test="gmtModified != null">
-      AND t1.gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
-    </if>
-  </select>
+    <select id="selectByParams" parameterType="com.data.profile.web.model.Label" resultMap="ResultMapWithEntity">
+        select
+            <include refid="Base_Column_List" />
+          ,<include refid="Entity_Column_List" />
+        from profile_meta_label as t1
+        left outer join profile_meta_entity_identifier as t2
+        on t1.entity_identifier_id = t2.entity_identifier_id
+        left outer join profile_meta_entity as t3
+        on t2.entity_id = t3.entity_id
+        where 1 = 1
+        <if test="isValid != null">
+          AND t1.is_valid = #{isValid,jdbcType=INTEGER}
+        </if>
+        <if test="labelId != null">
+          AND t1.label_id = #{labelId,jdbcType=VARCHAR}
+        </if>
+        <if test="labelName != null">
+          AND t1.label_name = #{labelName,jdbcType=VARCHAR}
+        </if>
+        <if test="labelStatus != null">
+          AND t1.label_status = #{labelStatus,jdbcType=INTEGER}
+        </if>
+        <if test="labelType != null">
+          AND t1.label_type = #{labelType,jdbcType=VARCHAR}
+        </if>
+        <if test="labelCategoryId != null">
+          AND t1.label_category_id = #{labelCategoryId,jdbcType=VARCHAR}
+        </if>
+        <if test="labelDataType != null">
+          AND t1.label_data_type = #{labelDataType,jdbcType=INTEGER}
+        </if>
+        <if test="labelDistType != null">
+          AND t1.label_dist_type = #{labelDistType,jdbcType=INTEGER}
+        </if>
+        <if test="labelOrganizeType != null">
+          AND t1.label_organize_type = #{labelOrganizeType,jdbcType=INTEGER}
+        </if>
+        <if test="labelProduceType != null">
+          AND t1.label_produce_type = #{labelProduceType,jdbcType=INTEGER}
+        </if>
+        <if test="labelTimeType != null">
+          AND t1.label_time_type = #{labelTimeType,jdbcType=INTEGER}
+        </if>
+        <if test="entityIdentifierId != null">
+          AND t1.entity_identifier_id = #{entityIdentifierId,jdbcType=VARCHAR}
+        </if>
+        <if test="sourceType != null">
+          AND t1.source_type = #{sourceType,jdbcType=INTEGER}
+        </if>
+        <if test="isOffice != null">
+          AND t1.is_office = #{isOffice,jdbcType=INTEGER}
+        </if>
+        <if test="owner != null">
+          AND t1.owner = #{owner,jdbcType=VARCHAR}
+        </if>
+        <if test="creator != null">
+          AND t1.creator = #{creator,jdbcType=VARCHAR}
+        </if>
+        <if test="modifier != null">
+          AND t1.modifier = #{modifier,jdbcType=VARCHAR}
+        </if>
+        <if test="gmtCreate != null">
+          AND t1.gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}
+        </if>
+        <if test="gmtModified != null">
+          AND t1.gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
+        </if>
+    </select>
 
-  <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
-    select
-        <include refid="Base_Column_List" />
-    from profile_meta_label as t1
-    where label_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
-  </select>
+    <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+            <include refid="Base_Column_List" />
+        from profile_meta_label as t1
+        where label_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+    </select>
 
   <insert id="insert" parameterType="com.data.profile.web.model.Label">
     insert into profile_meta_label (is_valid, label_id,

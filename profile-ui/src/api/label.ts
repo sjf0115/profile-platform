@@ -22,6 +22,13 @@ export const labelApi = {
     return request.post<ApiResponse<Label[]>>('/label/list', params || {})
   },
 
+  // 获取可用标签列表（未被其他数据集绑定的标签）
+  getAvailable: (entity_identifier_id: string, dataset_id?: string) => {
+    return request.get<ApiResponse<Label[]>>('/label/available', {
+      params: { entity_identifier_id, dataset_id }
+    })
+  },
+
   // 获取标签详情
   getDetail: (label_id: string) => {
     return request.get<ApiResponse<Label>>('/label/detail', {

@@ -234,7 +234,7 @@
                   :disabled="!formData.entity_id || labelList.length === 0"
                 >
                   <el-option
-                    v-for="label in labelList"
+                    v-for="label in getAvailableLabels(row.related_id)"
                     :key="label.label_id"
                     :label="label.label_name"
                     :value="label.label_id"
@@ -306,8 +306,27 @@ const fieldSearch = ref('')
 // 实体标识列表
 const entityIdentifierList = ref<EntityIdentifier[]>([])
 
-// 标签列表
+// 标签列表（可用标签 - 未被其他数据集绑定）
 const labelList = ref<any[]>([])
+
+// 已选择的标签ID列表（用于过滤下拉选项，防止重复选择）
+const selectedLabelIds = computed(() => {
+  return fieldList.value
+    .filter(field => field.related_id)
+    .map(field => field.related_id as string)
+})
+
+// 过滤后的可用标签列表（排除当前行已选择的标签）
+const getAvailableLabels = (currentRowRelatedId?: string) => {
+  return labelList.value.filter(label => {
+    // 当前行已选择的标签保留（允许保持原选择）
+    if (currentRowRelatedId && label.label_id === currentRowRelatedId) {
+      return true
+    }
+    // 排除已被其他字段选择的标签
+    return !selectedLabelIds.value.includes(label.label_id)
+  })
+}
 
 // 表单数据
 const formData = reactive({
@@ -417,14 +436,15 @@ const fetchEntityIdentifierList = async () => {
   }
 }
 
-// 获取标签列表
+// 获取可用标签列表（未被其他数据集绑定的标签）
 const fetchLabelList = async (entityIdentifierId: string) => {
   try {
-    const res = await labelApi.getList({ entity_identifier_id: entityIdentifierId })
-    console.log('标签列表响应:', res)
+    // 编辑模式传入 datasetId，创建模式传 undefined
+    const res = await labelApi.getAvailable(entityIdentifierId, isEditMode.value ? datasetId.value : undefined)
+    console.log('可用标签列表响应:', res)
     labelList.value = res.data.data || []
   } catch (error) {
-    console.error('获取标签列表失败:', error)
+    console.error('获取可用标签列表失败:', error)
     labelList.value = []
   }
 }
@@ -570,6 +590,11 @@ const fetchDatasetDetail = async () => {
       formData.entity_field = dataset.entity_field || ''
       formData.entity_id = dataset.entity_id || ''
       
+      // 先获取标签列表（确保下拉选项在字段填充前可用）
+      if (formData.entity_id) {
+        await fetchLabelList(formData.entity_id)
+      }
+      
       // 填充字段列表
       if (dataset.fields && dataset.fields.length > 0) {
         fieldList.value = dataset.fields.map((field: any) => ({
@@ -580,11 +605,6 @@ const fetchDatasetDetail = async () => {
           field_status: field.field_status,
           related_id: field.related_id
         }))
-      }
-      
-      // 获取标签列表
-      if (formData.entity_id) {
-        await fetchLabelList(formData.entity_id)
       }
       
       // 编辑模式直接跳到第二步

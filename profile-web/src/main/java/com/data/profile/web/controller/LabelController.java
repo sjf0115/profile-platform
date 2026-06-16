@@ -36,14 +36,14 @@ public class LabelController {
 
     @PostMapping(value = "/list")
     public Response getList(@RequestBody Label label) {
-        log.info("根据标签信息请求查询标签: {}", gson.toJson(label));
+        log.info("请求根据标签信息请求查询标签: {}", gson.toJson(label));
         List<Label> labels = labelService.getList(label);
         return Response.success(labels);
     }
 
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam(name = "label_id") String labelId) {
-        log.info("根据标签ID请求查询标签信息: {}", labelId);
+        log.info("请求根据标签ID请求查询标签信息: {}", labelId);
         Optional<Label> optional = labelService.getDetail(labelId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -63,6 +63,18 @@ public class LabelController {
         }
     }
 
+    @PostMapping(value = "/update")
+    public Response update(@RequestBody Label label) {
+        log.info("请求更新标签信息: {}", gson.toJson(label));
+        // TODO 单独 update
+        int result = labelService.save(label);
+        if (result > 0) {
+            return Response.success(result);
+        } else {
+            return Response.error("更新标签失败", ResponseCode.ERROR);
+        }
+    }
+
     @DeleteMapping(value = "/delete")
     public Response delete(@RequestParam(name = "label_id") String labelId) {
         log.info("请求删除标签: {}", labelId);
@@ -74,9 +86,21 @@ public class LabelController {
         }
     }
 
+    /**
+     * 获取可用标签列表，未被其他数据集绑定的标签
+     * 编辑模式传入 dataset_id 可保留当前数据集已绑定标签
+     */
+    @GetMapping(value = "/available")
+    public Response getAvailableLabels(@RequestParam(name = "entity_identifier_id") String entityIdentifierId,
+            @RequestParam(name = "dataset_id", required = false) String datasetId) {
+        log.info("请求获取实体 [{}] 下未被 [{}] 之外数据集绑定的可用标签", entityIdentifierId, datasetId);
+        List<Label> labels = labelService.getAvailableList(entityIdentifierId, datasetId);
+        return Response.success(labels);
+    }
+
     @GetMapping(value = "/config")
     public Response getConfig() {
-        log.info("获取标签配置信息");
+        log.info("请求获取标签配置信息");
         Map<String, Object> config = new HashMap<>();
 
         // 标签类型: 1-属性标签,2-行为标签
