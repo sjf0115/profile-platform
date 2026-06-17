@@ -100,7 +100,7 @@ public class DatasetController {
             datasetTask.schedule(datasetId, config);
             return Response.success("配置成功");
         } catch (Exception e) {
-            log.error("配置数据集调度失败: datasetId={}", datasetId, e);
+            log.error("配置数据集 [{}] 调度失败", datasetId, e);
             return Response.error("配置调度失败: " + e.getMessage(), ResponseCode.ERROR);
         }
     }

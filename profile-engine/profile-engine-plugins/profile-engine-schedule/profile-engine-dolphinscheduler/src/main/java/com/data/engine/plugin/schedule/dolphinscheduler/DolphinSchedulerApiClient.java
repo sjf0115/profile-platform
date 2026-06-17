@@ -4,20 +4,26 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.*;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
  * DolphinScheduler OpenAPI 封装。
  *
  * <p>基于 HttpClient 调用 DolphinScheduler RESTful API。
- * 配置项从 Engine 表的 config 字段读取：apiUrl、token、projectCode。</p>
+ * 配置项从 Engine 表的 config 字段读取：apiUrl、token、projectCode、tenantCode。</p>
+ *
+ * <p>参考 Swagger 文档：/dolphinscheduler/swagger-ui/index.html#/process%20definition%20related%20operation</p>
  */
 @Slf4j
 public class DolphinSchedulerApiClient {
@@ -27,95 +33,152 @@ public class DolphinSchedulerApiClient {
     private String apiUrl;
     private String token;
     private String projectCode;
+    private String tenantCode;
 
     /** 初始化 API 客户端配置 */
     public void init(Map<String, Object> config) {
         this.apiUrl = getString(config, "apiUrl");
         this.token = getString(config, "token");
         this.projectCode = getString(config, "projectCode");
-        log.info("DolphinSchedulerApiClient 初始化: apiUrl={}, projectCode={}", apiUrl, projectCode);
+        this.tenantCode = getString(config, "tenantCode");
+        if (this.tenantCode == null || this.tenantCode.isEmpty()) {
+            this.tenantCode = "default";
+        }
+        log.info("DolphinSchedulerApiClient 初始化: apiUrl={}, projectCode={}, tenantCode={}", apiUrl, projectCode, tenantCode);
+    }
+    
+    /**
+     * 创建工作流定义。
+     * POST /projects/{projectCode}/process-definition
+     */
+    public String createWorkflow(Map<String, String> params) throws IOException {
+        String url = apiUrl + "/projects/" + projectCode + "/process-definition";
+        // 补充必填参数
+        params.putIfAbsent("tenantCode", tenantCode);
+        params.putIfAbsent("locations", "[]");
+        params.putIfAbsent("globalParams", "[]");
+        params.putIfAbsent("timeout", "0");
+        return doPostForm(url, params);
     }
 
-    /** 创建工作流定义 */
-    public String createWorkflow(String workflowJson) throws IOException {
-        String url = apiUrl + "/projects/" + projectCode + "/workflows";
-        return doPost(url, workflowJson);
+    /**
+     * 更新工作流定义。
+     * PUT /projects/{projectCode}/process-definition/{code}
+     */
+    public String updateWorkflow(String workflowCode, Map<String, String> params) throws IOException {
+        String url = apiUrl + "/projects/" + projectCode + "/process-definition/" + workflowCode;
+        params.putIfAbsent("tenantCode", tenantCode);
+        params.putIfAbsent("locations", "[]");
+        params.putIfAbsent("globalParams", "[]");
+        params.putIfAbsent("timeout", "0");
+        return doPutForm(url, params);
     }
 
-    /** 更新工作流定义 */
-    public String updateWorkflow(String workflowCode, String workflowJson) throws IOException {
-        String url = apiUrl + "/projects/" + projectCode + "/workflows/" + workflowCode;
-        return doPut(url, workflowJson);
-    }
-
-    /** 删除工作流定义 */
+    /**
+     * 删除工作流定义。
+     * DELETE /projects/{projectCode}/process-definition/{code}
+     */
     public String deleteWorkflow(String workflowCode) throws IOException {
-        String url = apiUrl + "/projects/" + projectCode + "/workflows/" + workflowCode;
+        String url = apiUrl + "/projects/" + projectCode + "/process-definition/" + workflowCode;
         return doDelete(url);
     }
 
-    /** 上线工作流 */
-    public String onlineWorkflow(String workflowCode) throws IOException {
-        String url = apiUrl + "/projects/" + projectCode + "/workflows/" + workflowCode + "/online";
-        return doPost(url, "");
+    /**
+     * 发布（上线）工作流定义。
+     * POST /projects/{projectCode}/process-definition/{code}/release
+     */
+    public String onlineWorkflow(String workflowCode, String workflowName) throws IOException {
+        String url = apiUrl + "/projects/" + projectCode + "/process-definition/" + workflowCode + "/release";
+        Map<String, String> params = new java.util.LinkedHashMap<>();
+        params.put("name", workflowName);
+        params.put("releaseState", "ONLINE");
+        return doPostForm(url, params);
     }
 
-    /** 下线工作流 */
-    public String offlineWorkflow(String workflowCode) throws IOException {
-        String url = apiUrl + "/projects/" + projectCode + "/workflows/" + workflowCode + "/offline";
-        return doPost(url, "");
+    /**
+     * 下线工作流定义。
+     * POST /projects/{projectCode}/process-definition/{code}/release
+     */
+    public String offlineWorkflow(String workflowCode, String workflowName) throws IOException {
+        String url = apiUrl + "/projects/" + projectCode + "/process-definition/" + workflowCode + "/release";
+        Map<String, String> params = new java.util.LinkedHashMap<>();
+        params.put("name", workflowName);
+        params.put("releaseState", "OFFLINE");
+        return doPostForm(url, params);
     }
 
-    /** 创建定时调度 */
+    /**
+     * 创建定时调度。
+     * POST /projects/{projectCode}/schedules
+     * 参数：processDefinitionCode, schedule (cron JSON)
+     */
     public String createSchedule(String workflowCode, String scheduleJson) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/schedules";
-        return doPost(url, scheduleJson);
+        Map<String, String> params = new java.util.LinkedHashMap<>();
+        params.put("processDefinitionCode", workflowCode);
+        params.put("schedule", scheduleJson);
+        params.put("warningType", "NONE");
+        params.put("warningGroupId", "0");
+        params.put("failureStrategy", "CONTINUE");
+        params.put("processInstancePriority", "MEDIUM");
+        return doPostForm(url, params);
     }
 
-    /** 更新定时调度 */
-    public String updateSchedule(String scheduleId, String scheduleJson) throws IOException {
-        String url = apiUrl + "/projects/" + projectCode + "/schedules/" + scheduleId;
-        return doPut(url, scheduleJson);
-    }
-
-    /** 上线调度 */
+    /**
+     * 上线调度。
+     * POST /projects/{projectCode}/schedules/{id}/online
+     */
     public String onlineSchedule(String scheduleId) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/schedules/" + scheduleId + "/online";
-        return doPost(url, "");
+        return doPostForm(url, new java.util.LinkedHashMap<>());
     }
 
-    /** 下线调度 */
+    /**
+     * 下线调度。
+     * POST /projects/{projectCode}/schedules/{id}/offline
+     */
     public String offlineSchedule(String scheduleId) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/schedules/" + scheduleId + "/offline";
-        return doPost(url, "");
+        return doPostForm(url, new java.util.LinkedHashMap<>());
     }
 
-    /** 手动触发工作流执行 */
+    /**
+     * 手动触发工作流执行。
+     * POST /projects/{projectCode}/executors/start-process-instance
+     */
     public String triggerWorkflow(String workflowCode) throws IOException {
         String url = apiUrl + "/projects/" + projectCode + "/executors/start-process-instance";
-        String body = gson.toJson(new java.util.HashMap<String, Object>() {{
-            put("workflowCode", workflowCode);
-        }});
-        return doPost(url, body);
+        Map<String, String> params = new java.util.LinkedHashMap<>();
+        params.put("processDefinitionCode", workflowCode);
+        params.put("scheduleTime", "[]");
+        params.put("failureStrategy", "CONTINUE");
+        params.put("warningType", "NONE");
+        params.put("warningGroupId", "0");
+        params.put("processInstancePriority", "MEDIUM");
+        params.put("runMode", "RUN_MODE_SERIAL");
+        return doPostForm(url, params);
     }
 
     /** 查询工作流状态 */
     public String getWorkflowStatus(String workflowCode) throws IOException {
-        String url = apiUrl + "/projects/" + projectCode + "/workflows/" + workflowCode;
+        String url = apiUrl + "/projects/" + projectCode + "/process-definition/" + workflowCode;
+        return doGet(url);
+    }
+
+    /**
+     * 生成 Task Code。
+     * GET /projects/{projectCode}/task-definition/gen-task-codes?genNum=1
+     * @return 生成的 task code 列表
+     */
+    public String genTaskCodes(int genNum) throws IOException {
+        String url = apiUrl + "/projects/" + projectCode + "/task-definition/gen-task-codes?genNum=" + genNum;
         return doGet(url);
     }
 
     /**
      * 测试连通性。
-     * 调用 DolphinScheduler 的 /actuator/health 端点，返回服务健康信息。
-     * 如果该端点不可用，则尝试访问登录页面以验证服务可达。
-     *
-     * @return 健康信息 JSON 字符串
-     * @throws IOException 连接失败时抛出
      */
     public String testConnection() throws IOException {
-        // 尝试访问 DolphinScheduler actuator 健康检查端点
-        // DS 地址格式如： http://ds-host:12345/dolphinscheduler，健康端点在其上走 /actuator/health
         String baseUrl = apiUrl.replaceAll("/dolphinscheduler.*", "");
         String healthUrl = baseUrl + "/dolphinscheduler/actuator/health";
         return doGetNoAuth(healthUrl);
@@ -129,7 +192,7 @@ public class DolphinSchedulerApiClient {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpGet request = new HttpGet(url);
             request.setHeader("token", token);
-            request.setHeader("Content-Type", "application/json");
+            request.setHeader("Accept", "application/json");
             HttpResponse response = client.execute(request);
             return EntityUtils.toString(response.getEntity());
         }
@@ -138,32 +201,52 @@ public class DolphinSchedulerApiClient {
     private String doGetNoAuth(String url) throws IOException {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpGet request = new HttpGet(url);
-            request.setHeader("Content-Type", "application/json");
+            request.setHeader("Accept", "application/json");
             HttpResponse response = client.execute(request);
             return EntityUtils.toString(response.getEntity());
         }
     }
 
-    private String doPost(String url, String body) throws IOException {
+    /** 发送 POST 请求，参数以表单形式（application/x-www-form-urlencoded）传递 */
+    private String doPostForm(String url, Map<String, String> params) throws IOException {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpPost request = new HttpPost(url);
             request.setHeader("token", token);
-            request.setHeader("Content-Type", "application/json");
-            if (body != null && !body.isEmpty()) {
-                request.setEntity(new StringEntity(body, "UTF-8"));
+            request.setHeader("Accept", "application/json");
+
+            List<NameValuePair> formParams = new ArrayList<>();
+            if (params != null) {
+                for (Map.Entry<String, String> entry : params.entrySet()) {
+                    if (entry.getValue() != null) {
+                        formParams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+                    }
+                }
+            }
+            if (!formParams.isEmpty()) {
+                request.setEntity(new UrlEncodedFormEntity(formParams, "UTF-8"));
             }
             HttpResponse response = client.execute(request);
             return EntityUtils.toString(response.getEntity());
         }
     }
 
-    private String doPut(String url, String body) throws IOException {
+    /** 发送 PUT 请求，参数以表单形式传递 */
+    private String doPutForm(String url, Map<String, String> params) throws IOException {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpPut request = new HttpPut(url);
             request.setHeader("token", token);
-            request.setHeader("Content-Type", "application/json");
-            if (body != null && !body.isEmpty()) {
-                request.setEntity(new StringEntity(body, "UTF-8"));
+            request.setHeader("Accept", "application/json");
+
+            List<NameValuePair> formParams = new ArrayList<>();
+            if (params != null) {
+                for (Map.Entry<String, String> entry : params.entrySet()) {
+                    if (entry.getValue() != null) {
+                        formParams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+                    }
+                }
+            }
+            if (!formParams.isEmpty()) {
+                request.setEntity(new UrlEncodedFormEntity(formParams, "UTF-8"));
             }
             HttpResponse response = client.execute(request);
             return EntityUtils.toString(response.getEntity());
@@ -174,7 +257,7 @@ public class DolphinSchedulerApiClient {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpDelete request = new HttpDelete(url);
             request.setHeader("token", token);
-            request.setHeader("Content-Type", "application/json");
+            request.setHeader("Accept", "application/json");
             HttpResponse response = client.execute(request);
             return EntityUtils.toString(response.getEntity());
         }
