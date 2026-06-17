@@ -31,7 +31,7 @@ public class LabelCategoryController {
 
     @PostMapping(value = "/list")
     public Response getList(@RequestBody LabelCategory category) {
-        log.info("根据类目信息查询标签类目: {}", gson.toJson(category));
+        log.info("根据类目信息请求查询标签类目: {}", gson.toJson(category));
         List<LabelCategory> categories = categoryService.getList(category);
         return Response.success(categories);
     }

@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 功能：DatasetFieldController
+ * 功能：数据集字段--测试用
  * 作者：@SmartSi
  * 博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
@@ -24,7 +24,7 @@ import java.util.Optional;
 @Deprecated
 @Slf4j
 @RestController
-@RequestMapping(value = "/dataset/field", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/field", produces = MediaType.APPLICATION_JSON_VALUE)
 public class DatasetFieldController {
     private static final Gson gson = new GsonBuilder().create();
     @Autowired
@@ -86,5 +86,12 @@ public class DatasetFieldController {
         } else {
             return Response.error("删除数据集字段失败", ResponseCode.ERROR);
         }
+    }
+
+    @GetMapping(value = "/detail/label")
+    public Response getDetail(@RequestParam(name = "label_id") String labelId) {
+        log.info("根据标签ID [{}] 请求获取数据集字段详细信息", labelId);
+        DatasetField datasetField = datasetFieldService.getDetailByRelatedId(labelId);
+        return Response.success(datasetField);
     }
 }

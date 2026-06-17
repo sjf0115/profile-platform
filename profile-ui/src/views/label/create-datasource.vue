@@ -397,18 +397,6 @@ const fetchConfig = async () => {
   }
 }
 
-// 获取类目树
-// 获取类目列表（已废弃，使用分级加载）
-const fetchCategoryTree = async () => {
-  try {
-    // 加载完整的类目树（包含 children）
-    const res = await labelCategoryApi.getList()
-    level1Categories.value = res.data.data || []
-  } catch (error) {
-    console.error('获取类目树失败:', error)
-  }
-}
-
 // 获取实体标识列表
 const fetchEntityIdentifierList = async () => {
   try {
@@ -564,45 +552,38 @@ const fetchLabelDetail = async () => {
   }
 }
 
-// 根据类目ID设置层级选择
+// 根据类目ID设置层级选择（分级加载模式）
 const setCategoryLevels = async (categoryId: string) => {
-  // 递归查找类目及其所有父级
-  const findCategoryPath = (categories: LabelCategory[], id: string, path: LabelCategory[] = []): LabelCategory[] | null => {
-    for (const cat of categories) {
-      if (cat.category_id === id) {
-        return [...path, cat]
-      }
-      if (cat.children && cat.children.length > 0) {
-        const found = findCategoryPath(cat.children, id, [...path, cat])
-        if (found) return found
-      }
-    }
-    return null
+  // 先检查当前一级类目列表是否包含目标类目
+  const level1Match = level1Categories.value.find(cat => cat.category_id === categoryId)
+  if (level1Match) {
+    // 目标是一级类目
+    selectedLevel1.value = categoryId
+    return
   }
   
-  // 查找类目路径（从根到目标类目）
-  const path = findCategoryPath(level1Categories.value, categoryId)
-  console.log('类目路径:', path, '类目树:', level1Categories.value)
-  
-  if (path && path.length > 0) {
-    if (path.length === 1) {
-      // 一级类目
-      selectedLevel1.value = path[0].category_id
-    } else if (path.length === 2) {
-      // 二级类目
-      selectedLevel1.value = path[0].category_id
-      // 加载二级类目列表
-      await fetchLevel2Categories(path[0].category_id)
-      selectedLevel2.value = path[1].category_id
-    } else if (path.length === 3) {
-      // 三级类目
-      selectedLevel1.value = path[0].category_id
-      // 加载二级类目列表
-      await fetchLevel2Categories(path[0].category_id)
-      selectedLevel2.value = path[1].category_id
-      // 加载三级类目列表
-      await fetchLevel3Categories(path[1].category_id)
-      selectedLevel3.value = path[2].category_id
+  // 遍历一级类目，加载二级查找
+  for (const level1 of level1Categories.value) {
+    await fetchLevel2Categories(level1.category_id)
+    const level2Match = level2Categories.value.find(cat => cat.category_id === categoryId)
+    if (level2Match) {
+      // 目标是二级类目
+      selectedLevel1.value = level1.category_id
+      selectedLevel2.value = categoryId
+      return
+    }
+    
+    // 遍历二级类目，加载三级查找
+    for (const level2 of level2Categories.value) {
+      await fetchLevel3Categories(level2.category_id)
+      const level3Match = level3Categories.value.find(cat => cat.category_id === categoryId)
+      if (level3Match) {
+        // 目标是三级类目
+        selectedLevel1.value = level1.category_id
+        selectedLevel2.value = level2.category_id
+        selectedLevel3.value = categoryId
+        return
+      }
     }
   }
 }
@@ -615,7 +596,7 @@ const goBack = () => {
 onMounted(async () => {
   console.log('onMounted - route.params:', route.params, 'isEditMode:', isEditMode.value, 'labelId:', labelId.value)
   fetchConfig()
-  await fetchCategoryTree()  // 等待类目加载完成
+  await fetchLevel1Categories()  // 只加载一级类目
   fetchEntityIdentifierList()
   fetchDatasetList()
   fetchLabelDetail()  // 类目加载完成后再加载标签详情

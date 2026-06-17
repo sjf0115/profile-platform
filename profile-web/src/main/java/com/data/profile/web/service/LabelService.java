@@ -53,18 +53,17 @@ public class LabelService {
      * @param labelId 标签ID
      */
     public Optional<Label> getDetail(String labelId) {
+        // 查询标签详细信息
         Label label = labelMapper.selectByLabelId(labelId);
         if (label == null) {
             return Optional.empty();
         }
 
-        if (!StringUtils.isEmpty(label.getDatasetFieldName())) {
-            // 绑定数据集字段需要查询数据集ID和字段名称
-            DatasetField datasetField = datasetFieldService.getDetailByRelatedId(labelId);
-            if (!Objects.equals(datasetField, null)) {
-                label.setDatasetId(datasetField.getDatasetId());
-                label.setDatasetFieldName(datasetField.getFieldName());
-            }
+        // 查询绑定的数据集和字段
+        DatasetField datasetField = datasetFieldService.getDetailByRelatedId(labelId);
+        if (!Objects.equals(datasetField, null)) {
+            label.setDatasetId(datasetField.getDatasetId());
+            label.setDatasetFieldName(datasetField.getFieldName());
         }
 
         log.info("根据标签ID {} 获取标签详细信息: {}", labelId, gson.toJson(label));

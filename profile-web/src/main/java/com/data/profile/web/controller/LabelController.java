@@ -43,7 +43,7 @@ public class LabelController {
 
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam(name = "label_id") String labelId) {
-        log.info("请求根据标签ID请求查询标签信息: {}", labelId);
+        log.info("根据标签ID [{}] 请求查询标签信息", labelId);
         Optional<Label> optional = labelService.getDetail(labelId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
