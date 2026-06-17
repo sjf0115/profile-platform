@@ -18,6 +18,7 @@ import java.util.Map;
  * 博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
  */
+@Deprecated
 @Slf4j
 @RestController
 @RequestMapping(value = "/schedule", produces = MediaType.APPLICATION_JSON_VALUE)

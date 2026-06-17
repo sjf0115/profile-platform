@@ -1,41 +1,49 @@
 package com.data.profile.common.enums;
 
-import java.util.Objects;
-
-// 调度任务类型
+/**
+ * 任务类型枚举
+ * <p>统一的任务类型定义，用于任务创建、执行分发等场景。</p>
+ */
 public enum TaskType {
-    // 数据集
-    DATASET(1, "数据集"),
-    // 群组圈选
-    GROUP_CREATE(2, "群组圈选")
-    ;
+    /**
+     * 群组圈选
+     */
+    GROUP(1, "GroupJob"),
+    /**
+     * 群组投递
+     */
+    EXPORT(2, "ExportJob"),
+    /**
+     * 数据集同步
+     */
+    IMPORT(3, "ImportJob");
 
-    private Integer code;
-    private String message;
+    private final Integer code;
+    private final String name;
 
-    TaskType(Integer code, String message) {
+    TaskType(Integer code, String name) {
         this.code = code;
-        this.message = message;
+        this.name = name;
     }
 
     public Integer getCode() {
         return code;
     }
 
-    public String getMessage() {
-        return message;
+    public String getName() {
+        return name;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public static String codeOf(Integer code) {
-        for (TaskType value : values()) {
-            if (Objects.equals(value.code, code)) {
-                return value.message;
+    /**
+     * 根据 code 获取枚举值
+     */
+    public static TaskType of(Integer code) {
+        if (code == null) return null;
+        for (TaskType type : values()) {
+            if (type.code.equals(code)) {
+                return type;
             }
         }
-        return null;
+        throw new IllegalArgumentException("未知的任务类型: " + code);
     }
 }

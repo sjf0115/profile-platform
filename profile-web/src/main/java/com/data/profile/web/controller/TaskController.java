@@ -85,33 +85,46 @@ public class TaskController {
         }
     }
 
-    // 手动触发调度任务 TODO 是否放在这
-    @GetMapping(value = "/{taskId}/execute")
-    public Response execute(@PathVariable(value = "taskId") String taskId) {
-        log.info("手动触发任务 {} 执行", taskId);
+    /**
+     * 触发任务执行（统一入口）
+     * <p>用于手动触发和调度引擎回调，均为 POST + 异步执行。</p>
+     * <p>并发控制：同一任务只允许一个运行中的实例，重复触发会被拒绝。</p>
+     *
+     * @param taskId 任务ID
+     * @param triggerSource 触发来源（manual/schedule），用于日志追踪
+     */
+    @PostMapping(value = "/{taskId}/trigger")
+    public Response trigger(
+            @PathVariable(value = "taskId") String taskId,
+            @RequestHeader(value = "X-Trigger-Source", defaultValue = "manual") String triggerSource) {
+        log.info("触发任务执行: taskId={}, triggerSource={}", taskId, triggerSource);
         try {
             TaskInstance instance = taskExecutionService.executeTask(taskId);
             return Response.success(instance);
+        } catch (RuntimeException e) {
+            log.warn("任务触发被拒绝: taskId={}, reason={}", taskId, e.getMessage());
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
         } catch (Exception e) {
-            log.error("任务执行 {} 失败", taskId, e);
-            return Response.error("任务执行失败: " + e.getMessage(), ResponseCode.ERROR);
+            log.error("任务触发失败: taskId={}", taskId, e);
+            return Response.error("任务触发失败: " + e.getMessage(), ResponseCode.ERROR);
         }
     }
-
-    //------------------------------------------------------------------------------------------------------------------
 
     /**
      * 通过关联ID触发任务执行
      */
-    @PostMapping(value = "/executeByRelatedId")
-    public Response executeByRelatedId(@RequestParam(name = "related_id") String relatedId) {
+    @PostMapping(value = "/trigger-by-related-id")
+    public Response triggerByRelatedId(@RequestParam(name = "related_id") String relatedId) {
         log.info("通过关联ID触发任务执行: relatedId={}", relatedId);
         try {
             TaskInstance instance = taskExecutionService.executeByRelatedId(relatedId);
             return Response.success(instance);
+        } catch (RuntimeException e) {
+            log.warn("任务触发被拒绝: relatedId={}, reason={}", relatedId, e.getMessage());
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
         } catch (Exception e) {
-            log.error("任务执行失败: relatedId={}", relatedId, e);
-            return Response.error("任务执行失败: " + e.getMessage(), ResponseCode.ERROR);
+            log.error("任务触发失败: relatedId={}", relatedId, e);
+            return Response.error("任务触发失败: " + e.getMessage(), ResponseCode.ERROR);
         }
     }
 

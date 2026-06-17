@@ -2,6 +2,7 @@ package com.data.profile.web.service;
 
 import com.data.profile.web.dao.ExportMapper;
 import com.data.profile.web.model.Export;
+import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.security.RequestContext;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
@@ -29,14 +30,20 @@ import java.util.Optional;
 public class ExportService {
     @Resource
     private ExportMapper exportMapper;
+    @Resource
+    private TaskInstanceService taskInstanceService;
 
     /**
      * 根据查询条件获取投递列表
-     * @param export
-     * @return
      */
     public List<Export> getList(Export export) {
-        return exportMapper.selectByParams(export);
+        List<Export> exports = exportMapper.selectByParams(export);
+        // 查询最新任务实例（关联查询）
+        for (Export e : exports) {
+            TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(e.getExportId());
+            e.setLatestInstance(latestInstance);
+        }
+        return exports;
     }
 
     /**
@@ -59,14 +66,15 @@ public class ExportService {
 
     /**
      * 根据投递ID获取投递详细信息
-     * @param exportId
-     * @return
      */
     public Optional<Export> getDetail(String exportId) {
         Export export = exportMapper.selectByExportId(exportId);
         if (export == null) {
             return Optional.empty();
         }
+        // 查询最新任务实例（关联查询）
+        TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(exportId);
+        export.setLatestInstance(latestInstance);
         return Optional.of(export);
     }
 

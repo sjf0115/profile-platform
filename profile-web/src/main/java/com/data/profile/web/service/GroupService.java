@@ -7,6 +7,7 @@ import com.data.profile.web.model.EntityIdentifier;
 import com.data.profile.web.model.Group;
 import com.data.profile.web.model.GroupRule;
 import com.data.profile.web.model.Task;
+import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.security.RequestContext;
 import com.data.profile.common.utils.IDGenerator;
 import com.google.gson.Gson;
@@ -60,6 +61,9 @@ public class GroupService {
                 target.setEntityName(entityIdentifier.getEntityName());
                 target.setEntityIdentifierName(entityIdentifier.getEntityIdentifierName());
             }
+            // 查询最新任务实例（关联查询）
+            TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(target.getGroupId());
+            target.setLatestInstance(latestInstance);
             return target;
         }).collect(Collectors.toList());
         log.info("根据查询条件获取 {} 个群组: {}", groups.size(), gson.toJson(groups));
@@ -95,8 +99,10 @@ public class GroupService {
             group.setTriggerCron(task.getTriggerCron());
             group.setTriggerStartTime(task.getTriggerStartTime());
             group.setTriggerEndTime(task.getTriggerEndTime());
-            // Todo 获取群组调度任务最新实例
         }
+        // 查询最新任务实例（关联查询）
+        TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(groupId);
+        group.setLatestInstance(latestInstance);
         log.info("根据群组ID获取群组详细信息: {}", gson.toJson(group));
         return Optional.of(group);
     }
@@ -143,7 +149,7 @@ public class GroupService {
         // 创建调度任务
         Task task = Task.builder()
                 .taskName(groupName + "调度任务")
-                .taskType(SchedulerJobType.GROUP.getCode())
+                .taskType(TaskType.GROUP.getCode())
                 .taskRelatedId(groupId)
                 .triggerType(group.getTriggerType())
                 .triggerCron(group.getTriggerCron())
@@ -171,7 +177,7 @@ public class GroupService {
         Task task = Task.builder()
                 .taskId(group.getTaskId()) // 根据TaskId修改
                 .taskName(group.getGroupName() + "调度任务")
-                .taskType(SchedulerJobType.GROUP.getCode())
+                .taskType(TaskType.GROUP.getCode())
                 .taskRelatedId(groupId)
                 .triggerType(group.getTriggerType())
                 .triggerCron(group.getTriggerCron())
@@ -258,15 +264,5 @@ public class GroupService {
      */
     public void updateGroupCount(String groupId, int count) {
         groupMapper.updateGroupCount(groupId, count);
-    }
-
-    /**
-     * 更新群组实例状态
-     * @param groupId 群组ID
-     * @param status  实例状态
-     * @param msg     实例消息
-     */
-    public void updateInstanceStatus(String groupId, int status, String msg) {
-        groupMapper.updateInstanceStatus(groupId, status, msg);
     }
 }

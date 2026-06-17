@@ -14,6 +14,8 @@ public class TaskInstance {
 
     private String instanceName;
 
+    // TODO 增加任务类型
+
     private String taskId;
 
     private String instanceRelatedId;

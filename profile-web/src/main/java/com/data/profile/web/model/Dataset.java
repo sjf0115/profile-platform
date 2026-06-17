@@ -34,18 +34,6 @@ public class Dataset {
     private String entityId;
     // 实体对应字段
     private String entityField;
-    // 实体字段
-    private List<DatasetField> fields;
-    // 实例ID
-    private String instanceId;
-    // 实例状态
-    private Integer instanceStatus;
-    // 实例开始时间
-    private Date instanceStartTime;
-    // 实例结束时间
-    private Date instanceEndTime;
-    // 实例消息
-    private Integer instanceMsg;
     // 负责人
     private String owner;
     // 创建人
@@ -56,4 +44,10 @@ public class Dataset {
     private Date gmtCreate;
     // 修改时间
     private Date gmtModified;
+
+    // TODO VO
+    // 实体字段
+    private List<DatasetField> fields;
+    // 最新任务实例（查询时关联）
+    private TaskInstance latestInstance;
 }

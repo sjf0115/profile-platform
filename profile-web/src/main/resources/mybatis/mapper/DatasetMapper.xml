@@ -15,10 +15,6 @@
     <result column="partition_format" jdbcType="VARCHAR" property="partitionFormat" />
     <result column="entity_id" jdbcType="VARCHAR" property="entityId" />
     <result column="entity_field" jdbcType="VARCHAR" property="entityField" />
-    <result column="instance_status" jdbcType="INTEGER" property="instanceStatus" />
-    <result column="instance_start_time" jdbcType="TIMESTAMP" property="instanceStartTime" />
-    <result column="instance_end_time" jdbcType="TIMESTAMP" property="instanceEndTime" />
-    <result column="instance_msg" jdbcType="INTEGER" property="instanceMsg" />
     <result column="owner" jdbcType="VARCHAR" property="owner" />
     <result column="creator" jdbcType="VARCHAR" property="creator" />
     <result column="modifier" jdbcType="VARCHAR" property="modifier" />
@@ -30,7 +26,7 @@
   <sql id="Base_Column_List">
     id, status, dataset_id, dataset_name, dataset_type, dataset_desc, source_type, datasource_id, 
     table_name, partition_field, partition_format, fields,
-    entity_id, entity_field, instance_status, instance_start_time, instance_end_time, instance_msg,
+    entity_id, entity_field,
     owner, creator, modifier, gmt_create, gmt_modified
   </sql>
 
@@ -89,18 +85,6 @@
     <if test="entityField != null">
       and entity_field = #{entityField,jdbcType=VARCHAR}
     </if>
-    <if test="instanceStatus != null">
-      and instance_status = #{instanceStatus,jdbcType=INTEGER}
-    </if>
-    <if test="instanceStartTime != null">
-      and instance_start_time = #{instanceStartTime,jdbcType=TIMESTAMP}
-    </if>
-    <if test="instanceEndTime != null">
-      and instance_end_time = #{instanceEndTime,jdbcType=TIMESTAMP}
-    </if>
-    <if test="instanceMsg != null">
-      and instance_msg = #{instanceMsg,jdbcType=INTEGER}
-    </if>
     <if test="owner != null">
       and owner = #{owner,jdbcType=VARCHAR}
     </if>
@@ -131,16 +115,13 @@
       source_type, datasource_id, table_name,
       partition_field, partition_format,
       entity_id, entity_field, fields,
-      instance_status, instance_start_time, instance_end_time,
-      instance_msg, owner, creator, modifier
+      owner, creator, modifier
       )
     values (#{status,jdbcType=INTEGER}, #{datasetId,jdbcType=VARCHAR},
       #{datasetName,jdbcType=VARCHAR}, #{datasetType,jdbcType=INTEGER}, #{datasetDesc,jdbcType=VARCHAR}, 
       #{sourceType,jdbcType=INTEGER}, #{datasourceId,jdbcType=VARCHAR}, #{tableName,jdbcType=VARCHAR},
       #{partitionField,jdbcType=VARCHAR}, #{partitionFormat,jdbcType=VARCHAR},
       #{entityId,jdbcType=VARCHAR}, #{entityField,jdbcType=VARCHAR}, #{fields,jdbcType=LONGVARCHAR},
-      #{instanceStatus,jdbcType=INTEGER}, #{instanceStartTime,jdbcType=TIMESTAMP},
-      #{instanceEndTime,jdbcType=TIMESTAMP}, #{instanceMsg,jdbcType=VARCHAR},
       #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR}
       )
   </insert>
@@ -187,18 +168,6 @@
       <!--<if test="fields != null">
         fields,
       </if>-->
-      <if test="instanceStatus != null">
-        instance_status,
-      </if>
-      <if test="instanceStartTime != null">
-        instance_start_time,
-      </if>
-      <if test="instanceEndTime != null">
-        instance_end_time,
-      </if>
-      <if test="instanceMsg != null">
-        instanceMsg,
-      </if>
       <if test="owner != null">
         owner,
       </if>
@@ -249,18 +218,6 @@
       <!--<if test="fields != null">
         #{fields,jdbcType=LONGVARCHAR},
       </if>-->
-      <if test="instanceStatus != null">
-        #{instanceStatus,jdbcType=INTEGER},
-      </if>
-      <if test="instanceStartTime != null">
-        #{instanceStartTime,jdbcType=TIMESTAMP},
-      </if>
-      <if test="instanceEndTime != null">
-        #{instanceEndTime,jdbcType=TIMESTAMP},
-      </if>
-      <if test="instanceMsg != null">
-        #{instanceMsg,jdbcType=VARCHAR},
-      </if>
       <if test="owner != null">
         #{owner,jdbcType=VARCHAR},
       </if>
@@ -315,18 +272,6 @@
       <if test="fields != null">
         fields = #{fields,jdbcType=INTEGER},
       </if>
-      <if test="instanceStatus != null">
-        instance_status = #{instanceStatus,jdbcType=INTEGER},
-      </if>
-      <if test="instanceStartTime != null">
-        instance_start_time = #{instanceStartTime,jdbcType=TIMESTAMP},
-      </if>
-      <if test="instanceEndTime != null">
-        instance_end_time = #{instanceEndTime,jdbcType=TIMESTAMP},
-      </if>
-      <if test="instanceMsg != null">
-        instance_msg = #{instanceMsg,jdbcType=INTEGER},
-      </if>
       <if test="owner != null">
         owner = #{owner,jdbcType=VARCHAR},
       </if>
@@ -355,10 +300,6 @@
       entity_id = #{entityId,jdbcType=VARCHAR},
       entity_field = #{entityField,jdbcType=VARCHAR},
       fields = #{fields,jdbcType=VARCHAR},
-      instance_status = #{syncStatus,jdbcType=INTEGER},
-      instance_start_time = #{syncStartTime,jdbcType=TIMESTAMP},
-      instance_end_time = #{syncEndTime,jdbcType=TIMESTAMP},
-      instance_msg = #{syncTime,jdbcType=VARCHAR},
       owner = #{owner,jdbcType=VARCHAR},
       creator = #{creator,jdbcType=VARCHAR},
       modifier = #{modifier,jdbcType=VARCHAR}

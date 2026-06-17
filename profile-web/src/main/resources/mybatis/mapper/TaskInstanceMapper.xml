@@ -90,6 +90,15 @@
     where instance_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
   </select>
 
+  <select id="selectLatestByRelatedId" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_task_instance
+    where instance_related_id = #{instanceRelatedId,jdbcType=VARCHAR}
+    order by start_time desc
+    limit 1
+  </select>
+
   <insert id="insert" parameterType="com.data.profile.web.model.TaskInstance">
     insert into profile_meta_task_instance (status, instance_id,
       instance_name, task_id, instance_related_id, 

@@ -1,21 +1,30 @@
 package com.data.profile.web.service;
 
 import com.data.profile.common.enums.InstanceStatus;
-import com.data.profile.common.enums.SchedulerJobType;
+import com.data.profile.common.enums.TaskType;
 import com.data.profile.common.enums.Status;
-import com.data.profile.web.engine.AnalysisEngineService;
-import com.data.profile.web.engine.DiEngineService;
 import com.data.profile.web.model.Task;
 import com.data.profile.web.model.TaskInstance;
-import com.data.profile.web.task.GroupTask;
+import com.data.profile.web.task.ExecutionContext;
+import com.data.profile.web.task.TaskExecutor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 功能：任务执行服务
- * <p>负责任务执行的完整协调流程：创建实例 → 分发执行 → 更新状态。</p>
+ * <p>负责任务执行的完整协调流程：创建实例 → 异步分发执行器 → 更新状态。</p>
+ * <p>使用策略模式通过 TaskExecutor 接口分发执行逻辑。</p>
+ * <p>支持异步执行和并发控制，防止重复执行。</p>
  *
  * 作者：SmartSi
  * CSDN博客：https://smartsi.blog.csdn.net/
@@ -28,21 +37,32 @@ public class TaskExecutionService {
     private TaskService taskService;
     @Resource
     private TaskInstanceService taskInstanceService;
-    @Resource
-    private DiEngineService diEngineService;
-    @Resource
-    private AnalysisEngineService analysisEngineService;
-    @Resource
-    private DatasetService datasetService;
-    @Resource
-    private GroupTask groupTask;
-    @Resource
-    private GroupService groupService;
 
     /**
-     * 执行任务：创建实例并根据任务类型分发执行逻辑。
+     * 任务执行器映射（策略模式）
+     * Spring 自动注入所有 TaskExecutor 实现
+     */
+    private final Map<TaskType, TaskExecutor> executorMap;
+
+    /**
+     * 异步执行线程池
+     * TODO: 生产环境应使用可配置的线程池，并考虑持久化队列
+     */
+    private final ExecutorService taskExecutorPool = Executors.newFixedThreadPool(10);
+
+    @Autowired
+    public TaskExecutionService(List<TaskExecutor> executors) {
+        this.executorMap = executors.stream()
+                .collect(Collectors.toMap(TaskExecutor::getType, Function.identity()));
+        log.info("注册任务执行器: {}", executorMap.keySet());
+    }
+
+    /**
+     * 异步执行任务：创建实例并异步执行，立即返回实例信息。
+     * <p>包含并发控制：同一任务只允许一个运行中的实例。</p>
+     *
      * @param taskId 任务ID
-     * @return 创建的任务实例
+     * @return 创建的任务实例（状态为 PENDING 或 RUNNING）
      */
     public TaskInstance executeTask(String taskId) {
         Task task = taskService.getDetail(taskId)
@@ -51,27 +71,22 @@ public class TaskExecutionService {
             throw new RuntimeException("任务已停用，无法执行: " + taskId);
         }
 
-        // 创建实例
+        // 并发控制：检查是否有运行中的实例
+        checkRunningInstance(taskId);
+
+        // 创建实例（PENDING 状态）
         String instanceName = task.getTaskName() + "-" + System.currentTimeMillis();
-        TaskInstance instance = taskInstanceService.createInstance(taskId, instanceName, task.getTaskRelatedId());
+        TaskInstance instance = taskInstanceService.createInstance(
+                taskId, instanceName, task.getTaskRelatedId(), InstanceStatus.PENDING);
 
-        // 执行并更新状态
-        try {
-            dispatch(task);
-            taskInstanceService.markSuccess(instance.getInstanceId(), "执行成功");
-        } catch (Exception e) {
-            log.error("任务执行失败: taskId={}, instanceId={}", taskId, instance.getInstanceId(), e);
-            taskInstanceService.markFailed(instance.getInstanceId(), e.getMessage());
-            updateRelatedInstanceStatus(task, InstanceStatus.FAILED.getCode(), e.getMessage());
-            throw new RuntimeException("任务执行失败: " + e.getMessage(), e);
-        }
+        // 异步执行
+        CompletableFuture.runAsync(() -> executeAsync(task, instance), taskExecutorPool);
 
-        updateRelatedInstanceStatus(task, InstanceStatus.SUCCESS.getCode(), "执行成功");
         return instance;
     }
 
     /**
-     * 通过关联ID执行任务。
+     * 通过关联ID异步执行任务。
      */
     public TaskInstance executeByRelatedId(String relatedId) {
         Task task = taskService.getDetailByRelatedId(relatedId);
@@ -81,37 +96,76 @@ public class TaskExecutionService {
         return executeTask(task.getTaskId());
     }
 
-    //------------------------------------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // 私有方法
+    // -------------------------------------------------------------------------
 
     /**
-     * 根据任务类型分发执行逻辑。
+     * 检查任务是否有运行中的实例（并发控制）
      */
-    private void dispatch(Task task) throws Exception {
-        int taskType = task.getTaskType();
-        if (taskType == SchedulerJobType.IMPORT.getCode()) {
-            // 数据集同步
-            diEngineService.executeDatasetSync(task.getTaskRelatedId());
-        } else if (taskType == SchedulerJobType.GROUP.getCode()) {
-            // 群组圈选
-            groupTask.executeGroupSelection(task.getTaskRelatedId());
-        } else if (taskType == SchedulerJobType.EXPORT.getCode()) {
-            // 群组投递
-            throw new UnsupportedOperationException("群组投递任务暂未实现");
-        } else {
-            throw new IllegalStateException("未知的任务类型: " + taskType);
+    private void checkRunningInstance(String taskId) {
+        TaskInstance query = new TaskInstance();
+        query.setTaskId(taskId);
+        List<TaskInstance> instances = taskInstanceService.getList(query);
+
+        for (TaskInstance inst : instances) {
+            int status = inst.getStatus();
+            if (status == InstanceStatus.PENDING.getCode() || status == InstanceStatus.RUNNING.getCode()) {
+                throw new RuntimeException(
+                        "任务正在执行中，请稍后再试: instanceId=" + inst.getInstanceId() + ", status=" + inst.getStatus());
+            }
         }
     }
 
     /**
-     * 回写关联对象（数据集/群组等）的最新实例状态。
+     * 异步执行任务逻辑
      */
-    private void updateRelatedInstanceStatus(Task task, int status, String msg) {
-        int taskType = task.getTaskType();
-        if (taskType == SchedulerJobType.IMPORT.getCode()) {
-            datasetService.updateInstanceStatus(task.getTaskRelatedId(), status, msg);
-        } else if (taskType == SchedulerJobType.GROUP.getCode()) {
-            groupService.updateInstanceStatus(task.getTaskRelatedId(), status, msg);
+    private void executeAsync(Task task, TaskInstance instance) {
+        String taskId = task.getTaskId();
+        String instanceId = instance.getInstanceId();
+
+        try {
+            // 更新状态为 RUNNING
+            taskInstanceService.markRunning(instanceId);
+
+            // 获取执行器
+            TaskType taskType = TaskType.of(task.getTaskType());
+            TaskExecutor executor = executorMap.get(taskType);
+            if (executor == null) {
+                throw new IllegalStateException("未找到任务类型对应的执行器: " + taskType);
+            }
+
+            // 构建执行上下文
+            ExecutionContext context = ExecutionContext.builder()
+                    .task(task)
+                    .instance(instance)
+                    .relatedId(task.getTaskRelatedId())
+                    .build();
+
+            // 执行
+            executor.execute(context);
+            taskInstanceService.markSuccess(instanceId, "执行成功");
+            executor.onSuccess(context);
+
+        } catch (Exception e) {
+            log.error("任务执行失败: taskId={}, instanceId={}", taskId, instanceId, e);
+            taskInstanceService.markFailed(instanceId, e.getMessage());
+
+            // 尝试回调 onFailure（如果执行器存在）
+            try {
+                TaskType taskType = TaskType.of(task.getTaskType());
+                TaskExecutor executor = executorMap.get(taskType);
+                if (executor != null) {
+                    ExecutionContext context = ExecutionContext.builder()
+                            .task(task)
+                            .instance(instance)
+                            .relatedId(task.getTaskRelatedId())
+                            .build();
+                    executor.onFailure(context, e);
+                }
+            } catch (Exception callbackEx) {
+                log.warn("执行器 onFailure 回调失败: instanceId={}", instanceId, callbackEx);
+            }
         }
-        // 其他类型后续扩展
     }
 }

@@ -33,11 +33,6 @@ public class Export {
     private Date gmtCreate;
     private Date gmtModified;
 
-    // 关联实例
-    private String instanceId; // 最近一次实例ID
-    private Integer instanceStatus; // 最近一次实例状态
-    private Long instanceStartTime; // 最近一次实例开始运行时间
-    private Long instanceEndTime; // 最近一次实例结束运行时间
-    private Long instanceDuration; // 最近一次实例运行时长
-    private String instanceMessage; // 最近一次实例运行信息
+    // 最新任务实例（查询时关联）
+    private TaskInstance latestInstance;
 }

@@ -22,25 +22,10 @@
         <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
     </resultMap>
 
-    <resultMap extends="BaseResultMap" id="ResultMapWithInstance" type="com.data.profile.web.model.Export">
-        <result column="instance_id" jdbcType="VARCHAR" property="instanceId" />
-        <result column="instance_status" jdbcType="INTEGER" property="instanceStatus" />
-        <result column="instance_start_time" jdbcType="BIGINT" property="instanceStartTime" />
-        <result column="instance_end_time" jdbcType="BIGINT" property="instanceEndTime" />
-        <result column="instance_duration" jdbcType="BIGINT" property="instanceDuration" />
-        <result column="instance_message" jdbcType="VARCHAR" property="instanceMessage" />
-    </resultMap>
-
     <sql id="Base_Column_List">
         t1.id, t1.status, t1.export_id, t1.export_type, t1.export_name, t1.export_desc, t1.export_config,
         t1.scheduler_type, t1.scheduler_cron, t1.scheduler_url, t1.scheduler_start_time, t1.scheduler_end_time,
         t1.source_type, t1.owner, t1.creator, t1.modifier, t1.gmt_create, t1.gmt_modified
-    </sql>
-
-    <sql id="Instance_Column_List">
-        t2.id as instance_id, IF(t2.status is null, 1, t2.status) as instance_status,
-        t2.start_time as instance_start_time, t2.end_time as instance_end_time,
-        t2.duration as instance_duration, t2.message as instance_message
     </sql>
 
     <!-- 根据ID查询 -->
@@ -51,13 +36,10 @@
         where export_id = #{exportId,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByExportId" parameterType="java.lang.String" resultMap="ResultMapWithInstance">
+    <select id="selectByExportId" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List" />
-        ,<include refid="Instance_Column_List" />
         from profile_meta_export as t1
-        left outer join profile_meta_task_instance as t2
-        on t1.export_id = t2.instance_related_id
         where export_id = #{exportId,jdbcType=VARCHAR}
     </select>
 
@@ -69,13 +51,10 @@
         where export_name = #{exportName,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByExportName" parameterType="java.lang.String" resultMap="ResultMapWithInstance">
+    <select id="selectByExportName" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List" />
-        ,<include refid="Instance_Column_List" />
         from profile_meta_export as t1
-        left outer join profile_meta_task_instance as t2
-        on t1.export_id = t2.instance_related_id
         where export_name = #{exportName,jdbcType=VARCHAR}
     </select>
 
@@ -87,13 +66,10 @@
         where export_name LIKE CONCAT('%', #{exportName,jdbcType=VARCHAR}, '%')
     </select>
 
-    <select id="selectByKeyword" parameterType="java.lang.String" resultMap="ResultMapWithInstance">
+    <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List" />
-        ,<include refid="Instance_Column_List" />
         from profile_meta_export as t1
-        left outer join profile_meta_task_instance as t2
-        on t1.export_id = t2.instance_related_id
         where export_name LIKE CONCAT('%', #{exportName,jdbcType=VARCHAR}, '%')
     </select>
 
@@ -150,13 +126,10 @@
         </if>
     </select>
 
-    <select id="selectByParams" parameterType="com.data.profile.web.model.Export" resultMap="ResultMapWithInstance">
+    <select id="selectByParams" parameterType="com.data.profile.web.model.Export" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List" />
-        ,<include refid="Instance_Column_List" />
         from profile_meta_export as t1
-        left outer join profile_meta_task_instance as t2
-        on t1.export_id = t2.instance_related_id
         where 1 = 1
         <if test="status != null">
             status,
@@ -202,9 +175,6 @@
         </if>
         <if test="gmtModified != null">
             gmt_modified,
-        </if>
-        <if test="instanceStatus != null">
-            instance_status
         </if>
     </select>
 

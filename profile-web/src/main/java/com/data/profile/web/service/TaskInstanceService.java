@@ -44,14 +44,23 @@ public class TaskInstanceService {
     }
 
     /**
-     * 创建任务实例（运行中状态）。
+     * 根据关联ID获取最新任务实例。
+     * <p>用于查询业务实体（数据集/群组）的最新执行状态。</p>
+     */
+    public TaskInstance getLatestByRelatedId(String relatedId) {
+        return instanceMapper.selectLatestByRelatedId(relatedId);
+    }
+
+    /**
+     * 创建任务实例。
      *
-     * @param taskId           关联的任务ID
-     * @param instanceName     实例名称
+     * @param taskId            关联的任务ID
+     * @param instanceName      实例名称
      * @param instanceRelatedId 实例关联ID（如 datasetId）
+     * @param initialStatus     初始状态（PENDING 或 RUNNING）
      * @return 创建后的实例
      */
-    public TaskInstance createInstance(String taskId, String instanceName, String instanceRelatedId) {
+    public TaskInstance createInstance(String taskId, String instanceName, String instanceRelatedId, InstanceStatus initialStatus) {
         String instanceId = IDGenerator.getInstance().generate(ModelType.INSTANCE);
         long startTime = System.currentTimeMillis();
 
@@ -60,7 +69,7 @@ public class TaskInstanceService {
         instance.setInstanceName(instanceName);
         instance.setTaskId(taskId);
         instance.setInstanceRelatedId(instanceRelatedId);
-        instance.setStatus(InstanceStatus.RUNNING.getCode());
+        instance.setStatus(initialStatus.getCode());
         instance.setStartTime(startTime);
         instance.setEndTime(0L);
         instance.setDuration(0L);
@@ -69,8 +78,28 @@ public class TaskInstanceService {
         instance.setModifier(RequestContext.currentUserId());
 
         instanceMapper.insertSelective(instance);
-        log.info("创建任务实例: instanceId={}, taskId={}, relatedId={}", instanceId, taskId, instanceRelatedId);
+        log.info("创建任务实例: instanceId={}, taskId={}, relatedId={}, status={}", instanceId, taskId, instanceRelatedId, initialStatus);
         return instance;
+    }
+
+    /**
+     * 创建任务实例（默认为 RUNNING 状态，向后兼容）。
+     */
+    public TaskInstance createInstance(String taskId, String instanceName, String instanceRelatedId) {
+        return createInstance(taskId, instanceName, instanceRelatedId, InstanceStatus.RUNNING);
+    }
+
+    /**
+     * 更新任务实例为运行中状态（被异步执行器调用）。
+     */
+    public void markRunning(String instanceId) {
+        TaskInstance instance = instanceMapper.selectByInstanceId(instanceId);
+        if (instance == null) {
+            return;
+        }
+        instance.setStatus(InstanceStatus.RUNNING.getCode());
+        instanceMapper.updateByInstanceIdSelective(instance);
+        log.info("任务实例运行中: instanceId={}", instanceId);
     }
 
     /**
@@ -86,7 +115,7 @@ public class TaskInstanceService {
         instance.setEndTime(endTime);
         instance.setDuration(endTime - instance.getStartTime());
         instance.setMessage(message != null ? message : "");
-        instance.setModifier(RequestContext.currentUserId());
+        // instance.setModifier(RequestContext.currentUserId());
         instanceMapper.updateByInstanceIdSelective(instance);
         log.info("任务实例成功: instanceId={}, duration={}ms", instanceId, instance.getDuration());
     }
@@ -104,7 +133,7 @@ public class TaskInstanceService {
         instance.setEndTime(endTime);
         instance.setDuration(endTime - instance.getStartTime());
         instance.setMessage(errorMsg != null ? errorMsg : "");
-        instance.setModifier(RequestContext.currentUserId());
+        // instance.setModifier(RequestContext.currentUserId());
         instanceMapper.updateByInstanceIdSelective(instance);
         log.info("任务实例失败: instanceId={}, duration={}ms, error={}", instanceId, instance.getDuration(), errorMsg);
     }

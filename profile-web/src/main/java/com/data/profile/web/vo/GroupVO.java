@@ -1,12 +1,14 @@
-package com.data.profile.web.model;
+package com.data.profile.web.vo;
 
+import com.data.profile.web.model.GroupRule;
+import com.data.profile.web.model.TaskInstance;
 import lombok.Data;
 
 import java.util.Date;
 
 // 群组
 @Data
-public class Group {
+public class GroupVO {
     private Long id;
     // 群组 ID
     private String groupId;
@@ -38,7 +40,7 @@ public class Group {
     private Date gmtModified;
 
     //----------------------------------------------------------
-    // 调度任务
+    // 调度任务查询时关联
 
     private String taskId;
     // 调度类型:1-手动触发调度,2-周期调度,3-API触发调度
@@ -58,6 +60,7 @@ public class Group {
 
     //----------------------------------------------------------
     // 实体
+
     // 实体标识ID
     private String entityIdentifierName;
     // 实体ID

@@ -11,11 +11,6 @@
     <result column="group_count" jdbcType="INTEGER" property="groupCount" />
     <result column="entity_identifier_id" jdbcType="VARCHAR" property="entityIdentifierId" />
     <result column="source_type" jdbcType="INTEGER" property="sourceType" />
-    <result column="instance_id" jdbcType="INTEGER" property="instanceId" />
-    <result column="instance_status" jdbcType="INTEGER" property="instanceStatus" />
-    <result column="instance_start_time" jdbcType="TIMESTAMP" property="instanceStartTime" />
-    <result column="instance_end_time" jdbcType="TIMESTAMP" property="instanceEndTime" />
-    <result column="instance_msg" jdbcType="VARCHAR" property="instanceMsg" />
     <result column="owner" jdbcType="VARCHAR" property="owner" />
     <result column="creator" jdbcType="VARCHAR" property="creator" />
     <result column="modifier" jdbcType="VARCHAR" property="modifier" />
@@ -25,8 +20,7 @@
 
   <sql id="Base_Column_List">
     t1.id, t1.group_id, t1.group_status, t1.group_name, t1.group_type, t1.group_desc, 
-    t1.group_rule, t1.group_count, t1.entity_identifier_id, t1.source_type, t1.instance_id,
-    t1.instance_status, t1.instance_start_time, t1.instance_end_time, t1.instance_msg,
+    t1.group_rule, t1.group_count, t1.entity_identifier_id, t1.source_type,
     t1.owner, t1.creator, t1.modifier, t1.gmt_create, t1.gmt_modified
   </sql>
 
@@ -142,17 +136,13 @@
   <insert id="insert" parameterType="com.data.profile.web.model.Group">
     insert into profile_meta_group (
       group_id, group_status, group_name, group_type, group_desc, 
-      group_rule, group_count, entity_identifier_id, source_type, instance_id,
-      instance_status, instance_start_time, instance_end_time, instance_msg,
+      group_rule, group_count, entity_identifier_id, source_type,
       owner, creator, modifier
     ) values (
       #{groupId,jdbcType=VARCHAR}, #{groupStatus,jdbcType=INTEGER}, #{groupName,jdbcType=VARCHAR}, 
       #{groupType,jdbcType=INTEGER}, #{groupDesc,jdbcType=VARCHAR}, #{groupRule,jdbcType=LONGVARCHAR},
       #{groupCount,jdbcType=INTEGER}, #{entityIdentifierId,jdbcType=VARCHAR}, #{sourceType,jdbcType=INTEGER},
-      #{instanceId,jdbcType=INTEGER}, #{instanceStatus,jdbcType=INTEGER}, 
-      #{instanceStartTime,jdbcType=TIMESTAMP}, #{instanceEndTime,jdbcType=TIMESTAMP}, 
-      #{instanceMsg,jdbcType=VARCHAR}, #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, 
-      #{modifier,jdbcType=VARCHAR}
+      #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR}
     )
   </insert>
 
@@ -185,21 +175,6 @@
       </if>
       <if test="sourceType != null">
         source_type,
-      </if>
-      <if test="instanceId != null">
-        instance_id,
-      </if>
-      <if test="instanceStatus != null">
-        instance_status,
-      </if>
-      <if test="instanceStartTime != null">
-        instance_start_time,
-      </if>
-      <if test="instanceEndTime != null">
-        instance_end_time,
-      </if>
-      <if test="instanceMsg != null and instanceMsg != ''">
-        instance_msg,
       </if>
       <if test="owner != null and owner != ''">
         owner,
@@ -238,21 +213,6 @@
       </if>
       <if test="sourceType != null">
         #{sourceType,jdbcType=INTEGER},
-      </if>
-      <if test="instanceId != null">
-        #{instanceId,jdbcType=INTEGER},
-      </if>
-      <if test="instanceStatus != null">
-        #{instanceStatus,jdbcType=INTEGER},
-      </if>
-      <if test="instanceStartTime != null">
-        #{instanceStartTime,jdbcType=TIMESTAMP},
-      </if>
-      <if test="instanceEndTime != null">
-        #{instanceEndTime,jdbcType=TIMESTAMP},
-      </if>
-      <if test="instanceMsg != null and instanceMsg != ''">
-        #{instanceMsg,jdbcType=VARCHAR},
       </if>
       <if test="owner != null and owner != ''">
         #{owner,jdbcType=VARCHAR},
@@ -293,21 +253,6 @@
       <if test="sourceType != null">
         source_type = #{sourceType,jdbcType=INTEGER},
       </if>
-      <if test="instanceId != null">
-        instance_id = #{instanceId,jdbcType=INTEGER},
-      </if>
-      <if test="instanceStatus != null">
-        instance_status = #{instanceStatus,jdbcType=INTEGER},
-      </if>
-      <if test="instanceStartTime != null">
-        instance_start_time = #{instanceStartTime,jdbcType=TIMESTAMP},
-      </if>
-      <if test="instanceEndTime != null">
-        instance_end_time = #{instanceEndTime,jdbcType=TIMESTAMP},
-      </if>
-      <if test="instanceMsg != null and instanceMsg != ''">
-        instance_msg = #{instanceMsg,jdbcType=VARCHAR},
-      </if>
       <if test="owner != null and owner != ''">
         owner = #{owner,jdbcType=VARCHAR},
       </if>
@@ -332,11 +277,6 @@
       group_count = #{groupCount,jdbcType=INTEGER},
       entity_identifier_id = #{entityIdentifierId,jdbcType=VARCHAR},
       source_type = #{sourceType,jdbcType=INTEGER},
-      instance_id = #{instanceId,jdbcType=INTEGER},
-      instance_status = #{instanceStatus,jdbcType=INTEGER},
-      instance_start_time = #{instanceStartTime,jdbcType=TIMESTAMP},
-      instance_end_time = #{instanceEndTime,jdbcType=TIMESTAMP},
-      instance_msg = #{instanceMsg,jdbcType=VARCHAR},
       owner = #{owner,jdbcType=VARCHAR},
       creator = #{creator,jdbcType=VARCHAR},
       modifier = #{modifier,jdbcType=VARCHAR}
@@ -346,13 +286,6 @@
     <update id="updateGroupCount">
         update profile_meta_group
         set group_count = #{groupCount,jdbcType=INTEGER}
-        where group_id = #{groupId,jdbcType=VARCHAR}
-    </update>
-
-    <update id="updateInstanceStatus">
-        update profile_meta_group
-        set instance_status = #{instanceStatus,jdbcType=INTEGER},
-        instance_msg = #{instanceMsg,jdbcType=VARCHAR}
         where group_id = #{groupId,jdbcType=VARCHAR}
     </update>
 </mapper>

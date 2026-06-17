@@ -8,6 +8,7 @@ import com.data.profile.web.model.Task;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.service.DatasetService;
 import com.data.profile.web.service.TaskExecutionService;
+import com.data.profile.web.task.DatasetTask;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,8 @@ public class DatasetController {
     @Autowired
     private DatasetService datasetService;
     @Autowired
+    private DatasetTask datasetTask;
+    @Autowired
     private TaskExecutionService taskExecutionService;
 
     @PostMapping(value = "/list")
@@ -56,15 +59,10 @@ public class DatasetController {
     @PostMapping(value = "/save")
     public Response save(@RequestBody Dataset dataset) {
         log.info("请求保存/更新数据集: {}", gson.toJson(dataset));
-        int result = datasetService.save(dataset);
-        if (result > 0) {
-            return Response.success(result);
-        } else {
-            return Response.error("添加数据集失败", ResponseCode.ERROR);
-        }
+        String datasetId = datasetService.save(dataset);
+        return Response.success(datasetId);
     }
 
-    // 删除数据集
     @DeleteMapping(value = "/delete")
     public Response delete(@RequestParam(name = "dataset_id") String datasetId) {
         log.info("根据数据集ID {} 请求删除数据集", datasetId);
@@ -76,13 +74,16 @@ public class DatasetController {
         }
     }
 
-    // 立即执行数据同步
+    // 立即执行数据集同步（异步触发，立即返回实例状态）
     @PostMapping(value = "/{datasetId}/execute")
-    public Response execute(@RequestParam(name = "datasetId") String datasetId) {
+    public Response execute(@PathVariable(value = "datasetId") String datasetId) {
         log.info("立即执行数据集 {} 同步", datasetId);
         try {
             TaskInstance instance = taskExecutionService.executeByRelatedId(datasetId);
             return Response.success(instance);
+        } catch (RuntimeException e) {
+            log.warn("数据集同步触发被拒绝: datasetId={}, reason={}", datasetId, e.getMessage());
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
         } catch (Exception e) {
             log.error("数据集同步失败: datasetId={}", datasetId, e);
             return Response.error("数据集同步失败: " + e.getMessage(), ResponseCode.ERROR);
@@ -101,7 +102,7 @@ public class DatasetController {
     @GetMapping(value = "/{datasetId}/scheduler")
     public Response getSchedulerConfig(@PathVariable(value = "datasetId") String datasetId) {
         log.info("获取数据集 {} 调度配置", datasetId);
-        Task task = datasetService.getSchedulerConfig(datasetId);
+        Task task = datasetTask.getSchedulerConfig(datasetId);
         if (task != null) {
             return Response.success(task);
         } else {
@@ -114,24 +115,11 @@ public class DatasetController {
     public Response configureScheduler(@PathVariable(value = "datasetId") String datasetId, @RequestBody Task schedulerConfig) {
         log.info("配置数据集 {} 调度: {}", datasetId, gson.toJson(schedulerConfig));
         try {
-            datasetService.configureScheduler(datasetId,schedulerConfig);
+            datasetTask.configureScheduler(datasetId, schedulerConfig);
             return Response.success("配置成功");
         } catch (Exception e) {
             log.error("配置数据集调度失败: datasetId={}", datasetId, e);
             return Response.error("配置调度失败: " + e.getMessage(), ResponseCode.ERROR);
         }
     }
-
-    /*@GetMapping(value = "/refresh")
-    public Response refresh(@RequestParam(name = "datasource_id") String datasourceId,
-                            @RequestParam(name = "dataset_id") String datasetId,
-                            @RequestParam(name = "table_name") String tableName) {
-        log.info("根据数据源ID {}、数据集ID {}、表名 {} 请求刷新数据集字段", datasourceId, datasetId, tableName);
-        List<DatasetField> fields = datasetService.refresh(datasourceId, datasetId, tableName);
-        if (!Objects.equals(fields, null)) {
-            return Response.success(fields);
-        } else {
-            return Response.error("刷新数据集字段失败", ResponseCode.ERROR);
-        }
-    }*/
 }

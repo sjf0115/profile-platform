@@ -10,6 +10,7 @@ public interface TaskInstanceMapper {
     List<TaskInstance> selectByInstanceName(String instanceName); // 根据名字查询
     List<TaskInstance> selectByParams(TaskInstance instance); //根据参数查询
     List<TaskInstance> selectByKeyword(String keyword); // 模糊查询
+    TaskInstance selectLatestByRelatedId(String instanceRelatedId); // 查询最新实例
     // 插入
     int insert(TaskInstance instance); // 插入全部
     int insertSelective(TaskInstance instance); // 选择性插入

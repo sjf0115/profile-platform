@@ -225,7 +225,7 @@ public class ScheduleEngineService {
             // 默认值
             baseUrl = "http://localhost:8080";
         }
-        return baseUrl + "/task/" + taskId + "/execute";
+        return baseUrl + "/task/" + taskId + "/trigger";
     }
 
     @SuppressWarnings("unchecked")
