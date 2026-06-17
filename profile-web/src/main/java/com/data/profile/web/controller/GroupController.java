@@ -6,7 +6,9 @@ import com.data.profile.common.enums.*;
 import com.data.profile.web.model.Group;
 import com.data.profile.web.model.GroupRule;
 import com.data.profile.web.model.LabelOperator;
+import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.service.GroupService;
+import com.data.profile.web.service.TaskExecutionService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +39,8 @@ public class GroupController {
     private GroupService groupService;
     @Autowired
     private GroupTask groupTask;
+    @Autowired
+    private TaskExecutionService taskExecutionService;
 
     @PostMapping(value = "/list")
     public Response getList(@RequestBody Group group) {
@@ -138,6 +142,22 @@ public class GroupController {
         } catch (Exception e) {
             log.error("群组预估失败", e);
             return Response.error("群组预估失败: " + e.getMessage(), ResponseCode.ERROR);
+        }
+    }
+
+    // 立即执行群组圈选
+    @PostMapping(value = "/{groupId}/execute")
+    public Response execute(@PathVariable(value = "groupId") String groupId) {
+        log.info("请求手动立即执行群组 [{}] 圈选", groupId);
+        try {
+            TaskInstance instance = taskExecutionService.executeByRelatedId(groupId, TriggerMode.MANUAL);
+            return Response.success(instance);
+        } catch (RuntimeException e) {
+            log.warn("群组圈选触发被拒绝: groupId={}, reason={}", groupId, e.getMessage());
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
+        } catch (Exception e) {
+            log.error("群组圈选失败: groupId={}", groupId, e);
+            return Response.error("群组圈选失败: " + e.getMessage(), ResponseCode.ERROR);
         }
     }
 

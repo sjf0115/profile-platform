@@ -2,6 +2,8 @@ package com.data.profile.web.controller;
 
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.common.enums.TriggerMode;
+import com.data.profile.web.dto.ScheduleConfigRequest;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.Task;
@@ -74,12 +76,12 @@ public class DatasetController {
         }
     }
 
-    // 立即执行数据集同步（异步触发，立即返回实例状态）
+    // 立即执行数据集同步
     @PostMapping(value = "/{datasetId}/execute")
     public Response execute(@PathVariable(value = "datasetId") String datasetId) {
-        log.info("立即执行数据集 {} 同步", datasetId);
+        log.info("请求手动立即执行数据集 [{}] 同步", datasetId);
         try {
-            TaskInstance instance = taskExecutionService.executeByRelatedId(datasetId);
+            TaskInstance instance = taskExecutionService.executeByRelatedId(datasetId, TriggerMode.MANUAL);
             return Response.success(instance);
         } catch (RuntimeException e) {
             log.warn("数据集同步触发被拒绝: datasetId={}, reason={}", datasetId, e.getMessage());
@@ -90,18 +92,23 @@ public class DatasetController {
         }
     }
 
-    // 获取支持数据集的数据源
-    @GetMapping(value = "/datasources")
-    public Response getDataSources(@RequestParam(name = "dataset_type") String datasetType) {
-        log.info("根据数据集类型 {} 请求查看支持的数据源", datasetType);
-        List<DataSource> dataSources = datasetService.getDataSources(datasetType);
-        return Response.success(dataSources);
+    // 配置数据集调度
+    @PutMapping(value = "/{datasetId}/schedule")
+    public Response schedule(@PathVariable(value = "datasetId") String datasetId, @RequestBody ScheduleConfigRequest config) {
+        log.info("配置数据集 [{}] 调度: {}", datasetId, gson.toJson(config));
+        try {
+            datasetTask.schedule(datasetId, config);
+            return Response.success("配置成功");
+        } catch (Exception e) {
+            log.error("配置数据集调度失败: datasetId={}", datasetId, e);
+            return Response.error("配置调度失败: " + e.getMessage(), ResponseCode.ERROR);
+        }
     }
 
     // 获取数据集调度配置
-    @GetMapping(value = "/{datasetId}/scheduler")
-    public Response getSchedulerConfig(@PathVariable(value = "datasetId") String datasetId) {
-        log.info("获取数据集 {} 调度配置", datasetId);
+    @GetMapping(value = "/{datasetId}/schedule")
+    public Response getScheduleConfig(@PathVariable(value = "datasetId") String datasetId) {
+        log.info("获取数据集 [{}] 调度配置", datasetId);
         Task task = datasetTask.getSchedulerConfig(datasetId);
         if (task != null) {
             return Response.success(task);
@@ -110,16 +117,11 @@ public class DatasetController {
         }
     }
 
-    // 配置数据集调度
-    @PutMapping(value = "/{datasetId}/scheduler")
-    public Response configureScheduler(@PathVariable(value = "datasetId") String datasetId, @RequestBody Task schedulerConfig) {
-        log.info("配置数据集 {} 调度: {}", datasetId, gson.toJson(schedulerConfig));
-        try {
-            datasetTask.configureScheduler(datasetId, schedulerConfig);
-            return Response.success("配置成功");
-        } catch (Exception e) {
-            log.error("配置数据集调度失败: datasetId={}", datasetId, e);
-            return Response.error("配置调度失败: " + e.getMessage(), ResponseCode.ERROR);
-        }
+    // 获取支持数据集的数据源
+    @GetMapping(value = "/datasources")
+    public Response getDataSources(@RequestParam(name = "dataset_type") String datasetType) {
+        log.info("根据数据集类型 {} 请求查看支持的数据源", datasetType);
+        List<DataSource> dataSources = datasetService.getDataSources(datasetType);
+        return Response.success(dataSources);
     }
 }

@@ -45,9 +45,9 @@ public class Dataset {
     // 修改时间
     private Date gmtModified;
 
-    // TODO VO
-    // 实体字段
+    // TODO VO 关联查询
+    // 数据集字段
     private List<DatasetField> fields;
-    // 最新任务实例（查询时关联）
+    // 最新任务实例
     private TaskInstance latestInstance;
 }

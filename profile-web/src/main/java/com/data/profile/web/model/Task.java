@@ -22,7 +22,7 @@ public class Task {
     private String taskName;
     // 调度任务描述
     private String taskDesc;
-    // 调度任务类型:1-数据集,2-群组圈选
+    // 调度任务类型:1-群组圈选,2-群组导出,3-数据集
     private Integer taskType;
     // 调度任务关联ID
     private String taskRelatedId;

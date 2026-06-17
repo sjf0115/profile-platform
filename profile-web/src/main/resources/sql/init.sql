@@ -120,11 +120,6 @@ CREATE TABLE IF NOT EXISTS `profile_meta_dataset`(
     `entity_id` VARCHAR(50) NOT NULL COMMENT '主体(实体)ID',
     `entity_field` VARCHAR(100) NOT NULL COMMENT '主体(实体)标识字段',
     `fields` TEXT NOT NULL COMMENT '数据集字段',
---    `instance_id` INT COMMENT '最新执行任务实例ID',
---    `instance_status` INT COMMENT '最新执行状态: 1-未运行,2-运行中,3-运行成功,4-运行失败',
---    `instance_start_time` DATETIME COMMENT '最新执行开始时间',
---    `instance_end_time` DATETIME COMMENT '最新执行结束时间',
---    `instance_msg` VARCHAR(500) COMMENT '最新执行信息，只有运行失败时才有',
     `owner` VARCHAR(100) NOT NULL COMMENT '负责人',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
@@ -222,13 +217,8 @@ CREATE TABLE IF NOT EXISTS `profile_meta_group`(
     `group_desc` VARCHAR(200) COMMENT '群组描述',
     `group_rule` VARCHAR(500) NOT NULL COMMENT '群组规则',
     `group_count` INT NOT NULL COMMENT '群组覆盖规模',
-    `entity_id` VARCHAR(50) NOT NULL COMMENT '群组主体ID',
+    `entity_identifier_id` VARCHAR(50) NOT NULL COMMENT '群组主体标识ID',
     `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
---    `instance_id` INT COMMENT '最新执行任务实例ID',
---    `instance_status` INT COMMENT '最新执行状态: 1-未运行,2-运行中,3-运行成功,4-运行失败',
---    `instance_start_time` DATETIME COMMENT '最新执行开始时间',
---    `instance_end_time` DATETIME COMMENT '最新执行结束时间',
---    `instance_msg` VARCHAR(500) COMMENT '最新执行信息，只有运行失败时才有',
     `owner` VARCHAR(100) NOT NULL COMMENT '群组负责人',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
     `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
@@ -331,10 +321,10 @@ CREATE TABLE IF NOT EXISTS `profile_meta_task`(
     `task_id` VARCHAR(40) NOT NULL COMMENT '调度任务ID',
     `task_name` VARCHAR(100) NOT NULL COMMENT '调度任务名称',
     `task_desc` VARCHAR(100) COMMENT '调度任务描述',
-    `task_type` INT NOT NULL COMMENT '调度任务类型:1-数据集,2-群组圈选',
+    `task_type` INT NOT NULL COMMENT '调度任务类型:1-群组圈选,2-群组投递,3-数据集同步',
     `task_related_id` VARCHAR(100) COMMENT '调度任务关联ID',
     `trigger_target_id` VARCHAR(100) COMMENT '调度对象ID',
-    `trigger_type` INT NOT NULL COMMENT '调度类型:1-手动触发调度,2-API触发调度,3-周期调度',
+    `trigger_type` INT NOT NULL COMMENT '调度类型:1-无调度(手动调度),2-日周期调度,3-小时周期调度',
     `trigger_cron` VARCHAR(20) COMMENT '调度 cron 表达式:只有周期自动触发更新才有',
     `trigger_url` VARCHAR(20) COMMENT '调度触发URL:只有API触发调度才有',
     `trigger_start_time` VARCHAR(20) COMMENT '触发调度有效开始时间:只有周期自动触发更新才有',
@@ -352,7 +342,7 @@ CREATE TABLE IF NOT EXISTS `profile_meta_task`(
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-调度任务';
 
 -- 任务实例 调度任务运行实例
-DROP Table `profile_meta_instance`;
+DROP Table `profile_meta_task_instance`;
 CREATE TABLE IF NOT EXISTS `profile_meta_task_instance`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
     `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态:1-未运行,2-运行中,3-运行失败,4-运行成功',
@@ -360,6 +350,7 @@ CREATE TABLE IF NOT EXISTS `profile_meta_task_instance`(
     `instance_name` VARCHAR(100) NOT NULL COMMENT '实例名称',
     `task_id` VARCHAR(100) NOT NULL COMMENT '任务ID',
     `instance_related_id` VARCHAR(100) COMMENT '实例关联ID',
+    `trigger_mode` VARCHAR(100) COMMENT '触发模式：1-手动触发,2-定时调度,3-API触发',
     `start_time` BIGINT NOT NULL COMMENT '实例运行的开始时间:毫秒时间戳',
     `end_time` BIGINT NOT NULL COMMENT '实例运行的结束时间:毫秒时间戳',
     `duration` BIGINT NOT NULL COMMENT '实例运行时长:毫秒',

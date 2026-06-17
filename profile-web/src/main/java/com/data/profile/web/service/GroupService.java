@@ -62,6 +62,7 @@ public class GroupService {
                 target.setEntityIdentifierName(entityIdentifier.getEntityIdentifierName());
             }
             // 查询最新任务实例（关联查询）
+            // TODO 是否有必要
             TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(target.getGroupId());
             target.setLatestInstance(latestInstance);
             return target;

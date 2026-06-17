@@ -2,6 +2,7 @@ package com.data.profile.web.service;
 
 import com.data.profile.common.enums.InstanceStatus;
 import com.data.profile.common.enums.ModelType;
+import com.data.profile.common.enums.TriggerMode;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.web.dao.TaskInstanceMapper;
 import com.data.profile.web.model.TaskInstance;
@@ -58,9 +59,10 @@ public class TaskInstanceService {
      * @param instanceName      实例名称
      * @param instanceRelatedId 实例关联ID（如 datasetId）
      * @param initialStatus     初始状态（PENDING 或 RUNNING）
+     * @param triggerMode       触发模式
      * @return 创建后的实例
      */
-    public TaskInstance createInstance(String taskId, String instanceName, String instanceRelatedId, InstanceStatus initialStatus) {
+    public TaskInstance createInstance(String taskId, String instanceName, String instanceRelatedId, InstanceStatus initialStatus, TriggerMode triggerMode) {
         String instanceId = IDGenerator.getInstance().generate(ModelType.INSTANCE);
         long startTime = System.currentTimeMillis();
 
@@ -70,6 +72,7 @@ public class TaskInstanceService {
         instance.setTaskId(taskId);
         instance.setInstanceRelatedId(instanceRelatedId);
         instance.setStatus(initialStatus.getCode());
+        instance.setTriggerMode(triggerMode != null ? triggerMode.getCode() : null);
         instance.setStartTime(startTime);
         instance.setEndTime(0L);
         instance.setDuration(0L);
@@ -78,7 +81,7 @@ public class TaskInstanceService {
         instance.setModifier(RequestContext.currentUserId());
 
         instanceMapper.insertSelective(instance);
-        log.info("创建任务实例: instanceId={}, taskId={}, relatedId={}, status={}", instanceId, taskId, instanceRelatedId, initialStatus);
+        log.info("创建任务实例: instanceId={}, taskId={}, relatedId={}, status={}, triggerMode={}", instanceId, taskId, instanceRelatedId, initialStatus, triggerMode);
         return instance;
     }
 
@@ -86,7 +89,7 @@ public class TaskInstanceService {
      * 创建任务实例（默认为 RUNNING 状态，向后兼容）。
      */
     public TaskInstance createInstance(String taskId, String instanceName, String instanceRelatedId) {
-        return createInstance(taskId, instanceName, instanceRelatedId, InstanceStatus.RUNNING);
+        return createInstance(taskId, instanceName, instanceRelatedId, InstanceStatus.RUNNING, null);
     }
 
     /**

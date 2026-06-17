@@ -4,7 +4,7 @@ import com.data.engine.api.ScheduleContext;
 import com.data.engine.api.ScheduleEngineFactory;
 import com.data.engine.api.ScheduleExecutor;
 import com.data.engine.api.ScheduleTaskRegistrar;
-import com.data.profile.common.enums.SchedulerType;
+import com.data.profile.common.enums.TriggerType;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.model.Engine;
 import com.data.profile.web.model.Task;
@@ -80,7 +80,7 @@ public class ScheduleEngineService {
         }
 
         // 5. 上线/下线
-        if (triggerType == SchedulerType.MANUAL.getCode()) {
+        if (triggerType == TriggerType.MANUAL.getCode()) {
             // 手动触发：下线调度（仅保留 Workflow 定义，不自动执行）
             if (StringUtils.isNotBlank(task.getScheduleId())) {
                 registrar.offline(task.getScheduleId());
@@ -192,9 +192,9 @@ public class ScheduleEngineService {
     private ScheduleContext buildScheduleContext(Task task, int triggerType, String cron,
                                                  String startTime, String endTime, Engine scheduleEngine) {
         String triggerTypeStr;
-        if (triggerType == SchedulerType.DAY_REPEAT.getCode()) {
+        if (triggerType == TriggerType.DAY_REPEAT.getCode()) {
             triggerTypeStr = "day_repeat";
-        } else if (triggerType == SchedulerType.HOUR_REPEAT.getCode()) {
+        } else if (triggerType == TriggerType.HOUR_REPEAT.getCode()) {
             triggerTypeStr = "hour_repeat";
         } else {
             triggerTypeStr = "manual";
@@ -225,7 +225,7 @@ public class ScheduleEngineService {
             // 默认值
             baseUrl = "http://localhost:8080";
         }
-        return baseUrl + "/task/" + taskId + "/trigger";
+        return baseUrl + "/task/" + taskId + "/callback";
     }
 
     @SuppressWarnings("unchecked")

@@ -39,12 +39,12 @@ export const datasetApi = {
   },
 
   // 获取数据集调度配置
-  getSchedulerConfig: (datasetId: string) => {
-    return request.get<ApiResponse<Task>>(`/dataset/${datasetId}/scheduler`)
+  getScheduleConfig: (datasetId: string) => {
+    return request.get<ApiResponse<Task>>(`/dataset/${datasetId}/schedule`)
   },
 
   // 配置数据集调度
-  configureScheduler: (datasetId: string, data: Partial<Task>) => {
-    return request.put<ApiResponse<any>>(`/dataset/${datasetId}/scheduler`, data)
+  configureSchedule: (datasetId: string, data: any) => {
+    return request.put<ApiResponse<any>>(`/dataset/${datasetId}/schedule`, data)
   }
 }

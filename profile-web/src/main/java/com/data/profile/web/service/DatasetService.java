@@ -64,6 +64,7 @@ public class DatasetService {
         if (dataset == null) {
             return Optional.empty();
         }
+        // 查询数据集字段
         List<DatasetField> fields = datasetFieldService.getListByDatasetId(datasetId);
         dataset.setFields(fields);
         // 查询最新任务实例（关联查询）
@@ -163,7 +164,7 @@ public class DatasetService {
 
         // 创建引擎表
         createEngineTable(dataset);
-        // 创建同步任务 TODO 与定时任务的区别
+        // 创建同步任务
         createSyncTask(datasetId, dataset.getDatasetName());
         return datasetId;
     }
@@ -242,7 +243,7 @@ public class DatasetService {
     }
 
     /**
-     * 创建同步任务（手动触发类型）TODO
+     * 创建同步任务
      */
     private void createSyncTask(String datasetId, String datasetName) {
         Task task = new Task();
@@ -250,8 +251,8 @@ public class DatasetService {
         task.setTaskDesc("数据集[" + datasetName + "]的同步任务");
         task.setTaskType(TaskType.IMPORT.getCode());
         task.setTaskRelatedId(datasetId);
-        task.setTriggerType(SchedulerType.MANUAL.getCode());
+        task.setTriggerType(TriggerType.MANUAL.getCode()); // 默认无调度
         taskService.create(task);
-        log.info("创建同步任务: datasetId={}", datasetId);
+        log.info("为数据集 [{}] 创建同步任务", datasetId);
     }
 }

@@ -3,6 +3,7 @@ package com.data.profile.web.service;
 import com.data.profile.common.enums.InstanceStatus;
 import com.data.profile.common.enums.TaskType;
 import com.data.profile.common.enums.Status;
+import com.data.profile.common.enums.TriggerMode;
 import com.data.profile.web.model.Task;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.task.ExecutionContext;
@@ -61,10 +62,11 @@ public class TaskExecutionService {
      * 异步执行任务：创建实例并异步执行，立即返回实例信息。
      * <p>包含并发控制：同一任务只允许一个运行中的实例。</p>
      *
-     * @param taskId 任务ID
+     * @param taskId      任务ID
+     * @param triggerMode 触发模式
      * @return 创建的任务实例（状态为 PENDING 或 RUNNING）
      */
-    public TaskInstance executeTask(String taskId) {
+    public TaskInstance executeTask(String taskId, TriggerMode triggerMode) {
         Task task = taskService.getDetail(taskId)
                 .orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
         if (task.getStatus() != Status.ENABLE.getCode()) {
@@ -74,10 +76,10 @@ public class TaskExecutionService {
         // 并发控制：检查是否有运行中的实例
         checkRunningInstance(taskId);
 
-        // 创建实例（PENDING 状态）
+        // 创建实例（PENDING 状态，记录触发模式）
         String instanceName = task.getTaskName() + "-" + System.currentTimeMillis();
         TaskInstance instance = taskInstanceService.createInstance(
-                taskId, instanceName, task.getTaskRelatedId(), InstanceStatus.PENDING);
+                taskId, instanceName, task.getTaskRelatedId(), InstanceStatus.PENDING, triggerMode);
 
         // 异步执行
         CompletableFuture.runAsync(() -> executeAsync(task, instance), taskExecutorPool);
@@ -86,14 +88,28 @@ public class TaskExecutionService {
     }
 
     /**
+     * 异步执行任务（默认手动触发）。
+     */
+    public TaskInstance executeTask(String taskId) {
+        return executeTask(taskId, TriggerMode.MANUAL);
+    }
+
+    /**
      * 通过关联ID异步执行任务。
      */
-    public TaskInstance executeByRelatedId(String relatedId) {
+    public TaskInstance executeByRelatedId(String relatedId, TriggerMode triggerMode) {
         Task task = taskService.getDetailByRelatedId(relatedId);
         if (task == null) {
             throw new RuntimeException("关联ID " + relatedId + " 对应的任务不存在");
         }
-        return executeTask(task.getTaskId());
+        return executeTask(task.getTaskId(), triggerMode);
+    }
+
+    /**
+     * 通过关联ID异步执行任务（默认手动触发）。
+     */
+    public TaskInstance executeByRelatedId(String relatedId) {
+        return executeByRelatedId(relatedId, TriggerMode.MANUAL);
     }
 
     // -------------------------------------------------------------------------

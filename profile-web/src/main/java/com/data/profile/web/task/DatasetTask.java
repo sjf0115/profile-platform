@@ -1,5 +1,6 @@
 package com.data.profile.web.task;
 
+import com.data.profile.web.dto.ScheduleConfigRequest;
 import com.data.profile.web.engine.DiEngineService;
 import com.data.profile.web.engine.ScheduleEngineService;
 import com.data.profile.web.model.Task;
@@ -28,10 +29,6 @@ public class DatasetTask {
     @Resource
     private TaskService taskService;
 
-    // -------------------------------------------------------------------------
-    // 执行逻辑（被 ImportTaskExecutor 调用）
-    // -------------------------------------------------------------------------
-
     /**
      * 执行数据集同步
      * @param datasetId 数据集ID
@@ -39,28 +36,23 @@ public class DatasetTask {
     public void executeSync(String datasetId) throws Exception {
         log.info("开始执行数据集同步: datasetId={}", datasetId);
         diEngineService.executeDatasetSync(datasetId);
-        log.info("数据集同步完成: datasetId={}", datasetId);
     }
-
-    // -------------------------------------------------------------------------
-    // 调度配置（用户手动操作，独立于 CRUD）
-    // -------------------------------------------------------------------------
 
     /**
      * 配置数据集调度
      */
-    public void configureScheduler(String datasetId, Task schedulerConfig) {
+    public void schedule(String datasetId, ScheduleConfigRequest config) {
         Task task = taskService.getDetailByRelatedId(datasetId);
         if (task == null) {
-            log.error("数据集 {} 没有关联的同步任务，无法配置调度", datasetId);
+            log.error("数据集 [{}] 没有关联的同步任务，无法配置调度", datasetId);
             throw new RuntimeException("数据集没有关联的同步任务，请先创建数据集");
         }
         scheduleEngineService.configureSchedule(
                 task.getTaskId(),
-                schedulerConfig.getTriggerType(),
-                schedulerConfig.getTriggerCron(),
-                schedulerConfig.getTriggerStartTime(),
-                schedulerConfig.getTriggerEndTime());
+                config.getTriggerType(),
+                config.getTriggerCron(),
+                config.getTriggerStartTime(),
+                config.getTriggerEndTime());
     }
 
     /**

@@ -1,10 +1,14 @@
 package com.data.profile.common.enums;
 
+import lombok.Getter;
+
 /**
  * 任务类型枚举
  * <p>统一的任务类型定义，用于任务创建、执行分发等场景。</p>
  */
+@Getter
 public enum TaskType {
+    // 1-群组圈选,2-群组投递,3-数据集同步
     /**
      * 群组圈选
      */
@@ -24,14 +28,6 @@ public enum TaskType {
     TaskType(Integer code, String name) {
         this.code = code;
         this.name = name;
-    }
-
-    public Integer getCode() {
-        return code;
-    }
-
-    public String getName() {
-        return name;
     }
 
     /**

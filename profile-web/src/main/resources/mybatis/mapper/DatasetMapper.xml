@@ -20,12 +20,12 @@
     <result column="modifier" jdbcType="VARCHAR" property="modifier" />
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
     <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
-    <result column="fields" property="fields" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.web.handler.DatasetFieldHandler"/>
+<!--    <result column="fields" property="fields" jdbcType="LONGVARCHAR" typeHandler="com.data.profile.web.handler.DatasetFieldHandler"/>-->
   </resultMap>
 
   <sql id="Base_Column_List">
     id, status, dataset_id, dataset_name, dataset_type, dataset_desc, source_type, datasource_id, 
-    table_name, partition_field, partition_format, fields,
+    table_name, partition_field, partition_format,
     entity_id, entity_field,
     owner, creator, modifier, gmt_create, gmt_modified
   </sql>
@@ -114,14 +114,14 @@
       dataset_name, dataset_type, dataset_desc, 
       source_type, datasource_id, table_name,
       partition_field, partition_format,
-      entity_id, entity_field, fields,
+      entity_id, entity_field,
       owner, creator, modifier
       )
     values (#{status,jdbcType=INTEGER}, #{datasetId,jdbcType=VARCHAR},
       #{datasetName,jdbcType=VARCHAR}, #{datasetType,jdbcType=INTEGER}, #{datasetDesc,jdbcType=VARCHAR}, 
       #{sourceType,jdbcType=INTEGER}, #{datasourceId,jdbcType=VARCHAR}, #{tableName,jdbcType=VARCHAR},
       #{partitionField,jdbcType=VARCHAR}, #{partitionFormat,jdbcType=VARCHAR},
-      #{entityId,jdbcType=VARCHAR}, #{entityField,jdbcType=VARCHAR}, #{fields,jdbcType=LONGVARCHAR},
+      #{entityId,jdbcType=VARCHAR}, #{entityField,jdbcType=VARCHAR},
       #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR}
       )
   </insert>
@@ -165,9 +165,6 @@
       <if test="entityField != null">
         entity_field,
       </if>
-      <!--<if test="fields != null">
-        fields,
-      </if>-->
       <if test="owner != null">
         owner,
       </if>
@@ -215,9 +212,6 @@
       <if test="entityField != null">
         #{entityField,jdbcType=VARCHAR},
       </if>
-      <!--<if test="fields != null">
-        #{fields,jdbcType=LONGVARCHAR},
-      </if>-->
       <if test="owner != null">
         #{owner,jdbcType=VARCHAR},
       </if>
@@ -269,9 +263,6 @@
       <if test="entityField != null">
         entity_field = #{entityField,jdbcType=VARCHAR},
       </if>
-      <if test="fields != null">
-        fields = #{fields,jdbcType=INTEGER},
-      </if>
       <if test="owner != null">
         owner = #{owner,jdbcType=VARCHAR},
       </if>
@@ -299,7 +290,6 @@
       partition_format = #{partitionFormat,jdbcType=VARCHAR},
       entity_id = #{entityId,jdbcType=VARCHAR},
       entity_field = #{entityField,jdbcType=VARCHAR},
-      fields = #{fields,jdbcType=VARCHAR},
       owner = #{owner,jdbcType=VARCHAR},
       creator = #{creator,jdbcType=VARCHAR},
       modifier = #{modifier,jdbcType=VARCHAR}

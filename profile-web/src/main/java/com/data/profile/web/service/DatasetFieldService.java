@@ -80,6 +80,7 @@ public class DatasetFieldService {
     public int save(DatasetField datasetField) throws RuntimeException {
         String datasetId = datasetField.getDatasetId();
         String fieldName = datasetField.getFieldName();
+        int result;
         if (datasetField.getId() == null) {
             // 新增
             DatasetField target = getListByDatasetIdAndFieldName(datasetId, fieldName);
@@ -89,14 +90,15 @@ public class DatasetFieldService {
             }
             datasetField.setCreator(RequestContext.currentUserId());
             datasetField.setModifier(RequestContext.currentUserId());
+            result = datasetFieldMapper.insertSelective(datasetField);
             log.info("新增数据集字段: {}", gson.toJson(datasetField));
-            return datasetFieldMapper.insertSelective(datasetField);
         } else {
             // 修改
             datasetField.setModifier(RequestContext.currentUserId());
+            result = datasetFieldMapper.updateByIdSelective(datasetField);
             log.info("更新数据集字段: {}", gson.toJson(datasetField));
-            return datasetFieldMapper.updateByIdSelective(datasetField);
         }
+        return result;
     }
 
     /**
