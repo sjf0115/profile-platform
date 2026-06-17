@@ -223,7 +223,7 @@ public class ScheduleEngineService {
         String baseUrl = getString(config, "callbackBaseUrl");
         if (StringUtils.isBlank(baseUrl)) {
             // 默认值
-            baseUrl = "http://localhost:8080";
+            baseUrl = "http://localhost:3000";
         }
         return baseUrl + "/task/" + taskId + "/callback";
     }

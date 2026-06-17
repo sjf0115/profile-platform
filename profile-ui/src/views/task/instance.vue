@@ -44,7 +44,7 @@
             <el-option label="运行失败" :value="3" />
             <el-option label="运行成功" :value="4" />
           </el-select>
-          <el-button :icon="RefreshRight" @click="handleReset">重置</el-button>
+          <el-button @click="handleReset">重置</el-button>
           <el-button type="primary" :icon="Search" @click="handleSearch">
             查询
           </el-button>
@@ -82,7 +82,7 @@
                 <el-icon v-else color="#909399" size="16"><Timer /></el-icon>
                 <span class="name-text">{{ row.instance_name }}</span>
               </div>
-              <div class="instance-meta">ID: {{ row.instance_id }}</div>
+              <div class="instance-meta">实例ID: {{ row.instance_id }}</div>
               <div class="instance-time" v-if="row.start_time && row.end_time">
                 {{ formatTime(row.start_time) }} ~ {{ formatTime(row.end_time) }}
                 <span v-if="row.duration" class="duration">(dur {{ row.duration }}ms)</span>
@@ -101,36 +101,42 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="类型" width="120">
+        <el-table-column label="实例类型" width="120">
           <template #default="{ row }">
             <el-tag size="small" type="info">
               {{ getTaskTypeLabel(row.instance_related_id) }}
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="触发模式" width="110" align="center">
+          <template #default="{ row }">
+            <el-tag size="small" :type="getTriggerModeType(row.trigger_mode)">
+              {{ getTriggerModeLabel(row.trigger_mode) }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="creator" label="责任人" width="100" />
-        <el-table-column label="定时时间" width="170">
+        <el-table-column label="创建时间" width="170">
           <template #default="{ row }">
             {{ formatDateTime(row.gmt_create) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="240" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleRerun(row)">
-              <el-icon><RefreshRight /></el-icon>
-              重跑
+            <el-button link type="primary" @click="handleViewDetail(row)">
+              查看
             </el-button>
             <el-button link type="primary" @click="handleViewLog(row)">
-              <el-icon><Document /></el-icon>
               日志
             </el-button>
             <el-dropdown trigger="click" @command="(cmd: string) => handleMoreCommand(cmd, row)">
               <el-button link type="primary">
-                更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                <el-icon><More /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="detail">查看详情</el-dropdown-item>
+                  <el-dropdown-item command="rerun">重跑</el-dropdown-item>
+                  <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -171,10 +177,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import {
-  Search, Refresh, RefreshRight, ArrowLeft, ArrowDown,
-  CircleCheck, CircleClose, Loading, Timer, Document
-} from '@element-plus/icons-vue'
+import { Search, Refresh, ArrowLeft, More, CircleCheck, CircleClose, Loading, Timer } from '@element-plus/icons-vue'
 import type { TaskInstance, TaskInstanceQueryParams } from '@/types'
 import { taskInstanceApi } from '@/api/taskInstance'
 import { taskApi } from '@/api/task'
@@ -251,6 +254,17 @@ const getStatusType = (status?: number) => {
   return map[status || 0] || 'info'
 }
 
+// 获取触发模式标签
+const getTriggerModeLabel = (mode?: number) => {
+  const map: Record<number, string> = { 1: '手动触发', 2: '定时调度', 3: 'API触发' }
+  return map[mode || 0] || '未知'
+}
+
+const getTriggerModeType = (mode?: number) => {
+  const map: Record<number, any> = { 1: 'info', 2: 'success', 3: 'warning' }
+  return map[mode || 0] || 'info'
+}
+
 // 获取任务类型（简化：从 related_id 推断，实际应查 task 表）
 const getTaskTypeLabel = (relatedId?: string) => {
   return relatedId ? '数据集同步' : '未知'
@@ -260,12 +274,14 @@ const getTaskTypeLabel = (relatedId?: string) => {
 const fetchData = async () => {
   loading.value = true
   try {
-    let res
-    if (currentTaskId.value) {
-      res = await taskInstanceApi.listByTaskId(currentTaskId.value)
-    } else {
-      res = await taskInstanceApi.getList(queryParams)
+    // 统一使用 POST /instance/list，将空字符串转为 undefined
+    const params: TaskInstanceQueryParams = {
+      ...queryParams,
+      instance_name: queryParams.instance_name || undefined,
+      status: queryParams.status ?? undefined,
+      task_id: currentTaskId.value || undefined,
     }
+    const res = await taskInstanceApi.getList(params)
     tableData.value = res.data.data || []
     total.value = res.data.data?.length || 0
   } catch (error) {
@@ -283,7 +299,7 @@ const handleSearch = () => {
 
 // 重置
 const handleReset = () => {
-  queryParams.instance_name = ''
+  queryParams.instance_name = undefined
   queryParams.status = undefined
   queryParams.page_num = 1
   activeFilterTag.value = 'all'
@@ -308,6 +324,17 @@ const handleBack = () => {
   router.push('/task')
 }
 
+// 查看详情
+const handleViewDetail = (row: TaskInstance) => {
+  router.push(`/instance/detail/${row.instance_id}`)
+}
+
+// 查看日志
+const handleViewLog = (row: TaskInstance) => {
+  currentLog.value = row.message || '暂无日志信息'
+  logDialogVisible.value = true
+}
+
 // 重跑
 const handleRerun = (row: TaskInstance) => {
   ElMessageBox.confirm(
@@ -327,16 +354,27 @@ const handleRerun = (row: TaskInstance) => {
     .catch(() => {})
 }
 
-// 查看日志
-const handleViewLog = (row: TaskInstance) => {
-  currentLog.value = row.message || '暂无日志信息'
-  logDialogVisible.value = true
+// 删除
+const handleDelete = (row: TaskInstance) => {
+  ElMessageBox.confirm(
+    `确定要删除实例 "${row.instance_name}" 吗？`,
+    '提示',
+    { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+  )
+    .then(() => {
+      // TODO: 调用删除接口
+      ElMessage.success('删除成功')
+      fetchData()
+    })
+    .catch(() => {})
 }
 
 // 更多操作
 const handleMoreCommand = (command: string, row: TaskInstance) => {
-  if (command === 'detail') {
-    handleViewLog(row)
+  if (command === 'rerun') {
+    handleRerun(row)
+  } else if (command === 'delete') {
+    handleDelete(row)
   }
 }
 

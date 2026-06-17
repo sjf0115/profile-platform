@@ -30,7 +30,9 @@ public class TaskInstanceService {
      * 根据查询条件获取任务实例列表
      */
     public List<TaskInstance> getList(TaskInstance instance) {
-        return instanceMapper.selectByParams(instance);
+        List<TaskInstance> taskInstances = instanceMapper.selectByParams(instance);
+        log.info("根据查询条件获取到 {} 个任务执行实例", taskInstances.size());
+        return taskInstances;
     }
 
     /**

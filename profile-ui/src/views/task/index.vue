@@ -9,11 +9,6 @@
 
       <!-- 搜索和操作区域 -->
       <div class="toolbar">
-        <div class="left-actions">
-          <el-button type="primary" :icon="Plus" @click="handleAdd">
-            新增任务
-          </el-button>
-        </div>
         <div class="right-filters">
           <el-input
             v-model="queryParams.task_name"
@@ -66,14 +61,35 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="名称" min-width="200">
+        <el-table-column label="任务名称" min-width="200">
           <template #default="{ row }">
             <div class="task-name">
               <el-link type="primary" @click="handleViewDetail(row)">
                 {{ row.task_name }}
               </el-link>
-              <div class="task-meta">ID: {{ row.task_id }}</div>
+              <div class="task-meta">任务ID: {{ row.task_id }}</div>
             </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="任务类型" width="120">
+          <template #default="{ row }">
+            <el-tag size="small" :type="getTaskTypeType(row.task_type)">
+              {{ getTaskTypeLabel(row.task_type) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="任务状态" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag size="small" :type="row.status === 1 ? 'success' : 'danger'">
+              {{ row.status === 1 ? '启用' : '禁用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="调度类型" width="110" align="center">
+          <template #default="{ row }">
+            <el-tag size="small" :type="getTriggerTypeType(row.trigger_type)">
+              {{ getTriggerTypeLabel(row.trigger_type) }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="创建时间" width="170">
@@ -86,35 +102,26 @@
             {{ formatDateTime(row.gmt_modified) }}
           </template>
         </el-table-column>
-        <el-table-column label="类型" width="120">
-          <template #default="{ row }">
-            <el-tag size="small" :type="getTaskTypeType(row.task_type)">
-              {{ getTaskTypeLabel(row.task_type) }}
-            </el-tag>
-          </template>
-        </el-table-column>
+
         <el-table-column prop="owner" label="责任人" width="100" />
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
+            <el-button link type="primary" @click="handleViewDetail(row)">
+              查看
+            </el-button>
             <el-button link type="primary" @click="handleExecute(row)">
-              <el-icon><VideoPlay /></el-icon>
-              执行
+              手动执行
             </el-button>
             <el-button link type="primary" @click="handleViewInstance(row)">
-              <el-icon><List /></el-icon>
-              实例
-            </el-button>
-            <el-button link type="primary" @click="handleEdit(row)">
-              编辑
+              执行记录
             </el-button>
             <el-dropdown trigger="click" @command="(cmd: string) => handleMoreCommand(cmd, row)">
               <el-button link type="primary">
-                更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                <el-icon><More /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="detail">查看详情</el-dropdown-item>
-                  <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                  <el-dropdown-item command="delete">删除</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -136,56 +143,7 @@
       </div>
     </el-card>
 
-    <!-- 新增/编辑弹窗 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="dialogTitle"
-      width="600px"
-      destroy-on-close
-    >
-      <el-form
-        ref="formRef"
-        :model="formData"
-        :rules="formRules"
-        label-width="100px"
-      >
-        <el-form-item label="任务名称" prop="task_name">
-          <el-input v-model="formData.task_name" placeholder="请输入任务名称" />
-        </el-form-item>
-        <el-form-item label="任务描述" prop="task_desc">
-          <el-input
-            v-model="formData.task_desc"
-            type="textarea"
-            :rows="2"
-            placeholder="请输入任务描述"
-          />
-        </el-form-item>
-        <el-form-item label="任务类型" prop="task_type">
-          <el-select v-model="formData.task_type" placeholder="请选择任务类型" style="width: 100%">
-            <el-option label="数据集同步" :value="3" />
-            <el-option label="群组计算" :value="1" />
-            <el-option label="群组投递" :value="2" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="调度类型" prop="trigger_type">
-          <el-select v-model="formData.trigger_type" placeholder="请选择调度类型" style="width: 100%">
-            <el-option label="手动触发" :value="1" />
-            <el-option label="周期调度" :value="3" />
-          </el-select>
-        </el-form-item>
-        <el-form-item
-          v-if="formData.trigger_type === 3"
-          label="Cron表达式"
-          prop="trigger_cron"
-        >
-          <el-input v-model="formData.trigger_cron" placeholder="例如: 0 0 2 * * ?" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
+
   </div>
 </template>
 
@@ -193,7 +151,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Refresh, VideoPlay, List, ArrowDown } from '@element-plus/icons-vue'
+import { Search, Refresh, More } from '@element-plus/icons-vue'
 import type { Task, TaskQueryParams } from '@/types'
 import { taskApi } from '@/api/task'
 
@@ -240,28 +198,19 @@ const activeFilterTag = ref('all')
 // 选中的数据
 const selectedRows = ref<Task[]>([])
 
-// 弹窗相关
-const dialogVisible = ref(false)
-const dialogTitle = ref('新增任务')
-const formRef = ref()
-const formData = reactive<Partial<Task>>({
-  task_name: '',
-  task_desc: '',
-  task_type: 3,
-  trigger_type: 1,
-  trigger_cron: '',
-})
-const formRules = {
-  task_name: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
-  task_type: [{ required: true, message: '请选择任务类型', trigger: 'change' }],
-  trigger_type: [{ required: true, message: '请选择调度类型', trigger: 'change' }],
-}
+
 
 // 获取任务列表
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await taskApi.getList(queryParams)
+    // 将空字符串转为 undefined，避免后端查询条件匹配问题
+    const params: TaskQueryParams = {
+      ...queryParams,
+      task_name: queryParams.task_name || undefined,
+      task_type: queryParams.task_type ?? undefined,
+    }
+    const res = await taskApi.getList(params)
     tableData.value = res.data.data || []
     total.value = res.data.data?.length || 0
   } catch (error) {
@@ -282,6 +231,19 @@ const getTaskTypeType = (type?: number) => {
   return map[type || 0] || 'info'
 }
 
+// 获取调度类型标签
+const getTriggerTypeLabel = (type?: number) => {
+  const map: Record<number, string> = { 1: '手动触发', 2: '每日重复', 3: '小时重复' }
+  return map[type || 0] || '未知'
+}
+
+const getTriggerTypeType = (type?: number) => {
+  const map: Record<number, any> = { 1: 'info', 2: 'success', 3: 'warning' }
+  return map[type || 0] || 'info'
+}
+
+
+
 // 搜索
 const handleSearch = () => {
   queryParams.page_num = 1
@@ -290,7 +252,7 @@ const handleSearch = () => {
 
 // 重置
 const handleReset = () => {
-  queryParams.task_name = ''
+  queryParams.task_name = undefined
   queryParams.task_type = undefined
   queryParams.page_num = 1
   activeFilterTag.value = 'all'
@@ -304,43 +266,9 @@ const handleFilterTagChange = (value: string) => {
   handleSearch()
 }
 
-// 新增
-const handleAdd = () => {
-  dialogTitle.value = '新增任务'
-  Object.assign(formData, {
-    task_id: undefined,
-    task_name: '',
-    task_desc: '',
-    task_type: 3,
-    trigger_type: 1,
-    trigger_cron: '',
-  })
-  dialogVisible.value = true
-}
-
-// 编辑
-const handleEdit = (row: Task) => {
-  dialogTitle.value = '编辑任务'
-  Object.assign(formData, { ...row })
-  dialogVisible.value = true
-}
-
-// 提交
-const handleSubmit = async () => {
-  try {
-    await formRef.value.validate()
-    if (formData.task_id) {
-      await taskApi.update(formData.task_id, formData as Task)
-      ElMessage.success('修改成功')
-    } else {
-      await taskApi.create(formData as Task)
-      ElMessage.success('创建成功')
-    }
-    dialogVisible.value = false
-    fetchData()
-  } catch (error) {
-    console.error('提交失败:', error)
-  }
+// 查看任务详情
+const handleViewDetail = (row: Task) => {
+  router.push(`/task/detail/${row.task_id}`)
 }
 
 // 执行
@@ -369,16 +297,9 @@ const handleViewInstance = (row: Task) => {
   })
 }
 
-// 查看详情
-const handleViewDetail = (row: Task) => {
-  handleViewInstance(row)
-}
-
 // 更多操作
 const handleMoreCommand = (command: string, row: Task) => {
-  if (command === 'detail') {
-    handleViewDetail(row)
-  } else if (command === 'delete') {
+  if (command === 'delete') {
     handleDelete(row)
   }
 }

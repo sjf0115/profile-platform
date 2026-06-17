@@ -372,6 +372,7 @@ export interface TaskInstance {
   instance_name: string
   task_id: string
   instance_related_id?: string
+  trigger_mode?: number
   start_time?: number
   end_time?: number
   duration?: number

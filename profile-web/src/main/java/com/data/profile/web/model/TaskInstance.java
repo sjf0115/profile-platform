@@ -7,9 +7,9 @@ import java.util.Date;
 @Data
 public class TaskInstance {
     private Long id;
-
-    private int status;
-
+    // 状态:1-未运行,2-运行中,3-运行失败,4-运行成功
+    private Integer status;
+    // 实例ID
     private String instanceId;
 
     private String instanceName;

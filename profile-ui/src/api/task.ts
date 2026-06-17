@@ -29,7 +29,7 @@ export const taskApi = {
 
   // 执行任务
   execute: (taskId: string) => {
-    return request.get<ApiResponse<any>>(`/task/${taskId}/execute`)
+    return request.post<ApiResponse<any>>(`/task/${taskId}/execute`)
   },
 
   // 通过关联ID执行任务

@@ -4,6 +4,8 @@ import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.service.TaskInstanceService;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,12 +27,14 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/instance", produces = MediaType.APPLICATION_JSON_VALUE)
 public class TaskInstanceController {
+    private static final Gson gson = new GsonBuilder().create();
     @Autowired
     private TaskInstanceService instanceService;
 
     // 实例列表
     @PostMapping(value = "/list")
     public Response getList(@RequestBody TaskInstance instance) {
+        log.info("根据任务执行实例信息请求查询任务执行实例: {}", gson.toJson(instance));
         List<TaskInstance> tasks = instanceService.getList(instance);
         return Response.success(tasks);
     }

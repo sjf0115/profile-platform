@@ -195,10 +195,22 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '任务管理' },
       },
       {
+        path: 'task/detail/:id',
+        name: 'TaskDetail',
+        component: () => import('@/views/task/detail.vue'),
+        meta: { title: '任务详情' },
+      },
+      {
         path: 'task/instance',
         name: 'TaskInstanceManagement',
         component: () => import('@/views/task/instance.vue'),
         meta: { title: '任务实例' },
+      },
+      {
+        path: 'instance/detail/:id',
+        name: 'InstanceDetail',
+        component: () => import('@/views/task/instance-detail.vue'),
+        meta: { title: '实例详情' },
       },
     ],
   },

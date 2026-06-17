@@ -91,9 +91,9 @@ public class TaskController {
      *
      * @param taskId 任务ID
      */
-    @PostMapping(value = "/{taskId}/trigger")
-    public Response trigger(@PathVariable(value = "taskId") String taskId) {
-        log.info("手动触发任务执行: taskId={}", taskId);
+    @PostMapping(value = "/{taskId}/execute")
+    public Response execute(@PathVariable(value = "taskId") String taskId) {
+        log.info("手动触发任务执行: {}", taskId);
         try {
             TaskInstance instance = taskExecutionService.executeTask(taskId, TriggerMode.MANUAL);
             return Response.success(instance);
@@ -113,7 +113,7 @@ public class TaskController {
      */
     @PostMapping(value = "/{taskId}/callback")
     public Response scheduledCallback(@PathVariable(value = "taskId") String taskId) {
-        log.info("调度引擎回调任务执行: taskId={}", taskId);
+        log.info("调度引擎回调任务执行: {}", taskId);
         try {
             TaskInstance instance = taskExecutionService.executeTask(taskId, TriggerMode.SCHEDULED);
             return Response.success(instance);

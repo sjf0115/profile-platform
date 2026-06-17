@@ -141,6 +141,10 @@
                 <el-icon><Timer /></el-icon>
                 <span>任务管理</span>
               </el-dropdown-item>
+              <el-dropdown-item @click="router.push('/task/instance')">
+                  <el-icon><Timer /></el-icon>
+                  <span>任务实例</span>
+                </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -371,6 +375,9 @@ const activeTopNav = computed(() => {
   if (path.startsWith('/analysis')) return '/analysis'
   if (path.startsWith('/project')) return '/project'
   if (path.startsWith('/task')) return '/project'
+  if (path.startsWith('/instance')) return '/project'
+  if (path.startsWith('/dataset')) return '/project'
+  if (path.startsWith('/datasource')) return '/project'
   if (path.startsWith('/settings')) return '/settings'
   return '/home'
 })
