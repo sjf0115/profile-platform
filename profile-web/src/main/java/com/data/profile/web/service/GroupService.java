@@ -3,11 +3,9 @@ package com.data.profile.web.service;
 import com.beust.jcommander.internal.Lists;
 import com.data.profile.common.enums.*;
 import com.data.profile.web.dao.GroupMapper;
-import com.data.profile.web.model.EntityIdentifier;
-import com.data.profile.web.model.Group;
-import com.data.profile.web.model.GroupRule;
-import com.data.profile.web.model.Task;
-import com.data.profile.web.model.TaskInstance;
+import com.data.profile.web.engine.AnalysisEngineService;
+import com.data.profile.web.engine.ScheduleEngineService;
+import com.data.profile.web.model.*;
 import com.data.profile.web.security.RequestContext;
 import com.data.profile.common.utils.IDGenerator;
 import com.google.gson.Gson;
@@ -34,6 +32,9 @@ import java.util.stream.Collectors;
 @Service
 public class GroupService {
     private static final Gson gson = new GsonBuilder().create();
+
+    /** 群组引擎表前缀 */
+    public static final String GROUP_TABLE_PREFIX = "profile_group_";
     @Resource
     private GroupMapper groupMapper;
     @Autowired
@@ -44,6 +45,10 @@ public class GroupService {
     private EntityIdentifierService entityIdentifierService;
     @Autowired
     private MinioService minioService;
+    @Autowired
+    private AnalysisEngineService analysisEngineService;
+    @Autowired
+    private ScheduleEngineService scheduleEngineService;
 
     /**
      * 根据查询条件获取群组列表
@@ -147,48 +152,39 @@ public class GroupService {
             }
         }
 
-        // 创建调度任务
-        Task task = Task.builder()
-                .taskName(groupName + "调度任务")
-                .taskType(TaskType.GROUP.getCode())
-                .taskRelatedId(groupId)
-                .triggerType(group.getTriggerType())
-                .triggerCron(group.getTriggerCron())
-                .triggerStartTime(group.getTriggerStartTime())
-                .triggerEndTime(group.getTriggerEndTime())
-                .build();
-        taskService.create(task);
-
+        int result = groupMapper.insertSelective(group);
         log.info("新增群组: {}", gson.toJson(group));
-        return groupMapper.insertSelective(group);
+
+        // 创建群组引擎表
+        createGroupEngineTable(group);
+
+        // 创建圈选任务
+        createAnalysisTask(group, groupId);
+
+        // 注册调度到调度引擎
+        scheduleGroupIfNeeded(group);
+
+        return result;
     }
 
     /**
      * 修改群组
+     * <p>更新群组元数据，并同步调度配置到调度引擎。</p>
+     *
      * @param group 群组
      */
     @Transactional
     public int update(Group group) {
-        String groupId = group.getGroupId();
-
         // 修改群组
         group.setModifier(RequestContext.currentUserId());
 
-        // 修改调度任务
-        Task task = Task.builder()
-                .taskId(group.getTaskId()) // 根据TaskId修改
-                .taskName(group.getGroupName() + "调度任务")
-                .taskType(TaskType.GROUP.getCode())
-                .taskRelatedId(groupId)
-                .triggerType(group.getTriggerType())
-                .triggerCron(group.getTriggerCron())
-                .triggerStartTime(group.getTriggerStartTime())
-                .triggerEndTime(group.getTriggerEndTime())
-                .build();
-        taskService.update(task);
-
         log.info("更新群组: {}", gson.toJson(group));
-        return groupMapper.updateByGroupIdSelective(group);
+        int result = groupMapper.updateByGroupIdSelective(group);
+
+        // 同步调度到调度引擎
+        scheduleGroupIfNeeded(group);
+
+        return result;
     }
 
     /**
@@ -208,9 +204,12 @@ public class GroupService {
         }
 
         // 删除调度任务
-        int result = taskService.deleteByRelatedId(groupId);
+        taskService.deleteByRelatedId(groupId);
 
-        // TODO 检查依赖确保无下游使用
+        // 删除群组引擎表
+        dropGroupEngineTable(groupId);
+
+        // 删除群组元数据
         log.info("删除群组: {}", groupId);
         return groupMapper.deleteByGroupId(groupId);
     }
@@ -265,5 +264,83 @@ public class GroupService {
      */
     public void updateGroupCount(String groupId, int count) {
         groupMapper.updateGroupCount(groupId, count);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 创建圈选任务
+     * <p>仅创建 Task 元数据，调度注册由 GroupController 调用 GroupTask.schedule() 完成。</p>
+     */
+    private void createAnalysisTask(Group group, String groupId) {
+        Task task = Task.builder()
+                .taskName(group.getGroupName())
+                .taskType(TaskType.GROUP.getCode())
+                .taskDesc(group.getGroupName() + "群组圈选任务")
+                .taskRelatedId(groupId)
+                .build();
+        taskService.create(task);
+        log.info("为群组 [{}] 创建圈选任务", groupId);
+    }
+
+    /**
+     * 创建群组引擎表
+     * <p>在分析引擎中创建群组结果表，用于存储圈选结果。</p>
+     * <p>建表失败不阻塞群组创建流程。</p>
+     */
+    private void createGroupEngineTable(Group group) {
+        String tableName = GROUP_TABLE_PREFIX + group.getGroupId();
+        String createSql = String.format(
+                "CREATE TABLE IF NOT EXISTS %s (" +
+                        "entity_id String COMMENT '实体ID', " +
+                        "_created_time DateTime DEFAULT now() COMMENT '圈选时间'" +
+                        ") ENGINE = MergeTree() ORDER BY entity_id SETTINGS index_granularity = 8192",
+                tableName);
+        try {
+            analysisEngineService.executeStatement(createSql);
+            log.info("群组引擎表创建成功: {}", tableName);
+        } catch (Exception e) {
+            log.warn("群组引擎表创建失败（非阻塞）: table={}, reason={}", tableName, e.getMessage());
+        }
+    }
+
+    /**
+     * 删除群组引擎表
+     * <p>从分析引擎中删除群组结果表。</p>
+     */
+    private void dropGroupEngineTable(String groupId) {
+        String tableName = GROUP_TABLE_PREFIX + groupId;
+        try {
+            analysisEngineService.executeStatement("DROP TABLE IF EXISTS " + tableName);
+            log.info("群组引擎表删除成功: {}", tableName);
+        } catch (Exception e) {
+            log.warn("群组引擎表删除失败（非阻塞）: table={}, reason={}", tableName, e.getMessage());
+        }
+    }
+
+    /**
+     * 如果群组配置了调度，则注册到调度引擎。
+     * <p>直接调用 ScheduleEngineService，避免循环依赖。</p>
+     * <p>调度注册失败不阻塞群组创建/更新流程。</p>
+     */
+    private void scheduleGroupIfNeeded(Group group) {
+        if (group.getTriggerType() != null) {
+            try {
+                Task task = taskService.getDetailByRelatedId(group.getGroupId());
+                if (task == null) {
+                    log.warn("群组 [{}] 没有关联的圈选任务，无法注册调度", group.getGroupId());
+                    return;
+                }
+                scheduleEngineService.configureSchedule(
+                        task.getTaskId(),
+                        group.getTriggerType(),
+                        group.getTriggerCron(),
+                        group.getTriggerStartTime(),
+                        group.getTriggerEndTime());
+                log.info("群组 [{}] 调度注册成功: triggerType={}", group.getGroupId(), group.getTriggerType());
+            } catch (Exception e) {
+                log.warn("群组调度注册失败（非阻塞）: groupId={}, reason={}", group.getGroupId(), e.getMessage());
+            }
+        }
     }
 }

@@ -2,9 +2,11 @@ package com.data.profile.web.task;
 
 import com.data.profile.web.model.*;
 import com.data.profile.web.engine.AnalysisEngineService;
+import com.data.profile.web.engine.ScheduleEngineService;
 import com.data.profile.web.service.DatasetFieldService;
 import com.data.profile.web.service.DatasetService;
 import com.data.profile.web.service.GroupService;
+import com.data.profile.web.service.TaskService;
 import com.data.profile.web.utils.RuleToSqlTranslator;
 import com.data.profile.web.utils.RuleToSqlTranslator.LabelMeta;
 import com.data.profile.web.utils.RuleToSqlTranslator.MetadataContext;
@@ -16,7 +18,7 @@ import java.util.*;
 
 /**
  * 功能：群组计算任务
- * <p>负责群组圈选执行（规则翻译、预估人数、全量圈选、结果持久化）。</p>
+ * <p>负责群组圈选执行（规则翻译、预估人数、全量圈选、结果持久化）及调度配置。</p>
  * <p>业界 CDP 标准实践：CRUD 服务(GroupService) 与计算任务(GroupTask) 分离。</p>
  *
  * 作者：SmartSi
@@ -34,6 +36,10 @@ public class GroupTask {
     private DatasetFieldService datasetFieldService;
     @Resource
     private AnalysisEngineService analysisEngineService;
+    @Resource
+    private ScheduleEngineService scheduleEngineService;
+    @Resource
+    private TaskService taskService;
 
     /**
      * 预估群组人数（前端交互式调用，不走 Task 体系）。
@@ -108,7 +114,7 @@ public class GroupTask {
 
         // 3. 验证被引用群组的结果表存在（前置防御）
         for (String refGroupId : referencedGroupIds) {
-            String refTable = "profile_group_" + refGroupId;
+            String refTable = GroupService.GROUP_TABLE_PREFIX + refGroupId;
             String checkSql = "EXISTS TABLE " + refTable;
             try {
                 long exists = analysisEngineService.executeCountQuery(checkSql);
@@ -130,39 +136,35 @@ public class GroupTask {
         String subQuery = RuleToSqlTranslator.translate(expression, context);
         log.info("群组圈选 - 翻译 SQL: groupId={}, sql={}", groupId, subQuery);
 
-        String resultTable = "profile_group_" + groupId;
+        String resultTable = GroupService.GROUP_TABLE_PREFIX + groupId;
         String tmpTable = resultTable + "_tmp";
 
         try {
-            // 6. 建正式表（如不存在）
-            analysisEngineService.executeStatement(buildCreateTableSql(resultTable));
-            log.info("群组圈选 - 结果表已就绪: {}", resultTable);
-
-            // 7. 建临时表（先 DROP 再 CREATE，确保干净）
+            // 6. 建临时表（先 DROP 再 CREATE，确保干净）
             analysisEngineService.executeStatement("DROP TABLE IF EXISTS " + tmpTable);
             analysisEngineService.executeStatement(buildCreateTableSql(tmpTable));
 
-            // 8. 写入圈选结果到临时表
+            // 7. 写入圈选结果到临时表
             String insertSql = String.format(
                     "INSERT INTO %s (entity_id) SELECT DISTINCT entity_id FROM (%s)",
                     tmpTable, subQuery);
             analysisEngineService.executeStatement(insertSql);
             log.info("群组圈选 - 数据写入临时表完成: {}", tmpTable);
 
-            // 9. 原子交换（ClickHouse EXCHANGE TABLES 原子操作，其他读者无感知）
+            // 8. 原子交换（ClickHouse EXCHANGE TABLES 原子操作，其他读者无感知）
             String exchangeSql = String.format("EXCHANGE TABLES %s AND %s", resultTable, tmpTable);
             analysisEngineService.executeStatement(exchangeSql);
             log.info("群组圈选 - 原子交换完成: {} <-> {}", resultTable, tmpTable);
 
-            // 10. 清理旧临时表（交换后里面是旧数据）
+            // 9. 清理旧临时表（交换后里面是旧数据）
             analysisEngineService.executeStatement("DROP TABLE IF EXISTS " + tmpTable);
 
-            // 11. 查询结果数量
+            // 10. 查询结果数量
             String countSql = "SELECT COUNT(*) FROM " + resultTable;
             long count = analysisEngineService.executeCountQuery(countSql);
             log.info("群组圈选 - 圈选人数: groupId={}, count={}", groupId, count);
 
-            // 12. 回写 groupCount（防止溢出）
+            // 11. 回写 groupCount（防止溢出）
             int groupCount = count > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) count;
             groupService.updateGroupCount(groupId, groupCount);
             log.info("群组圈选完成: groupId={}, count={}", groupId, count);
@@ -173,6 +175,36 @@ public class GroupTask {
             throw new RuntimeException("群组圈选执行失败: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * 配置群组调度
+     * <p>通过 ScheduleEngineService 注册/更新调度到调度引擎。</p>
+     *
+     * @param groupId    群组ID
+     * @param triggerType 调度类型
+     * @param cron       Cron 表达式
+     * @param startTime  生效开始时间
+     * @param endTime    生效结束时间
+     */
+    public void schedule(String groupId, int triggerType, String cron, String startTime, String endTime) {
+        Task task = taskService.getDetailByRelatedId(groupId);
+        if (task == null) {
+            log.error("群组 [{}] 没有关联的圈选任务，无法配置调度", groupId);
+            throw new RuntimeException("群组没有关联的圈选任务，请先创建群组");
+        }
+        scheduleEngineService.configureSchedule(
+                task.getTaskId(), triggerType, cron, startTime, endTime);
+        log.info("群组 [{}] 调度配置完成: triggerType={}", groupId, triggerType);
+    }
+
+    /**
+     * 获取群组关联的调度任务配置
+     */
+    public Task getSchedulerConfig(String groupId) {
+        return taskService.getDetailByRelatedId(groupId);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
 
     /**
      * 构建结果表 CREATE TABLE 语句。
@@ -211,10 +243,6 @@ public class GroupTask {
         }
         return groupIds;
     }
-
-    // -------------------------------------------------------------------------
-    // 元数据上下文构建
-    // -------------------------------------------------------------------------
 
     /**
      * 构建 MetadataContext：遍历 RuleExpression 中的所有 Rule，
@@ -255,7 +283,7 @@ public class GroupTask {
                 } else if (filter.getType() == 2) {
                     // 群组
                     String groupId = filter.getId();
-                    groupTableMap.putIfAbsent(groupId, "profile_group_" + groupId);
+                    groupTableMap.putIfAbsent(groupId, GroupService.GROUP_TABLE_PREFIX + groupId);
                 }
             }
         }

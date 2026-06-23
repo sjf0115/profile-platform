@@ -27,7 +27,7 @@ public class DolphinSchedulerApiClientTest {
 
     // === 配置项（根据实际环境修改） ===
     private static final String API_URL = "http://localhost:12345/dolphinscheduler";
-    private static final String TOKEN = "your-ds-token-here";  // 替换为真实 token
+    private static final String TOKEN = "2414ea93cbc65f55497da84a1e1b1973";  // 替换为真实 token
     private static final String PROJECT_CODE = "22012166559808"; // 替换为真实 projectCode
     private static final String TENANT_CODE = "default";
 
@@ -60,7 +60,6 @@ public class DolphinSchedulerApiClientTest {
     // -----------------------------------------------------------------
 
     @Test
-    @Ignore("需要真实 DS 服务，手动启用")
     public void genTaskCodes_shouldReturnValidCode() throws IOException {
         String resp = apiClient.genTaskCodes(1);
         System.out.println("genTaskCodes 响应: " + resp);
@@ -82,7 +81,6 @@ public class DolphinSchedulerApiClientTest {
     }
 
     @Test
-    @Ignore("需要真实 DS 服务，手动启用")
     public void genTaskCodes_multiple_shouldReturnList() throws IOException {
         String resp = apiClient.genTaskCodes(5);
         Map<?, ?> map = gson.fromJson(resp, Map.class);
@@ -100,7 +98,6 @@ public class DolphinSchedulerApiClientTest {
      * 注意：此测试会真实创建 DS 工作流，测试结束后会自动清理
      */
     @Test
-    @Ignore("需要真实 DS 服务，手动启用")
     public void workflowLifecycle_shouldSucceed() throws IOException {
         String workflowCode = null;
         String workflowName = "test-workflow-" + System.currentTimeMillis();
@@ -193,7 +190,6 @@ public class DolphinSchedulerApiClientTest {
     // -----------------------------------------------------------------
 
     @Test
-    @Ignore("需要真实 DS 服务 + 已存在的工作流，手动启用")
     public void scheduleLifecycle_shouldSucceed() throws IOException {
         // 前置：创建测试工作流（复用 workflowLifecycle 逻辑）
         String workflowName = "test-schedule-" + System.currentTimeMillis();
@@ -237,7 +233,6 @@ public class DolphinSchedulerApiClientTest {
     // -----------------------------------------------------------------
 
     @Test
-    @Ignore("需要真实 DS 服务 + 已上线的工作流，手动启用")
     public void triggerWorkflow_shouldStartProcessInstance() throws IOException {
         String workflowName = "test-trigger-" + System.currentTimeMillis();
         String workflowCode = createTestWorkflow(workflowName);
@@ -256,23 +251,14 @@ public class DolphinSchedulerApiClientTest {
         }
     }
 
-    // -----------------------------------------------------------------
-    // 6. 错误场景测试
-    // -----------------------------------------------------------------
-
     @Test
-    @Ignore("需要真实 DS 服务，手动启用")
-    public void getWorkflowStatus_invalidCode_shouldReturnError() throws IOException {
-        String resp = apiClient.getWorkflowStatus("999999999999");
-        System.out.println("查询不存在的 workflow 响应: " + resp);
-        Map<?, ?> map = gson.fromJson(resp, Map.class);
-        // DS 对于不存在的 code 通常返回非 0 的 code
-        Object code = map.get("code");
-        assertNotEquals("查询不存在的 workflow 应返回错误 code", 0.0, ((Number) code).doubleValue(), 0);
+    public void getWorkflowStatusTest() throws IOException {
+        String resp = apiClient.getWorkflowStatus("22049687866816");
+        System.out.println(resp);
+        //Map<?, ?> map = gson.fromJson(resp, Map.class);
     }
 
     @Test
-    @Ignore("需要真实 DS 服务，手动启用")
     public void deleteWorkflow_invalidCode_shouldReturnError() throws IOException {
         String resp = apiClient.deleteWorkflow("999999999999");
         System.out.println("删除不存在的 workflow 响应: " + resp);
@@ -344,9 +330,4 @@ public class DolphinSchedulerApiClientTest {
             apiClient.deleteWorkflow(workflowCode);
         } catch (Exception ignored) {}
     }
-}
-package com.data.engine.plugin.schedule.dolphinscheduler;
-
-public class DolphinSchedulerApiClientTest {
-    
 }

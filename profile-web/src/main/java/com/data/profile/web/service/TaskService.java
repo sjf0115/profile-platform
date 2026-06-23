@@ -70,7 +70,7 @@ public class TaskService {
         task.setOwner(RequestContext.currentUserId());
         task.setCreator(RequestContext.currentUserId());
         task.setModifier(RequestContext.currentUserId());
-        log.info("创建调度任务: taskId={}, name={}", taskId, task.getTaskName());
+        log.info("创建调度任务: {}", task.getTaskName());
         return taskMapper.insertSelective(task);
     }
 
@@ -79,7 +79,7 @@ public class TaskService {
      */
     public int update(Task task) {
         task.setModifier(RequestContext.currentUserId());
-        log.info("修改调度任务: taskId={}", task.getTaskId());
+        log.info("修改调度任务: {}", task.getTaskId());
         return taskMapper.updateByTaskIdSelective(task);
     }
 
