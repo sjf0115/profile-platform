@@ -324,7 +324,7 @@ CREATE TABLE IF NOT EXISTS `profile_meta_task`(
     `task_type` INT NOT NULL COMMENT '调度任务类型:1-群组圈选,2-群组投递,3-数据集同步',
     `task_related_id` VARCHAR(100) COMMENT '调度任务关联ID',
     `trigger_target_id` VARCHAR(100) COMMENT '调度对象ID',
-    `trigger_type` INT NOT NULL COMMENT '调度类型:1-无调度(手动调度),2-日周期调度,3-小时周期调度',
+    `trigger_type` INT DEFAULT 1 COMMENT '调度类型:1-无调度(手动调度),2-日周期调度,3-小时周期调度',
     `trigger_cron` VARCHAR(20) COMMENT '调度 cron 表达式:只有周期自动触发更新才有',
     `trigger_url` VARCHAR(20) COMMENT '调度触发URL:只有API触发调度才有',
     `trigger_start_time` VARCHAR(20) COMMENT '触发调度有效开始时间:只有周期自动触发更新才有',

@@ -1,6 +1,7 @@
 package com.data.profile.web.service;
 
 import com.data.profile.web.config.MinioConfig;
+import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -84,6 +86,23 @@ public class MinioService {
         } catch (Exception e) {
             log.error("文件删除失败: {}", e.getMessage(), e);
             throw new RuntimeException("文件删除失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 从 MinIO 读取文件（返回 InputStream）
+     */
+    public InputStream getFileAsStream(String objectName) {
+        try {
+            return minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(minioConfig.getBucket())
+                            .object(objectName)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("读取文件失败: {}", objectName, e);
+            throw new RuntimeException("读取 MinIO 文件失败: " + e.getMessage());
         }
     }
 

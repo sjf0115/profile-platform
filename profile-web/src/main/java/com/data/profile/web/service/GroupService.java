@@ -22,10 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static com.data.profile.common.domain.Constant.ENGINE_DATASET_TABLE_PREFIX;
 
 /**
  * 功能：群组服务
@@ -144,8 +144,7 @@ public class GroupService {
     @Transactional
     public int create(Group group) throws RuntimeException {
         String groupName = group.getGroupName();
-
-        // 群组处理
+        // 群组校验
         List<Group> groups = groupMapper.selectSimpleByGroupName(groupName);
         if (!groups.isEmpty()) {
             log.error("群组 {} 已经存在，不允许重复添加", groupName);
@@ -157,6 +156,7 @@ public class GroupService {
             log.error("群组ID {} 已经存在，不允许重复添加", groupId);
             throw new RuntimeException("群组ID已经存在，不允许重复添加");
         }
+        // 2. 群组基本信息
         group.setGroupId(groupId);
         group.setSourceType(SourceType.CUSTOM.getCode());
         group.setGroupStatus(Status.ENABLE.getCode());
@@ -164,8 +164,14 @@ public class GroupService {
         group.setCreator(RequestContext.currentUserId());
         group.setModifier(RequestContext.currentUserId());
 
+        // 3. 群组预估人数
+        long count = estimateGroupCount(group.getGroupRule());
+        // TODO 优化 Long -> Int
+        group.setGroupCount((int)count);
+
         // TODO 优化 处理上传文件类型群组
-        if (group.getGroupType() != null && group.getGroupType() == 2) {
+        // 文件上传：后端从 MinIO 读取 CSV → 解析去重 → 写入引擎表 → 创建群组记录 → 返回导入统计
+        if (Objects.equals(group.getGroupType(), GroupType.UPLOAD.getCode())) {
             GroupRule groupRule = group.getGroupRule();
             if (groupRule != null && "upload".equals(groupRule.getType())) {
                 log.info("上传文件类型群组，MinIO 文件路径: {}", groupRule.getUuidFileKey());
@@ -173,7 +179,8 @@ public class GroupService {
         }
 
         // TODO 优化 处理 SQL 创建类型群组
-        if (group.getGroupType() != null && group.getGroupType() == 3) {
+        // SQL 创建：
+        if (Objects.equals(group.getGroupType(), GroupType.SQL.getCode())) {
             GroupRule groupRule = group.getGroupRule();
             if (groupRule == null || !"sql".equals(groupRule.getType())
                     || StringUtils.isBlank(groupRule.getSqlText())) {
@@ -198,22 +205,19 @@ public class GroupService {
             log.info("SQL创建类型群组，SQL: {}", sqlText);
         }
 
-        // 修改时预估人数
-        long count = estimateGroupCount(group.getGroupRule());
-        // TODO 优化 Long -> Int
-        group.setGroupCount((int)count);
+
 
         int result = groupMapper.insertSelective(group);
         log.info("新增群组: {}", gson.toJson(group));
 
-        // 创建群组引擎表
+        // 创建群组引擎表 TODO 原子性
         createGroupEngineTable(group);
 
         // 创建圈选任务
         createAnalysisTask(group, groupId);
 
         // 注册调度到调度引擎
-        scheduleGroupIfNeeded(group);
+        // scheduleGroupIfNeeded(group);
 
         return result;
     }
@@ -342,15 +346,18 @@ public class GroupService {
             throw new IllegalArgumentException("群组规则不能为空");
         }
         String ruleType = groupRule.getType();
-        if ("sql".equals(ruleType)) {
+        if (Objects.equals(ruleType, GroupType.SQL.getMessage())) {
             // SQL 创建群组预估
             return estimateSqlGroupCount(groupRule.getSqlText());
-        } else if ("rule".equals(ruleType)) {
+        } else if (Objects.equals(ruleType, GroupType.RULE.getMessage())) {
             // 规则创建群组预估
             return estimateRuleGroupCount(groupRule);
+        } else if (Objects.equals(ruleType, GroupType.UPLOAD.getMessage())) {
+            // 文件上传创建群组预估
+            return estimateUploadGroupCount(groupRule.getUuidFileKey());
         } else {
             // 其它
-            throw new IllegalArgumentException("仅支持规则创建和SQL创建的群组进行预估");
+            throw new IllegalArgumentException("仅支持规则创建、SQL创建和文件上传创建的群组进行预估");
         }
     }
 
@@ -381,7 +388,7 @@ public class GroupService {
      * @param groupRule 规则
      * @return 预估人数
      */
-    public long estimateRuleGroupCount(GroupRule groupRule) {
+    private long estimateRuleGroupCount(GroupRule groupRule) {
         RuleExpression expression = groupRule.getExpression();
         if (expression == null || expression.getRuleGroups() == null || expression.getRuleGroups().isEmpty()) {
             throw new IllegalArgumentException("规则表达式不能为空");
@@ -406,6 +413,29 @@ public class GroupService {
         } catch (Exception e) {
             log.error("规则创建群组预估执行失败", e);
             throw new RuntimeException("规则创建群组预估执行失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 文件上传创建群组预估人数
+     * @param uuidFileKey MinIO 文件路径
+     * @return 预估人数（文件行数，不含表头）
+     */
+    private long estimateUploadGroupCount(String uuidFileKey) {
+        if (StringUtils.isBlank(uuidFileKey)) {
+            throw new IllegalArgumentException("文件路径不能为空");
+        }
+        log.info("群组预估(文件上传) - 读取文件: {}", uuidFileKey);
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(minioService.getFileAsStream(uuidFileKey), "UTF-8"))) {
+            long lineCount = reader.lines().count();
+            // 减去表头行
+            long count = Math.max(0, lineCount - 1);
+            log.info("文件上传群组预估结果: {} 行（不含表头）", count);
+            return count;
+        } catch (Exception e) {
+            log.error("文件上传群组预估执行失败", e);
+            throw new RuntimeException("文件上传群组预估执行失败: " + e.getMessage(), e);
         }
     }
 

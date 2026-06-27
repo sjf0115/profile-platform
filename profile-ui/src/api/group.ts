@@ -50,6 +50,13 @@ export const groupApi = {
     })
   },
 
+  // 取消上传（删除 MinIO 文件）
+  deleteUpload: (file_key: string) => {
+    return request.delete<ApiResponse<null>>('/group/cancel-upload', {
+      params: { file_key }
+    })
+  },
+
   // 下载 CSV 上传模板
   downloadTemplate: () => {
     return request.get('/group/template/download', { responseType: 'blob' })

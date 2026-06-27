@@ -77,60 +77,58 @@
           </span>
         </div>
 
-        <!-- 列头预览提示条 -->
-        <div class="column-preview-bar">
-          <span class="col-tag">entity_id</span>
-        </div>
-
         <!-- 上传区域 -->
         <div class="section-content upload-content">
-          <el-upload
-            ref="uploadRef"
-            class="upload-dragger"
-            drag
-            :auto-upload="false"
-            :limit="1"
-            accept=".csv"
-            :on-change="handleFileChange"
-            :on-exceed="handleExceed"
-            :show-file-list="false"
-            :disabled="uploaded"
-          >
-            <div class="upload-inner">
-              <div class="excel-icon">
-                <svg viewBox="0 0 48 48" width="52" height="52">
-                  <rect width="48" height="48" rx="6" fill="#1D7A47"/>
-                  <text x="50%" y="68%" dominant-baseline="middle" text-anchor="middle"
-                        font-size="26" font-weight="bold" fill="white">X</text>
-                </svg>
+          <div class="upload-container" :class="{ 'is-uploading': uploading }">
+            <el-upload
+              ref="uploadRef"
+              v-loading="uploading"
+              element-loading-text="文件上传中..."
+              drag
+              :auto-upload="true"
+              :action="uploadUrl"
+              :limit="1"
+              :on-success="handleUploadSuccess"
+              :on-error="handleUploadError"
+              :on-remove="handleRemove"
+              :before-upload="beforeUpload"
+              :show-file-list="false"
+              name="file"
+              accept=".csv"
+            >
+              <div class="upload-drag-content">
+                <!-- Excel 图标 -->
+                <div class="excel-icon">
+                  <svg viewBox="0 0 48 48" width="56" height="56">
+                    <rect width="48" height="48" rx="6" fill="#1D7A47"/>
+                    <text x="50%" y="68%" dominant-baseline="middle" text-anchor="middle"
+                          font-size="26" font-weight="bold" fill="white">X</text>
+                  </svg>
+                </div>
+                <!-- 上传提示文字 -->
+                <div class="upload-text">
+                  上传请 <span class="click-link">点击</span> 或拖拽文件至此区域
+                </div>
               </div>
-              <div class="upload-text">
-                上传请
-                <span class="click-link">点击</span>
-                或拖拽文件至此区域
-              </div>
-              <div class="upload-tips">
-                1. 仅支持上传单个文件；2. 文件不能超过200M；3. 仅支持csv格式
-              </div>
+            </el-upload>
+
+            <!-- 提示信息 -->
+            <div class="upload-tips-box">
+              1. 仅支持上传单个文件；2. 文件不能超过200M；3. 仅支持csv格式
             </div>
-          </el-upload>
 
-          <!-- 已选文件展示 -->
-          <div v-if="selectedFile" class="selected-file">
-            <el-icon class="file-icon"><Document /></el-icon>
-            <span class="file-name">{{ selectedFile.name }}</span>
-            <span class="file-size">（{{ formatFileSize(selectedFile.size || 0) }}）</span>
-            <el-tag v-if="uploaded" type="success" size="small">已上传</el-tag>
-            <el-button link type="danger" @click="removeFile">
-              <el-icon><Delete /></el-icon>
-              删除
-            </el-button>
-          </div>
+            <!-- 已上传文件展示 -->
+            <div v-if="uploaded" class="uploaded-file-card">
+              <el-icon class="success-icon"><CircleCheck /></el-icon>
+              <span class="file-status">已完成</span>
+              <span class="file-name">{{ selectedFileName }}</span>
+              <el-icon class="delete-icon" @click="handleRemove"><Delete /></el-icon>
+            </div>
 
-          <!-- 上传成功提示 -->
-          <div v-if="uploaded" class="upload-success-tip">
-            <el-icon style="color: #67c23a"><CircleCheck /></el-icon>
-            <span>文件上传成功，请先保存群组，在群组列表中查看计算结果</span>
+            <!-- 上传成功提示 -->
+            <div v-if="uploaded" class="upload-success-tip">
+              文件上传成功，请先保存分群，在分群列表中查看计算结果
+            </div>
           </div>
         </div>
       </div>
@@ -138,10 +136,9 @@
       <!-- 底部操作 -->
       <div class="page-actions">
         <el-button @click="goBack">取消</el-button>
-        <el-button type="success" @click="handleUpload" :loading="saving" :disabled="!selectedFile || uploaded">
-          {{ uploaded ? '已上传' : '上传文件' }}
+        <el-button type="primary" @click="handleSave" :loading="saving" :disabled="!uploaded">
+          保存群组
         </el-button>
-        <el-button type="primary" @click="handleSave" :loading="saving" :disabled="!uploaded">保存群组</el-button>
       </div>
     </div>
   </div>
@@ -151,8 +148,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import type { UploadFile, FormInstance, UploadInstance } from 'element-plus'
-import { ArrowLeft, ArrowDown, Menu, Setting, Download, Document, Delete, CircleCheck } from '@element-plus/icons-vue'
+import type { FormInstance, UploadInstance } from 'element-plus'
+import { ArrowLeft, ArrowDown, Menu, Setting, Download, CircleCheck, Delete } from '@element-plus/icons-vue'
 import { groupApi } from '@/api/group'
 import { entityIdentifierApi } from '@/api/entity'
 
@@ -162,9 +159,13 @@ const basicInfoExpanded = ref(true)
 const basicFormRef = ref<FormInstance>()
 const uploadRef = ref<UploadInstance>()
 const saving = ref(false)
-const selectedFile = ref<UploadFile | null>(null)
+
+// 上传状态
+const uploading = ref(false)
 const uploaded = ref(false)
-const uploadResult = ref<{ uuid_file_key: string; file_list: string[] } | null>(null)
+const uploadedFileKey = ref('')
+const selectedFileName = ref('')
+const uploadUrl = '/api/group/upload'
 
 // 实体标识列表
 const entityIdentifierList = ref<any[]>([])
@@ -179,7 +180,7 @@ const basicForm = reactive({
 // 表单校验规则
 const basicRules = {
   group_name: [
-    { required: true, message: '请输入分群名称', trigger: 'blur' }
+    { required: true, message: '请输入群组名称', trigger: 'blur' }
   ],
   entity_identifier_id: [
     { required: true, message: '请选择分析主体', trigger: 'change' }
@@ -196,51 +197,58 @@ const fetchEntityIdentifierList = async () => {
   }
 }
 
-// 文件变化
-const handleFileChange = (file: UploadFile) => {
-  // 校验文件格式
-  const name = file.name || ''
-  if (!name.toLowerCase().endsWith('.csv')) {
-    ElMessage.error('仅支持 csv 格式文件')
-    uploadRef.value?.clearFiles()
-    return
+// 上传前校验
+const beforeUpload = (file: File) => {
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    ElMessage.error('仅支持 CSV 格式文件')
+    return false
   }
-  // 校验文件大小 200M
-  const maxSize = 200 * 1024 * 1024
-  if (file.size && file.size > maxSize) {
-    ElMessage.error('文件不能超过 200M')
-    uploadRef.value?.clearFiles()
-    return
+  if (file.size > 200 * 1024 * 1024) {
+    ElMessage.error('文件大小不能超过 200M')
+    return false
   }
-  selectedFile.value = file
+  // 暂存文件名（用于上传成功后显示）
+  selectedFileName.value = file.name
+  uploading.value = true
+  return true
 }
 
-// 超出数量限制
-const handleExceed = () => {
-  ElMessage.warning('只能上传单个文件，请先删除已选文件')
+// 上传成功回调
+const handleUploadSuccess = (response: any) => {
+  console.log('上传成功响应:', response)
+  uploading.value = false
+
+  if (response.code === 0) {
+    uploadedFileKey.value = response.data.uuid_file_key
+    selectedFileName.value = response.data.file_list?.[0] || selectedFileName.value
+    uploaded.value = true
+  } else {
+    ElMessage.error(response.message || '文件上传失败')
+    uploaded.value = false
+  }
 }
 
-// 删除文件（同时删除 MinIO 中的文件）
-const removeFile = async () => {
-  // 如果已上传到 MinIO，先删除
-  if (uploaded.value && uploadResult.value?.uuid_file_key) {
+// 上传失败
+const handleUploadError = () => {
+  uploading.value = false
+  ElMessage.error('文件上传失败')
+  uploaded.value = false
+}
+
+// 点击删除按钮：删除 MinIO 文件，重置状态
+const handleRemove = async () => {
+  if (uploadedFileKey.value) {
     try {
-      await groupApi.deleteUploadedFile(uploadResult.value.uuid_file_key)
-    } catch (error) {
-      console.error('删除 MinIO 文件失败:', error)
+      await groupApi.deleteUpload(uploadedFileKey.value)
+    } catch (e) {
+      console.warn('删除文件失败', e)
     }
   }
-  selectedFile.value = null
   uploaded.value = false
-  uploadResult.value = null
+  uploadedFileKey.value = ''
+  selectedFileName.value = ''
+  // 清除 el-upload 内部文件列表，允许重新上传
   uploadRef.value?.clearFiles()
-}
-
-// 格式化文件大小
-const formatFileSize = (size: number): string => {
-  if (size < 1024) return `${size} B`
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
-  return `${(size / 1024 / 1024).toFixed(1)} MB`
 }
 
 // 下载模板
@@ -259,34 +267,6 @@ const handleDownloadTemplate = async () => {
   }
 }
 
-// 上传文件
-const handleUpload = async () => {
-  if (!selectedFile.value || !selectedFile.value.raw) {
-    ElMessage.warning('请选择 CSV 文件')
-    return
-  }
-
-  saving.value = true
-  try {
-    const formData = new FormData()
-    formData.append('file', selectedFile.value.raw)
-
-    const res = await groupApi.uploadFile(formData)
-    if (res.data.code === 200) {
-      uploaded.value = true
-      uploadResult.value = res.data.data
-      ElMessage.success('文件上传成功，请先保存群组，在群组列表中查看计算结果')
-    } else {
-      ElMessage.error(res.data.message || '文件上传失败')
-    }
-  } catch (error) {
-    console.error('上传失败:', error)
-    ElMessage.error('文件上传失败')
-  } finally {
-    saving.value = false
-  }
-}
-
 // 保存群组
 const handleSave = async () => {
   if (!basicFormRef.value) return
@@ -295,7 +275,7 @@ const handleSave = async () => {
     basicInfoExpanded.value = true
     return
   }
-  if (!uploaded.value || !uploadResult.value) {
+  if (!uploaded.value || !uploadedFileKey.value) {
     ElMessage.warning('请先上传文件')
     return
   }
@@ -311,8 +291,8 @@ const handleSave = async () => {
       source_type: 2,
       group_rule: {
         type: 'upload',
-        uuid_file_key: uploadResult.value.uuid_file_key,
-        file_list: uploadResult.value.file_list
+        uuid_file_key: uploadedFileKey.value,
+        file_list: [selectedFileName.value]
       }
     }
 
@@ -329,9 +309,9 @@ const handleSave = async () => {
 
 const goBack = async () => {
   // 如果已上传到 MinIO，先删除文件
-  if (uploaded.value && uploadResult.value?.uuid_file_key) {
+  if (uploaded.value && uploadedFileKey.value) {
     try {
-      await groupApi.deleteUploadedFile(uploadResult.value.uuid_file_key)
+      await groupApi.deleteUpload(uploadedFileKey.value)
     } catch (error) {
       console.error('删除 MinIO 文件失败:', error)
     }
@@ -456,98 +436,126 @@ onMounted(() => {
   padding: 20px;
 }
 
-.upload-dragger {
-  width: 100%;
+.upload-container {
+  border: 1px dashed #dcdfe6;
+  border-radius: 6px;
+  background: #fafafa;
+  padding: 40px 20px 20px;
+  transition: border-color 0.3s;
 
+  &:hover {
+    border-color: #409eff;
+  }
+
+  &.is-uploading {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+
+  // el-upload 拖拽区域样式覆盖
   :deep(.el-upload) {
     width: 100%;
   }
 
   :deep(.el-upload-dragger) {
     width: 100%;
-    height: 280px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #fafafa;
-    border: 1.5px dashed #d9d9d9;
-    border-radius: 6px;
-    transition: border-color 0.3s;
+    background: transparent;
+    border: none;
+    padding: 20px 0;
 
     &:hover {
-      border-color: #409eff;
+      background: transparent;
     }
   }
-}
 
-.upload-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
+  .upload-drag-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
 
-  .excel-icon {
+    .excel-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-text {
+      font-size: 14px;
+      color: #606266;
+
+      .click-link {
+        color: #409eff;
+        cursor: pointer;
+      }
+    }
+  }
+
+  // 提示信息框
+  .upload-tips-box {
+    margin: 16px auto 0;
+    padding: 10px 16px;
+    background: #fff;
+    border: 1px solid #e4e7ed;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #909399;
+    text-align: center;
+    max-width: 500px;
+  }
+
+  // 已上传文件卡片
+  .uploaded-file-card {
     display: flex;
     align-items: center;
-    justify-content: center;
-  }
+    gap: 8px;
+    margin: 16px auto 0;
+    padding: 12px 16px;
+    background: #fff;
+    border: 1px solid #e4e7ed;
+    border-radius: 4px;
+    max-width: 500px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 
-  .upload-text {
-    font-size: 15px;
-    color: #303133;
-
-    .click-link {
-      color: #409eff;
-      cursor: pointer;
+    .success-icon {
+      color: #67c23a;
+      font-size: 16px;
     }
-  }
 
-  .upload-tips {
-    font-size: 12px;
-    color: #909399;
-  }
-}
+    .file-status {
+      font-size: 13px;
+      color: #606266;
+    }
 
-// 已选文件
-.selected-file {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-  padding: 10px 16px;
-  background: #f0f7ff;
-  border: 1px solid #c6e2ff;
-  border-radius: 4px;
+    .file-name {
+      flex: 1;
+      font-size: 13px;
+      color: #303133;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-  .file-icon {
-    color: #409eff;
-    font-size: 18px;
-  }
+    .delete-icon {
+      color: #909399;
+      font-size: 14px;
+      cursor: pointer;
 
-  .file-name {
-    font-size: 14px;
-    color: #303133;
-    flex: 1;
-  }
-
-  .file-size {
-    font-size: 12px;
-    color: #909399;
+      &:hover {
+        color: #f56c6c;
+      }
+    }
   }
 }
 
 // 上传成功提示
 .upload-success-tip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
+  margin: 12px auto 0;
   padding: 10px 16px;
-  background: #f0f9eb;
-  border: 1px solid #e1f3d8;
-  border-radius: 4px;
   font-size: 13px;
-  color: #67c23a;
+  color: #909399;
+  text-align: center;
+  max-width: 500px;
 }
 
 // 底部操作

@@ -40,8 +40,6 @@ public class GroupController {
     @Autowired
     private GroupService groupService;
     @Autowired
-    private GroupTask groupTask;
-    @Autowired
     private TaskExecutionService taskExecutionService;
 
     @PostMapping(value = "/list")
@@ -97,7 +95,7 @@ public class GroupController {
         }
     }
 
-    // 上传 CSV 文件到 MinIO
+    // 文件上传
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Response upload(@RequestPart("file") MultipartFile file) {
         GroupRule groupRule = groupService.upload(file);
@@ -108,8 +106,8 @@ public class GroupController {
         }
     }
 
-    // 取消上传 TODO
-    @DeleteMapping(value = "/upload/delete")
+    // 取消上传
+    @DeleteMapping(value = "/cancel-upload")
     public Response cancelUploaded(@RequestParam(name = "file_key") String fileKey) {
         log.info("删除已上传文件: {}", fileKey);
         groupService.cancelUpload(fileKey);
