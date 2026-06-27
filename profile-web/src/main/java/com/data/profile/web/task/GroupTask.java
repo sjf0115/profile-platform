@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.*;
 
+import static com.data.profile.common.domain.Constant.ENGINE_GROUP_TABLE_PREFIX;
+
 /**
  * 功能：群组计算任务
  * <p>负责群组圈选执行（规则翻译、预估人数、全量圈选、结果持久化）及调度配置。</p>
@@ -48,7 +50,7 @@ public class GroupTask {
      * @param groupId 群组ID
      */
     public void executeGroupSelection(String groupId) {
-        log.info("开始执行群组圈选: groupId={}", groupId);
+        log.info("开始执行群组 [{}] 圈选", groupId);
 
         // 1. 加载群组元数据
         Optional<Group> groupOpt = groupService.getDetailModel(groupId);
@@ -77,7 +79,7 @@ public class GroupTask {
 
             // 验证被引用群组的结果表存在（前置防御）
             for (String refGroupId : referencedGroupIds) {
-                String refTable = GroupService.GROUP_TABLE_PREFIX + refGroupId;
+                String refTable = ENGINE_GROUP_TABLE_PREFIX + refGroupId;
                 String checkSql = "EXISTS TABLE " + refTable;
                 try {
                     long exists = analysisEngineService.executeCountQuery(checkSql);
@@ -107,7 +109,7 @@ public class GroupTask {
             throw new IllegalStateException("群组 " + groupId + " 不支持的规则类型: " + groupRule.getType());
         }
 
-        String resultTable = GroupService.GROUP_TABLE_PREFIX + groupId;
+        String resultTable = ENGINE_GROUP_TABLE_PREFIX + groupId;
         String tmpTable = resultTable + "_tmp";
 
         try {
@@ -157,6 +159,7 @@ public class GroupTask {
      * @param startTime  生效开始时间
      * @param endTime    生效结束时间
      */
+    @Deprecated
     public void schedule(String groupId, int triggerType, String cron, String startTime, String endTime) {
         Task task = taskService.getDetailByRelatedId(groupId);
         if (task == null) {
@@ -171,6 +174,7 @@ public class GroupTask {
     /**
      * 获取群组关联的调度任务配置
      */
+    @Deprecated
     public Task getSchedulerConfig(String groupId) {
         return taskService.getDetailByRelatedId(groupId);
     }

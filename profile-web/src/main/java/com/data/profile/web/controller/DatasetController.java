@@ -17,6 +17,7 @@ import com.data.profile.web.task.DatasetTask;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -66,13 +67,13 @@ public class DatasetController {
     public Response save(@RequestBody DatasetVO datasetVO) {
         log.info("请求保存/更新数据集: {}", gson.toJson(datasetVO));
         Dataset dataset = new Dataset();
-        org.springframework.beans.BeanUtils.copyProperties(datasetVO, dataset);
+        BeanUtils.copyProperties(datasetVO, dataset);
         // 将 DatasetFieldVO 转回 DatasetField
         List<DatasetField> fields = new ArrayList<>();
         if (datasetVO.getFields() != null) {
             for (DatasetFieldVO fvo : datasetVO.getFields()) {
                 DatasetField f = new DatasetField();
-                org.springframework.beans.BeanUtils.copyProperties(fvo, f);
+                BeanUtils.copyProperties(fvo, f);
                 fields.add(f);
             }
         }
@@ -108,9 +109,10 @@ public class DatasetController {
     }
 
     // 配置数据集调度
+    // TODO Service
     @PutMapping(value = "/{datasetId}/schedule")
     public Response schedule(@PathVariable(value = "datasetId") String datasetId, @RequestBody ScheduleConfigRequest config) {
-        log.info("配置数据集 [{}] 调度: {}", datasetId, gson.toJson(config));
+        log.info("请求配置数据集 [{}] 调度: {}", datasetId, gson.toJson(config));
         try {
             datasetTask.schedule(datasetId, config);
             return Response.success("配置成功");
@@ -121,6 +123,7 @@ public class DatasetController {
     }
 
     // 获取数据集调度配置
+    // TODO Service
     @GetMapping(value = "/{datasetId}/schedule")
     public Response getScheduleConfig(@PathVariable(value = "datasetId") String datasetId) {
         log.info("获取数据集 [{}] 调度配置", datasetId);

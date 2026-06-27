@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -69,7 +70,7 @@ public class TaskExecutionService {
     public TaskInstance executeTask(String taskId, TriggerMode triggerMode) {
         Task task = taskService.getDetail(taskId)
                 .orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
-        if (task.getStatus() != Status.ENABLE.getCode()) {
+        if (!Objects.equals(task.getStatus(), Status.ENABLE.getCode())) {
             throw new RuntimeException("任务已停用，无法执行: " + taskId);
         }
 

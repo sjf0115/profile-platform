@@ -27,6 +27,8 @@ import java.io.InputStreamReader;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.data.profile.common.domain.Constant.ENGINE_GROUP_TABLE_PREFIX;
+
 /**
  * 功能：群组服务
  * 作者：SmartSi
@@ -39,28 +41,29 @@ import java.util.stream.Collectors;
 @Service
 public class GroupService {
     private static final Gson gson = new GsonBuilder().create();
-
-    /** 群组引擎表前缀 */
-    public static final String GROUP_TABLE_PREFIX = "profile_group_";
     @Resource
     private GroupMapper groupMapper;
-    @Autowired
-    private TaskService taskService;
-    @Autowired
-    private TaskInstanceService taskInstanceService;
-    @Autowired
-    private EntityIdentifierService entityIdentifierService;
+
     @Autowired
     private MinioService minioService;
     @Autowired
     private AnalysisEngineService analysisEngineService;
     @Autowired
     private ScheduleEngineService scheduleEngineService;
+
+    @Autowired
+    private EntityIdentifierService entityIdentifierService;
     @Autowired
     private DatasetService datasetService;
     @Autowired
     private DatasetFieldService datasetFieldService;
 
+    @Autowired
+    private TaskService taskService;
+    @Autowired
+    private TaskInstanceService taskInstanceService;
+    @Autowired
+    private TaskExecutionService taskExecutionService;
     /**
      * 根据查询条件获取群组列表（含关联信息）
      * @param group 群组查询条件
@@ -361,6 +364,21 @@ public class GroupService {
         }
     }
 
+    /**
+     * 手动立即执行圈选任务
+     * @param groupId 群组ID
+     * @return 执行实例
+     */
+    public TaskInstance execute(String groupId) {
+        // 获取关联任务
+        // TODO 需要根据群组ID和任务类型
+        Task task = taskService.getDetailByRelatedId(groupId);
+        if (task == null) {
+            throw new RuntimeException("关联ID " + groupId + " 对应的任务不存在");
+        }
+        return taskExecutionService.executeTask(task.getTaskId(), TriggerMode.MANUAL);
+    }
+
     //------------------------------------------------------------------------------------------------------------------
     /**
      * SQL创建群组预估人数
@@ -480,7 +498,7 @@ public class GroupService {
                 } else if (filter.getType() == 2) {
                     // 群组
                     String groupId = filter.getId();
-                    groupTableMap.putIfAbsent(groupId, GroupService.GROUP_TABLE_PREFIX + groupId);
+                    groupTableMap.putIfAbsent(groupId, ENGINE_GROUP_TABLE_PREFIX + groupId);
                 }
             }
         }
@@ -535,7 +553,7 @@ public class GroupService {
      * <p>建表失败不阻塞群组创建流程。</p>
      */
     private void createGroupEngineTable(Group group) {
-        String tableName = GROUP_TABLE_PREFIX + group.getGroupId();
+        String tableName = ENGINE_GROUP_TABLE_PREFIX + group.getGroupId();
         String createSql = String.format(
                 "CREATE TABLE IF NOT EXISTS %s (" +
                         "entity_id String COMMENT '实体ID', " +
@@ -555,7 +573,7 @@ public class GroupService {
      * <p>从分析引擎中删除群组结果表。</p>
      */
     private void dropGroupEngineTable(String groupId) {
-        String tableName = GROUP_TABLE_PREFIX + groupId;
+        String tableName = ENGINE_GROUP_TABLE_PREFIX + groupId;
         try {
             analysisEngineService.executeStatement("DROP TABLE IF EXISTS " + tableName);
             log.info("群组引擎表删除成功: {}", tableName);

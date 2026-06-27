@@ -99,8 +99,8 @@
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item @click="handlePush(row)">推送</el-dropdown-item>
-                <el-dropdown-item @click="handleUpdate(row)">重新执行</el-dropdown-item>
+                <el-dropdown-item @click="handlePush(row)">投递</el-dropdown-item>
+                <el-dropdown-item @click="handleExecute(row)">立即执行</el-dropdown-item>
                 <el-dropdown-item @click="handleDownload(row)">下载</el-dropdown-item>
                 <el-dropdown-item @click="handleCopy(row)">复制</el-dropdown-item>
                 <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
@@ -246,11 +246,11 @@ const handleAnalyze = (row: Group) => {
 }
 
 const handlePush = (row: Group) => {
-  ElMessage.info('推送功能开发中')
+  ElMessage.info('投递功能开发中')
 }
 
-const handleUpdate = (row: Group) => {
-  ElMessage.info('更新功能开发中')
+const handleExecute = (row: Group) => {
+  ElMessage.info('立即执行功能开发中')
 }
 
 const handleDownload = (row: Group) => {

@@ -1,6 +1,5 @@
 package com.data.profile.web.controller;
 
-import com.data.profile.web.task.GroupTask;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.*;
 import com.data.profile.web.model.Group;
@@ -10,7 +9,6 @@ import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.vo.DatasetVO;
 import com.data.profile.web.vo.GroupVO;
 import com.data.profile.web.service.GroupService;
-import com.data.profile.web.service.TaskExecutionService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +37,6 @@ public class GroupController {
     private static final Gson gson = new GsonBuilder().create();
     @Autowired
     private GroupService groupService;
-    @Autowired
-    private TaskExecutionService taskExecutionService;
 
     @PostMapping(value = "/list")
     public Response getList(@RequestBody Group group) {
@@ -97,7 +93,7 @@ public class GroupController {
 
     // 文件上传
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Response upload(@RequestPart("file") MultipartFile file) {
+    public Response<GroupRule> upload(@RequestPart("file") MultipartFile file) {
         GroupRule groupRule = groupService.upload(file);
         if (!Objects.equals(groupRule, null)) {
             return Response.success(groupRule);
@@ -131,7 +127,7 @@ public class GroupController {
 
     // 预估群组人数
     @PostMapping(value = "/estimate")
-    public Response estimate(@RequestBody Group group) {
+    public Response<Long> estimate(@RequestBody Group group) {
         log.info("请求预估群组人数");
         try {
             long count = groupService.estimateGroupCount(group.getGroupRule());
@@ -142,26 +138,22 @@ public class GroupController {
         }
     }
 
-    // 立即执行群组圈选 TODO GroupTask 还是 taskExecutionService ？
+    // 立即执行群组圈选
     @PostMapping(value = "/{groupId}/execute")
-    public Response execute(@PathVariable(value = "groupId") String groupId) {
+    public Response<TaskInstance> execute(@PathVariable(value = "groupId") String groupId) {
         log.info("请求手动立即执行群组 [{}] 圈选", groupId);
         try {
-            TaskInstance instance = taskExecutionService.executeByRelatedId(groupId, TriggerMode.MANUAL);
+            TaskInstance instance = groupService.execute(groupId);
             return Response.success(instance);
-        } catch (RuntimeException e) {
-            log.warn("群组圈选触发被拒绝: groupId={}, reason={}", groupId, e.getMessage());
-            return Response.error(e.getMessage(), ResponseCode.ERROR);
         } catch (Exception e) {
-            log.error("群组圈选失败: groupId={}", groupId, e);
+            log.error("手动立即执行群组 [{}] 圈选失败", groupId, e);
             return Response.error("群组圈选失败: " + e.getMessage(), ResponseCode.ERROR);
         }
     }
 
     // 获取 SQL 创建可用的数据集表和字段列表
     @GetMapping(value = "/available-tables")
-    public Response getAvailableTables(
-            @RequestParam(name = "entity_identifier_id") String entityIdentifierId) {
+    public Response getAvailableTables(@RequestParam(name = "entity_identifier_id") String entityIdentifierId) {
         log.info("根据实体ID [{}] 请求获取可用数据集表和字段", entityIdentifierId);
         List<DatasetVO> tables = groupService.getAvailableTables(entityIdentifierId);
         return Response.success(tables);

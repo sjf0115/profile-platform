@@ -186,23 +186,29 @@ public class DatasetService {
      * 创建数据集（元数据 + 引擎表 + 同步任务）
      */
     private String createDataset(Dataset dataset, List<DatasetField> fields) {
-        // 检查名称唯一性
+        // 1. 校验
         List<Dataset> datasets = datasetMapper.selectByDatasetName(dataset.getDatasetName());
         if (!datasets.isEmpty()) {
-            throw new RuntimeException("数据集已经存在，不允许重复添加");
+            log.error("数据集名称 [{}] 已经存在，不允许重复创建", dataset.getDatasetName());
+            throw new RuntimeException("数据集已经存在，不允许重复创建");
         }
         String datasetId = IDGenerator.getInstance().generate(ModelType.DATASET);
         if (datasetMapper.selectByDatasetId(datasetId) != null) {
+            log.error("数据集ID [{}] 已经存在，不允许重复创建", datasetId);
             throw new RuntimeException("数据集ID已经存在，不允许重复添加");
         }
+
+        // 2. 数据集信息
         dataset.setDatasetId(datasetId);
         dataset.setStatus(Status.ENABLE.getCode());
         dataset.setSourceType(SourceType.CUSTOM.getCode());
         dataset.setOwner(RequestContext.currentUserId());
         dataset.setCreator(RequestContext.currentUserId());
         dataset.setModifier(RequestContext.currentUserId());
+        datasetMapper.insertSelective(dataset);
+        log.info("成功创建数据集: {}", gson.toJson(dataset));
 
-        // 保存数据集字段
+        // 3. 数据集字段
         if (fields != null && !fields.isEmpty()) {
             for (DatasetField field : fields) {
                 field.setDatasetId(datasetId);
@@ -210,13 +216,11 @@ public class DatasetService {
             }
         }
 
-        // 保存元数据
-        datasetMapper.insertSelective(dataset);
-        log.info("创建数据集元数据: datasetId={}, datasetName={}", datasetId, dataset.getDatasetName());
-
-        // 创建引擎表
+        // TODO 4.5步骤 是否需要转移到手动执行/定时调度首次执行时执行，而不是创建数据集时执行
+        // 4. 创建引擎表
         createEngineTable(dataset, fields);
-        // 创建同步任务
+
+        // 5. 创建同步任务
         createSyncTask(datasetId, dataset.getDatasetName());
         return datasetId;
     }
@@ -254,7 +258,7 @@ public class DatasetService {
         try {
             DataSource dataSource = dataSourceService.getDetail(dataset.getDatasourceId());
             if (dataSource != null) {
-                String tableName = "profile_dataset_" + dataset.getDatasetId();
+                String tableName = ENGINE_DATASET_TABLE_PREFIX + dataset.getDatasetId();
                 analysisEngineService.buildAndUpsertTable(dataset, dataSource, tableName, fields);
                 log.info("创建引擎表成功: {}", tableName);
             }

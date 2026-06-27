@@ -11,10 +11,8 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 
 /**
- * 功能：数据集任务
- * <p>负责数据集独立的执行逻辑：数据同步、调度配置。</p>
- * <p>基础设施操作（引擎表、同步任务创建）已内聚到 DatasetService 中。</p>
- *
+ * 功能：数据集定时调度任务
+ * <p>负责数据集独立的执行逻辑：数据同步</p>
  * 作者：SmartSi
  * CSDN博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
@@ -34,11 +32,12 @@ public class DatasetTask {
      * @param datasetId 数据集ID
      */
     public void executeSync(String datasetId) throws Exception {
-        log.info("开始执行数据集同步: datasetId={}", datasetId);
+        log.info("开始执行数据集 [{}] 同步", datasetId);
         diEngineService.executeDatasetSync(datasetId);
     }
 
     /**
+     * TODO 是否放在 DatasetService
      * 配置数据集调度
      */
     public void schedule(String datasetId, ScheduleConfigRequest config) {
@@ -56,6 +55,7 @@ public class DatasetTask {
     }
 
     /**
+     * TODO 是否放在 DatasetService
      * 获取数据集关联的调度任务配置
      */
     public Task getSchedulerConfig(String datasetId) {
