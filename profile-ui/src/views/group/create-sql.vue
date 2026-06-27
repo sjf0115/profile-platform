@@ -5,7 +5,7 @@
       <el-button link @click="goBack">
         <el-icon><ArrowLeft /></el-icon>
       </el-button>
-      <h2 class="page-title">SQL 创建</h2>
+      <h2 class="page-title">{{ pageTitle }}</h2>
     </div>
 
     <!-- 内容区域 -->
@@ -204,7 +204,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, ArrowDown, Menu, Setting, Loading, Grid, CaretRight, Key } from '@element-plus/icons-vue'
 import { groupApi } from '@/api/group'
@@ -216,6 +216,12 @@ import { sql } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
 
 const router = useRouter()
+const route = useRoute()
+
+// 编辑模式判断
+const groupId = computed(() => route.params.id as string | undefined)
+const isEdit = computed(() => !!groupId.value)
+const pageTitle = computed(() => isEdit.value ? '编辑群组' : 'SQL 创建')
 
 // 展开状态
 const basicInfoExpanded = ref(true)
@@ -252,6 +258,7 @@ const entityIdentifierList = ref<any[]>([])
 
 // 基本信息表单
 const basicForm = reactive({
+  group_id: '',
   group_name: '',
   group_desc: '',
   group_type: 3, // SQL 创建
@@ -434,7 +441,7 @@ const handleSave = async () => {
 
   saving.value = true
   try {
-    const submitData = {
+    const submitData: any = {
       group_name: basicForm.group_name,
       group_desc: basicForm.group_desc,
       entity_identifier_id: basicForm.entity_identifier_id,
@@ -450,8 +457,13 @@ const handleSave = async () => {
       },
     }
 
+    // 编辑模式需要传递 group_id
+    if (isEdit.value) {
+      submitData.group_id = basicForm.group_id
+    }
+
     await groupApi.save(submitData)
-    ElMessage.success('保存成功')
+    ElMessage.success(isEdit.value ? '保存成功' : '保存成功')
     router.push('/group/filter')
   } catch (error: any) {
     console.error('保存失败:', error)
@@ -466,8 +478,62 @@ const goBack = () => {
   router.back()
 }
 
+// 获取群组详情（编辑模式）
+const fetchGroupDetail = async () => {
+  if (!isEdit.value || !groupId.value) return
+  try {
+    const res = await groupApi.getDetail(groupId.value)
+    const data = res.data.data
+    if (data) {
+      basicForm.group_id = data.group_id
+      basicForm.group_name = data.group_name
+      basicForm.group_desc = data.group_desc || ''
+      basicForm.entity_identifier_id = data.entity_identifier_id || ''
+      basicForm.trigger_type = data.trigger_type || 1
+      basicForm.trigger_cron = data.trigger_cron || ''
+
+      // 解析生效日期
+      if (data.trigger_start_time && data.trigger_end_time) {
+        if (data.trigger_end_time === '9999-12-31') {
+          basicForm.effective_type = 1
+        } else {
+          basicForm.effective_type = 2
+          basicForm.effective_date_range = [data.trigger_start_time, data.trigger_end_time]
+        }
+      }
+
+      // 从 Cron 表达式解析计算时间
+      if (data.trigger_cron) {
+        const parts = data.trigger_cron.split(' ')
+        if (parts.length >= 3) {
+          basicForm.calc_time = `${parts[2].padStart(2, '0')}:${parts[1].padStart(2, '0')}`
+        }
+      }
+
+      // 解析群组规则，填充 SQL 文本
+      if (data.group_rule) {
+        const parsedRule = typeof data.group_rule === 'string'
+          ? JSON.parse(data.group_rule)
+          : data.group_rule
+        if (parsedRule?.type === 'sql') {
+          sqlText.value = parsedRule.sql_text || ''
+        }
+      }
+
+      // 加载可用表
+      if (basicForm.entity_identifier_id) {
+        await handleEntityChange(basicForm.entity_identifier_id)
+      }
+    }
+  } catch (error) {
+    console.error('获取群组详情失败:', error)
+    ElMessage.error('获取群组详情失败')
+  }
+}
+
 onMounted(() => {
   fetchEntityIdentifierList()
+  fetchGroupDetail()
 })
 </script>
 

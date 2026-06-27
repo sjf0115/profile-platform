@@ -5,7 +5,7 @@
       <el-button link @click="goBack">
         <el-icon><ArrowLeft /></el-icon>
       </el-button>
-      <h2 class="page-title">上传文件创建</h2>
+      <h2 class="page-title">{{ pageTitle }}</h2>
     </div>
 
     <!-- 内容区域 -->
@@ -127,7 +127,7 @@
 
             <!-- 上传成功提示 -->
             <div v-if="uploaded" class="upload-success-tip">
-              文件上传成功，请先保存分群，在分群列表中查看计算结果
+              文件上传成功，请先保存群组，在群组列表中查看计算结果
             </div>
           </div>
         </div>
@@ -145,8 +145,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, UploadInstance } from 'element-plus'
 import { ArrowLeft, ArrowDown, Menu, Setting, Download, CircleCheck, Delete } from '@element-plus/icons-vue'
@@ -154,6 +154,12 @@ import { groupApi } from '@/api/group'
 import { entityIdentifierApi } from '@/api/entity'
 
 const router = useRouter()
+const route = useRoute()
+
+// 编辑模式判断
+const groupId = computed(() => route.params.id as string | undefined)
+const isEdit = computed(() => !!groupId.value)
+const pageTitle = computed(() => isEdit.value ? '编辑群组' : '上传文件创建')
 
 const basicInfoExpanded = ref(true)
 const basicFormRef = ref<FormInstance>()
@@ -172,6 +178,7 @@ const entityIdentifierList = ref<any[]>([])
 
 // 基本信息表单
 const basicForm = reactive({
+  group_id: '',
   group_name: '',
   group_desc: '',
   entity_identifier_id: ''
@@ -282,7 +289,7 @@ const handleSave = async () => {
 
   saving.value = true
   try {
-    const groupData = {
+    const groupData: any = {
       group_name: basicForm.group_name,
       group_desc: basicForm.group_desc,
       entity_identifier_id: basicForm.entity_identifier_id,
@@ -296,8 +303,13 @@ const handleSave = async () => {
       }
     }
 
+    // 编辑模式需要传递 group_id
+    if (isEdit.value) {
+      groupData.group_id = basicForm.group_id
+    }
+
     await groupApi.save(groupData)
-    ElMessage.success('群组保存成功')
+    ElMessage.success(isEdit.value ? '保存成功' : '群组保存成功')
     router.push('/group/filter')
   } catch (error) {
     console.error('保存失败:', error)
@@ -319,8 +331,39 @@ const goBack = async () => {
   router.back()
 }
 
+// 获取群组详情（编辑模式）
+const fetchGroupDetail = async () => {
+  if (!isEdit.value || !groupId.value) return
+  try {
+    const res = await groupApi.getDetail(groupId.value)
+    const data = res.data.data
+    if (data) {
+      basicForm.group_id = data.group_id
+      basicForm.group_name = data.group_name
+      basicForm.group_desc = data.group_desc || ''
+      basicForm.entity_identifier_id = data.entity_identifier_id || ''
+
+      // 解析群组规则，填充上传状态
+      if (data.group_rule) {
+        const parsedRule = typeof data.group_rule === 'string'
+          ? JSON.parse(data.group_rule)
+          : data.group_rule
+        if (parsedRule?.type === 'upload') {
+          uploadedFileKey.value = parsedRule.uuid_file_key || ''
+          selectedFileName.value = parsedRule.file_list?.[0] || ''
+          uploaded.value = !!(parsedRule.uuid_file_key)
+        }
+      }
+    }
+  } catch (error) {
+    console.error('获取群组详情失败:', error)
+    ElMessage.error('获取群组详情失败')
+  }
+}
+
 onMounted(() => {
   fetchEntityIdentifierList()
+  fetchGroupDetail()
 })
 </script>
 

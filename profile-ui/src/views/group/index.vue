@@ -231,7 +231,14 @@ const handleView = (row: Group) => {
 }
 
 const handleEdit = (row: Group) => {
-  router.push(`/group/edit/${row.group_id}`)
+  // 根据群组类型跳转到对应的编辑页面
+  const typeRoutes: Record<number, string> = {
+    1: 'rule',
+    2: 'upload',
+    3: 'sql'
+  }
+  const typeRoute = typeRoutes[row.group_type || 1] || 'rule'
+  router.push(`/group/edit/${typeRoute}/${row.group_id}`)
 }
 
 const handleAnalyze = (row: Group) => {

@@ -59,7 +59,7 @@
                         size="default"
                         style="width: 180px"
                         filterable
-                        :disabled="readonly"
+                        :disabled="readonly || !hasEntityIdentifier"
                         @change="(val: string) => handleTagChange(rule, val)"
                       >
                         <el-option
@@ -107,7 +107,7 @@
                         size="default"
                         style="width: 200px"
                         filterable
-                        :disabled="readonly"
+                        :disabled="readonly || !hasEntityIdentifier"
                       >
                         <el-option
                           v-for="g in groupList"
@@ -141,7 +141,7 @@
                         size="default"
                         style="width: 180px"
                         filterable
-                        :disabled="readonly"
+                        :disabled="readonly || !hasEntityIdentifier"
                       >
                         <el-option
                           v-for="event in eventList"
@@ -200,7 +200,7 @@
                             size="default"
                             style="width: 180px"
                             filterable
-                            :disabled="readonly"
+                            :disabled="readonly || !hasEntityIdentifier"
                           >
                             <el-option
                               v-for="event in eventList"
@@ -312,7 +312,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import {
   Plus, Close, CopyDocument, CircleClose, Operation,
   User, Calendar, PriceTag, Sort
@@ -331,6 +331,9 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: any]
 }>()
+
+// 是否已选择分析主体
+const hasEntityIdentifier = computed(() => !!props.entityIdentifierId)
 
 // 规则类型定义
 interface SequenceEvent {
@@ -450,10 +453,14 @@ const getRuleTypeLabel = (type: string) => {
   return labels[type] || type
 }
 
-// 加载标签列表
+// 加载标签列表（根据分析主体过滤）
 const fetchTagList = async () => {
+  if (!props.entityIdentifierId) {
+    tagList.value = []
+    return
+  }
   try {
-    const res = await labelApi.getList({ page_size: 1000 })
+    const res = await labelApi.getAvailable(props.entityIdentifierId)
     tagList.value = res.data.data || []
   } catch (error) {
     console.error('获取标签列表失败:', error)
@@ -470,10 +477,14 @@ const fetchLabelOperators = async () => {
   }
 }
 
-// 加载群组列表
+// 加载群组列表（根据分析主体过滤）
 const fetchGroupList = async () => {
+  if (!props.entityIdentifierId) {
+    groupList.value = []
+    return
+  }
   try {
-    const res = await groupApi.getList({ page_size: 1000 })
+    const res = await groupApi.getList({ entity_identifier_id: props.entityIdentifierId })
     groupList.value = res.data.data || []
   } catch (error) {
     console.error('获取群组列表失败:', error)
@@ -837,12 +848,34 @@ const getGroupRule = () => {
 // 监听变化
 watch(ruleGroups, updateModelValue, { deep: true })
 
+// 监听分析主体变化，重新加载标签和群组列表
+watch(() => props.entityIdentifierId, (newVal, oldVal) => {
+  if (newVal !== oldVal) {
+    // 清空已选择的标签和群组
+    ruleGroups.value.forEach(group => {
+      group.rules.forEach(rule => {
+        if (rule.rule_type === 'tag') {
+          rule.tag_id = ''
+          rule.operator = undefined
+          rule.value = ''
+        } else if (rule.rule_type === 'group') {
+          rule.group_id = ''
+        }
+      })
+    })
+    fetchTagList()
+    fetchGroupList()
+  }
+})
+
 // 初始化
 onMounted(() => {
-  fetchTagList()
   fetchLabelOperators()
-  fetchGroupList()
   fetchEventList()
+  if (props.entityIdentifierId) {
+    fetchTagList()
+    fetchGroupList()
+  }
   // 如果有传入的初始值（编辑模式），则解析
   if (props.modelValue?.expression?.rule_groups && props.modelValue.expression.rule_groups.length > 0) {
     parseGroupRule(props.modelValue)

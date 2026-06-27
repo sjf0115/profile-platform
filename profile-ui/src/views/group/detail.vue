@@ -76,27 +76,21 @@
       <div class="section">
         <div class="section-header">
           <el-icon class="section-icon"><Setting /></el-icon>
-          <span class="section-title">群组规则</span>
-          <span class="rule-tip">符合下列条件的用户将创建分群，每条规则计算结果最长支持连续365天</span>
+          <span class="section-title">{{ ruleSectionTitle }}</span>
+          <span class="rule-tip">{{ ruleSectionTip }}</span>
           <el-tooltip content="规则说明" placement="top">
             <el-icon class="help-icon"><QuestionFilled /></el-icon>
           </el-tooltip>
         </div>
         <div class="section-content">
-          <!-- SQL 类型：只读展示 SQL -->
-          <div v-if="groupInfo.group_type === 3" class="sql-display">
-            <div class="sql-label">圈选 SQL：</div>
-            <pre class="sql-code">{{ parsedSqlText }}</pre>
-          </div>
-          <!-- 规则类型：显示 GroupRuleConfig -->
-          <GroupRuleConfig
-            v-else-if="groupRule"
-            ref="ruleConfigRef"
-            v-model="ruleForm"
+          <GroupRuleDisplay
+            ref="ruleDisplayRef"
+            :group-type="groupInfo.group_type || 1"
+            :group-rule="groupRule"
             :entity-identifier-id="groupInfo.entity_identifier_id || ''"
-            :readonly="true"
+            :rule-form="ruleForm"
+            readonly
           />
-          <el-empty v-else description="暂无规则数据" />
         </div>
       </div>
     </div>
@@ -110,7 +104,7 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft, Menu, Setting, Timer, QuestionFilled } from '@element-plus/icons-vue'
 import { groupApi } from '@/api/group'
 import type { Group } from '@/types'
-import GroupRuleConfig from './components/GroupRuleConfig.vue'
+import GroupRuleDisplay from './components/GroupRuleDisplay.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -119,14 +113,26 @@ const groupId = route.params.id as string
 const groupInfo = ref<Partial<Group>>({})
 const groupRule = ref<any>(null)
 const loading = ref(false)
-const ruleConfigRef = ref()
+const ruleDisplayRef = ref()
 
-// 解析 SQL 文本
-const parsedSqlText = computed(() => {
-  if (groupRule.value?.type === 'sql') {
-    return groupRule.value.sql_text || ''
+// 规则区域标题
+const ruleSectionTitle = computed(() => {
+  switch (groupInfo.value.group_type) {
+    case 1: return '群组规则'
+    case 2: return '上传文件'
+    case 3: return 'SQL 语句'
+    default: return '群组规则'
   }
-  return ''
+})
+
+// 规则区域提示
+const ruleSectionTip = computed(() => {
+  switch (groupInfo.value.group_type) {
+    case 1: return '符合下列条件的用户将创建分群，每条规则计算结果最长支持连续365天'
+    case 2: return '通过上传文件方式创建群组'
+    case 3: return 'SQL 创建的群组，结果集必须包含 entity_id 列'
+    default: return ''
+  }
 })
 
 // 规则表单
@@ -335,26 +341,6 @@ onMounted(() => {
 
   .section-content {
     padding: 20px;
-  }
-}
-
-.sql-display {
-  .sql-label {
-    font-size: 14px;
-    color: #606266;
-    margin-bottom: 8px;
-  }
-
-  .sql-code {
-    background: #1e1e1e;
-    color: #d4d4d4;
-    padding: 16px;
-    border-radius: 4px;
-    font-family: 'Fira Code', 'Consolas', monospace;
-    font-size: 13px;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    margin: 0;
   }
 }
 </style>

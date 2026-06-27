@@ -176,10 +176,22 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '规则创建群组' },
       },
       {
+        path: 'group/edit/rule/:id',
+        name: 'EditGroupRule',
+        component: () => import('@/views/group/create-rule.vue'),
+        meta: { title: '编辑群组' },
+      },
+      {
         path: 'group/create/upload',
         name: 'CreateGroupUpload',
         component: () => import('@/views/group/create-upload.vue'),
         meta: { title: '上传文件创建群组' },
+      },
+      {
+        path: 'group/edit/upload/:id',
+        name: 'EditGroupUpload',
+        component: () => import('@/views/group/create-upload.vue'),
+        meta: { title: '编辑群组' },
       },
       {
         path: 'group/create/sql',
@@ -188,9 +200,9 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'SQL创建群组' },
       },
       {
-        path: 'group/edit/:id',
-        name: 'EditGroup',
-        component: () => import('@/views/group/edit.vue'),
+        path: 'group/edit/sql/:id',
+        name: 'EditGroupSql',
+        component: () => import('@/views/group/create-sql.vue'),
         meta: { title: '编辑群组' },
       },
       // 任务管理
