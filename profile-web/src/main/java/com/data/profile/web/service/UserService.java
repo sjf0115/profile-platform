@@ -16,9 +16,11 @@ import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.utils.JwtUtil;
 import com.data.profile.common.utils.UserUtil;
 import com.data.profile.web.vo.UserOverviewVO;
+import com.data.profile.web.vo.UserVO;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,29 +72,45 @@ public class UserService {
     }
 
     /**
-     * 根据查询条件获取用户列表（MyBatis 嵌套查询自动加载角色）
-     * @param user 用户信息
+     * 根据查询条件获取用户列表（含角色信息）
+     * @param user 用户查询条件
+     * @return 用户 VO 列表
      */
-    public List<User> getList(User user) {
+    public List<UserVO> getList(User user) {
         List<User> users = userMapper.selectByParams(user);
-        log.info("根据查询条件获取 {} 个用户", users.size());
-        return users;
+        List<UserVO> userVOs = new ArrayList<>();
+        for (User u : users) {
+            userVOs.add(toVO(u));
+        }
+        log.info("根据查询条件获取 {} 个用户", userVOs.size());
+        return userVOs;
     }
 
     /**
      * 根据用户ID获取用户详细信息
      * @param userId 用户ID
+     * @return 用户 VO
      */
-    public Optional<User> getDetail(String userId) {
+    public Optional<UserVO> getDetail(String userId) {
         User user = userMapper.selectByUserId(userId);
         if (user == null) {
             return Optional.empty();
         }
+        UserVO vo = toVO(user);
+        log.info("根据用户ID {} 获取用户详细信息: {}", userId, JSONUtils.toJsonString(vo));
+        return Optional.of(vo);
+    }
+
+    /**
+     * 将 User Model 转换为 UserVO（含角色查询）
+     */
+    private UserVO toVO(User user) {
+        UserVO vo = new UserVO();
+        BeanUtils.copyProperties(user, vo);
         // 查询用户角色
-        List<Role> roles = userMapper.selectRolesByUserId(userId);
-        user.setRoles(roles);
-        log.info("根据用户ID {} 获取用户详细信息: {}", userId, JSONUtils.toJsonString(user));
-        return Optional.of(user);
+        List<Role> roles = userMapper.selectRolesByUserId(user.getUserId());
+        vo.setRoles(roles);
+        return vo;
     }
 
     /**
@@ -169,15 +187,15 @@ public class UserService {
      * 获取用户概览统计
      */
     public UserOverviewVO getOverview() {
-        List<User> users = userMapper.selectByParams(new User());
+        List<UserVO> userVOs = getList(new User());
         // 已加入用户数
-        int totalCount = users.size();
+        int totalCount = userVOs.size();
         // 管理员用户数
         int adminCount = 0;
         // 成员数量
         int memberCount = 0;
-        for (User user : users) {
-            List<Role> roles = user.getRoles();
+        for (UserVO userVO : userVOs) {
+            List<Role> roles = userVO.getRoles();
             boolean isAdmin = false;
             boolean isMember = false;
             for (Role role : roles) {
@@ -203,7 +221,7 @@ public class UserService {
     /**
      * 登录
      */
-    public User login(UserLoginRequest userLoinRequest, String authType) {
+    public UserVO login(UserLoginRequest userLoinRequest, String authType) {
         // 登录验证
         authType = StringUtils.isEmpty(authType) ? Constant.AUTHENTICATION_PROVIDER_PASSWORD : authType;
         if (!strategies.containsKey(authType)) {
@@ -226,6 +244,6 @@ public class UserService {
                 .userId(user.getUserId())
                 .build();
         userLoginService.save(userLogin);
-        return user;
+        return toVO(user);
     }
 }

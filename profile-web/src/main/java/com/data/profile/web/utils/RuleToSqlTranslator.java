@@ -1,6 +1,7 @@
 package com.data.profile.web.utils;
 
 import com.data.profile.web.model.*;
+import com.data.profile.web.service.GroupService;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -91,6 +92,8 @@ public class RuleToSqlTranslator {
                 .map(sql -> "(" + sql + ")")
                 .collect(Collectors.joining(combiner));
     }
+
+    //------------------------------------------------------------------------------------------------------------------
 
     /**
      * 翻译单个 RuleGroup 为 SQL。

@@ -3,7 +3,6 @@ package com.data.profile.web.model;
 import lombok.Data;
 
 import java.util.Date;
-import java.util.List;
 
 @Data
 public class User {
@@ -20,6 +19,4 @@ public class User {
     private String modifier;
     private Date gmtCreate;
     private Date gmtModified;
-    // 用户角色列表，包含角色完整信息
-    private List<Role> roles;
 }

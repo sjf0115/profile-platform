@@ -59,7 +59,7 @@
     where user_id = #{userId,jdbcType=VARCHAR}
   </select>
 
-  <select id="selectByParams" parameterType="com.data.profile.web.model.User" resultMap="UserWithRolesMap">
+  <select id="selectByParams" parameterType="com.data.profile.web.model.User" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List" />
     from profile_meta_user

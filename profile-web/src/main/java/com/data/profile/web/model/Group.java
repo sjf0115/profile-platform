@@ -38,7 +38,7 @@ public class Group {
     private Date gmtModified;
 
     //----------------------------------------------------------
-    // 调度任务
+    // 调度任务（非 DB 列，前端创建/修改群组时传入，用于注册调度）
 
     private String taskId;
     // 调度类型:1-手动触发调度,2-周期调度,3-API触发调度
@@ -51,17 +51,4 @@ public class Group {
     private String triggerStartTime;
     // 触发调度有效结束时间:只有周期自动触发更新才有
     private String triggerEndTime;
-
-    //----------------------------------------------------------
-    // 最新任务实例（查询时关联）
-    private TaskInstance latestInstance;
-
-    //----------------------------------------------------------
-    // 实体
-    // 实体标识ID
-    private String entityIdentifierName;
-    // 实体ID
-    private String entityId;
-    // 实体名称
-    private String entityName;
 }

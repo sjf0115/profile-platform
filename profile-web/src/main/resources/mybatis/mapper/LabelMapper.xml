@@ -49,15 +49,10 @@
         where label_id = #{labelId,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByLabelId" parameterType="java.lang.String" resultMap="ResultMapWithEntity">
+    <select id="selectByLabelId" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
             <include refid="Base_Column_List" />
-            ,<include refid="Entity_Column_List" />
         from profile_meta_label as t1
-        left outer join profile_meta_entity_identifier as t2
-        on t1.entity_identifier_id = t2.entity_identifier_id
-        left outer join profile_meta_entity as t3
-        on t2.entity_id = t3.entity_id
         where label_id = #{labelId,jdbcType=VARCHAR}
     </select>
 
@@ -68,15 +63,10 @@
         where label_name = #{labelName,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByParams" parameterType="com.data.profile.web.model.Label" resultMap="ResultMapWithEntity">
+    <select id="selectByParams" parameterType="com.data.profile.web.model.Label" resultMap="BaseResultMap">
         select
             <include refid="Base_Column_List" />
-          ,<include refid="Entity_Column_List" />
         from profile_meta_label as t1
-        left outer join profile_meta_entity_identifier as t2
-        on t1.entity_identifier_id = t2.entity_identifier_id
-        left outer join profile_meta_entity as t3
-        on t2.entity_id = t3.entity_id
         where 1 = 1
         <if test="isValid != null">
           AND t1.is_valid = #{isValid,jdbcType=INTEGER}

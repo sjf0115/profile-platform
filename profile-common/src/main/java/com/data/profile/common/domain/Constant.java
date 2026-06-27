@@ -18,4 +18,8 @@ public class Constant {
 
     public static final String AUTHENTICATION_PROVIDER_PASSWORD = "PASSWD";
     public static final String AUTHENTICATION_PROVIDER_LDAP = "LDAP";
+
+    // 引擎相关常量
+    public static final String ENGINE_DATASET_TABLE_PREFIX = "profile_dataset_";
+    public static final String ENGINE_GROUP_TABLE_PREFIX = "profile_group_";
 }

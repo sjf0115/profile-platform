@@ -11,6 +11,7 @@ import com.data.profile.web.utils.RuleToSqlTranslator;
 import com.data.profile.web.utils.RuleToSqlTranslator.LabelMeta;
 import com.data.profile.web.utils.RuleToSqlTranslator.MetadataContext;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -42,46 +43,6 @@ public class GroupTask {
     private TaskService taskService;
 
     /**
-     * 预估群组人数（前端交互式调用，不走 Task 体系）。
-     * 翻译 GroupRule → COUNT SQL → 执行查询 → 返回人数。
-     *
-     * @param groupRule           群组规则
-     * @param entityIdentifierId  实体标识ID
-     * @return 预估人数
-     */
-    public long estimateGroupCount(GroupRule groupRule, String entityIdentifierId) {
-        // 1. 校验规则
-        if (groupRule == null || !"rule".equals(groupRule.getType())) {
-            throw new IllegalArgumentException("仅支持规则类型(rule)的群组进行预估");
-        }
-        RuleExpression expression = groupRule.getExpression();
-        if (expression == null || expression.getRuleGroups() == null || expression.getRuleGroups().isEmpty()) {
-            throw new IllegalArgumentException("规则表达式不能为空");
-        }
-
-        // 2. 构建元数据上下文
-        MetadataContext context = buildMetadataContext(expression);
-
-        // 3. 翻译规则为 SQL
-        String subQuery = RuleToSqlTranslator.translate(expression, context);
-        log.info("群组预估 - 翻译 SQL: {}", subQuery);
-
-        // 4. 包装为 COUNT 查询
-        String countSql = "SELECT COUNT(DISTINCT entity_id) FROM (" + subQuery + ")";
-        log.info("群组预估 - 执行 COUNT SQL: {}", countSql);
-
-        // 5. 执行查询
-        try {
-            long count = analysisEngineService.executeCountQuery(countSql);
-            log.info("群组预估结果: {} 人", count);
-            return count;
-        } catch (Exception e) {
-            log.error("群组预估执行失败", e);
-            throw new RuntimeException("群组预估执行失败: " + e.getMessage(), e);
-        }
-    }
-
-    /**
      * 执行群组圈选（Task dispatch 调用）。
      * 翻译规则 → 写临时表 → EXCHANGE TABLES 原子交换 → 更新 groupCount。
      *
@@ -91,50 +52,61 @@ public class GroupTask {
         log.info("开始执行群组圈选: groupId={}", groupId);
 
         // 1. 加载群组元数据
-        Optional<Group> groupOpt = groupService.getDetail(groupId);
+        Optional<Group> groupOpt = groupService.getDetailModel(groupId);
         if (!groupOpt.isPresent()) {
             throw new RuntimeException("群组不存在: " + groupId);
         }
         Group group = groupOpt.get();
         GroupRule groupRule = group.getGroupRule();
 
-        if (groupRule == null || !"rule".equals(groupRule.getType())) {
-            throw new IllegalStateException("群组 " + groupId + " 不是规则类型，无法执行圈选");
-        }
-        RuleExpression expression = groupRule.getExpression();
-        if (expression == null || expression.getRuleGroups() == null || expression.getRuleGroups().isEmpty()) {
-            throw new IllegalStateException("群组 " + groupId + " 规则表达式为空");
+        if (groupRule == null) {
+            throw new IllegalStateException("群组 " + groupId + " 规则为空，无法执行圈选");
         }
 
-        // 2. 自引用检测：禁止群组规则中引用自身
-        Set<String> referencedGroupIds = collectReferencedGroupIds(expression);
-        if (referencedGroupIds.contains(groupId)) {
-            throw new IllegalStateException("群组 " + groupId + " 存在自引用，无法执行圈选");
-        }
-
-        // 3. 验证被引用群组的结果表存在（前置防御）
-        for (String refGroupId : referencedGroupIds) {
-            String refTable = GroupService.GROUP_TABLE_PREFIX + refGroupId;
-            String checkSql = "EXISTS TABLE " + refTable;
-            try {
-                long exists = analysisEngineService.executeCountQuery(checkSql);
-                if (exists == 0) {
-                    throw new IllegalStateException(
-                            "被引用群组 " + refGroupId + " 尚未执行圈选，请先执行该群组");
-                }
-            } catch (IllegalStateException e) {
-                throw e;
-            } catch (Exception e) {
-                log.warn("检查引用群组表失败: {}", refGroupId, e);
+        String subQuery;
+        if ("rule".equals(groupRule.getType())) {
+            RuleExpression expression = groupRule.getExpression();
+            if (expression == null || expression.getRuleGroups() == null || expression.getRuleGroups().isEmpty()) {
+                throw new IllegalStateException("群组 " + groupId + " 规则表达式为空");
             }
+
+            // 自引用检测：禁止群组规则中引用自身
+            Set<String> referencedGroupIds = collectReferencedGroupIds(expression);
+            if (referencedGroupIds.contains(groupId)) {
+                throw new IllegalStateException("群组 " + groupId + " 存在自引用，无法执行圈选");
+            }
+
+            // 验证被引用群组的结果表存在（前置防御）
+            for (String refGroupId : referencedGroupIds) {
+                String refTable = GroupService.GROUP_TABLE_PREFIX + refGroupId;
+                String checkSql = "EXISTS TABLE " + refTable;
+                try {
+                    long exists = analysisEngineService.executeCountQuery(checkSql);
+                    if (exists == 0) {
+                        throw new IllegalStateException(
+                                "被引用群组 " + refGroupId + " 尚未执行圈选，请先执行该群组");
+                    }
+                } catch (IllegalStateException e) {
+                    throw e;
+                } catch (Exception e) {
+                    log.warn("检查引用群组表失败: {}", refGroupId, e);
+                }
+            }
+
+            // 构建元数据上下文
+            MetadataContext context = groupService.buildMetadataContext(expression);
+            // 翻译规则为 SQL
+            subQuery = RuleToSqlTranslator.translate(expression, context);
+            log.info("群组圈选 - 翻译 SQL: groupId={}, sql={}", groupId, subQuery);
+        } else if ("sql".equals(groupRule.getType())) {
+            subQuery = groupRule.getSqlText();
+            if (StringUtils.isBlank(subQuery)) {
+                throw new IllegalStateException("群组 " + groupId + " 的 SQL 为空");
+            }
+            log.info("群组圈选 - 使用自定义 SQL: groupId={}", groupId);
+        } else {
+            throw new IllegalStateException("群组 " + groupId + " 不支持的规则类型: " + groupRule.getType());
         }
-
-        // 4. 构建元数据上下文
-        MetadataContext context = buildMetadataContext(expression);
-
-        // 5. 翻译规则为 SQL
-        String subQuery = RuleToSqlTranslator.translate(expression, context);
-        log.info("群组圈选 - 翻译 SQL: groupId={}, sql={}", groupId, subQuery);
 
         String resultTable = GroupService.GROUP_TABLE_PREFIX + groupId;
         String tmpTable = resultTable + "_tmp";
@@ -242,77 +214,5 @@ public class GroupTask {
             }
         }
         return groupIds;
-    }
-
-    /**
-     * 构建 MetadataContext：遍历 RuleExpression 中的所有 Rule，
-     * 收集标签 ID 和群组 ID 对应的元数据。
-     */
-    private MetadataContext buildMetadataContext(RuleExpression expression) {
-        Map<String, LabelMeta> labelMetaMap = new HashMap<>();
-        Map<String, String> groupTableMap = new HashMap<>();
-
-        for (RuleGroup ruleGroup : expression.getRuleGroups()) {
-            if (ruleGroup.getRules() == null) continue;
-            for (Rule rule : ruleGroup.getRules()) {
-                collectMetadata(rule, labelMetaMap, groupTableMap);
-            }
-        }
-        return new MetadataContext(labelMetaMap, groupTableMap);
-    }
-
-    /**
-     * 从单条规则中收集元数据。
-     */
-    private void collectMetadata(Rule rule, Map<String, LabelMeta> labelMetaMap, Map<String, String> groupTableMap) {
-        RuleFilterExpression filterExpression = rule.getFilterExpression();
-        if (filterExpression == null || filterExpression.getFilterGroups() == null) return;
-
-        for (RuleFilterGroup filterGroup : filterExpression.getFilterGroups()) {
-            if (filterGroup.getFilters() == null) continue;
-            for (RuleFilter filter : filterGroup.getFilters()) {
-                if (filter.getType() == 1) {
-                    // 标签：通过 labelId 查找 datasetField → dataset
-                    String labelId = filter.getId();
-                    if (!labelMetaMap.containsKey(labelId)) {
-                        LabelMeta meta = resolveLabelMeta(labelId);
-                        if (meta != null) {
-                            labelMetaMap.put(labelId, meta);
-                        }
-                    }
-                } else if (filter.getType() == 2) {
-                    // 群组
-                    String groupId = filter.getId();
-                    groupTableMap.putIfAbsent(groupId, GroupService.GROUP_TABLE_PREFIX + groupId);
-                }
-            }
-        }
-    }
-
-    /**
-     * 通过 labelId 解析标签元数据：
-     * labelId → DatasetField (relatedId) → datasetId + fieldName → Dataset (entityField)
-     */
-    private LabelMeta resolveLabelMeta(String labelId) {
-        // 通过 relatedId 查找 DatasetField
-        DatasetField field = datasetFieldService.getDetailByRelatedId(labelId);
-        if (field == null) {
-            log.warn("标签 {} 未关联数据集字段", labelId);
-            throw new IllegalStateException("标签 " + labelId + " 未关联数据集字段，无法圈选");
-        }
-
-        // 获取数据集信息（entityField）
-        String datasetId = field.getDatasetId();
-        Optional<Dataset> datasetOpt = datasetService.getDetail(datasetId);
-        if (!datasetOpt.isPresent()) {
-            throw new IllegalStateException("数据集不存在: " + datasetId);
-        }
-        Dataset dataset = datasetOpt.get();
-        String entityField = dataset.getEntityField();
-        if (entityField == null || entityField.isEmpty()) {
-            throw new IllegalStateException("数据集 " + datasetId + " 未配置实体字段(entityField)");
-        }
-
-        return new LabelMeta(datasetId, field.getFieldName(), entityField);
     }
 }

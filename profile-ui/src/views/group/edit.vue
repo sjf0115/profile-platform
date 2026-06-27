@@ -136,17 +136,26 @@
         <div class="section-header rule-header">
           <el-icon class="section-icon"><Setting /></el-icon>
           <span class="section-title">群组规则</span>
-          <span class="rule-tip">符合下列条件的用户将创建分群，每条规则计算结果最长支持连续365天</span>
+          <span class="rule-tip" v-if="!isSqlType">符合下列条件的用户将创建分群，每条规则计算结果最长支持连续365天</span>
+          <span class="rule-tip" v-else>SQL 创建的群组，结果集必须包含 entity_id 列</span>
           <el-tooltip content="规则说明" placement="top">
             <el-icon class="help-icon"><QuestionFilled /></el-icon>
           </el-tooltip>
         </div>
         <div class="section-content">
+          <!-- SQL 类型：只读展示 SQL -->
+          <div v-if="isSqlType" class="sql-display">
+            <div class="sql-label">圈选 SQL：</div>
+            <pre class="sql-code">{{ sqlText }}</pre>
+          </div>
+          <!-- 规则类型：显示 GroupRuleConfig -->
           <GroupRuleConfig
+            v-else-if="canEditRule"
             ref="ruleConfigRef"
             v-model="ruleForm"
             :entity-identifier-id="basicForm.entity_identifier_id"
           />
+          <el-empty v-else description="暂无规则数据" />
         </div>
       </div>
 
@@ -180,6 +189,9 @@ const basicFormRef = ref<FormInstance>()
 const ruleConfigRef = ref()
 const saving = ref(false)
 
+// SQL 文本（用于 SQL 类型群组展示）
+const sqlText = ref('')
+
 // 规则表单
 const ruleForm = reactive<{ rule_groups?: any[]; logic?: string }>({
   rule_groups: [],
@@ -207,6 +219,9 @@ const basicForm = reactive({
 
 // 群组规则（用于回填）
 const groupRule = ref<any>(null)
+
+// 是否为 SQL 类型
+const isSqlType = computed(() => basicForm.group_type === 3)
 
 // 是否可编辑规则（只有规则筛选类型可编辑）
 const canEditRule = computed(() => {
@@ -277,6 +292,11 @@ const fetchGroupDetail = async () => {
           ? JSON.parse(data.group_rule) 
           : data.group_rule
         groupRule.value = parsedRule
+        
+        // SQL 类型：回填 SQL 文本
+        if (parsedRule?.type === 'sql') {
+          sqlText.value = parsedRule.sql_text || ''
+        }
         
         // 将后端 GroupRule 格式转换为前端 rule_groups 格式
         // GroupRule 包含 expression 字段（RuleExpression）
@@ -434,10 +454,12 @@ const handleSave = async () => {
 
   saving.value = true
   try {
-    // 获取后端格式的 RuleExpression 数据
-    const groupRuleData = canEditRule.value 
-      ? ruleConfigRef.value?.getGroupRule() 
-      : groupRule.value
+    // 根据类型构建不同的 group_rule
+    const groupRuleData = isSqlType.value
+      ? { type: 'sql', sql_text: sqlText.value }
+      : canEditRule.value
+        ? ruleConfigRef.value?.getGroupRule()
+        : groupRule.value
 
     const submitData = {
       group_id: basicForm.group_id,
@@ -597,5 +619,25 @@ onMounted(() => {
   padding: 20px;
   background-color: #fff;
   border-radius: 4px;
+}
+
+.sql-display {
+  .sql-label {
+    font-size: 14px;
+    color: #606266;
+    margin-bottom: 8px;
+  }
+
+  .sql-code {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 16px;
+    border-radius: 4px;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    margin: 0;
+  }
 }
 </style>

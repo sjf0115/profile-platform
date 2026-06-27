@@ -19,7 +19,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GroupRule {
-    // 规则类型: rule-标签筛选, upload-文件上传
+    // 规则类型: rule-标签筛选, upload-文件上传, sql-SQL创建
     private String type;
     // 标签筛选规则表达式（type=rule 时使用）
     private RuleExpression expression;
@@ -27,4 +27,6 @@ public class GroupRule {
     private String uuidFileKey;
     // 上传的文件列表（type=upload 时使用）
     private List<String> fileList;
+    // SQL 语句（type=sql 时使用）
+    private String sqlText;
 }

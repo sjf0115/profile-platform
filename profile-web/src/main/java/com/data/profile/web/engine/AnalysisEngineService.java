@@ -101,9 +101,9 @@ public class AnalysisEngineService {
      *
      * @return 构建完成的 TableSchema
      */
-    public TableSchema buildAndUpsertTable(Dataset dataset, DataSource dataSource, String tableName) throws Exception {
+    public TableSchema buildAndUpsertTable(Dataset dataset, DataSource dataSource, String tableName, List<DatasetField> fields) throws Exception {
         Engine analysisEngine = getDefaultAnalysisEngine();
-        TableSchema tableSchema = buildTargetSchema(dataset, dataSource, tableName, analysisEngine);
+        TableSchema tableSchema = buildTargetSchema(dataset, dataSource, tableName, analysisEngine, fields);
         upsertAnalysisEngineTable(analysisEngine, tableSchema);
         return tableSchema;
     }
@@ -155,12 +155,11 @@ public class AnalysisEngineService {
      *   <li>若 dataset.partitionField 存在，用于 PARTITION BY。</li>
      * </ul>
      */
-    public TableSchema buildTargetSchema(Dataset dataset, DataSource dataSource, String tableName, Engine analysisEngine) {
+    public TableSchema buildTargetSchema(Dataset dataset, DataSource dataSource, String tableName, Engine analysisEngine, List<DatasetField> datasetFields) {
         TypeConverter sourceTypeConverter = loadSourceTypeConverter(dataSource);
         String entityField = StringUtils.trimToNull(dataset.getEntityField());
         String partitionField = StringUtils.trimToNull(dataset.getPartitionField());
 
-        List<DatasetField> datasetFields = dataset.getFields();
         List<DatasetField> importFields = datasetFields.stream()
                 .filter(f -> f.getImportStatus() != null && f.getImportStatus() == 1)
                 .collect(Collectors.toList());

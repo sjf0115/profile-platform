@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { ApiResponse, Group, GroupConfigResponse } from '@/types'
+import type { ApiResponse, Group, GroupConfigResponse, Dataset } from '@/types'
 
 export const groupApi = {
   // 获取群组列表
@@ -53,5 +53,17 @@ export const groupApi = {
   // 下载 CSV 上传模板
   downloadTemplate: () => {
     return request.get('/group/template/download', { responseType: 'blob' })
+  },
+
+  // 获取 SQL 创建可用的数据集表和字段
+  getAvailableTables: (entity_identifier_id: string) => {
+    return request.get<ApiResponse<Dataset[]>>('/group/available-tables', {
+      params: { entity_identifier_id }
+    })
+  },
+
+  // 预估群组人数
+  estimate: (data: any) => {
+    return request.post<ApiResponse<number>>('/group/estimate', data)
   }
 }

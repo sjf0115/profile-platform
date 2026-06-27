@@ -6,8 +6,11 @@ import com.data.profile.common.enums.TriggerMode;
 import com.data.profile.web.dto.ScheduleConfigRequest;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
+import com.data.profile.web.model.DatasetField;
 import com.data.profile.web.model.Task;
 import com.data.profile.web.model.TaskInstance;
+import com.data.profile.web.vo.DatasetFieldVO;
+import com.data.profile.web.vo.DatasetVO;
 import com.data.profile.web.service.DatasetService;
 import com.data.profile.web.service.TaskExecutionService;
 import com.data.profile.web.task.DatasetTask;
@@ -18,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,14 +47,14 @@ public class DatasetController {
     @PostMapping(value = "/list")
     public Response getList(@RequestBody Dataset dataset) {
         log.info("根据数据集信息请求查询数据集: {}", gson.toJson(dataset));
-        List<Dataset> datasets = datasetService.getList(dataset);
+        List<DatasetVO> datasets = datasetService.getList(dataset);
         return Response.success(datasets);
     }
 
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam(name = "dataset_id") String datasetId) {
         log.info("根据数据集ID请求查看数据集信息: {}", datasetId);
-        Optional<Dataset> optional = datasetService.getDetail(datasetId);
+        Optional<DatasetVO> optional = datasetService.getDetail(datasetId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
         } else {
@@ -59,9 +63,20 @@ public class DatasetController {
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody Dataset dataset) {
-        log.info("请求保存/更新数据集: {}", gson.toJson(dataset));
-        String datasetId = datasetService.save(dataset);
+    public Response save(@RequestBody DatasetVO datasetVO) {
+        log.info("请求保存/更新数据集: {}", gson.toJson(datasetVO));
+        Dataset dataset = new Dataset();
+        org.springframework.beans.BeanUtils.copyProperties(datasetVO, dataset);
+        // 将 DatasetFieldVO 转回 DatasetField
+        List<DatasetField> fields = new ArrayList<>();
+        if (datasetVO.getFields() != null) {
+            for (DatasetFieldVO fvo : datasetVO.getFields()) {
+                DatasetField f = new DatasetField();
+                org.springframework.beans.BeanUtils.copyProperties(fvo, f);
+                fields.add(f);
+            }
+        }
+        String datasetId = datasetService.save(dataset, fields);
         return Response.success(datasetId);
     }
 

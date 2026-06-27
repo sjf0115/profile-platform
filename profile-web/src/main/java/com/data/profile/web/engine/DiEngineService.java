@@ -11,8 +11,10 @@ import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.config.ProfileEngineConfig;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
+import com.data.profile.web.model.DatasetField;
 import com.data.profile.web.model.Engine;
 import com.data.profile.web.service.DataSourceService;
+import com.data.profile.web.service.DatasetFieldService;
 import com.data.profile.web.service.DatasetService;
 import com.data.profile.web.service.EngineService;
 import com.data.spi.PluginLoader;
@@ -58,6 +60,9 @@ public class DiEngineService {
     @Resource
     private AnalysisEngineService analysisEngineService;
 
+    @Resource
+    private DatasetFieldService datasetFieldService;
+
     /**
      * 同步数据集到分析引擎（一站式业务方法）。
      * <p>内部解析默认 DI 引擎和分析引擎，业务层无需感知 {@link Engine} 对象。</p>
@@ -85,7 +90,7 @@ public class DiEngineService {
      * @param datasetId 数据集ID
      */
     public void executeDatasetSync(String datasetId) throws Exception {
-        Optional<Dataset> opt = datasetService.getDetail(datasetId);
+        Optional<Dataset> opt = datasetService.getDetailModel(datasetId);
         if (!opt.isPresent()) {
             throw new IllegalStateException("数据集不存在: " + datasetId);
         }
@@ -96,11 +101,14 @@ public class DiEngineService {
             throw new IllegalStateException("数据源不存在: " + dataset.getDatasourceId());
         }
 
-        // 1. 构建目标 Schema + 建表/演进
-        String tableName = "profile_dataset_" + datasetId;
-        TableSchema tableSchema = analysisEngineService.buildAndUpsertTable(dataset, dataSource, tableName);
+        // 1. 查询数据集字段
+        List<DatasetField> fields = datasetFieldService.getListByDatasetId(datasetId);
 
-        // 2. 同步数据
+        // 2. 构建目标 Schema + 建表/演进
+        String tableName = "profile_dataset_" + datasetId;
+        TableSchema tableSchema = analysisEngineService.buildAndUpsertTable(dataset, dataSource, tableName, fields);
+
+        // 3. 同步数据
         syncDataset(dataset, dataSource, tableSchema);
 
         log.info("数据集同步完成: datasetId={}", datasetId);

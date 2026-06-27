@@ -83,8 +83,14 @@
           </el-tooltip>
         </div>
         <div class="section-content">
+          <!-- SQL 类型：只读展示 SQL -->
+          <div v-if="groupInfo.group_type === 3" class="sql-display">
+            <div class="sql-label">圈选 SQL：</div>
+            <pre class="sql-code">{{ parsedSqlText }}</pre>
+          </div>
+          <!-- 规则类型：显示 GroupRuleConfig -->
           <GroupRuleConfig
-            v-if="groupRule"
+            v-else-if="groupRule"
             ref="ruleConfigRef"
             v-model="ruleForm"
             :entity-identifier-id="groupInfo.entity_identifier_id || ''"
@@ -98,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Menu, Setting, Timer, QuestionFilled } from '@element-plus/icons-vue'
@@ -114,6 +120,14 @@ const groupInfo = ref<Partial<Group>>({})
 const groupRule = ref<any>(null)
 const loading = ref(false)
 const ruleConfigRef = ref()
+
+// 解析 SQL 文本
+const parsedSqlText = computed(() => {
+  if (groupRule.value?.type === 'sql') {
+    return groupRule.value.sql_text || ''
+  }
+  return ''
+})
 
 // 规则表单
 const ruleForm = reactive<{
@@ -321,6 +335,26 @@ onMounted(() => {
 
   .section-content {
     padding: 20px;
+  }
+}
+
+.sql-display {
+  .sql-label {
+    font-size: 14px;
+    color: #606266;
+    margin-bottom: 8px;
+  }
+
+  .sql-code {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 16px;
+    border-radius: 4px;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    margin: 0;
   }
 }
 </style>

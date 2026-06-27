@@ -182,6 +182,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '上传文件创建群组' },
       },
       {
+        path: 'group/create/sql',
+        name: 'CreateGroupSql',
+        component: () => import('@/views/group/create-sql.vue'),
+        meta: { title: 'SQL创建群组' },
+      },
+      {
         path: 'group/edit/:id',
         name: 'EditGroup',
         component: () => import('@/views/group/edit.vue'),

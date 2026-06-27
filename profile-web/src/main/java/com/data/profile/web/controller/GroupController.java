@@ -7,6 +7,8 @@ import com.data.profile.web.model.Group;
 import com.data.profile.web.model.GroupRule;
 import com.data.profile.web.model.LabelOperator;
 import com.data.profile.web.model.TaskInstance;
+import com.data.profile.web.vo.DatasetVO;
+import com.data.profile.web.vo.GroupVO;
 import com.data.profile.web.service.GroupService;
 import com.data.profile.web.service.TaskExecutionService;
 import com.google.gson.Gson;
@@ -45,14 +47,14 @@ public class GroupController {
     @PostMapping(value = "/list")
     public Response getList(@RequestBody Group group) {
         log.info("根据群组条件请求查询群组信息: {}", gson.toJson(group));
-        List<Group> groups = groupService.getList(group);
+        List<GroupVO> groups = groupService.getList(group);
         return Response.success(groups);
     }
 
     @GetMapping(value = "/detail")
     public Response getDetail(@RequestParam(name = "group_id") String groupId) {
         log.info("根据群组ID请求查询群组信息: {}", groupId);
-        Optional<Group> optional = groupService.getDetail(groupId);
+        Optional<GroupVO> optional = groupService.getDetail(groupId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
         } else {
@@ -134,10 +136,7 @@ public class GroupController {
     public Response estimate(@RequestBody Group group) {
         log.info("请求预估群组人数");
         try {
-            GroupRule groupRule = group.getGroupRule();
-            String entityIdentifierId = group.getEntityIdentifierId();
-            // TODO 是否直接使用 groupTask
-            long count = groupTask.estimateGroupCount(groupRule, entityIdentifierId);
+            long count = groupService.estimateGroupCount(group.getGroupRule());
             return Response.success(count);
         } catch (Exception e) {
             log.error("群组预估失败", e);
@@ -145,7 +144,7 @@ public class GroupController {
         }
     }
 
-    // 立即执行群组圈选
+    // 立即执行群组圈选 TODO GroupTask 还是 taskExecutionService ？
     @PostMapping(value = "/{groupId}/execute")
     public Response execute(@PathVariable(value = "groupId") String groupId) {
         log.info("请求手动立即执行群组 [{}] 圈选", groupId);
@@ -159,6 +158,15 @@ public class GroupController {
             log.error("群组圈选失败: groupId={}", groupId, e);
             return Response.error("群组圈选失败: " + e.getMessage(), ResponseCode.ERROR);
         }
+    }
+
+    // 获取 SQL 创建可用的数据集表和字段列表
+    @GetMapping(value = "/available-tables")
+    public Response getAvailableTables(
+            @RequestParam(name = "entity_identifier_id") String entityIdentifierId) {
+        log.info("根据实体ID [{}] 请求获取可用数据集表和字段", entityIdentifierId);
+        List<DatasetVO> tables = groupService.getAvailableTables(entityIdentifierId);
+        return Response.success(tables);
     }
 
     @GetMapping(value = "/config/label")

@@ -7,6 +7,7 @@ import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.dto.UserRequest;
 import com.data.profile.web.model.User;
 import com.data.profile.web.vo.UserOverviewVO;
+import com.data.profile.web.vo.UserVO;
 import com.data.profile.web.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,14 +34,14 @@ public class UserController {
     @PostMapping(value = "/list")
     public Response getList(@RequestBody User user) {
         log.info("请求查询用户：{}", JSONUtils.toJsonString(user));
-        List<User> users = userService.getList(user);
+        List<UserVO> users = userService.getList(user);
         return Response.success(users);
     }
 
     @GetMapping(value = "/{userId}/detail")
     public Response getDetail(@PathVariable(value = "userId") String userId) {
         log.info("请求查询用户 {} 详细信息", userId);
-        Optional<User> userOptional = userService.getDetail(userId);
+        Optional<UserVO> userOptional = userService.getDetail(userId);
         if (userOptional.isPresent()) {
             return Response.success(userOptional.get());
         }
@@ -101,7 +102,7 @@ public class UserController {
 
     @PostMapping(value = "/login")
     public Response login(@RequestBody UserLoginRequest userLoinRequest, @RequestHeader(value = "auth-Type", required = false) String authType) {
-        User user = userService.login(userLoinRequest, authType);
+        UserVO user = userService.login(userLoinRequest, authType);
         return Response.success(user);
     }
 

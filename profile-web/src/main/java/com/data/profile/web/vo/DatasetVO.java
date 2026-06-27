@@ -1,13 +1,14 @@
-package com.data.profile.web.model;
+package com.data.profile.web.vo;
 
+import com.data.profile.web.model.TaskInstance;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
-public class Dataset {
+public class DatasetVO {
     private Long id;
-
     private Integer status;
     // 数据集ID
     private String datasetId;
@@ -41,4 +42,11 @@ public class Dataset {
     private Date gmtCreate;
     // 修改时间
     private Date gmtModified;
+    // 关联字段
+    // 数据集在引擎中的表名
+    private String engineTableName;
+    // 数据集字段
+    private List<DatasetFieldVO> fields;
+    // 最新任务实例
+    private TaskInstance latestInstance;
 }

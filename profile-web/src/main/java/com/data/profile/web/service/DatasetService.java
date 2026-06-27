@@ -7,6 +7,8 @@ import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;
 import com.data.profile.web.model.Task;
 import com.data.profile.web.model.TaskInstance;
+import com.data.profile.web.vo.DatasetFieldVO;
+import com.data.profile.web.vo.DatasetVO;
 import com.data.profile.web.security.RequestContext;
 import com.data.profile.common.enums.*;
 import com.data.profile.common.utils.IDGenerator;
@@ -14,11 +16,14 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.*;
+
+import static com.data.profile.common.domain.Constant.ENGINE_DATASET_TABLE_PREFIX;
 
 /**
  * 功能：数据集服务
@@ -48,41 +53,89 @@ public class DatasetService {
     private TaskInstanceService taskInstanceService;
 
     /**
-     * 根据查询条件获取数据集列表
+     * 根据查询条件获取数据集列表（仅元数据，不含字段）
      */
-    public List<Dataset> getList(Dataset dataset) {
+    public List<DatasetVO> getList(Dataset dataset) {
         List<Dataset> datasets = datasetMapper.selectByParams(dataset);
+        List<DatasetVO> vos = new ArrayList<>();
+        for (Dataset ds : datasets) {
+            vos.add(toVO(ds));
+        }
         log.info("根据查询条件获取 {} 个数据集", datasets.size());
-        return datasets;
+        return vos;
     }
 
     /**
-     * 根据数据集ID获取数据集详细信息
+     * 根据查询条件获取数据集列表（含字段详情）
+     * <p>每个 DatasetVO 附带已导入的字段列表（importStatus=1）。</p>
+     *
+     * @param dataset 查询条件
+     * @return 带字段的数据集 VO 列表
      */
-    public Optional<Dataset> getDetail(String datasetId) {
+    public List<DatasetVO> getListWithFields(Dataset dataset) {
+        List<Dataset> datasets = datasetMapper.selectByParams(dataset);
+        List<DatasetVO> vos = new ArrayList<>();
+        for (Dataset ds : datasets) {
+            DatasetVO vo = toVO(ds);
+            List<DatasetField> fields = datasetFieldService.getListByDatasetId(ds.getDatasetId());
+            vo.setFields(toFieldVOList(fields, ds.getEntityField()));
+            vos.add(vo);
+        }
+        log.info("根据查询条件获取 {} 个数据集（含字段）", datasets.size());
+        return vos;
+    }
+
+    /**
+     * 根据数据集ID获取数据集详细信息（含字段和最新实例）
+     */
+    public Optional<DatasetVO> getDetail(String datasetId) {
         Dataset dataset = datasetMapper.selectByDatasetId(datasetId);
         if (dataset == null) {
             return Optional.empty();
         }
+        DatasetVO vo = toVO(dataset);
         // 查询数据集字段
         List<DatasetField> fields = datasetFieldService.getListByDatasetId(datasetId);
-        dataset.setFields(fields);
-        // 查询最新任务实例（关联查询）
+        vo.setFields(toFieldVOList(fields, dataset.getEntityField()));
+        // 查询最新任务实例
         TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(datasetId);
-        dataset.setLatestInstance(latestInstance);
+        vo.setLatestInstance(latestInstance);
+        return Optional.of(vo);
+    }
+
+    /**
+     * 根据数据集ID获取数据集纯 Model（供内部调用）
+     */
+    public Optional<Dataset> getDetailModel(String datasetId) {
+        Dataset dataset = datasetMapper.selectByDatasetId(datasetId);
+        if (dataset == null) {
+            return Optional.empty();
+        }
         return Optional.of(dataset);
     }
 
     /**
+     * 将 Dataset Model 转换为 DatasetVO
+     */
+    private DatasetVO toVO(Dataset dataset) {
+        DatasetVO vo = new DatasetVO();
+        BeanUtils.copyProperties(dataset, vo);
+        vo.setEngineTableName(ENGINE_DATASET_TABLE_PREFIX + dataset.getDatasetId());
+        return vo;
+    }
+
+    /**
      * 创建/更新数据集
+     * @param dataset 数据集元数据
+     * @param fields  数据集字段列表（可为 null）
      * @return 数据集ID
      */
     @Transactional
-    public String save(Dataset dataset) {
+    public String save(Dataset dataset, List<DatasetField> fields) {
         if (StringUtils.isBlank(dataset.getDatasetId())) {
-            return createDataset(dataset);
+            return createDataset(dataset, fields);
         } else {
-            updateDataset(dataset);
+            updateDataset(dataset, fields);
             return dataset.getDatasetId();
         }
     }
@@ -132,7 +185,7 @@ public class DatasetService {
     /**
      * 创建数据集（元数据 + 引擎表 + 同步任务）
      */
-    private String createDataset(Dataset dataset) {
+    private String createDataset(Dataset dataset, List<DatasetField> fields) {
         // 检查名称唯一性
         List<Dataset> datasets = datasetMapper.selectByDatasetName(dataset.getDatasetName());
         if (!datasets.isEmpty()) {
@@ -150,7 +203,6 @@ public class DatasetService {
         dataset.setModifier(RequestContext.currentUserId());
 
         // 保存数据集字段
-        List<DatasetField> fields = dataset.getFields();
         if (fields != null && !fields.isEmpty()) {
             for (DatasetField field : fields) {
                 field.setDatasetId(datasetId);
@@ -163,7 +215,7 @@ public class DatasetService {
         log.info("创建数据集元数据: datasetId={}, datasetName={}", datasetId, dataset.getDatasetName());
 
         // 创建引擎表
-        createEngineTable(dataset);
+        createEngineTable(dataset, fields);
         // 创建同步任务
         createSyncTask(datasetId, dataset.getDatasetName());
         return datasetId;
@@ -172,11 +224,10 @@ public class DatasetService {
     /**
      * 修改数据集（元数据 + 引擎表 Schema 更新）
      */
-    private void updateDataset(Dataset dataset) {
+    private void updateDataset(Dataset dataset, List<DatasetField> fields) {
         String datasetId = dataset.getDatasetId();
         // 先清空再保存字段
         datasetFieldService.deleteByDatasetId(datasetId);
-        List<DatasetField> fields = dataset.getFields();
         if (fields != null && !fields.isEmpty()) {
             for (DatasetField field : fields) {
                 field.setDatasetId(datasetId);
@@ -190,7 +241,7 @@ public class DatasetService {
         log.info("更新数据集元数据: datasetId={}", datasetId);
 
         // 基础设施操作：更新引擎表 Schema
-        updateEngineTable(dataset);
+        updateEngineTable(dataset, fields);
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -199,12 +250,12 @@ public class DatasetService {
     /**
      * 创建引擎表
      */
-    private void createEngineTable(Dataset dataset) {
+    private void createEngineTable(Dataset dataset, List<DatasetField> fields) {
         try {
             DataSource dataSource = dataSourceService.getDetail(dataset.getDatasourceId());
             if (dataSource != null) {
                 String tableName = "profile_dataset_" + dataset.getDatasetId();
-                analysisEngineService.buildAndUpsertTable(dataset, dataSource, tableName);
+                analysisEngineService.buildAndUpsertTable(dataset, dataSource, tableName, fields);
                 log.info("创建引擎表成功: {}", tableName);
             }
         } catch (Exception e) {
@@ -216,12 +267,12 @@ public class DatasetService {
     /**
      * 更新引擎表
      */
-    private void updateEngineTable(Dataset dataset) {
+    private void updateEngineTable(Dataset dataset, List<DatasetField> fields) {
         try {
             DataSource dataSource = dataSourceService.getDetail(dataset.getDatasourceId());
             if (dataSource != null) {
                 String tableName = "profile_dataset_" + dataset.getDatasetId();
-                analysisEngineService.buildAndUpsertTable(dataset, dataSource, tableName);
+                analysisEngineService.buildAndUpsertTable(dataset, dataSource, tableName, fields);
                 log.info("更新引擎表成功: {}", tableName);
             }
         } catch (Exception e) {
@@ -254,5 +305,21 @@ public class DatasetService {
         task.setTriggerType(TriggerType.MANUAL.getCode()); // 默认无调度
         taskService.create(task);
         log.info("为数据集 [{}] 创建同步任务", datasetId);
+    }
+
+    /**
+     * 将 DatasetField 列表转换为 DatasetFieldVO 列表，并标记 isEntityField
+     */
+    // TODO 数据集字段服务处理
+    private List<DatasetFieldVO> toFieldVOList(List<DatasetField> fields, String entityField) {
+        List<DatasetFieldVO> vos = new ArrayList<>();
+        for (DatasetField f : fields) {
+            DatasetFieldVO vo = new DatasetFieldVO();
+            BeanUtils.copyProperties(f, vo);
+            // 是否是实体ID对应字段
+            vo.setEntityField(f.getFieldName() != null && f.getFieldName().equals(entityField));
+            vos.add(vo);
+        }
+        return vos;
     }
 }

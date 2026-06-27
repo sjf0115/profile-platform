@@ -220,7 +220,7 @@ const handleCreateTypeSelect = (type: string) => {
       router.push('/group/create/upload')
       break
     case 'sql':
-      ElMessage.info('SQL创建功能开发中')
+      router.push('/group/create/sql')
       break
   }
 }

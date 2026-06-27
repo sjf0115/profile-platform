@@ -135,6 +135,7 @@ export interface DatasetField {
   field_type?: string // 字段类型
   import_status?: number // 导入状态: 1-导入, 2-不导入
   related_id?: string // 数据集关联对象ID
+  entity_field?: boolean // 是否是实体字段（VO 扩展字段）
 }
 
 // 数据集
@@ -149,6 +150,7 @@ export interface Dataset {
   datasource_id?: string
   datasource_name?: string  // 扩展字段，用于展示
   table_name?: string
+  engine_table_name?: string // 引擎表名（VO 扩展字段）
   partition_field?: string
   partition_format?: string
   entity_id?: string
