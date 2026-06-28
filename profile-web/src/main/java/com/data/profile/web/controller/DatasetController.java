@@ -1,5 +1,7 @@
 package com.data.profile.web.controller;
 
+import com.data.profile.common.enums.TriggerMode;
+import com.data.profile.web.service.TaskExecutionService;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.dto.ScheduleConfigRequest;
@@ -37,6 +39,8 @@ public class DatasetController {
     private static final Gson gson = new GsonBuilder().create();
     @Autowired
     private DatasetService datasetService;
+    @Autowired
+    private TaskExecutionService taskExecutionService;
 
     @PostMapping(value = "/list")
     public Response<List<DatasetVO>> getList(@RequestBody Dataset dataset) {
@@ -90,7 +94,8 @@ public class DatasetController {
     public Response<TaskInstance> execute(@PathVariable(value = "datasetId") String datasetId) {
         log.info("请求手动立即执行数据集 [{}] 同步", datasetId);
         try {
-            TaskInstance instance = datasetService.execute(datasetId);
+            // TODO 需要根据数据集ID和任务类型
+            TaskInstance instance = taskExecutionService.executeByRelatedId(datasetId, TriggerMode.MANUAL);
             return Response.success(instance);
         } catch (Exception e) {
             log.error("手动立即执行数据集 [{}] 同步失败：{}", datasetId, e.getMessage());

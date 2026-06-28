@@ -55,8 +55,6 @@ public class DatasetService {
     @Resource
     private TaskInstanceService taskInstanceService;
     @Autowired
-    private TaskExecutionService taskExecutionService;
-    @Autowired
     private ScheduleEngineService scheduleEngineService;
 
     /**
@@ -154,16 +152,16 @@ public class DatasetService {
     public int delete(String datasetId) {
         Dataset dataset = datasetMapper.selectByDatasetId(datasetId);
         if (dataset == null) {
-            log.error("数据集 {} 不存在，无法删除", datasetId);
+            log.error("数据集 [{}] 不存在，无法删除", datasetId);
             throw new RuntimeException("数据集不存在，无法删除");
         }
         if (Objects.equals(dataset.getSourceType(), SourceType.BUILT_IN.getCode())) {
-            log.error("内置数据集 {} 不允许删除", datasetId);
+            log.error("内置数据集 [{}] 不允许删除", datasetId);
             throw new RuntimeException("内置数据集不允许删除");
         }
 
         // 1. 删除引擎表
-        dropEngineTable(datasetId);
+        analysisEngineService.dropDatasetTable(datasetId);
 
         // 2. 删除关联同步任务
         taskService.deleteByRelatedId(datasetId);
@@ -171,8 +169,7 @@ public class DatasetService {
         // 3. 删除数据集字段
         datasetFieldService.deleteByDatasetId(datasetId);
 
-        // 4. 删除元数据
-        log.info("删除数据集: {}", datasetId);
+        // 4. TODO 删除调度任务
         return datasetMapper.deleteByDatasetId(datasetId);
     }
 
@@ -181,14 +178,15 @@ public class DatasetService {
      * @param datasetId 数据集ID
      * @return 同步任务执行实例
      */
-    public TaskInstance execute(String datasetId) {
+    /*public TaskInstance execute(String datasetId) {
+        // TODO 需要根据数据集ID和任务类型获取
         Task task = taskService.getDetailByRelatedId(datasetId);
         if (task == null) {
             log.error("数据集 [{}] 没有关联任务无法执行同步", datasetId);
             throw new RuntimeException("数据集没有关联任务无法执行");
         }
-        return taskExecutionService.executeTask(task.getTaskId(), TriggerMode.MANUAL);
-    }
+        return taskExecutionService.executeTask(task, TriggerMode.MANUAL);
+    }*/
 
     /**
      * 配置数据集调度
@@ -251,7 +249,6 @@ public class DatasetService {
         dataset.setCreator(RequestContext.currentUserId());
         dataset.setModifier(RequestContext.currentUserId());
         datasetMapper.insertSelective(dataset);
-        log.info("成功创建数据集: {}", gson.toJson(dataset));
 
         // 3. 数据集字段
         if (fields != null && !fields.isEmpty()) {
@@ -267,6 +264,8 @@ public class DatasetService {
 
         // 5. 创建同步任务
         createSyncTask(datasetId, dataset.getDatasetName());
+
+        log.info("成功创建数据集: {}", gson.toJson(dataset));
         return datasetId;
     }
 
@@ -326,19 +325,6 @@ public class DatasetService {
             }
         } catch (Exception e) {
             log.error("更新引擎表失败: datasetId={}", dataset.getDatasetId(), e);
-        }
-    }
-
-    /**
-     * 删除引擎表
-     */
-    private void dropEngineTable(String datasetId) {
-        try {
-            analysisEngineService.dropDatasetTable(datasetId);
-            log.info("删除引擎表成功: {}", datasetId);
-        } catch (Exception e) {
-            log.error("删除引擎表失败: {}", datasetId, e);
-            throw new RuntimeException("删除引擎表失败，请联系管理员", e);
         }
     }
 

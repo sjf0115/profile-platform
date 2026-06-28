@@ -16,6 +16,7 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -62,14 +63,12 @@ public class TaskExecutionService {
     /**
      * 异步执行任务：创建实例并异步执行，立即返回实例信息。
      * <p>包含并发控制：同一任务只允许一个运行中的实例。</p>
-     *
-     * @param taskId      任务ID
+     * @param task 任务
      * @param triggerMode 触发模式
-     * @return 创建的任务实例（状态为 PENDING 或 RUNNING）
+     * @return 创建的任务实例
      */
-    public TaskInstance executeTask(String taskId, TriggerMode triggerMode) {
-        Task task = taskService.getDetail(taskId)
-                .orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
+    public TaskInstance executeTask(Task task, TriggerMode triggerMode) {
+        String taskId = task.getTaskId();
         if (!Objects.equals(task.getStatus(), Status.ENABLE.getCode())) {
             throw new RuntimeException("任务已停用，无法执行: " + taskId);
         }
@@ -89,10 +88,11 @@ public class TaskExecutionService {
     }
 
     /**
-     * 异步执行任务（默认手动触发）。
+     * 通过任务ID异步执行任务
      */
-    public TaskInstance executeTask(String taskId) {
-        return executeTask(taskId, TriggerMode.MANUAL);
+    public TaskInstance executeTask(String taskId, TriggerMode triggerMode) {
+        Task task = taskService.getDetail(taskId).orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
+        return executeTask(task, triggerMode);
     }
 
     /**
@@ -103,14 +103,7 @@ public class TaskExecutionService {
         if (task == null) {
             throw new RuntimeException("关联ID " + relatedId + " 对应的任务不存在");
         }
-        return executeTask(task.getTaskId(), triggerMode);
-    }
-
-    /**
-     * 通过关联ID异步执行任务（默认手动触发）。
-     */
-    public TaskInstance executeByRelatedId(String relatedId) {
-        return executeByRelatedId(relatedId, TriggerMode.MANUAL);
+        return executeTask(task, triggerMode);
     }
 
     // -------------------------------------------------------------------------

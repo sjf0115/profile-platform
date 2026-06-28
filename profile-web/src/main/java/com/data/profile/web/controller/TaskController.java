@@ -129,6 +129,7 @@ public class TaskController {
     /**
      * 通过关联ID触发任务执行
      */
+    @Deprecated
     @PostMapping(value = "/trigger-by-related-id")
     public Response triggerByRelatedId(@RequestParam(name = "related_id") String relatedId) {
         log.info("通过关联ID触发任务执行: relatedId={}", relatedId);

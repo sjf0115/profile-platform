@@ -111,7 +111,7 @@ public class AnalysisEngineService {
     /**
      * 删除数据集对应的分析引擎表
      */
-    public void dropDatasetTable(String datasetId) throws Exception {
+    public void dropDatasetTable(String datasetId) {
         // 获取执行引擎
         Engine analysisEngine = getDefaultAnalysisEngine();
         // 获取需要删除的数据库和数据表
@@ -122,14 +122,19 @@ public class AnalysisEngineService {
         AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class).getOrCreatePlugin(pluginName);
         TableManager tm = factory.getTableManager();
         if (tm == null) {
-            log.warn("分析引擎 [{}] 未实现 TableManager，跳过删除引擎表", analysisEngine.getEngineType());
+            log.error("分析引擎 [{}] 未实现 TableManager，跳过删除引擎表", analysisEngine.getEngineType());
             return;
         }
 
         Map<String, Object> engineConfig = parseConfig(analysisEngine.getConfig());
-        tm.init(engineConfig);
-        tm.dropTable(database, tableName);
-        log.info("已删除引擎表: {}.{}", database, tableName);
+        try {
+            tm.init(engineConfig);
+            tm.dropTable(database, tableName);
+            log.info("成功删除引擎表: {}.{}", database, tableName);
+        } catch (Exception e) {
+            log.error("删除引擎表 [{}.{}] 失败：{}", database, tableName, e.getMessage());
+            throw new RuntimeException("删除引擎表失败");
+        }
     }
 
     /**

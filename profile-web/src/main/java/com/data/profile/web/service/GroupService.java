@@ -62,8 +62,7 @@ public class GroupService {
     private TaskService taskService;
     @Autowired
     private TaskInstanceService taskInstanceService;
-    @Autowired
-    private TaskExecutionService taskExecutionService;
+
     /**
      * 根据查询条件获取群组列表（含关联信息）
      * @param group 群组查询条件
@@ -369,7 +368,7 @@ public class GroupService {
      * @param groupId 群组ID
      * @return 执行实例
      */
-    public TaskInstance execute(String groupId) {
+    /*public TaskInstance execute(String groupId) {
         // 获取关联任务
         // TODO 需要根据群组ID和任务类型
         Task task = taskService.getDetailByRelatedId(groupId);
@@ -377,7 +376,7 @@ public class GroupService {
             throw new RuntimeException("关联ID " + groupId + " 对应的任务不存在");
         }
         return taskExecutionService.executeTask(task.getTaskId(), TriggerMode.MANUAL);
-    }
+    }*/
 
     //------------------------------------------------------------------------------------------------------------------
     /**

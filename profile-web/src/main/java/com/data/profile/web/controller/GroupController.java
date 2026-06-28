@@ -1,5 +1,6 @@
 package com.data.profile.web.controller;
 
+import com.data.profile.web.service.TaskExecutionService;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.*;
 import com.data.profile.web.model.Group;
@@ -37,6 +38,8 @@ public class GroupController {
     private static final Gson gson = new GsonBuilder().create();
     @Autowired
     private GroupService groupService;
+    @Autowired
+    private TaskExecutionService taskExecutionService;
 
     @PostMapping(value = "/list")
     public Response getList(@RequestBody Group group) {
@@ -144,7 +147,8 @@ public class GroupController {
     public Response<TaskInstance> execute(@PathVariable(value = "groupId") String groupId) {
         log.info("请求手动立即执行群组 [{}] 圈选", groupId);
         try {
-            TaskInstance instance = groupService.execute(groupId);
+            // TODO 需要根据群组ID和任务类型
+            TaskInstance instance = taskExecutionService.executeByRelatedId(groupId, TriggerMode.MANUAL);
             return Response.success(instance);
         } catch (Exception e) {
             log.error("手动立即执行群组 [{}] 圈选失败", groupId, e);
