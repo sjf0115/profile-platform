@@ -1,7 +1,6 @@
 package com.data.profile.web.vo;
 
 import com.data.profile.web.model.GroupRule;
-import com.data.profile.web.model.TaskInstance;
 import lombok.Data;
 
 import java.util.Date;
@@ -41,7 +40,7 @@ public class GroupVO {
 
     //----------------------------------------------------------
     // 调度任务查询时关联
-
+    // TODO
     private String taskId;
     // 调度类型:1-手动触发调度,2-周期调度,3-API触发调度
     private Integer triggerType;
@@ -56,7 +55,7 @@ public class GroupVO {
 
     //----------------------------------------------------------
     // 最新任务实例（查询时关联）
-    private TaskInstance latestInstance;
+    private TaskInstanceVO taskInstance;
 
     //----------------------------------------------------------
     // 实体

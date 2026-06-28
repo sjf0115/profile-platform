@@ -76,16 +76,17 @@
           {{ formatDateTime(row.gmt_create) }}
         </template>
       </el-table-column>
-      <el-table-column prop="instance_end_time" label="更新时间" width="150">
+      <el-table-column prop="task_instance" label="更新时间" width="150">
         <template #default="{ row }">
-          {{ formatDateTime(row.instance_end_time) }}
+          {{ row.task_instance ? formatDateTime(row.task_instance.end_time) : '-' }}
         </template>
       </el-table-column>
-      <el-table-column prop="instance_status" label="执行状态" width="100">
+      <el-table-column prop="task_instance" label="执行状态" width="100">
         <template #default="{ row }">
-          <el-tag :type="getInstanceStatusType(row.instance_status)" size="small">
-            {{ getInstanceStatusText(row.instance_status) }}
+          <el-tag v-if="row.task_instance" :type="getInstanceStatusType(row.task_instance.status)" size="small">
+            {{ getInstanceStatusText(row.task_instance.status) }}
           </el-tag>
+          <span v-else>-</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="200" fixed="right">
@@ -249,8 +250,25 @@ const handlePush = (row: Group) => {
   ElMessage.info('投递功能开发中')
 }
 
-const handleExecute = (row: Group) => {
-  ElMessage.info('立即执行功能开发中')
+const handleExecute = async (row: Group) => {
+  try {
+    await ElMessageBox.confirm(
+      `确认立即执行群组「${row.group_name}」？`,
+      '提示',
+      { type: 'warning' }
+    )
+    const res = await groupApi.execute(row.group_id!)
+    if (res.data.code === 0) {
+      ElMessage.success('任务已提交，请稍后查看执行结果')
+      fetchGroupList() // 刷新列表
+    } else {
+      ElMessage.error(res.data.message || '执行失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('执行失败')
+    }
+  }
 }
 
 const handleDownload = (row: Group) => {
@@ -330,8 +348,8 @@ const getInstanceStatusText = (status?: number) => {
   switch (status) {
     case 1: return '未运行'
     case 2: return '运行中'
-    case 3: return '成功'
-    case 4: return '失败'
+    case 3: return '运行失败'
+    case 4: return '运行成功'
     default: return '-'
   }
 }

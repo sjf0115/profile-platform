@@ -4,15 +4,18 @@ import com.data.profile.common.enums.InstanceStatus;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.TriggerMode;
 import com.data.profile.common.utils.IDGenerator;
+import com.data.profile.web.converter.TaskInstanceConverter;
 import com.data.profile.web.dao.TaskInstanceMapper;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.vo.TaskInstanceVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * 功能：任务实例服务
@@ -27,7 +30,18 @@ public class TaskInstanceService {
     private TaskInstanceMapper instanceMapper;
 
     /**
-     * 根据查询条件获取任务实例列表
+     * 根据查询条件获取任务实例列表（返回 VO，供 Controller 使用）
+     */
+    public List<TaskInstanceVO> getListVO(TaskInstance instance) {
+        List<TaskInstance> taskInstances = instanceMapper.selectByParams(instance);
+        log.info("根据查询条件获取到 {} 个任务执行实例", taskInstances.size());
+        return taskInstances.stream()
+                .map(TaskInstanceConverter::convert)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 根据查询条件获取任务实例列表（返回 Model，供内部使用）
      */
     public List<TaskInstance> getList(TaskInstance instance) {
         List<TaskInstance> taskInstances = instanceMapper.selectByParams(instance);
@@ -36,7 +50,18 @@ public class TaskInstanceService {
     }
 
     /**
-     * 根据任务实例ID获取任务实例详细信息
+     * 根据任务实例ID获取任务实例详细信息（返回 VO，供 Controller 使用）
+     */
+    public Optional<TaskInstanceVO> getDetailVO(String instanceId) {
+        TaskInstance instance = instanceMapper.selectByInstanceId(instanceId);
+        if (instance == null) {
+            return Optional.empty();
+        }
+        return Optional.of(TaskInstanceConverter.convert(instance));
+    }
+
+    /**
+     * 根据任务实例ID获取任务实例详细信息（返回 Model，供内部使用）
      */
     public Optional<TaskInstance> getDetail(String instanceId) {
         TaskInstance instance = instanceMapper.selectByInstanceId(instanceId);

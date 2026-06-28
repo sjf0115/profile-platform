@@ -1,6 +1,7 @@
 package com.data.profile.web.controller;
 
 import com.data.profile.web.vo.Response;
+import com.data.profile.web.vo.TaskInstanceVO;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.service.TaskInstanceService;
@@ -33,16 +34,16 @@ public class TaskInstanceController {
 
     // 实例列表
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody TaskInstance instance) {
+    public Response<List<TaskInstanceVO>> getList(@RequestBody TaskInstance instance) {
         log.info("根据任务执行实例信息请求查询任务执行实例: {}", gson.toJson(instance));
-        List<TaskInstance> tasks = instanceService.getList(instance);
-        return Response.success(tasks);
+        List<TaskInstanceVO> instances = instanceService.getListVO(instance);
+        return Response.success(instances);
     }
 
     // 实例详情
     @GetMapping(value = "/{instanceId}/detail")
-    public Response getDetail(@PathVariable(value = "instanceId") String instanceId) {
-        Optional<TaskInstance> optional = instanceService.getDetail(instanceId);
+    public Response<TaskInstanceVO> getDetail(@PathVariable(value = "instanceId") String instanceId) {
+        Optional<TaskInstanceVO> optional = instanceService.getDetailVO(instanceId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
         } else {
@@ -52,10 +53,10 @@ public class TaskInstanceController {
 
     // 根据任务ID查询实例列表
     @GetMapping(value = "/{taskId}/list")
-    public Response listByTaskId(@RequestParam(name = "taskId") String taskId) {
+    public Response<List<TaskInstanceVO>> listByTaskId(@RequestParam(name = "taskId") String taskId) {
         TaskInstance query = new TaskInstance();
         query.setTaskId(taskId);
-        List<TaskInstance> instances = instanceService.getList(query);
+        List<TaskInstanceVO> instances = instanceService.getListVO(query);
         return Response.success(instances);
     }
 }

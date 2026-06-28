@@ -60,14 +60,15 @@
         <div class="section-content">
           <el-descriptions :column="3" border>
             <el-descriptions-item label="执行状态">
-              <el-tag :type="getInstanceStatusType(groupInfo.instance_status)" size="small">
-                {{ getInstanceStatusText(groupInfo.instance_status) }}
+              <el-tag v-if="groupInfo.task_instance" :type="getInstanceStatusType(groupInfo.task_instance.status)" size="small">
+                {{ getInstanceStatusText(groupInfo.task_instance.status) }}
               </el-tag>
+              <span v-else>-</span>
             </el-descriptions-item>
-            <el-descriptions-item label="实例ID">{{ groupInfo.instance_id || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="执行信息">{{ groupInfo.instance_msg || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="开始时间">{{ formatDateTime(groupInfo.instance_start_time) }}</el-descriptions-item>
-            <el-descriptions-item label="结束时间">{{ formatDateTime(groupInfo.instance_end_time) }}</el-descriptions-item>
+            <el-descriptions-item label="实例ID">{{ groupInfo.task_instance?.instance_id || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="执行信息">{{ groupInfo.task_instance?.message || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="开始时间">{{ groupInfo.task_instance?.start_time ? formatDateTime(new Date(groupInfo.task_instance.start_time).toISOString()) : '-' }}</el-descriptions-item>
+            <el-descriptions-item label="结束时间">{{ groupInfo.task_instance?.end_time ? formatDateTime(new Date(groupInfo.task_instance.end_time).toISOString()) : '-' }}</el-descriptions-item>
           </el-descriptions>
         </div>
       </div>
@@ -234,8 +235,8 @@ const getInstanceStatusText = (status?: number) => {
   switch (status) {
     case 1: return '未运行'
     case 2: return '运行中'
-    case 3: return '成功'
-    case 4: return '失败'
+    case 3: return '运行失败'
+    case 4: return '运行成功'
     default: return '-'
   }
 }

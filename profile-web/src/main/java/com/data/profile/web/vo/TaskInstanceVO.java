@@ -1,11 +1,19 @@
-package com.data.profile.web.model;
+package com.data.profile.web.vo;
 
+import com.data.profile.web.model.Task;
 import lombok.Data;
 
 import java.util.Date;
 
+/**
+ * 功能：任务执行实例
+ * 作者：@SmartSi
+ * 博客：https://smartsi.blog.csdn.net/
+ * 公众号：大数据生态
+ * 日期：2026/6/28 22:26
+ */
 @Data
-public class TaskInstance {
+public class TaskInstanceVO {
     private Long id;
     // 状态:1-未运行,2-运行中,3-运行失败,4-运行成功
     private Integer status;
@@ -35,4 +43,6 @@ public class TaskInstance {
     private Date gmtCreate;
     // 实例修改时间
     private Date gmtModified;
+    // 任务详情
+    private Task task;
 }

@@ -356,9 +356,9 @@
         where task_id = #{taskId,jdbcType=VARCHAR}
     </delete>
 
-    <delete id="deleteByRelatedId" parameterType="java.lang.String">
+    <!--<delete id="deleteByRelatedId" parameterType="java.lang.String">
         delete from profile_meta_task
         where task_related_id = #{taskRelatedId,jdbcType=VARCHAR}
-    </delete>
+    </delete>-->
 
 </mapper>

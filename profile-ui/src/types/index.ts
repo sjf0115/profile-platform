@@ -199,12 +199,8 @@ export interface Group {
   trigger_start_time?: string
   trigger_end_time?: string
   
-  // 实例信息
-  instance_id?: number
-  instance_status?: number   // 1-未运行, 2-运行中, 3-运行成功, 4-运行失败
-  instance_start_time?: string
-  instance_end_time?: string
-  instance_msg?: string
+  // 最新任务实例（嵌套对象）
+  task_instance?: TaskInstance
   
   // 人员信息
   owner?: string

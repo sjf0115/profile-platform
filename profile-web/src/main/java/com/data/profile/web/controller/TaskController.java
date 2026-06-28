@@ -8,6 +8,8 @@ import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.service.TaskExecutionService;
 import com.data.profile.web.engine.ScheduleEngineService;
 import com.data.profile.web.service.TaskService;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -27,6 +29,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/task", produces = MediaType.APPLICATION_JSON_VALUE)
 public class TaskController {
+    private static Gson gson = new GsonBuilder().create();
     @Autowired
     private TaskService taskService;
     @Autowired
@@ -36,14 +39,16 @@ public class TaskController {
 
     // 任务列表
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody Task task) {
+    public Response<List<Task>> getList(@RequestBody Task task) {
+        log.info("根据任务参数请求查询任务: {}", gson.toJson(task));
         List<Task> tasks = taskService.getList(task);
         return Response.success(tasks);
     }
 
     // 任务详情
     @GetMapping(value = "/{taskId}/detail")
-    public Response getDetail(@PathVariable(value = "taskId") String taskId) {
+    public Response<Task> getDetail(@PathVariable(value = "taskId") String taskId) {
+        log.info("根据任务ID请求查询群组信息: {}", taskId);
         Optional<Task> optional = taskService.getDetail(taskId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -54,7 +59,8 @@ public class TaskController {
 
     // 创建调度任务
     @PostMapping
-    public Response create(@RequestBody Task task) {
+    public Response<Integer> create(@RequestBody Task task) {
+        log.info("请求创建任务: {}", gson.toJson(task));
         int result = taskService.create(task);
         if (result > 0) {
             return Response.success(result);
@@ -65,8 +71,9 @@ public class TaskController {
 
     // 修改调度任务
     @PutMapping("/{taskId}")
-    public Response update(@PathVariable(value = "taskId") String taskId, @RequestBody Task task) {
+    public Response<Integer> update(@PathVariable(value = "taskId") String taskId, @RequestBody Task task) {
         task.setTaskId(taskId);
+        log.info("请求修改任务: {}", gson.toJson(task));
         int result = taskService.update(task);
         if (result > 0) {
             return Response.success(result);
@@ -77,7 +84,8 @@ public class TaskController {
 
     // 删除调度任务
     @DeleteMapping(value = "/{taskId}")
-    public Response delete(@PathVariable(value = "taskId") String taskId) {
+    public Response<Integer> delete(@PathVariable(value = "taskId") String taskId) {
+        log.info("根据任务ID {} 请求删除任务", taskId);
         int result = taskService.delete(taskId);
         if (result > 0) {
             return Response.success(result);
@@ -92,7 +100,7 @@ public class TaskController {
      * @param taskId 任务ID
      */
     @PostMapping(value = "/{taskId}/execute")
-    public Response execute(@PathVariable(value = "taskId") String taskId) {
+    public Response<TaskInstance> execute(@PathVariable(value = "taskId") String taskId) {
         log.info("手动触发任务执行: {}", taskId);
         try {
             TaskInstance instance = taskExecutionService.executeTask(taskId, TriggerMode.MANUAL);
@@ -112,7 +120,7 @@ public class TaskController {
      * @param taskId 任务ID
      */
     @PostMapping(value = "/{taskId}/callback")
-    public Response scheduledCallback(@PathVariable(value = "taskId") String taskId) {
+    public Response<TaskInstance> scheduledCallback(@PathVariable(value = "taskId") String taskId) {
         log.info("调度引擎回调任务执行: {}", taskId);
         try {
             TaskInstance instance = taskExecutionService.executeTask(taskId, TriggerMode.SCHEDULED);
@@ -131,7 +139,7 @@ public class TaskController {
      */
     @Deprecated
     @PostMapping(value = "/trigger-by-related-id")
-    public Response triggerByRelatedId(@RequestParam(name = "related_id") String relatedId) {
+    public Response<TaskInstance> triggerByRelatedId(@RequestParam(name = "related_id") String relatedId) {
         log.info("通过关联ID触发任务执行: relatedId={}", relatedId);
         try {
             TaskInstance instance = taskExecutionService.executeByRelatedId(relatedId, TriggerMode.MANUAL);
@@ -149,8 +157,7 @@ public class TaskController {
      * 配置任务上游依赖
      */
     @PutMapping(value = "/{taskId}/upstream")
-    public Response configureUpstream(@PathVariable(value = "taskId") String taskId,
-                                      @RequestBody Task taskUpdate) {
+    public Response<String> configureUpstream(@PathVariable(value = "taskId") String taskId, @RequestBody Task taskUpdate) {
         log.info("配置任务上游依赖: taskId={}, upstreamTaskIds={}", taskId, taskUpdate.getUpstreamTaskIds());
         try {
             Task task = taskService.getDetail(taskId)
@@ -168,7 +175,7 @@ public class TaskController {
      * 通过调度引擎触发任务执行
      */
     @PostMapping(value = "/{taskId}/schedule-trigger")
-    public Response scheduleTrigger(@PathVariable(value = "taskId") String taskId) {
+    public Response<String> scheduleTrigger(@PathVariable(value = "taskId") String taskId) {
         log.info("通过调度引擎触发任务: taskId={}", taskId);
         try {
             scheduleEngineService.triggerSchedule(taskId);

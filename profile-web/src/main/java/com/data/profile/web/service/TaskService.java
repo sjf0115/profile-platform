@@ -84,36 +84,37 @@ public class TaskService {
     }
 
     /**
-     * 根据调度任务ID删除调度任务
+     * 根据执行任务ID删除调度任务
      */
     public int delete(String taskId) {
         Task task = taskMapper.selectByTaskId(taskId);
         if (Objects.equals(task, null)) {
-            log.warn("调度任务 {} 不存在", taskId);
+            log.warn("执行任务 [{}] 不存在", taskId);
             return 1;
         }
         if (Objects.equals(task.getSourceType(), SourceType.BUILT_IN.getCode())) {
-            log.error("内置调度任务 {} 不允许删除", taskId);
-            throw new RuntimeException("内置调度任务不允许删除");
+            log.error("内置执行任务 [{}] 不允许删除", taskId);
+            throw new RuntimeException("内置执行任务不允许删除");
         }
-        log.info("删除调度任务: {}", taskId);
+        log.info("删除执行任务: {}", taskId);
         return taskMapper.deleteByTaskId(taskId);
     }
 
     /**
      * 根据关联ID删除调度任务
      */
-    public int deleteByRelatedId(String relatedId) {
+    public void deleteByRelatedId(String relatedId) {
         Task task = taskMapper.selectByRelatedId(relatedId);
         if (Objects.equals(task, null)) {
             log.warn("关联ID {} 对应的任务不存在", relatedId);
-            return 1;
+            return;
         }
-        if (Objects.equals(task.getSourceType(), SourceType.BUILT_IN.getCode())) {
+        delete(task.getTaskId());
+        /*if (Objects.equals(task.getSourceType(), SourceType.BUILT_IN.getCode())) {
             log.error("内置调度任务 {} 不允许删除", task.getTaskId());
             throw new RuntimeException("内置调度任务不允许删除");
         }
         log.info("根据关联ID删除调度任务: relatedId={}", relatedId);
-        return taskMapper.deleteByRelatedId(relatedId);
+        taskMapper.deleteByRelatedId(relatedId);*/
     }
 }

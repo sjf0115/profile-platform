@@ -48,8 +48,8 @@ public class GroupController {
         return Response.success(groups);
     }
 
-    @GetMapping(value = "/detail")
-    public Response<GroupVO> getDetail(@RequestParam(name = "group_id") String groupId) {
+    @GetMapping(value = "/{groupId}/detail")
+    public Response<GroupVO> getDetail(@PathVariable(name = "groupId") String groupId) {
         log.info("根据群组ID请求查询群组信息: {}", groupId);
         Optional<GroupVO> optional = groupService.getDetail(groupId);
         if (optional.isPresent()) {
@@ -144,12 +144,11 @@ public class GroupController {
 
     // 立即执行群组圈选
     @PostMapping(value = "/{groupId}/execute")
-    public Response<TaskInstance> execute(@PathVariable(value = "groupId") String groupId) {
+    public Response<String> execute(@PathVariable(value = "groupId") String groupId) {
         log.info("请求手动立即执行群组 [{}] 圈选", groupId);
         try {
-            // TODO 需要根据群组ID和任务类型
             TaskInstance instance = taskExecutionService.executeByRelatedId(groupId, TriggerMode.MANUAL);
-            return Response.success(instance);
+            return Response.success(instance.getInstanceId());
         } catch (Exception e) {
             log.error("手动立即执行群组 [{}] 圈选失败", groupId, e);
             return Response.error("群组圈选失败: " + e.getMessage(), ResponseCode.ERROR);

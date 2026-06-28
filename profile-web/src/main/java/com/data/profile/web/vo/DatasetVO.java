@@ -1,6 +1,5 @@
 package com.data.profile.web.vo;
 
-import com.data.profile.web.model.TaskInstance;
 import lombok.Data;
 
 import java.util.Date;
@@ -48,5 +47,5 @@ public class DatasetVO {
     // 数据集字段
     private List<DatasetFieldVO> fields;
     // 最新任务实例
-    private TaskInstance latestInstance;
+    private TaskInstanceVO latestInstance;
 }

@@ -2,6 +2,7 @@ package com.data.profile.web.service;
 
 import com.beust.jcommander.internal.Lists;
 import com.data.profile.common.enums.*;
+import com.data.profile.web.converter.TaskInstanceConverter;
 import com.data.profile.web.dao.GroupMapper;
 import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.engine.ScheduleEngineService;
@@ -74,7 +75,7 @@ public class GroupService {
             GroupVO vo = toVO(target);
             // 查询最新任务实例
             TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(target.getGroupId());
-            vo.setLatestInstance(latestInstance);
+            vo.setTaskInstance(TaskInstanceConverter.convert(latestInstance));
             return vo;
         }).collect(Collectors.toList());
         log.info("根据查询条件获取 {} 个群组", groups.size());
@@ -103,7 +104,7 @@ public class GroupService {
         }
         // 查询最新任务实例
         TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(groupId);
-        vo.setLatestInstance(latestInstance);
+        vo.setTaskInstance(TaskInstanceConverter.convert(latestInstance));
         log.info("根据群组ID获取群组详细信息: {}", gson.toJson(vo));
         return Optional.of(vo);
     }
@@ -216,7 +217,7 @@ public class GroupService {
         createGroupEngineTable(group);
 
         // 创建圈选任务
-        createAnalysisTask(group, groupId);
+        createGroupSelectionTask(group, groupId);
 
         // 注册调度到调度引擎
         // scheduleGroupIfNeeded(group);
@@ -535,7 +536,7 @@ public class GroupService {
      * 创建圈选任务
      * <p>仅创建 Task 元数据，调度注册由 GroupController 调用 GroupTask.schedule() 完成。</p>
      */
-    private void createAnalysisTask(Group group, String groupId) {
+    private void createGroupSelectionTask(Group group, String groupId) {
         Task task = Task.builder()
                 .taskName(group.getGroupName())
                 .taskType(TaskType.GROUP.getCode())

@@ -1,5 +1,6 @@
 package com.data.profile.web.service;
 
+import com.data.profile.web.converter.TaskInstanceConverter;
 import com.data.profile.web.dao.DatasetMapper;
 import com.data.profile.web.dto.ScheduleConfigRequest;
 import com.data.profile.web.engine.AnalysisEngineService;
@@ -104,7 +105,7 @@ public class DatasetService {
         vo.setFields(toFieldVOList(fields, dataset.getEntityField()));
         // 查询最新任务实例
         TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(datasetId);
-        vo.setLatestInstance(latestInstance);
+        vo.setLatestInstance(TaskInstanceConverter.convert(latestInstance));
         return Optional.of(vo);
     }
 

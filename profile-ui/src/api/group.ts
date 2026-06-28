@@ -9,9 +9,7 @@ export const groupApi = {
 
   // 获取群组详情
   getDetail: (group_id: string) => {
-    return request.get<ApiResponse<Group>>('/group/detail', {
-      params: { group_id }
-    })
+    return request.get<ApiResponse<Group>>(`/group/${group_id}/detail`)
   },
 
   // 保存群组（新增/修改）
@@ -72,5 +70,10 @@ export const groupApi = {
   // 预估群组人数
   estimate: (data: any) => {
     return request.post<ApiResponse<number>>('/group/estimate', data)
+  },
+
+  // 立即执行群组圈选
+  execute: (group_id: string) => {
+    return request.post<ApiResponse<string>>(`/group/${group_id}/execute`)
   }
 }
