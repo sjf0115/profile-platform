@@ -46,7 +46,7 @@ public class GroupController {
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam(name = "group_id") String groupId) {
+    public Response<GroupVO> getDetail(@RequestParam(name = "group_id") String groupId) {
         log.info("根据群组ID请求查询群组信息: {}", groupId);
         Optional<GroupVO> optional = groupService.getDetail(groupId);
         if (optional.isPresent()) {
@@ -57,7 +57,7 @@ public class GroupController {
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody Group group) {
+    public Response<Integer> save(@RequestBody Group group) {
         String groupId = group.getGroupId();
         if (StringUtils.isEmpty(groupId)) {
             // 创建群组
@@ -81,7 +81,7 @@ public class GroupController {
     }
 
     @DeleteMapping(value = "/delete")
-    public Response delete(@RequestParam(name = "group_id") String groupId) {
+    public Response<Integer> delete(@RequestParam(name = "group_id") String groupId) {
         log.info("根据群组ID {} 请求删除群组", groupId);
         int result = groupService.delete(groupId);
         if (result > 0) {
@@ -104,13 +104,14 @@ public class GroupController {
 
     // 取消上传
     @DeleteMapping(value = "/cancel-upload")
-    public Response cancelUploaded(@RequestParam(name = "file_key") String fileKey) {
+    public Response<Void> cancelUploaded(@RequestParam(name = "file_key") String fileKey) {
         log.info("删除已上传文件: {}", fileKey);
         groupService.cancelUpload(fileKey);
         return Response.success(null);
     }
 
     // 下载 CSV 上传模板
+    // TODO 优化
     @GetMapping(value = "/template/download")
     public void downloadTemplate(HttpServletResponse response) throws IOException {
         response.setContentType("text/csv;charset=UTF-8");
@@ -153,14 +154,14 @@ public class GroupController {
 
     // 获取 SQL 创建可用的数据集表和字段列表
     @GetMapping(value = "/available-tables")
-    public Response getAvailableTables(@RequestParam(name = "entity_identifier_id") String entityIdentifierId) {
+    public Response<List<DatasetVO>> getAvailableTables(@RequestParam(name = "entity_identifier_id") String entityIdentifierId) {
         log.info("根据实体ID [{}] 请求获取可用数据集表和字段", entityIdentifierId);
         List<DatasetVO> tables = groupService.getAvailableTables(entityIdentifierId);
         return Response.success(tables);
     }
 
     @GetMapping(value = "/config/label")
-    public Response getLabelConfig() {
+    public Response<List<LabelOperator>> getLabelConfig() {
         log.info("请求获取群组配置: 标签操作符");
         // 1-文本型,2-数值型,3-时间型
         List<LabelOperator> ops = Arrays.asList(

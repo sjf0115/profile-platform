@@ -2,7 +2,6 @@ package com.data.profile.web.controller;
 
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.common.enums.TriggerMode;
 import com.data.profile.web.dto.ScheduleConfigRequest;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
@@ -12,8 +11,6 @@ import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.vo.DatasetFieldVO;
 import com.data.profile.web.vo.DatasetVO;
 import com.data.profile.web.service.DatasetService;
-import com.data.profile.web.service.TaskExecutionService;
-import com.data.profile.web.task.DatasetTask;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -40,20 +37,16 @@ public class DatasetController {
     private static final Gson gson = new GsonBuilder().create();
     @Autowired
     private DatasetService datasetService;
-    @Autowired
-    private DatasetTask datasetTask;
-    @Autowired
-    private TaskExecutionService taskExecutionService;
 
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody Dataset dataset) {
+    public Response<List<DatasetVO>> getList(@RequestBody Dataset dataset) {
         log.info("根据数据集信息请求查询数据集: {}", gson.toJson(dataset));
         List<DatasetVO> datasets = datasetService.getList(dataset);
         return Response.success(datasets);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam(name = "dataset_id") String datasetId) {
+    public Response<DatasetVO> getDetail(@RequestParam(name = "dataset_id") String datasetId) {
         log.info("根据数据集ID请求查看数据集信息: {}", datasetId);
         Optional<DatasetVO> optional = datasetService.getDetail(datasetId);
         if (optional.isPresent()) {
@@ -64,7 +57,7 @@ public class DatasetController {
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody DatasetVO datasetVO) {
+    public Response<String> save(@RequestBody DatasetVO datasetVO) {
         log.info("请求保存/更新数据集: {}", gson.toJson(datasetVO));
         Dataset dataset = new Dataset();
         BeanUtils.copyProperties(datasetVO, dataset);
@@ -82,7 +75,7 @@ public class DatasetController {
     }
 
     @DeleteMapping(value = "/delete")
-    public Response delete(@RequestParam(name = "dataset_id") String datasetId) {
+    public Response<Integer> delete(@RequestParam(name = "dataset_id") String datasetId) {
         log.info("根据数据集ID {} 请求删除数据集", datasetId);
         int result = datasetService.delete(datasetId);
         if (result > 0) {
@@ -94,27 +87,23 @@ public class DatasetController {
 
     // 立即执行数据集同步
     @PostMapping(value = "/{datasetId}/execute")
-    public Response execute(@PathVariable(value = "datasetId") String datasetId) {
+    public Response<TaskInstance> execute(@PathVariable(value = "datasetId") String datasetId) {
         log.info("请求手动立即执行数据集 [{}] 同步", datasetId);
         try {
-            TaskInstance instance = taskExecutionService.executeByRelatedId(datasetId, TriggerMode.MANUAL);
+            TaskInstance instance = datasetService.execute(datasetId);
             return Response.success(instance);
-        } catch (RuntimeException e) {
-            log.warn("数据集同步触发被拒绝: datasetId={}, reason={}", datasetId, e.getMessage());
-            return Response.error(e.getMessage(), ResponseCode.ERROR);
         } catch (Exception e) {
-            log.error("数据集同步失败: datasetId={}", datasetId, e);
-            return Response.error("数据集同步失败: " + e.getMessage(), ResponseCode.ERROR);
+            log.error("手动立即执行数据集 [{}] 同步失败：{}", datasetId, e.getMessage());
+            return Response.error("手动立即执行数据集同步失败: " + e.getMessage(), ResponseCode.ERROR);
         }
     }
 
     // 配置数据集调度
-    // TODO Service
     @PutMapping(value = "/{datasetId}/schedule")
-    public Response schedule(@PathVariable(value = "datasetId") String datasetId, @RequestBody ScheduleConfigRequest config) {
+    public Response<String> schedule(@PathVariable(value = "datasetId") String datasetId, @RequestBody ScheduleConfigRequest config) {
         log.info("请求配置数据集 [{}] 调度: {}", datasetId, gson.toJson(config));
         try {
-            datasetTask.schedule(datasetId, config);
+            datasetService.schedule(datasetId, config);
             return Response.success("配置成功");
         } catch (Exception e) {
             log.error("配置数据集 [{}] 调度失败", datasetId, e);
@@ -123,11 +112,10 @@ public class DatasetController {
     }
 
     // 获取数据集调度配置
-    // TODO Service
     @GetMapping(value = "/{datasetId}/schedule")
-    public Response getScheduleConfig(@PathVariable(value = "datasetId") String datasetId) {
-        log.info("获取数据集 [{}] 调度配置", datasetId);
-        Task task = datasetTask.getSchedulerConfig(datasetId);
+    public Response<Task> getScheduleConfig(@PathVariable(value = "datasetId") String datasetId) {
+        log.info("请求获取数据集 [{}] 调度配置", datasetId);
+        Task task = datasetService.getSchedulerConfig(datasetId);
         if (task != null) {
             return Response.success(task);
         } else {

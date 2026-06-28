@@ -35,30 +35,4 @@ public class DatasetTask {
         log.info("开始执行数据集 [{}] 同步", datasetId);
         diEngineService.executeDatasetSync(datasetId);
     }
-
-    /**
-     * TODO 是否放在 DatasetService
-     * 配置数据集调度
-     */
-    public void schedule(String datasetId, ScheduleConfigRequest config) {
-        Task task = taskService.getDetailByRelatedId(datasetId);
-        if (task == null) {
-            log.error("数据集 [{}] 没有关联的同步任务，无法配置调度", datasetId);
-            throw new RuntimeException("数据集没有关联的同步任务，请先创建数据集");
-        }
-        scheduleEngineService.configureSchedule(
-                task.getTaskId(),
-                config.getTriggerType(),
-                config.getTriggerCron(),
-                config.getTriggerStartTime(),
-                config.getTriggerEndTime());
-    }
-
-    /**
-     * TODO 是否放在 DatasetService
-     * 获取数据集关联的调度任务配置
-     */
-    public Task getSchedulerConfig(String datasetId) {
-        return taskService.getDetailByRelatedId(datasetId);
-    }
 }

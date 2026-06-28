@@ -1,7 +1,9 @@
 package com.data.profile.web.service;
 
 import com.data.profile.web.dao.DatasetMapper;
+import com.data.profile.web.dto.ScheduleConfigRequest;
 import com.data.profile.web.engine.AnalysisEngineService;
+import com.data.profile.web.engine.ScheduleEngineService;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;
@@ -17,6 +19,7 @@ import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +54,10 @@ public class DatasetService {
     private TaskService taskService;
     @Resource
     private TaskInstanceService taskInstanceService;
+    @Autowired
+    private TaskExecutionService taskExecutionService;
+    @Autowired
+    private ScheduleEngineService scheduleEngineService;
 
     /**
      * 根据查询条件获取数据集列表（仅元数据，不含字段）
@@ -167,6 +174,44 @@ public class DatasetService {
         // 4. 删除元数据
         log.info("删除数据集: {}", datasetId);
         return datasetMapper.deleteByDatasetId(datasetId);
+    }
+
+    /**
+     * 手动立即执行数据集同步
+     * @param datasetId 数据集ID
+     * @return 同步任务执行实例
+     */
+    public TaskInstance execute(String datasetId) {
+        Task task = taskService.getDetailByRelatedId(datasetId);
+        if (task == null) {
+            log.error("数据集 [{}] 没有关联任务无法执行同步", datasetId);
+            throw new RuntimeException("数据集没有关联任务无法执行");
+        }
+        return taskExecutionService.executeTask(task.getTaskId(), TriggerMode.MANUAL);
+    }
+
+    /**
+     * 配置数据集调度
+     */
+    public void schedule(String datasetId, ScheduleConfigRequest config) {
+        Task task = taskService.getDetailByRelatedId(datasetId);
+        if (task == null) {
+            log.error("数据集 [{}] 没有关联的同步任务，无法配置调度", datasetId);
+            throw new RuntimeException("数据集没有关联的同步任务，请先创建数据集");
+        }
+        scheduleEngineService.configureSchedule(
+                task.getTaskId(),
+                config.getTriggerType(),
+                config.getTriggerCron(),
+                config.getTriggerStartTime(),
+                config.getTriggerEndTime());
+    }
+
+    /**
+     * 获取数据集关联的调度任务配置
+     */
+    public Task getSchedulerConfig(String datasetId) {
+        return taskService.getDetailByRelatedId(datasetId);
     }
 
     /**
