@@ -103,6 +103,10 @@ CREATE TABLE `profile_meta_datasource` (
   UNIQUE KEY `datasource_id` (`datasource_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='画像-数据源'
 
+INSERT INTO `profile_meta_datasource` (`status`, `datasource_id`, `datasource_name`, `datasource_desc`, `schema_id`, `source_type`, `config`, `owner`, `creator`, `modifier`)
+VALUES (1, '0500000000000001', 'bi-reports', 'MySQL数据平台报表数据库', '0400000000000001', 2, '{"host":"localhost","port":"3306","database":"test","user_name":"root","password":"root", "driver": "com.mysql.cj.jdbc.Driver"}', '100000', '100000', '100000');
+
+
 -- 6. 数据集
 DROP Table `profile_meta_dataset`;
 CREATE TABLE IF NOT EXISTS `profile_meta_dataset`(
@@ -238,6 +242,7 @@ CREATE TABLE `profile_meta_export` (
     `export_name` varchar(100) NOT NULL COMMENT '投递名称',
     `export_desc` varchar(100) COMMENT '投递描述',
     `export_config` text NOT NULL COMMENT '投递配置',
+    `export_mode` int NOT NULL COMMENT '投递方式:1-数据源,2-应用',
     `scheduler_type` int NOT NULL COMMENT '调度类型:1-手动触发调度,2-API触发调度,3-日周期调度,4-小时周期调度',
     `scheduler_cron` varchar(20) COMMENT '调度 cron 表达式:只有周期自动触发更新才有',
     `scheduler_url` VARCHAR(100) COMMENT '调度触发URL:只有API触发调度才有',
@@ -429,3 +434,46 @@ CREATE TABLE IF NOT EXISTS `profile_user_label` (
   UNIQUE KEY `uk_user_label` (`user_id`, `label_id`),
   KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-用户标签关联表';
+
+-- 22. 应用管理
+DROP TABLE IF EXISTS `profile_meta_application`;
+CREATE TABLE IF NOT EXISTS `profile_meta_application` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态: 1-启用, 2-停用',
+    `app_name` VARCHAR(100) NOT NULL COMMENT '应用名称',
+    `app_desc` VARCHAR(200) COMMENT '应用描述',
+    `app_key` VARCHAR(64) NOT NULL COMMENT '应用Key（唯一标识 + API凭证）',
+    `app_secret` VARCHAR(128) NOT NULL COMMENT '应用Secret（API密钥）',
+    `target_config` TEXT COMMENT '投递目标配置(JSON)，可选，适配不同数据源类型',
+    `webhook_url` VARCHAR(200) COMMENT 'Webhook地址（可选，用于回调通知）',
+    `rate_limit` INT DEFAULT 100 COMMENT 'API调用频率限制（次/分钟）',
+    `ip_whitelist` TEXT COMMENT 'IP白名单（逗号分隔，为空则不限制）',
+    `source_type` INT NOT NULL DEFAULT 2 COMMENT '创建方式: 1-系统内置, 2-自定义',
+    `owner` VARCHAR(100) NOT NULL COMMENT '负责人',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE (`app_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-应用管理';
+
+-- 15. 投递记录
+DROP TABLE IF EXISTS `profile_delivery_record`;
+CREATE TABLE IF NOT EXISTS `profile_delivery_record` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `export_id` VARCHAR(40) NOT NULL COMMENT '投递ID',
+    `task_instance_id` VARCHAR(40) NOT NULL COMMENT '任务实例ID',
+    `group_id` VARCHAR(40) NOT NULL COMMENT '群组ID',
+    `delivery_type` VARCHAR(20) NOT NULL COMMENT '投递类型：datasource/application',
+    `target_type` VARCHAR(20) COMMENT '目标类型：table/file/topic/index',
+    `record_count` INT COMMENT '投递记录数',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态：1-成功,2-失败',
+    `error_message` TEXT COMMENT '错误信息',
+    `start_time` DATETIME COMMENT '开始时间',
+    `end_time` DATETIME COMMENT '结束时间',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    INDEX `idx_export_id` (`export_id`),
+    INDEX `idx_task_instance_id` (`task_instance_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-投递记录';

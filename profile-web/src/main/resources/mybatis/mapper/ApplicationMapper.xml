@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.web.dao.ApplicationMapper">
+    <resultMap id="BaseResultMap" type="com.data.profile.web.model.Application">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="status" jdbcType="INTEGER" property="status" />
+        <result column="app_name" jdbcType="VARCHAR" property="appName" />
+        <result column="app_desc" jdbcType="VARCHAR" property="appDesc" />
+        <result column="app_key" jdbcType="VARCHAR" property="appKey" />
+        <result column="app_secret" jdbcType="VARCHAR" property="appSecret" />
+        <result column="target_config" jdbcType="LONGVARCHAR" property="targetConfig" />
+        <result column="webhook_url" jdbcType="VARCHAR" property="webhookUrl" />
+        <result column="rate_limit" jdbcType="INTEGER" property="rateLimit" />
+        <result column="ip_whitelist" jdbcType="LONGVARCHAR" property="ipWhitelist" />
+        <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+        <result column="owner" jdbcType="VARCHAR" property="owner" />
+        <result column="creator" jdbcType="VARCHAR" property="creator" />
+        <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        t1.id, t1.status, t1.app_name, t1.app_desc, t1.app_key, t1.app_secret,
+        t1.target_config, t1.webhook_url, t1.rate_limit, t1.ip_whitelist,
+        t1.source_type, t1.owner, t1.creator, t1.modifier, t1.gmt_create, t1.gmt_modified
+    </sql>
+
+    <!-- 根据 appKey 查询 -->
+    <select id="selectByAppKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_application as t1
+        where app_key = #{appKey,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 根据 ID 查询 -->
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_application as t1
+        where id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <!-- 根据参数查询 -->
+    <select id="selectByParams" parameterType="com.data.profile.web.model.Application" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_application as t1
+        <where>
+            <if test="status != null">
+                and t1.status = #{status,jdbcType=INTEGER}
+            </if>
+            <if test="appName != null and appName != ''">
+                and t1.app_name like concat('%', #{appName,jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="sourceType != null">
+                and t1.source_type = #{sourceType,jdbcType=INTEGER}
+            </if>
+        </where>
+        order by t1.gmt_create desc
+    </select>
+
+    <!-- 模糊查询 -->
+    <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_application as t1
+        where t1.app_name like concat('%', #{keyword,jdbcType=VARCHAR}, '%')
+        order by t1.gmt_create desc
+    </select>
+
+    <!-- 插入全部 -->
+    <insert id="insert" parameterType="com.data.profile.web.model.Application" useGeneratedKeys="true" keyProperty="id">
+        insert into profile_meta_application (
+            status, app_name, app_desc, app_key, app_secret, target_config,
+            webhook_url, rate_limit, ip_whitelist, source_type, owner, creator, modifier
+        ) values (
+            #{status,jdbcType=INTEGER}, #{appName,jdbcType=VARCHAR}, #{appDesc,jdbcType=VARCHAR},
+            #{appKey,jdbcType=VARCHAR}, #{appSecret,jdbcType=VARCHAR}, #{targetConfig,jdbcType=LONGVARCHAR},
+            #{webhookUrl,jdbcType=VARCHAR}, #{rateLimit,jdbcType=INTEGER}, #{ipWhitelist,jdbcType=LONGVARCHAR},
+            #{sourceType,jdbcType=INTEGER}, #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR}
+        )
+    </insert>
+
+    <!-- 选择性插入 -->
+    <insert id="insertSelective" parameterType="com.data.profile.web.model.Application" useGeneratedKeys="true" keyProperty="id">
+        insert into profile_meta_application
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="status != null">status,</if>
+            <if test="appName != null and appName != ''">app_name,</if>
+            <if test="appDesc != null and appDesc != ''">app_desc,</if>
+            <if test="appKey != null and appKey != ''">app_key,</if>
+            <if test="appSecret != null and appSecret != ''">app_secret,</if>
+            <if test="targetConfig != null and targetConfig != ''">target_config,</if>
+            <if test="webhookUrl != null and webhookUrl != ''">webhook_url,</if>
+            <if test="rateLimit != null">rate_limit,</if>
+            <if test="ipWhitelist != null and ipWhitelist != ''">ip_whitelist,</if>
+            <if test="sourceType != null">source_type,</if>
+            <if test="owner != null and owner != ''">owner,</if>
+            <if test="creator != null and creator != ''">creator,</if>
+            <if test="modifier != null and modifier != ''">modifier,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="status != null">#{status,jdbcType=INTEGER},</if>
+            <if test="appName != null and appName != ''">#{appName,jdbcType=VARCHAR},</if>
+            <if test="appDesc != null and appDesc != ''">#{appDesc,jdbcType=VARCHAR},</if>
+            <if test="appKey != null and appKey != ''">#{appKey,jdbcType=VARCHAR},</if>
+            <if test="appSecret != null and appSecret != ''">#{appSecret,jdbcType=VARCHAR},</if>
+            <if test="targetConfig != null and targetConfig != ''">#{targetConfig,jdbcType=LONGVARCHAR},</if>
+            <if test="webhookUrl != null and webhookUrl != ''">#{webhookUrl,jdbcType=VARCHAR},</if>
+            <if test="rateLimit != null">#{rateLimit,jdbcType=INTEGER},</if>
+            <if test="ipWhitelist != null and ipWhitelist != ''">#{ipWhitelist,jdbcType=LONGVARCHAR},</if>
+            <if test="sourceType != null">#{sourceType,jdbcType=INTEGER},</if>
+            <if test="owner != null and owner != ''">#{owner,jdbcType=VARCHAR},</if>
+            <if test="creator != null and creator != ''">#{creator,jdbcType=VARCHAR},</if>
+            <if test="modifier != null and modifier != ''">#{modifier,jdbcType=VARCHAR},</if>
+        </trim>
+    </insert>
+
+    <!-- 根据 ID 删除 -->
+    <delete id="deleteById" parameterType="java.lang.Long">
+        delete from profile_meta_application where id = #{id,jdbcType=BIGINT}
+    </delete>
+
+    <!-- 根据 ID 选择性更新 -->
+    <update id="updateByIdSelective" parameterType="com.data.profile.web.model.Application">
+        update profile_meta_application
+        <set>
+            <if test="status != null">status = #{status,jdbcType=INTEGER},</if>
+            <if test="appName != null and appName != ''">app_name = #{appName,jdbcType=VARCHAR},</if>
+            <if test="appDesc != null">app_desc = #{appDesc,jdbcType=VARCHAR},</if>
+            <if test="targetConfig != null">target_config = #{targetConfig,jdbcType=LONGVARCHAR},</if>
+            <if test="webhookUrl != null">webhook_url = #{webhookUrl,jdbcType=VARCHAR},</if>
+            <if test="rateLimit != null">rate_limit = #{rateLimit,jdbcType=INTEGER},</if>
+            <if test="ipWhitelist != null">ip_whitelist = #{ipWhitelist,jdbcType=LONGVARCHAR},</if>
+            <if test="modifier != null and modifier != ''">modifier = #{modifier,jdbcType=VARCHAR},</if>
+            <if test="appSecret != null and appSecret != ''">app_secret = #{appSecret,jdbcType=VARCHAR},</if>
+        </set>
+        where id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <!-- 根据 ID 更新全部 -->
+    <update id="updateById" parameterType="com.data.profile.web.model.Application">
+        update profile_meta_application
+        set status = #{status,jdbcType=INTEGER},
+            app_name = #{appName,jdbcType=VARCHAR},
+            app_desc = #{appDesc,jdbcType=VARCHAR},
+            target_config = #{targetConfig,jdbcType=LONGVARCHAR},
+            webhook_url = #{webhookUrl,jdbcType=VARCHAR},
+            rate_limit = #{rateLimit,jdbcType=INTEGER},
+            ip_whitelist = #{ipWhitelist,jdbcType=LONGVARCHAR},
+            modifier = #{modifier,jdbcType=VARCHAR}
+        where id = #{id,jdbcType=BIGINT}
+    </update>
+</mapper>

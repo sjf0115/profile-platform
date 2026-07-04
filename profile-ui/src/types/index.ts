@@ -458,3 +458,79 @@ export interface UserProfileRowVO {
   device_brand: string
   region: string
 }
+
+// 应用管理
+export interface Application {
+  id?: number
+  status?: number
+  app_name: string
+  app_desc?: string
+  app_key?: string
+  app_secret?: string
+  target_config?: string  // JSON 字符串
+  webhook_url?: string
+  rate_limit?: number
+  ip_whitelist?: string
+  source_type?: number
+  owner?: string
+  creator?: string
+  modifier?: string
+  gmt_create?: string
+  gmt_modified?: string
+}
+
+// 应用查询参数
+export interface ApplicationQueryParams {
+  status?: number
+  app_name?: string
+  source_type?: number
+}
+
+// 投递
+export interface Export {
+  id?: number
+  status?: number
+  export_id?: string
+  export_type?: number  // 1-群组, 2-标签
+  export_name: string
+  export_desc?: string
+  export_mode?: number  // 投递方式：1-数据源, 2-应用
+  export_config?: string  // JSON 字符串
+  scheduler_type?: number  // 1-手动触发, 2-API触发, 3-日周期, 4-小时周期
+  scheduler_cron?: string
+  scheduler_url?: string
+  scheduler_start_time?: number
+  scheduler_end_time?: number
+  source_type?: number
+  owner?: string
+  creator?: string
+  modifier?: string
+  gmt_create?: string
+  gmt_modified?: string
+  // 最新任务实例（关联查询）
+  latest_instance?: TaskInstance
+}
+
+// 投递查询参数
+export interface ExportQueryParams {
+  status?: number
+  export_type?: number
+  export_name?: string
+}
+
+// 投递配置
+export interface ExportConfig {
+  // 应用投递配置（export_mode=2 时有效）
+  application_id?: string
+  // 数据源投递配置（export_mode=1 时有效）
+  datasource_id?: string
+  database?: string
+  table_name?: string
+  write_mode?: string  // append-追加, upsert-覆盖
+  bucket?: string
+  object_path?: string
+  file_format?: string
+  topic?: string
+  message_format?: string
+  index_name?: string
+}

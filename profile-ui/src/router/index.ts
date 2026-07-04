@@ -205,6 +205,31 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/group/create-sql.vue'),
         meta: { title: '编辑群组' },
       },
+      // 群组投递
+      {
+        path: 'group/export',
+        name: 'GroupExport',
+        component: () => import('@/views/group/export.vue'),
+        meta: { title: '群组投递' },
+      },
+      {
+        path: 'group/export/create',
+        name: 'CreateGroupExport',
+        component: () => import('@/views/group/export-create.vue'),
+        meta: { title: '创建投递' },
+      },
+      {
+        path: 'group/export/edit/:id',
+        name: 'EditGroupExport',
+        component: () => import('@/views/group/export-create.vue'),
+        meta: { title: '编辑投递' },
+      },
+      {
+        path: 'group/export/detail/:id',
+        name: 'GroupExportDetail',
+        component: () => import('@/views/group/export-detail.vue'),
+        meta: { title: '投递详情' },
+      },
       // 任务管理
       {
         path: 'task',
@@ -242,6 +267,31 @@ const routes: RouteRecordRaw[] = [
         name: 'UserProfileDetail',
         component: () => import('@/views/user-profile/detail.vue'),
         meta: { title: '用户细查详情' },
+      },
+      // 应用管理
+      {
+        path: 'application',
+        name: 'Application',
+        component: () => import('@/views/application/index.vue'),
+        meta: { title: '应用管理' },
+      },
+      {
+        path: 'application/create',
+        name: 'CreateApplication',
+        component: () => import('@/views/application/create.vue'),
+        meta: { title: '创建应用' },
+      },
+      {
+        path: 'application/edit/:id',
+        name: 'EditApplication',
+        component: () => import('@/views/application/create.vue'),
+        meta: { title: '编辑应用' },
+      },
+      {
+        path: 'application/detail/:id',
+        name: 'ApplicationDetail',
+        component: () => import('@/views/application/detail.vue'),
+        meta: { title: '应用详情' },
       },
     ],
   },

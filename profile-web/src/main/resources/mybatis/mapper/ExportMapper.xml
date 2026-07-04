@@ -8,6 +8,7 @@
         <result column="export_type" jdbcType="INTEGER" property="exportType" />
         <result column="export_name" jdbcType="VARCHAR" property="exportName" />
         <result column="export_desc" jdbcType="VARCHAR" property="exportDesc" />
+        <result column="export_mode" jdbcType="INTEGER" property="exportMode" />
         <result column="export_config" jdbcType="LONGVARCHAR" property="exportConfig" />
         <result column="scheduler_type" jdbcType="INTEGER" property="schedulerType" />
         <result column="scheduler_cron" jdbcType="VARCHAR" property="schedulerCron" />
@@ -23,7 +24,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        t1.id, t1.status, t1.export_id, t1.export_type, t1.export_name, t1.export_desc, t1.export_config,
+        t1.id, t1.status, t1.export_id, t1.export_type, t1.export_name, t1.export_desc, t1.export_mode, t1.export_config,
         t1.scheduler_type, t1.scheduler_cron, t1.scheduler_url, t1.scheduler_start_time, t1.scheduler_end_time,
         t1.source_type, t1.owner, t1.creator, t1.modifier, t1.gmt_create, t1.gmt_modified
     </sql>
@@ -184,13 +185,14 @@
             export_type, export_name, export_desc,
             scheduler_type, scheduler_cron, scheduler_url,
             scheduler_start_time, scheduler_end_time, source_type,
-            owner, creator, modifier, export_config
+            owner, creator, modifier, export_mode, export_config
         )
         values (#{id,jdbcType=BIGINT}, #{status,jdbcType=INTEGER}, #{exportId,jdbcType=VARCHAR},
         #{exportType,jdbcType=INTEGER}, #{exportName,jdbcType=VARCHAR}, #{exportDesc,jdbcType=VARCHAR},
         #{schedulerType,jdbcType=INTEGER}, #{schedulerCron,jdbcType=VARCHAR}, #{schedulerUrl,jdbcType=VARCHAR},
         #{schedulerStartTime,jdbcType=BIGINT}, #{schedulerEndTime,jdbcType=BIGINT}, #{sourceType,jdbcType=INTEGER},
-        #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR}, #{exportConfig,jdbcType=LONGVARCHAR}
+        #{owner,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{modifier,jdbcType=VARCHAR}, #{exportMode,jdbcType=INTEGER},
+        #{exportConfig,jdbcType=LONGVARCHAR}
         )
     </insert>
 
@@ -245,6 +247,9 @@
             <if test="exportConfig != null">
                 export_config,
             </if>
+            <if test="exportMode != null">
+                export_mode,
+            </if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">
@@ -294,6 +299,9 @@
             </if>
             <if test="exportConfig != null">
                 #{exportConfig,jdbcType=LONGVARCHAR},
+            </if>
+            <if test="exportMode != null">
+                #{exportMode,jdbcType=INTEGER},
             </if>
         </trim>
     </insert>
@@ -352,6 +360,9 @@
             </if>
             <if test="exportConfig != null">
                 export_config = #{exportConfig,jdbcType=LONGVARCHAR},
+            </if>
+            <if test="exportMode != null">
+                export_mode = #{exportMode,jdbcType=INTEGER},
             </if>
         </set>
         where export_id = #{exportId,jdbcType=VARCHAR}

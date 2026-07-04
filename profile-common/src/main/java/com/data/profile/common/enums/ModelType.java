@@ -41,6 +41,8 @@ public enum ModelType {
     PERMISSION("19", "权限"),
     // 计算引擎
     ENGINE("20", "计算引擎"),
+    // 应用
+    APPLICATION("21", "应用"),
     ;
 
     private String code;

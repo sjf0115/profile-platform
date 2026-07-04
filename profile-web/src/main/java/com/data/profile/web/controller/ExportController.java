@@ -3,6 +3,7 @@ package com.data.profile.web.controller;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.model.Export;
+import com.data.profile.web.task.ExportTask;
 import com.data.profile.web.service.ExportService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,10 @@ public class ExportController {
     @Autowired
     private ExportService exportService;
 
-    @GetMapping(value = "/list")
+    @Autowired
+    private ExportTask exportTask;
+
+    @PostMapping(value = "/list")
     public Response getList(@RequestBody Export export) {
         List<Export> exports = exportService.getList(export);
         return Response.success(exports);
@@ -71,6 +75,20 @@ public class ExportController {
             return Response.success(result);
         } else {
             return Response.error("删除投递任务失败", ResponseCode.ERROR);
+        }
+    }
+
+    /**
+     * 立即执行投递
+     */
+    @PostMapping(value = "/execute")
+    public Response execute(@RequestParam String exportId) {
+        try {
+            exportTask.executeExport(exportId);
+            return Response.success("投递执行成功");
+        } catch (Exception e) {
+            log.error("投递执行失败: exportId={}, error={}", exportId, e.getMessage(), e);
+            return Response.error("投递执行失败: " + e.getMessage(), ResponseCode.ERROR);
         }
     }
 }

@@ -61,9 +61,9 @@
                 <el-icon><DataAnalysis /></el-icon>
                 <span>群组分析</span>
               </el-dropdown-item>
-              <el-dropdown-item @click="router.push('/group/push')">
+              <el-dropdown-item @click="router.push('/group/export')">
                 <el-icon><Promotion /></el-icon>
-                <span>群组推送</span>
+                <span>群组投递</span>
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -141,6 +141,10 @@
                   <el-icon><Timer /></el-icon>
                   <span>任务实例</span>
                 </el-dropdown-item>
+              <el-dropdown-item @click="router.push('/application')">
+                <el-icon><Connection /></el-icon>
+                <span>应用管理</span>
+              </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -243,9 +247,9 @@
               <el-icon><DataAnalysis /></el-icon>
               <span>群组分析</span>
             </el-menu-item>
-            <el-menu-item index="/group/push">
+            <el-menu-item index="/group/export">
               <el-icon><Promotion /></el-icon>
-              <span>群组推送</span>
+              <span>群组投递</span>
             </el-menu-item>
           </template>
           
@@ -309,6 +313,10 @@
               <el-icon><List /></el-icon>
               <span>任务实例</span>
             </el-menu-item>
+            <el-menu-item index="/application">
+              <el-icon><Connection /></el-icon>
+              <span>应用管理</span>
+            </el-menu-item>
           </template>
 
           <!-- 设置子菜单 -->
@@ -370,6 +378,7 @@ const activeTopNav = computed(() => {
   if (path.startsWith('/instance')) return '/project'
   if (path.startsWith('/dataset')) return '/project'
   if (path.startsWith('/datasource')) return '/project'
+  if (path.startsWith('/application')) return '/project'
   if (path.startsWith('/settings')) return '/settings'
   return '/home'
 })

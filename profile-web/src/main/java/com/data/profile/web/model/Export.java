@@ -17,6 +17,7 @@ public class Export {
     private Integer exportType;
     private String exportName;
     private String exportDesc;
+    private Integer exportMode; // 投递方式：1-数据源, 2-应用
     private String exportConfig;
 
     // 调度信息
