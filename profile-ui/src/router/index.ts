@@ -230,6 +230,19 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/task/instance-detail.vue'),
         meta: { title: '实例详情' },
       },
+      // 用户画像
+      {
+        path: 'insight/user-profile',
+        name: 'UserProfile',
+        component: () => import('@/views/user-profile/index.vue'),
+        meta: { title: '用户细查' },
+      },
+      {
+        path: 'insight/user-profile/detail/:id',
+        name: 'UserProfileDetail',
+        component: () => import('@/views/user-profile/detail.vue'),
+        meta: { title: '用户细查详情' },
+      },
     ],
   },
 ]

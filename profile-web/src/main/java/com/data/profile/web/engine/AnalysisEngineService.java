@@ -82,6 +82,32 @@ public class AnalysisEngineService {
     }
 
     /**
+     * 执行 SELECT 查询并返回结果列表。
+     * 每行数据以 Map 形式返回，key 为列名，value 为列值。
+     */
+    public List<Map<String, Object>> executeQueryList(String sql) throws Exception {
+        Engine analysisEngine = getDefaultAnalysisEngine();
+        Map<String, Object> config = parseConfig(analysisEngine.getConfig());
+        List<Map<String, Object>> results = new ArrayList<>();
+        try (Connection conn = getAnalysisConnection(config);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            java.sql.ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            while (rs.next()) {
+                Map<String, Object> row = new LinkedHashMap<>();
+                for (int i = 1; i <= columnCount; i++) {
+                    String columnName = metaData.getColumnLabel(i);
+                    Object value = rs.getObject(i);
+                    row.put(columnName, value);
+                }
+                results.add(row);
+            }
+        }
+        return results;
+    }
+
+    /**
      * 通过分析引擎配置建立 JDBC 连接。
      */
     private Connection getAnalysisConnection(Map<String, Object> config) throws Exception {

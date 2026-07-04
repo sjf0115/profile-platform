@@ -387,3 +387,74 @@ export interface TaskInstanceQueryParams extends PageParams {
   instance_name?: string
   status?: number
 }
+
+// ==================== 用户细查相关类型 ====================
+
+// 用户画像（聚合接口响应）
+export interface UserProfileVO {
+  user: UserVO
+  label_categories: LabelCategoryVO[]
+  groups: GroupVO[]
+}
+
+// 用户基础信息
+export interface UserVO {
+  user_id: string
+  user_name: string
+  email: string
+  user_type: string
+  status: number
+  source_type: number
+  roles: RoleVO[]
+  gmt_create: string
+  gmt_modified: string
+}
+
+// 角色信息
+export interface RoleVO {
+  role_id: string
+  role_name: string
+  role_type: string
+  role_desc: string
+}
+
+// 标签类目（用户细查）
+export interface LabelCategoryVO {
+  category_id: string
+  category_name: string
+  sort_order: number
+  labels: UserLabelVO[]
+}
+
+// 用户标签（用户细查）
+export interface UserLabelVO {
+  label_id: string
+  label_name: string
+  label_value: string
+}
+
+// 群组信息（用户细查）
+export interface GroupVO {
+  group_id: string
+  group_name: string
+  group_desc: string
+  group_status: number
+  group_type: number
+  group_count: number
+}
+
+// ==================== 用户画像主页相关类型 ====================
+
+// 用户画像表格行（随机抽取的用户列表）
+export interface UserProfileRowVO {
+  user_id: string
+  user_name: string
+  app: string
+  last_access_time: string
+  device_model: string
+  os: string
+  software_version: string
+  channel: string
+  device_brand: string
+  region: string
+}

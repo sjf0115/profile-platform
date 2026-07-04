@@ -37,10 +37,6 @@
           </div>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="router.push('/insight/user-detail')">
-                <el-icon><View /></el-icon>
-                <span>用户细查</span>
-              </el-dropdown-item>
               <el-dropdown-item @click="router.push('/insight/user-profile')">
                 <el-icon><User /></el-icon>
                 <span>用户画像</span>
@@ -230,10 +226,6 @@
           <!-- 用户洞察子菜单 -->
           <template v-if="activeTopNav === '/insight'">
             <div class="menu-group-title">用户洞察</div>
-            <el-menu-item index="/insight/user-detail">
-              <el-icon><View /></el-icon>
-              <span>用户细查</span>
-            </el-menu-item>
             <el-menu-item index="/insight/user-profile">
               <el-icon><User /></el-icon>
               <span>用户画像</span>
