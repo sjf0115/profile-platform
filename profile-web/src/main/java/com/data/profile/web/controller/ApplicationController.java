@@ -26,7 +26,7 @@ public class ApplicationController {
      * 应用列表（支持搜索/筛选）
      */
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody(required = false) Application application) {
+    public Response<List<Application>> getList(@RequestBody(required = false) Application application) {
         if (application == null) {
             application = new Application();
         }
@@ -38,7 +38,7 @@ public class ApplicationController {
      * 模糊查询
      */
     @GetMapping(value = "/keyword")
-    public Response getByKeyword(@RequestParam String keyword) {
+    public Response<List<Application>> getByKeyword(@RequestParam String keyword) {
         List<Application> list = applicationService.getByKeyword(keyword);
         return Response.success(list);
     }
@@ -47,7 +47,7 @@ public class ApplicationController {
      * 应用详情
      */
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam Long id) {
+    public Response<Application> getDetail(@RequestParam Long id) {
         Optional<Application> optional = applicationService.getDetail(id);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -60,7 +60,7 @@ public class ApplicationController {
      * 创建/编辑应用
      */
     @PostMapping(value = "/save")
-    public Response save(@RequestBody Application application) {
+    public Response<Application> save(@RequestBody Application application) {
         try {
             Application result = applicationService.save(application);
             return Response.success(result);
@@ -73,7 +73,7 @@ public class ApplicationController {
      * 删除应用
      */
     @DeleteMapping(value = "/delete")
-    public Response delete(@RequestParam Long id) {
+    public Response<Integer> delete(@RequestParam Long id) {
         try {
             int result = applicationService.delete(id);
             if (result > 0) {
@@ -90,7 +90,7 @@ public class ApplicationController {
      * 重置 AppSecret
      */
     @PostMapping(value = "/reset-secret")
-    public Response resetSecret(@RequestParam Long id) {
+    public Response<String> resetSecret(@RequestParam Long id) {
         try {
             String newSecret = applicationService.resetSecret(id);
             return Response.success(newSecret);

@@ -205,6 +205,37 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/group/create-sql.vue'),
         meta: { title: '编辑群组' },
       },
+      // 群组分析
+      {
+        path: 'group/analysis',
+        name: 'GroupAnalysis',
+        component: () => import('@/views/group-analysis/index.vue'),
+        meta: { title: '群组分析' },
+      },
+      {
+        path: 'group/analysis/create',
+        name: 'CreateGroupAnalysis',
+        component: () => import('@/views/group-analysis/create.vue'),
+        meta: { title: '创建群组分析' },
+      },
+      {
+        path: 'group/analysis/edit/:id',
+        name: 'EditGroupAnalysis',
+        component: () => import('@/views/group-analysis/create.vue'),
+        meta: { title: '编辑群组分析' },
+      },
+      {
+        path: 'group/analysis/detail/:id',
+        name: 'GroupAnalysisDetail',
+        component: () => import('@/views/group-analysis/detail.vue'),
+        meta: { title: '群组分析详情' },
+      },
+      {
+        path: 'group/analysis/live',
+        name: 'GroupAnalysisLive',
+        component: () => import('@/views/group-analysis/detail.vue'),
+        meta: { title: '群组分析' },
+      },
       // 群组投递
       {
         path: 'group/export',

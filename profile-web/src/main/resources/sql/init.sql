@@ -477,3 +477,24 @@ CREATE TABLE IF NOT EXISTS `profile_delivery_record` (
     INDEX `idx_export_id` (`export_id`),
     INDEX `idx_task_instance_id` (`task_instance_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-投递记录';
+
+
+-- 21. 群组分析
+CREATE TABLE IF NOT EXISTS `profile_meta_group_analysis`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+    `analysis_id` VARCHAR(40) NOT NULL COMMENT '分析ID',
+    `analysis_name` VARCHAR(200) NOT NULL COMMENT '分析名称',
+    `analysis_desc` VARCHAR(500) COMMENT '分析描述',
+    `group_id` VARCHAR(40) NOT NULL COMMENT '当前群组ID',
+    `compare_group_ids` VARCHAR(2000) COMMENT '对比群组ID列表(JSON数组)',
+    `label_ids` VARCHAR(5000) COMMENT '已选标签ID列表(JSON数组)',
+    `source_type` INT DEFAULT 2 COMMENT '创建方式:1-系统内置,2-自定义',
+    `owner` VARCHAR(100) COMMENT '负责人',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE (`analysis_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-群组分析';

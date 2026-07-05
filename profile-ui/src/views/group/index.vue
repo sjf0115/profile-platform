@@ -243,7 +243,7 @@ const handleEdit = (row: Group) => {
 }
 
 const handleAnalyze = (row: Group) => {
-  ElMessage.info('分析功能开发中')
+  router.push(`/group/analysis/live?group_id=${row.group_id}`)
 }
 
 const handlePush = (row: Group) => {

@@ -531,3 +531,73 @@ export interface ExportConfig {
   // 应用投递配置（export_mode=2 时有效）
   application_id?: string
 }
+
+// ==================== 群组分析相关类型 ====================
+
+// 群组分析实体（持久化记录）
+export interface GroupAnalysis {
+  analysis_id?: string
+  analysis_name: string
+  analysis_desc?: string
+  group_id: string
+  group_name?: string
+  group_count?: number
+  entity_identifier_name?: string
+  entity_name?: string
+  group_type?: number
+  group_status?: number
+  compare_group_ids?: string[]
+  label_ids?: string[]
+  status?: number
+  creator?: string
+  modifier?: string
+  gmt_create?: string
+  gmt_modified?: string
+}
+
+// 群组分析查询参数
+export interface GroupAnalysisQueryParams {
+  analysis_name?: string
+  group_id?: string
+  creator?: string
+}
+
+// 群组分析 - 可分析标签
+export interface AnalysisLabel {
+  label_id: string
+  label_name: string
+  label_category_id: string
+  label_category_name: string
+  label_data_type: number
+  dataset_id: string
+  dataset_name: string
+  field_name: string
+  update_type: number
+}
+
+// 群组分析 - 标签分布
+export interface LabelDistribution {
+  label_id: string
+  label_name: string
+  dataset_name: string
+  update_type: string
+  values: DistributionItem[]
+}
+
+// 群组分析 - 分布项
+export interface DistributionItem {
+  value: string
+  current_count: number
+  current_rate: number
+  all_count: number
+  all_rate: number
+  compare_count?: number
+  compare_rate?: number
+}
+
+// 群组分析 - 分布请求
+export interface DistributionRequest {
+  group_id: string
+  label_ids: string[]
+  compare_group_ids?: string[]
+}

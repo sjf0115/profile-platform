@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.web.dao.GroupAnalysisMapper">
+    <resultMap id="BaseResultMap" type="com.data.profile.web.model.GroupAnalysis">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="status" jdbcType="INTEGER" property="status" />
+        <result column="analysis_id" jdbcType="VARCHAR" property="analysisId" />
+        <result column="analysis_name" jdbcType="VARCHAR" property="analysisName" />
+        <result column="analysis_desc" jdbcType="VARCHAR" property="analysisDesc" />
+        <result column="group_id" jdbcType="VARCHAR" property="groupId" />
+        <result column="compare_group_ids" jdbcType="VARCHAR" property="compareGroupIds" />
+        <result column="label_ids" jdbcType="VARCHAR" property="labelIds" />
+        <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+        <result column="owner" jdbcType="VARCHAR" property="owner" />
+        <result column="creator" jdbcType="VARCHAR" property="creator" />
+        <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        t1.id, t1.status, t1.analysis_id, t1.analysis_name, t1.analysis_desc,
+        t1.group_id, t1.compare_group_ids, t1.label_ids, t1.source_type,
+        t1.owner, t1.creator, t1.modifier, t1.gmt_create, t1.gmt_modified
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectByAnalysisId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_group_analysis as t1
+        where analysis_id = #{analysisId,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 根据名字查询 -->
+    <select id="selectByAnalysisName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_group_analysis as t1
+        where analysis_name = #{analysisName,jdbcType=VARCHAR}
+    </select>
+
+    <!-- 根据群组ID查询 -->
+    <select id="selectByGroupId" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_group_analysis as t1
+        where group_id = #{groupId,jdbcType=VARCHAR}
+        order by gmt_modified desc
+    </select>
+
+    <!-- 根据参数查询 -->
+    <select id="selectByParams" parameterType="com.data.profile.web.model.GroupAnalysis" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from profile_meta_group_analysis as t1
+        where 1 = 1
+        <if test="status != null">
+            and t1.status = #{status,jdbcType=INTEGER}
+        </if>
+        <if test="analysisId != null">
+            and t1.analysis_id = #{analysisId,jdbcType=VARCHAR}
+        </if>
+        <if test="analysisName != null">
+            and t1.analysis_name LIKE CONCAT('%', #{analysisName,jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="groupId != null">
+            and t1.group_id = #{groupId,jdbcType=VARCHAR}
+        </if>
+        <if test="creator != null">
+            and t1.creator = #{creator,jdbcType=VARCHAR}
+        </if>
+        order by t1.gmt_modified desc
+    </select>
+
+    <!-- 选择性插入 -->
+    <insert id="insertSelective" parameterType="com.data.profile.web.model.GroupAnalysis">
+        insert into profile_meta_group_analysis
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="status != null">status,</if>
+            <if test="analysisId != null">analysis_id,</if>
+            <if test="analysisName != null">analysis_name,</if>
+            <if test="analysisDesc != null">analysis_desc,</if>
+            <if test="groupId != null">group_id,</if>
+            <if test="compareGroupIds != null">compare_group_ids,</if>
+            <if test="labelIds != null">label_ids,</if>
+            <if test="sourceType != null">source_type,</if>
+            <if test="owner != null">owner,</if>
+            <if test="creator != null">creator,</if>
+            <if test="modifier != null">modifier,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id,jdbcType=BIGINT},</if>
+            <if test="status != null">#{status,jdbcType=INTEGER},</if>
+            <if test="analysisId != null">#{analysisId,jdbcType=VARCHAR},</if>
+            <if test="analysisName != null">#{analysisName,jdbcType=VARCHAR},</if>
+            <if test="analysisDesc != null">#{analysisDesc,jdbcType=VARCHAR},</if>
+            <if test="groupId != null">#{groupId,jdbcType=VARCHAR},</if>
+            <if test="compareGroupIds != null">#{compareGroupIds,jdbcType=VARCHAR},</if>
+            <if test="labelIds != null">#{labelIds,jdbcType=VARCHAR},</if>
+            <if test="sourceType != null">#{sourceType,jdbcType=INTEGER},</if>
+            <if test="owner != null">#{owner,jdbcType=VARCHAR},</if>
+            <if test="creator != null">#{creator,jdbcType=VARCHAR},</if>
+            <if test="modifier != null">#{modifier,jdbcType=VARCHAR},</if>
+        </trim>
+    </insert>
+
+    <!-- 删除 -->
+    <delete id="deleteByAnalysisId" parameterType="java.lang.String">
+        delete from profile_meta_group_analysis
+        where analysis_id = #{analysisId,jdbcType=VARCHAR}
+    </delete>
+
+    <!-- 选择性更新 -->
+    <update id="updateByAnalysisIdSelective" parameterType="com.data.profile.web.model.GroupAnalysis">
+        update profile_meta_group_analysis
+        <set>
+            <if test="status != null">status = #{status,jdbcType=INTEGER},</if>
+            <if test="analysisName != null">analysis_name = #{analysisName,jdbcType=VARCHAR},</if>
+            <if test="analysisDesc != null">analysis_desc = #{analysisDesc,jdbcType=VARCHAR},</if>
+            <if test="groupId != null">group_id = #{groupId,jdbcType=VARCHAR},</if>
+            <if test="compareGroupIds != null">compare_group_ids = #{compareGroupIds,jdbcType=VARCHAR},</if>
+            <if test="labelIds != null">label_ids = #{labelIds,jdbcType=VARCHAR},</if>
+            <if test="sourceType != null">source_type = #{sourceType,jdbcType=INTEGER},</if>
+            <if test="owner != null">owner = #{owner,jdbcType=VARCHAR},</if>
+            <if test="modifier != null">modifier = #{modifier,jdbcType=VARCHAR},</if>
+        </set>
+        where analysis_id = #{analysisId,jdbcType=VARCHAR}
+    </update>
+</mapper>

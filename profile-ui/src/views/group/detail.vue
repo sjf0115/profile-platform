@@ -193,9 +193,9 @@ const handleEdit = () => {
   router.push(`/group/edit/${groupId}`)
 }
 
-// 分析
+// 分析（从群组详情页进入实时分析）
 const handleAnalyze = () => {
-  ElMessage.info('分析功能开发中')
+  router.push(`/group/analysis/live?group_id=${groupId}`)
 }
 
 // 工具函数

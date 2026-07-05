@@ -36,14 +36,14 @@ public class LabelController {
     private LabelService labelService;
 
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody Label label) {
+    public Response<List<LabelVO>> getList(@RequestBody Label label) {
         log.info("请求根据标签信息请求查询标签: {}", gson.toJson(label));
         List<LabelVO> labels = labelService.getList(label);
         return Response.success(labels);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam(name = "label_id") String labelId) {
+    public Response<LabelVO> getDetail(@RequestParam(name = "label_id") String labelId) {
         log.info("根据标签ID [{}] 请求查询标签信息", labelId);
         Optional<LabelVO> optional = labelService.getDetail(labelId);
         if (optional.isPresent()) {
@@ -54,7 +54,7 @@ public class LabelController {
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody LabelVO labelVO) {
+    public Response<Integer> save(@RequestBody LabelVO labelVO) {
         log.info("请求保存/更新标签信息: {}", gson.toJson(labelVO));
         Label label = new Label();
         org.springframework.beans.BeanUtils.copyProperties(labelVO, label);
@@ -67,7 +67,7 @@ public class LabelController {
     }
 
     @PostMapping(value = "/update")
-    public Response update(@RequestBody LabelVO labelVO) {
+    public Response<Integer> update(@RequestBody LabelVO labelVO) {
         log.info("请求更新标签信息: {}", gson.toJson(labelVO));
         Label label = new Label();
         org.springframework.beans.BeanUtils.copyProperties(labelVO, label);
@@ -80,7 +80,7 @@ public class LabelController {
     }
 
     @DeleteMapping(value = "/delete")
-    public Response delete(@RequestParam(name = "label_id") String labelId) {
+    public Response<Integer> delete(@RequestParam(name = "label_id") String labelId) {
         log.info("请求删除标签: {}", labelId);
         int result = labelService.delete(labelId);
         if (result > 0) {
@@ -95,7 +95,7 @@ public class LabelController {
      * 编辑模式传入 dataset_id 可保留当前数据集已绑定标签
      */
     @GetMapping(value = "/available")
-    public Response getAvailableLabels(@RequestParam(name = "entity_identifier_id") String entityIdentifierId,
+    public Response<List<LabelVO>> getAvailableLabels(@RequestParam(name = "entity_identifier_id") String entityIdentifierId,
             @RequestParam(name = "dataset_id", required = false) String datasetId) {
         log.info("请求获取实体 [{}] 下未被 [{}] 之外数据集绑定的可用标签", entityIdentifierId, datasetId);
         List<LabelVO> labels = labelService.getAvailableList(entityIdentifierId, datasetId);
@@ -103,7 +103,7 @@ public class LabelController {
     }
 
     @GetMapping(value = "/config")
-    public Response getConfig() {
+    public Response<Map<String, Object>> getConfig() {
         log.info("请求获取标签配置信息");
         Map<String, Object> config = new HashMap<>();
 
