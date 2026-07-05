@@ -5,31 +5,53 @@ import com.data.spi.SPI;
 @SPI
 public interface ConnectorFactory {
 
+    // Connector 类型
     String getCategory();
+
+    // 核心：数据源表单的动态构建配置
+    ConfigBuilder getConfigBuilder();
 
     Connector getConnector();
 
-    Executor getExecutor();
-
     TypeConverter getTypeConverter();
 
-    Dialect getDialect();
+    default Executor getExecutor() {
+        return null;
+    }
 
-     ResponseConverter getResponseConverter();
+    default Dialect getDialect() {
+        return null;
+    }
 
-     ParameterConverter getConnectorParameterConverter();
+    default ResponseConverter getResponseConverter() {
+        return null;
+    }
 
-     ConfigBuilder getConfigBuilder();
+    default ParameterConverter getConnectorParameterConverter() {
+        return null;
+    }
 
-     DataSourceClient getDataSourceClient();
+    default DataSourceClient getDataSourceClient() {
+        return null;
+    }
 
-     StatementSplitter getStatementSplitter();
+    default StatementSplitter getStatementSplitter() {
+        return null;
+    }
 
-     StatementParser getStatementParser();
+    default StatementParser getStatementParser() {
+        return null;
+    }
 
-     MetricScript getMetricScript();
+    default MetricScript getMetricScript() {
+        return null;
+    }
 
     default Boolean showInFrontend() {
         return true;
+    }
+
+    default ExportConfigBuilder getExportConfigBuilder() {
+        return null;
     }
 }

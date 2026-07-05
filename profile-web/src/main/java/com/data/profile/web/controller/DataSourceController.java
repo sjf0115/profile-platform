@@ -38,7 +38,7 @@ public class DataSourceController {
     private DataSourceService dataSourceService;
 
     @PostMapping(value = "/test", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public Response testConnection(@RequestBody TestConnectionRequestParam param)  {
+    public Response<String> testConnection(@RequestBody TestConnectionRequestParam param)  {
         log.info("数据源请求测试连接: {}", gson.toJson(param));
 
         ConnectorResponse response = dataSourceService.testConnect(param);
@@ -62,13 +62,13 @@ public class DataSourceController {
     }
 
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody DataSource dataSource) {
+    public Response<List<DataSource>> getList(@RequestBody DataSource dataSource) {
         List<DataSource> dataSources = dataSourceService.getList(dataSource);
         return Response.success(dataSources);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam(name = "datasource_id") String datasourceId) {
+    public Response<DataSource> getDetail(@RequestParam(name = "datasource_id") String datasourceId) {
         DataSource dataSource = dataSourceService.getDetail(datasourceId);
         if (!Objects.equals(dataSource, null)) {
             return Response.success(dataSource);
@@ -78,7 +78,7 @@ public class DataSourceController {
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody DataSource datasource) {
+    public Response<Integer> save(@RequestBody DataSource datasource) {
         log.info("请求创建/修改数据源: {}", gson.toJson(datasource));
         int result = dataSourceService.save(datasource);
         if (result > 0) {
@@ -89,7 +89,7 @@ public class DataSourceController {
     }
 
     @DeleteMapping(value = "/delete")
-    public Response delete(@RequestParam(name = "datasource_id") String datasourceId) {
+    public Response<Integer> delete(@RequestParam(name = "datasource_id") String datasourceId) {
         int result = dataSourceService.delete(datasourceId);
         if (result > 0) {
             return Response.success(result);
@@ -99,21 +99,21 @@ public class DataSourceController {
     }
 
     @GetMapping(value = "/config/{type}")
-    public Response getConfigJson(@PathVariable String type){
+    public Response<String> getConfigJson(@PathVariable String type){
         log.info("请求指定插件类型的配置: {}", type);
         String config = dataSourceService.getConfigJson(type);
         return Response.success(config);
     }
 
     @GetMapping(value = "/type/list")
-    public Response getConnectorTypeList() {
+    public Response<List<Item>> getConnectorTypeList() {
         log.info("请求获取插件类型");
         List<Item> connectors = dataSourceService.getConnectorTypeList();
         return Response.success(connectors);
     }
 
     @GetMapping(value = "/{id}/databases")
-    public Response getDatabases(@PathVariable String id) {
+    public Response<List<DatabaseInfo>> getDatabases(@PathVariable String id) {
         List<DatabaseInfo> databases = dataSourceService.getDatabaseList(id);
         if (Objects.equals(databases, null) || databases.isEmpty()) {
             return Response.error("没有获取到数据库", ResponseCode.ERROR);
@@ -123,7 +123,7 @@ public class DataSourceController {
     }
 
     @GetMapping(value = "/{id}/{database}/tables")
-    public Response getTables(@PathVariable String id, @PathVariable String database) {
+    public Response<List<TableInfo>> getTables(@PathVariable String id, @PathVariable String database) {
         List<TableInfo> tables = dataSourceService.getTableList(id, database);
         if (Objects.equals(tables, null) || tables.isEmpty()) {
             return Response.error("没有获取到数据表", ResponseCode.ERROR);
@@ -133,8 +133,35 @@ public class DataSourceController {
     }
 
     @GetMapping(value = "/{id}/{database}/{table}/columns")
-    public Response getColumns(@PathVariable String id, @PathVariable String database, @PathVariable String table) {
+    public Response<TableColumnInfo> getColumns(@PathVariable String id, @PathVariable String database, @PathVariable String table) {
         TableColumnInfo columns = dataSourceService.getColumnList(id, database, table);
+        if (Objects.equals(columns, null) || columns.getColumns().isEmpty()) {
+            return Response.error("没有获取到数据列", ResponseCode.ERROR);
+        } else {
+            return Response.success(columns);
+        }
+    }
+
+    @GetMapping(value = "/export-config/{datasourceId}")
+    public Response<String> getExportConfigJson(@PathVariable String datasourceId) {
+        log.info("请求获取投递配置表单: datasourceId={}", datasourceId);
+        String config = dataSourceService.getExportConfigJson(datasourceId);
+        return Response.success(config);
+    }
+
+    @GetMapping(value = "/tables/{datasourceId}")
+    public Response<List<TableInfo>> getTablesByDatasource(@PathVariable String datasourceId) {
+        List<TableInfo> tables = dataSourceService.getTableListByDatasource(datasourceId);
+        if (Objects.equals(tables, null) || tables.isEmpty()) {
+            return Response.error("没有获取到数据表", ResponseCode.ERROR);
+        } else {
+            return Response.success(tables);
+        }
+    }
+
+    @GetMapping(value = "/columns/{datasourceId}/{table}")
+    public Response<TableColumnInfo> getColumnsByDatasource(@PathVariable String datasourceId, @PathVariable String table) {
+        TableColumnInfo columns = dataSourceService.getColumnListByDatasource(datasourceId, table);
         if (Objects.equals(columns, null) || columns.getColumns().isEmpty()) {
             return Response.error("没有获取到数据列", ResponseCode.ERROR);
         } else {

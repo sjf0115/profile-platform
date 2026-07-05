@@ -75,6 +75,21 @@ export const dataSourceApi = {
   getColumns: (id: string, database: string, table: string) => {
     return request.get<ApiResponse<TableColumnInfo>>(`/datasource/${id}/${database}/${table}/columns`)
   },
+
+  // 获取投递配置表单定义（根据数据源类型动态返回）
+  getExportConfig: (datasourceId: string) => {
+    return request.get<ApiResponse<string>>(`/datasource/export-config/${datasourceId}`)
+  },
+
+  // 简化版：获取数据表列表（后端自动提取 database）
+  getTablesByDatasource: (datasourceId: string) => {
+    return request.get<ApiResponse<TableInfo[]>>(`/datasource/tables/${datasourceId}`)
+  },
+
+  // 简化版：获取数据列信息（后端自动提取 database）
+  getColumnsByDatasource: (datasourceId: string, table: string) => {
+    return request.get<ApiResponse<TableColumnInfo>>(`/datasource/columns/${datasourceId}/${table}`)
+  },
 }
 
 // 数据源类型相关接口（通过 Connector 插件）

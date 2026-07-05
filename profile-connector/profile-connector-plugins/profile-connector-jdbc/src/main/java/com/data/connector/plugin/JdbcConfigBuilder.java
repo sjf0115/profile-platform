@@ -19,25 +19,25 @@ import java.util.List;
 public class JdbcConfigBuilder implements ConfigBuilder {
 
     @Override
-    public String build(boolean isEn) {
+    public String build() {
         List<PluginParams> params = new ArrayList<>();
-        params.add(getHostInput(isEn));
-        params.add(getPortInput(isEn));
-        if (getCatalogInput(isEn) != null) {
-            params.add(getCatalogInput(isEn));
+        params.add(getHostInput());
+        params.add(getPortInput());
+        if (getCatalogInput() != null) {
+            params.add(getCatalogInput());
         }
 
-        params.add(getDatabaseInput(isEn));
+        params.add(getDatabaseInput());
 
-        if (getSchemaInput(isEn) != null) {
-            params.add(getSchemaInput(isEn));
+        if (getSchemaInput() != null) {
+            params.add(getSchemaInput());
         }
 
-        params.add(getUserInput(isEn));
-        params.add(getPasswordInput(isEn));
-        params.add(getPropertiesInput(isEn));
+        params.add(getUserInput());
+        params.add(getPasswordInput());
+        params.add(getPropertiesInput());
 
-        params.addAll(getOtherParams(isEn));
+        params.addAll(getOtherParams());
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -53,61 +53,61 @@ public class JdbcConfigBuilder implements ConfigBuilder {
     }
 
     @Override
-    public String buildErrorDataStorage(boolean isEn) {
-        return this.build(isEn);
+    public String buildErrorDataStorage() {
+        return this.build();
     }
 
-    protected InputParam getHostInput(boolean isEn) {
+    protected InputParam getHostInput() {
         return getInputParam("host",
-                isEn ? "host":"地址",
-                isEn ? "please enter host ip" : "请填入连接地址", 1,
-                Validate.newBuilder().setRequired(true).setMessage(isEn ? "please enter host ip" : "请填入连接地址").build(),
+                "地址",
+                "请填入连接地址", 1,
+                Validate.newBuilder().setRequired(true).setMessage("请填入连接地址").build(),
                 null);
     }
 
-    protected InputParam getPortInput(boolean isEn) {
+    protected InputParam getPortInput() {
         return getInputParam("port",
-                isEn ? "port" : "端口",
-                isEn ? "please enter port" : "请填入端口号", 1,
-                Validate.newBuilder().setRequired(true).setMessage(isEn ? "please enter port" : "请填入端口号").build(),
+                "端口",
+                "请填入端口号", 1,
+                Validate.newBuilder().setRequired(true).setMessage("请填入端口号").build(),
                 null);
     }
 
-    protected InputParam getCatalogInput(boolean isEn) {
+    protected InputParam getCatalogInput() {
         return null;
     }
 
-    protected InputParam getSchemaInput(boolean isEn) {
+    protected InputParam getSchemaInput() {
         return null;
     }
 
-    protected InputParam getDatabaseInput(boolean isEn) {
+    protected InputParam getDatabaseInput() {
         return getInputParam("database",
-                isEn ? "database" : "数据库",
-                isEn ? "please enter database" : "请填入数据库", 1, Validate.newBuilder().setRequired(true).setMessage(isEn ? "please enter database" : "请填入数据库").build(),
+                "数据库",
+                "请填入数据库", 1, Validate.newBuilder().setRequired(true).setMessage("请填入数据库").build(),
                 null);
     }
 
-    protected InputParam getUserInput(boolean isEn) {
+    protected InputParam getUserInput() {
         return getInputParam("user",
-                isEn ? "user" : "用户名",
-                isEn ? "please enter user" : "请填入用户名", 1,
-                Validate.newBuilder().setRequired(true).setMessage(isEn ? "please enter user" : "请填入用户名").build(),
+                "用户名",
+                "请填入用户名", 1,
+                Validate.newBuilder().setRequired(true).setMessage("请填入用户名").build(),
                 null);
     }
 
-    protected InputParam getPasswordInput(boolean isEn) {
+    protected InputParam getPasswordInput() {
         return getInputParam("password",
-                isEn ? "password" : "密码",
-                isEn ? "please enter password" : "请填入密码", 1,
-                Validate.newBuilder().setRequired(false).setMessage(isEn ? "please enter password" : "请填入密码").build(),
+                "密码",
+                "请填入密码", 1,
+                Validate.newBuilder().setRequired(false).setMessage("请填入密码").build(),
                 null);
     }
 
-    protected InputParam getPropertiesInput(boolean isEn) {
+    protected InputParam getPropertiesInput() {
         return getInputParam("properties",
-                isEn ? "properties" : "参数",
-                isEn ? "please enter properties,like key=value&key1=value1" : "请填入参数，格式为key=value&key1=value1", 2, null,
+                "参数",
+                "请填入参数，格式为key=value&key1=value1", 2, null,
                 null);
     }
 
@@ -125,7 +125,7 @@ public class JdbcConfigBuilder implements ConfigBuilder {
                 .build();
     }
 
-    protected List<PluginParams> getOtherParams(boolean isEn) {
+    protected List<PluginParams> getOtherParams() {
 
         return new ArrayList<>();
     }

@@ -23,5 +23,17 @@
             <artifactId>profile-connector-mysql</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.data</groupId>
+            <artifactId>profile-connector-minio</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.data</groupId>
+            <artifactId>profile-connector-kafka</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>

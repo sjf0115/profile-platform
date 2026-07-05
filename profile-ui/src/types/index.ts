@@ -518,19 +518,16 @@ export interface ExportQueryParams {
   export_name?: string
 }
 
-// 投递配置
+// 投递配置（精简后，database/bucket/topic 等连接信息已在数据源 config 中）
 export interface ExportConfig {
-  // 应用投递配置（export_mode=2 时有效）
-  application_id?: string
+  // 通用配置
+  group_id?: string  // 关联群组ID
   // 数据源投递配置（export_mode=1 时有效）
   datasource_id?: string
-  database?: string
   table_name?: string
   write_mode?: string  // append-追加, upsert-覆盖
-  bucket?: string
-  object_path?: string
-  file_format?: string
-  topic?: string
-  message_format?: string
-  index_name?: string
+  target_column?: string  // upsert key 列
+  object_path?: string  // MinIO 对象路径模板
+  // 应用投递配置（export_mode=2 时有效）
+  application_id?: string
 }

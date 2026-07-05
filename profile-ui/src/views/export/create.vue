@@ -90,96 +90,71 @@
               </el-select>
             </el-form-item>
 
-            <el-form-item label="数据库" prop="database">
-              <el-select
-                v-model="formData.database"
-                placeholder="请选择数据库"
-                clearable
-                style="width: 300px"
-                :disabled="!formData.datasource_id"
-                @change="handleDatabaseChange"
-              >
-                <el-option
-                  v-for="db in databaseList"
-                  :key="db.name"
-                  :label="db.name"
-                  :value="db.name"
-                />
-              </el-select>
-            </el-form-item>
+            <!-- 动态表单区域 -->
+            <template v-if="exportPluginParams.length > 0">
+              <template v-for="param in exportPluginParams" :key="param.field">
+                <!-- select 类型 -->
+                <el-form-item
+                  v-if="param.type === 'select'"
+                  :label="param.title"
+                  :prop="param.field"
+                >
+                  <el-select
+                    v-model="exportFormData[param.field]"
+                    :placeholder="getPlaceholder(param)"
+                    clearable
+                    filterable
+                    :loading="loadingFields[param.field]"
+                    style="width: 300px"
+                    @change="handleExportFieldChange(param.field)"
+                  >
+                    <el-option
+                      v-for="opt in fieldOptions[param.field]"
+                      :key="opt.value"
+                      :label="opt.label"
+                      :value="opt.value"
+                    />
+                  </el-select>
+                </el-form-item>
 
-            <el-form-item label="数据表" prop="table_name">
-              <el-select
-                v-model="formData.table_name"
-                placeholder="请选择数据表"
-                clearable
-                style="width: 300px"
-                :disabled="!formData.database"
-              >
-                <el-option
-                  v-for="tb in tableList"
-                  :key="tb.name"
-                  :label="tb.name + (tb.comment ? ' (' + tb.comment + ')' : '')"
-                  :value="tb.name"
-                />
-              </el-select>
-            </el-form-item>
+                <!-- radio 类型 -->
+                <el-form-item
+                  v-else-if="param.type === 'radio'"
+                  :label="param.title"
+                >
+                  <el-radio-group v-model="exportFormData[param.field]">
+                    <el-radio
+                      v-for="opt in param.options"
+                      :key="opt.value"
+                      :label="opt.value"
+                    >{{ opt.label }}</el-radio>
+                  </el-radio-group>
+                </el-form-item>
 
-            <!-- 写入模式 -->
-            <el-form-item
-              v-if="inferredTargetType === 'table' || inferredTargetType === 'index'"
-              label="写入模式"
-            >
-              <el-radio-group v-model="formData.write_mode">
-                <el-radio label="append">追加</el-radio>
-                <el-radio label="upsert">覆盖</el-radio>
-              </el-radio-group>
-            </el-form-item>
-
-            <!-- Topic 配置 -->
-            <template v-if="inferredTargetType === 'topic'">
-              <el-form-item label="Topic">
-                <el-input
-                  v-model="formData.topic"
-                  placeholder="请输入 Topic 名称"
-                  style="width: 300px"
-                />
-              </el-form-item>
+                <!-- input 类型 -->
+                <el-form-item
+                  v-else-if="param.type === 'input'"
+                  :label="param.title"
+                  :prop="param.field"
+                >
+                  <el-input
+                    v-model="exportFormData[param.field]"
+                    :placeholder="getPlaceholder(param)"
+                    style="width: 400px"
+                  />
+                </el-form-item>
+              </template>
             </template>
 
-            <!-- 文件存储配置 -->
-            <template v-if="inferredTargetType === 'file'">
-              <el-form-item label="Bucket">
-                <el-input
-                  v-model="formData.bucket"
-                  placeholder="请输入 Bucket 名称"
-                  style="width: 300px"
-                />
-              </el-form-item>
-              <el-form-item label="对象路径">
-                <el-input
-                  v-model="formData.object_path"
-                  placeholder="例如 /groups/{groupId}/{timestamp}.csv"
-                  style="width: 400px"
-                />
-              </el-form-item>
-              <el-form-item label="文件格式">
-                <el-select v-model="formData.file_format" style="width: 300px">
-                  <el-option label="CSV" value="csv" />
-                  <el-option label="JSON" value="json" />
-                  <el-option label="Parquet" value="parquet" />
-                </el-select>
-              </el-form-item>
-            </template>
-
-            <!-- ES 索引配置 -->
-            <el-form-item v-if="inferredTargetType === 'index'" label="索引名">
-              <el-input
-                v-model="formData.index_name"
-                placeholder="请输入 ES 索引名"
-                style="width: 300px"
+            <!-- 无需配置提示 -->
+            <template v-else-if="datasourceSelected && exportPluginParamsLoaded">
+              <el-alert
+                title="该数据源类型无需额外配置"
+                type="info"
+                :closable="false"
+                style="margin-left: 120px; max-width: 400px"
               />
-            </el-form-item>
+            </template>
           </template>
 
           <!-- 应用投递 -->
@@ -257,12 +232,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import type { Export, ExportConfig, DataSource, DatabaseInfo, TableInfo, Group, Application } from '@/types'
+import type { Export, DataSource, Group, Application, PluginParam, TableInfo, TableColumnInfo } from '@/types'
 import { exportApi } from '@/api/export'
 import { dataSourceApi } from '@/api/datasource'
 import { groupApi } from '@/api/group'
@@ -282,17 +257,24 @@ const submitting = ref(false)
 
 // 列表数据
 const datasourceList = ref<DataSource[]>([])
-const databaseList = ref<DatabaseInfo[]>([])
-const tableList = ref<TableInfo[]>([])
 const groupList = ref<Group[]>([])
 const applicationList = ref<Application[]>([])
 
+// 动态表单状态
+const exportPluginParams = ref<PluginParam[]>([])
+const exportFormData = reactive<Record<string, any>>({})
+const fieldOptions = reactive<Record<string, Array<{ label: string; value: any }>>>({})
+const loadingFields = reactive<Record<string, boolean>>({})
+const exportPluginParamsLoaded = ref(false)
+
 // 表单数据
-const formData = reactive<ExportConfig & {
+const formData = reactive<{
   export_name: string
   export_desc: string
   group_id: string
   export_mode: number
+  datasource_id: string
+  application_id: string
   scheduler_type: number
   scheduler_cron: string
   scheduler_url: string
@@ -302,18 +284,27 @@ const formData = reactive<ExportConfig & {
   group_id: '',
   export_mode: 1,
   datasource_id: '',
-  database: '',
-  table_name: '',
-  write_mode: 'append',
   application_id: '',
-  bucket: '',
-  object_path: '',
-  file_format: 'csv',
-  topic: '',
-  index_name: '',
   scheduler_type: 1,
   scheduler_cron: '',
   scheduler_url: '',
+})
+
+const datasourceSelected = computed(() => !!formData.datasource_id)
+
+// 监听投递方式切换，清空另一模式的字段
+watch(() => formData.export_mode, (newMode) => {
+  if (newMode === 1) {
+    // 切换到数据源投递，清空应用投递字段
+    formData.application_id = ''
+  } else if (newMode === 2) {
+    // 切换到应用投递，清空数据源投递字段
+    formData.datasource_id = ''
+    exportPluginParams.value = []
+    Object.keys(exportFormData).forEach(key => delete exportFormData[key])
+    Object.keys(fieldOptions).forEach(key => delete fieldOptions[key])
+    exportPluginParamsLoaded.value = true
+  }
 })
 
 // 表单校验规则
@@ -328,40 +319,33 @@ const formRules = reactive<FormRules>({
   datasource_id: [
     { required: true, message: '请选择数据源', trigger: 'change' },
   ],
-  database: [
-    { required: true, message: '请选择数据库', trigger: 'change' },
-  ],
-  table_name: [
-    { required: true, message: '请选择数据表', trigger: 'change' },
-  ],
   application_id: [
     { required: true, message: '请选择应用', trigger: 'change' },
   ],
 })
 
-// 当前选中数据源的类型
-const currentDatasourceType = computed(() => {
-  const ds = datasourceList.value.find(d => d.datasource_id === formData.datasource_id)
-  return ds?.datasource_type || ''
-})
-
-// 根据数据源类型推断目标类型
-const inferredTargetType = computed((): string => {
-  const type = currentDatasourceType.value.toLowerCase()
-  if (['mysql', 'clickhouse', 'postgresql', 'oracle', 'hive', 'doris', 'jdbc'].includes(type)) {
-    return 'table'
-  }
-  if (['minio', 'hdfs', 'oss', 's3'].includes(type)) {
-    return 'file'
-  }
-  if (['kafka', 'rabbitmq', 'rocketmq'].includes(type)) {
-    return 'topic'
-  }
-  if (['elasticsearch', 'es'].includes(type)) {
-    return 'index'
-  }
-  return ''
-})
+// 字段名约定加载器
+const fieldLoaders: Record<string, (dsId: string, form: Record<string, any>) => Promise<Array<{ label: string; value: any }>>> = {
+  'table_name': async (dsId) => {
+    const res = await dataSourceApi.getTablesByDatasource(dsId)
+    const tables = res.data.data || []
+    return tables.map((tb: TableInfo) => ({
+      label: tb.name + (tb.comment ? ` (${tb.comment})` : ''),
+      value: tb.name,
+    }))
+  },
+  'target_column': async (dsId, form) => {
+    const tableName = form['table_name']
+    if (!tableName) return []
+    const res = await dataSourceApi.getColumnsByDatasource(dsId, tableName)
+    const colInfo = res.data.data as TableColumnInfo
+    if (!colInfo || !colInfo.columns) return []
+    return colInfo.columns.map((col: any) => ({
+      label: col.name + (col.comment ? ` (${col.comment})` : ''),
+      value: col.name,
+    }))
+  },
+}
 
 // 选中的应用
 const selectedApplication = computed(() => {
@@ -383,13 +367,16 @@ const getApplicationTargetInfo = (app: Application): string => {
     if (config.topic) {
       return `Topic: ${config.topic}`
     }
-    if (config.indexName) {
-      return `Index: ${config.indexName}`
-    }
     return '未配置'
   } catch {
     return '未配置'
   }
+}
+
+// 获取 placeholder
+const getPlaceholder = (param: PluginParam): string => {
+  const props = param.props as any
+  return props?.placeholder || `请选择${param.title}`
 }
 
 // 获取数据源列表
@@ -399,26 +386,6 @@ const fetchDatasourceList = async () => {
     datasourceList.value = res.data.data || []
   } catch (error) {
     console.error('获取数据源列表失败:', error)
-  }
-}
-
-// 获取数据库列表
-const fetchDatabaseList = async (datasourceId: string) => {
-  try {
-    const res = await dataSourceApi.getDatabases(datasourceId)
-    databaseList.value = res.data.data || []
-  } catch (error) {
-    console.error('获取数据库列表失败:', error)
-  }
-}
-
-// 获取数据表列表
-const fetchTableList = async (datasourceId: string, database: string) => {
-  try {
-    const res = await dataSourceApi.getTables(datasourceId, database)
-    tableList.value = res.data.data || []
-  } catch (error) {
-    console.error('获取数据表列表失败:', error)
   }
 }
 
@@ -442,23 +409,84 @@ const fetchApplicationList = async () => {
   }
 }
 
-// 数据源变更
-const handleDatasourceChange = (datasourceId: string) => {
-  formData.database = ''
-  formData.table_name = ''
-  databaseList.value = []
-  tableList.value = []
-  formData.write_mode = inferredTargetType.value === 'table' ? 'append' : 'upsert'
-  if (!datasourceId) return
-  fetchDatabaseList(datasourceId)
+// 加载动态表单配置
+const loadExportPluginParams = async (datasourceId: string) => {
+  exportPluginParams.value = []
+  exportPluginParamsLoaded.value = false
+  Object.keys(exportFormData).forEach(key => delete exportFormData[key])
+  Object.keys(fieldOptions).forEach(key => delete fieldOptions[key])
+
+  if (!datasourceId) {
+    exportPluginParamsLoaded.value = true
+    return
+  }
+
+  try {
+    const res = await dataSourceApi.getExportConfig(datasourceId)
+    const jsonStr = res.data.data
+    if (!jsonStr || jsonStr === '[]') {
+      exportPluginParams.value = []
+      exportPluginParamsLoaded.value = true
+      return
+    }
+    const params: PluginParam[] = JSON.parse(jsonStr)
+    exportPluginParams.value = params
+
+    // 初始化表单数据和默认值
+    params.forEach(param => {
+      if (param.value !== undefined && param.value !== null) {
+        exportFormData[param.field] = param.value
+      } else {
+        exportFormData[param.field] = ''
+      }
+    })
+
+    // 自动加载有 loader 的字段选项
+    for (const param of params) {
+      if (fieldLoaders[param.field]) {
+        await loadFieldOptions(param.field)
+      }
+    }
+
+    exportPluginParamsLoaded.value = true
+  } catch (error) {
+    console.error('获取投递配置表单失败:', error)
+    exportPluginParamsLoaded.value = true
+  }
 }
 
-// 数据库变更
-const handleDatabaseChange = (database: string) => {
-  formData.table_name = ''
-  tableList.value = []
-  if (!database || !formData.datasource_id) return
-  fetchTableList(formData.datasource_id, database)
+// 加载字段选项
+const loadFieldOptions = async (fieldName: string) => {
+  const loader = fieldLoaders[fieldName]
+  if (!loader || !formData.datasource_id) return
+
+  loadingFields[fieldName] = true
+  try {
+    const options = await loader(formData.datasource_id, exportFormData)
+    fieldOptions[fieldName] = options
+  } catch (error) {
+    console.error(`加载字段 ${fieldName} 选项失败:`, error)
+    fieldOptions[fieldName] = []
+  } finally {
+    loadingFields[fieldName] = false
+  }
+}
+
+// 数据源变更
+const handleDatasourceChange = (datasourceId: string) => {
+  loadExportPluginParams(datasourceId)
+}
+
+// 动态表单字段变更
+const handleExportFieldChange = (fieldName: string) => {
+  // 检查是否有其他字段依赖当前字段
+  exportPluginParams.value.forEach((param: PluginParam) => {
+    // 简单约定：target_column 依赖 table_name
+    if (param.field === 'target_column' && fieldName === 'table_name') {
+      exportFormData['target_column'] = ''
+      loadFieldOptions('target_column')
+    }
+  })
 }
 
 // 获取投递详情（编辑模式）
@@ -485,24 +513,26 @@ const fetchDetail = async () => {
     // 解析 export_config
     if (data.export_config) {
       try {
-        const config: ExportConfig = JSON.parse(data.export_config)
+        const config = JSON.parse(data.export_config)
         formData.export_mode = data.export_mode || 1
+        formData.group_id = config.group_id || ''
         formData.datasource_id = config.datasource_id || ''
-        formData.database = config.database || ''
-        formData.table_name = config.table_name || ''
-        formData.write_mode = config.write_mode || 'append'
         formData.application_id = config.application_id || ''
-        formData.bucket = config.bucket || ''
-        formData.object_path = config.object_path || ''
-        formData.file_format = config.file_format || 'csv'
-        formData.topic = config.topic || ''
-        formData.index_name = config.index_name || ''
 
-        // 级联加载
-        if (formData.datasource_id) {
-          await fetchDatabaseList(formData.datasource_id)
-          if (formData.database) {
-            await fetchTableList(formData.datasource_id, formData.database)
+        // 加载动态表单配置
+        if (formData.datasource_id && formData.export_mode === 1) {
+          await loadExportPluginParams(formData.datasource_id)
+
+          // 回填动态表单数据
+          Object.keys(config).forEach(key => {
+            if (key !== 'datasource_id' && key in exportFormData) {
+              exportFormData[key] = config[key]
+            }
+          })
+
+          // 级联加载选项
+          if (exportFormData['table_name']) {
+            await loadFieldOptions('target_column')
           }
         }
       } catch (e) {
@@ -522,29 +552,18 @@ const handleBack = () => {
 
 // 构建 export_config
 const buildExportConfig = (): string => {
-  const config: ExportConfig = {}
-
   if (formData.export_mode === 1) {
-    config.datasource_id = formData.datasource_id
-    if (inferredTargetType.value === 'table') {
-      config.database = formData.database
-      config.table_name = formData.table_name
-      config.write_mode = formData.write_mode
-    } else if (inferredTargetType.value === 'file') {
-      config.bucket = formData.bucket
-      config.object_path = formData.object_path
-      config.file_format = formData.file_format
-    } else if (inferredTargetType.value === 'topic') {
-      config.topic = formData.topic
-    } else if (inferredTargetType.value === 'index') {
-      config.index_name = formData.index_name
-      config.write_mode = formData.write_mode
-    }
+    return JSON.stringify({
+      group_id: formData.group_id,
+      datasource_id: formData.datasource_id,
+      ...exportFormData,
+    })
   } else {
-    config.application_id = formData.application_id
+    return JSON.stringify({
+      group_id: formData.group_id,
+      application_id: formData.application_id,
+    })
   }
-
-  return JSON.stringify(config)
 }
 
 // 提交表单

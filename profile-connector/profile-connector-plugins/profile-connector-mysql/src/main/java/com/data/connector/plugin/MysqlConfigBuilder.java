@@ -15,23 +15,23 @@ import java.util.List;
 public class MysqlConfigBuilder extends JdbcConfigBuilder {
 
     @Override
-    public String buildErrorDataStorage(boolean isEn) {
+    public String buildErrorDataStorage() {
         List<PluginParams> params = new ArrayList<>();
-        params.add(getHostInput(isEn));
-        params.add(getPortInput(isEn));
-        if (getCatalogInput(isEn) != null) {
-            params.add(getCatalogInput(isEn));
+        params.add(getHostInput());
+        params.add(getPortInput());
+        if (getCatalogInput() != null) {
+            params.add(getCatalogInput());
         }
 
-        params.add(getErrorDataStorageDatabaseInput(isEn));
+        params.add(getErrorDataStorageDatabaseInput());
 
-        if (getSchemaInput(isEn) != null) {
-            params.add(getSchemaInput(isEn));
+        if (getSchemaInput() != null) {
+            params.add(getSchemaInput());
         }
 
-        params.add(getUserInput(isEn));
-        params.add(getPasswordInput(isEn));
-        params.add(getPropertiesInput(isEn));
+        params.add(getUserInput());
+        params.add(getPasswordInput());
+        params.add(getPropertiesInput());
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -47,35 +47,35 @@ public class MysqlConfigBuilder extends JdbcConfigBuilder {
     }
 
     @Override
-    protected InputParam getPropertiesInput(boolean isEn) {
+    protected InputParam getPropertiesInput() {
         return getInputParam("properties",
-                isEn ? "properties" : "参数",
-                isEn ? "please enter properties,like key=value&key1=value1" : "请填入参数，格式为key=value&key1=value1", 2, null,
+                "参数",
+                "请填入参数，格式为key=value&key1=value1", 2, null,
                 "useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&useInformationSchema=true&allowPublicKeyRetrieval=true");
     }
 
     @Override
-    protected InputParam getDatabaseInput(boolean isEn) {
+    protected InputParam getDatabaseInput() {
         return getInputParam("database",
-                isEn ? "database" : "数据库",
-                isEn ? "please enter database" : "请填入数据库", 1, null,
+                "数据库",
+                "请填入数据库", 1, null,
                 null);
     }
 
     @Override
-    protected InputParam getPortInput(boolean isEn) {
+    protected InputParam getPortInput() {
         return getInputParam("port",
-                isEn ? "port" : "端口",
-                isEn ? "please enter port" : "请填入端口号", 1,
-                Validate.newBuilder().setRequired(true).setMessage(isEn ? "please enter port" : "请填入端口号").build(),
+                "端口",
+                "请填入端口号", 1,
+                Validate.newBuilder().setRequired(true).setMessage("请填入端口号").build(),
                 3306);
     }
 
-    protected InputParam getErrorDataStorageDatabaseInput(boolean isEn) {
+    protected InputParam getErrorDataStorageDatabaseInput() {
         return getInputParam("database",
-                isEn ? "database" : "数据库",
-                isEn ? "please enter database" : "请填入数据库", 1,
-                Validate.newBuilder().setRequired(true).setMessage(isEn ? "please enter database" : "请填入数据库").build(),
+                "数据库",
+                "请填入数据库", 1,
+                Validate.newBuilder().setRequired(true).setMessage("请填入数据库").build(),
                 null);
     }
 }

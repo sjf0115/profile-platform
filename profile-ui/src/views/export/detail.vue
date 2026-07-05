@@ -38,6 +38,9 @@
             <el-descriptions-item label="修改人">
               {{ exportData.modifier || '-' }}
             </el-descriptions-item>
+            <el-descriptions-item label="关联群组">
+              {{ getGroupName(parsedConfig.group_id) }}
+            </el-descriptions-item>
           </el-descriptions>
         </div>
 
@@ -50,9 +53,6 @@
                 {{ exportData.export_mode === 2 ? '应用投递' : '数据源投递' }}
               </el-tag>
             </el-descriptions-item>
-            <el-descriptions-item label="目标类型">
-              <el-tag :type="targetTypeTag" size="small">{{ targetTypeLabel }}</el-tag>
-            </el-descriptions-item>
 
             <!-- 数据源投递配置 -->
             <template v-if="exportData.export_mode === 1">
@@ -60,46 +60,22 @@
                 {{ getDatasourceName(parsedConfig.datasource_id) }}
               </el-descriptions-item>
 
-              <!-- table 类型 -->
-              <template v-if="targetType === 'table'">
-                <el-descriptions-item label="数据库">
-                  {{ parsedConfig.database || '-' }}
-                </el-descriptions-item>
-                <el-descriptions-item label="数据表">
-                  {{ parsedConfig.table_name || '-' }}
-                </el-descriptions-item>
-                <el-descriptions-item label="写入模式">
-                  {{ parsedConfig.write_mode === 'append' ? '追加' : '覆盖' }}
-                </el-descriptions-item>
-              </template>
-
-              <!-- file 类型 -->
-              <template v-if="targetType === 'file'">
-                <el-descriptions-item label="Bucket">
-                  {{ parsedConfig.bucket || '-' }}
-                </el-descriptions-item>
-                <el-descriptions-item label="对象路径">
-                  {{ parsedConfig.object_path || '-' }}
-                </el-descriptions-item>
-                <el-descriptions-item label="文件格式">
-                  {{ parsedConfig.file_format || '-' }}
+              <!-- 动态展示投递配置字段 -->
+              <template v-for="param in exportPluginParams" :key="param.field">
+                <el-descriptions-item :label="param.title">
+                  <template v-if="param.type === 'radio'">
+                    {{ getRadioLabel(param, parsedConfig[param.field]) }}
+                  </template>
+                  <template v-else>
+                    {{ parsedConfig[param.field] || '-' }}
+                  </template>
                 </el-descriptions-item>
               </template>
 
-              <!-- topic 类型 -->
-              <template v-if="targetType === 'topic'">
-                <el-descriptions-item label="Topic">
-                  {{ parsedConfig.topic || '-' }}
-                </el-descriptions-item>
-              </template>
-
-              <!-- index 类型 -->
-              <template v-if="targetType === 'index'">
-                <el-descriptions-item label="索引名">
-                  {{ parsedConfig.index_name || '-' }}
-                </el-descriptions-item>
-                <el-descriptions-item label="写入模式">
-                  {{ parsedConfig.write_mode === 'append' ? '追加' : '覆盖' }}
+              <!-- 无需配置提示 -->
+              <template v-if="exportPluginParams.length === 0 && exportPluginParamsLoaded">
+                <el-descriptions-item label="配置" :span="2">
+                  该数据源类型无需额外配置
                 </el-descriptions-item>
               </template>
             </template>
@@ -180,10 +156,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import type { Export, ExportConfig, DataSource, Application } from '@/types'
+import type { Export, DataSource, Application, Group, PluginParam } from '@/types'
 import { exportApi } from '@/api/export'
 import { dataSourceApi } from '@/api/datasource'
 import { applicationApi } from '@/api/application'
+import { groupApi } from '@/api/group'
 
 const route = useRoute()
 const router = useRouter()
@@ -203,8 +180,11 @@ const datasourceList = ref<DataSource[]>([])
 // 应用列表
 const applicationList = ref<Application[]>([])
 
+// 群组列表（用于群组名称显示）
+const groupMap = ref<Map<string, Group>>(new Map())
+
 // 解析 export_config
-const parsedConfig = computed<ExportConfig>(() => {
+const parsedConfig = computed<Record<string, any>>(() => {
   if (!exportData.value?.export_config) return {}
   try {
     return JSON.parse(exportData.value.export_config)
@@ -213,36 +193,16 @@ const parsedConfig = computed<ExportConfig>(() => {
   }
 })
 
-// 目标类型
-const targetType = computed(() => {
-  const config = parsedConfig.value
-  if (config.table_name) return 'table'
-  if (config.bucket) return 'file'
-  if (config.topic) return 'topic'
-  if (config.index_name) return 'index'
-  return 'table'
-})
+// 动态表单配置
+const exportPluginParams = ref<PluginParam[]>([])
+const exportPluginParamsLoaded = ref(false)
 
-// 目标类型标签
-const targetTypeTag = computed(() => {
-  switch (targetType.value) {
-    case 'table': return 'primary'
-    case 'file': return 'success'
-    case 'topic': return 'warning'
-    case 'index': return 'danger'
-    default: return 'info'
-  }
-})
-
-const targetTypeLabel = computed(() => {
-  switch (targetType.value) {
-    case 'table': return '数据表'
-    case 'file': return '文件'
-    case 'topic': return '消息'
-    case 'index': return '索引'
-    default: return '-'
-  }
-})
+// 获取 radio 选项的 label
+const getRadioLabel = (param: PluginParam, value: any): string => {
+  if (!param.options || !value) return '-'
+  const opt = param.options.find((o: any) => o.value === value)
+  return opt ? opt.label : String(value)
+}
 
 // 获取数据源名称
 const getDatasourceName = (datasourceId?: string): string => {
@@ -258,17 +218,47 @@ const getApplicationName = (applicationId?: string): string => {
   return app ? app.app_name : applicationId
 }
 
+// 获取群组名称
+const getGroupName = (groupId?: string): string => {
+  if (!groupId) return '-'
+  const group = groupMap.value.get(groupId)
+  return group ? group.group_name : groupId
+}
+
 // 获取投递详情
 const fetchDetail = async () => {
   loading.value = true
   try {
     const res = await exportApi.getDetail(exportId.value)
     exportData.value = res.data.data || null
+
+    // 加载动态表单配置
+    if (exportData.value?.export_mode === 1 && parsedConfig.value.datasource_id) {
+      await loadExportPluginParams(parsedConfig.value.datasource_id)
+    }
   } catch (error) {
     console.error('获取投递详情失败:', error)
     ElMessage.error('获取投递详情失败')
   } finally {
     loading.value = false
+  }
+}
+
+// 加载动态表单配置
+const loadExportPluginParams = async (datasourceId: string) => {
+  try {
+    const res = await dataSourceApi.getExportConfig(datasourceId)
+    const jsonStr = res.data.data
+    if (!jsonStr || jsonStr === '[]') {
+      exportPluginParams.value = []
+    } else {
+      exportPluginParams.value = JSON.parse(jsonStr)
+    }
+  } catch (error) {
+    console.error('获取投递配置表单失败:', error)
+    exportPluginParams.value = []
+  } finally {
+    exportPluginParamsLoaded.value = true
   }
 }
 
@@ -289,6 +279,21 @@ const fetchApplicationList = async () => {
     applicationList.value = res.data.data || []
   } catch (error) {
     console.error('获取应用列表失败:', error)
+  }
+}
+
+// 获取群组列表
+const fetchGroupList = async () => {
+  try {
+    const res = await groupApi.getList({})
+    const list = res.data.data || []
+    const map = new Map<string, Group>()
+    list.forEach((g: Group) => {
+      if (g.group_id) map.set(g.group_id, g)
+    })
+    groupMap.value = map
+  } catch (error) {
+    console.error('获取群组列表失败:', error)
   }
 }
 
@@ -409,6 +414,7 @@ onMounted(() => {
   fetchDetail()
   fetchDatasourceList()
   fetchApplicationList()
+  fetchGroupList()
 })
 </script>
 

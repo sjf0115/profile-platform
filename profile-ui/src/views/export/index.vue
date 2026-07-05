@@ -131,7 +131,9 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, QuestionFilled, More } from '@element-plus/icons-vue'
 import { exportApi } from '@/api/export'
-import type { Export, ExportConfig } from '@/types'
+import { dataSourceApi } from '@/api/datasource'
+import { groupApi } from '@/api/group'
+import type { Export, ExportConfig, DataSource, Group } from '@/types'
 
 const router = useRouter()
 
@@ -144,6 +146,12 @@ const pageNum = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 const exportList = ref<Export[]>([])
+
+// 数据源列表（用于目标类型推断）
+const datasourceMap = ref<Map<string, DataSource>>(new Map())
+
+// 群组列表（用于群组名称显示）
+const groupMap = ref<Map<string, Group>>(new Map())
 
 // 获取投递列表
 const fetchExportList = async () => {
@@ -172,6 +180,34 @@ const fetchExportList = async () => {
     ElMessage.error('获取投递列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+// 加载数据源列表（构建 ID→数据源 映射）
+const fetchDatasourceList = async () => {
+  try {
+    const res = await dataSourceApi.getList()
+    const list = res.data.data || []
+    const map = new Map<string, DataSource>()
+    list.forEach((ds: DataSource) => {
+      if (ds.datasource_id) map.set(ds.datasource_id, ds)
+    })
+    datasourceMap.value = map
+  } catch (error) {
+    console.error('获取数据源列表失败:', error)
+  }
+}
+
+// 加载群组列表（构建 ID→群组 映射）
+const fetchGroupList = async () => {
+  try {
+    const res = await groupApi.getList({})
+    const list = res.data.data || []
+    const map = new Map<string, Group>()
+    list.forEach((g: Group) => map.set(g.group_id, g))
+    groupMap.value = map
+  } catch (error) {
+    console.error('获取群组列表失败:', error)
   }
 }
 
@@ -306,32 +342,41 @@ const getDeliveryTypeText = (row: Export) => {
   return row.export_mode === 2 ? '应用投递' : '数据源投递'
 }
 
-// 目标类型
+// 目标类型（基于数据源类型推断）
 const getTargetTypeTag = (row: Export) => {
+  if (row.export_mode === 2) return 'success' // 应用投递
   const config = parseExportConfig(row.export_config)
-  if (!config) return 'info'
-  if (config.table_name) return 'primary'
-  if (config.bucket) return 'success'
-  if (config.topic) return 'warning'
-  if (config.index_name) return 'danger'
+  if (!config?.datasource_id) return 'info'
+  const ds = datasourceMap.value.get(config.datasource_id)
+  if (!ds) return 'info'
+  const type = ds.datasource_type?.toLowerCase() || ''
+  if (['mysql', 'clickhouse', 'postgresql', 'oracle', 'hive', 'doris', 'jdbc'].includes(type)) return 'primary'
+  if (['minio', 'hdfs', 'oss', 's3'].includes(type)) return 'success'
+  if (['kafka', 'rabbitmq', 'rocketmq'].includes(type)) return 'warning'
+  if (['elasticsearch', 'es'].includes(type)) return 'danger'
   return 'info'
 }
 
 const getTargetTypeText = (row: Export) => {
+  if (row.export_mode === 2) return '应用'
   const config = parseExportConfig(row.export_config)
-  if (!config) return '-'
-  if (config.table_name) return '数据表'
-  if (config.bucket) return '文件'
-  if (config.topic) return '消息'
-  if (config.index_name) return '索引'
+  if (!config?.datasource_id) return '-'
+  const ds = datasourceMap.value.get(config.datasource_id)
+  if (!ds) return '-'
+  const type = ds.datasource_type?.toLowerCase() || ''
+  if (['mysql', 'clickhouse', 'postgresql', 'oracle', 'hive', 'doris', 'jdbc'].includes(type)) return '数据表'
+  if (['minio', 'hdfs', 'oss', 's3'].includes(type)) return '文件'
+  if (['kafka', 'rabbitmq', 'rocketmq'].includes(type)) return '消息'
+  if (['elasticsearch', 'es'].includes(type)) return '索引'
   return '-'
 }
 
 // 关联群组
 const getGroupName = (row: Export) => {
   const config = parseExportConfig(row.export_config)
-  // 实际应该从群组列表中获取名称
-  return config ? '群组' : '-'
+  if (!config?.group_id) return '-'
+  const group = groupMap.value.get(config.group_id)
+  return group ? group.group_name : config.group_id
 }
 
 // 状态
@@ -365,6 +410,8 @@ const getInstanceStatusText = (status?: number) => {
 }
 
 onMounted(() => {
+  fetchDatasourceList()
+  fetchGroupList()
   fetchExportList()
 })
 </script>

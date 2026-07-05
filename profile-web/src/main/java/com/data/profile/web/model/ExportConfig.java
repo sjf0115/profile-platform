@@ -1,101 +1,66 @@
 package com.data.profile.web.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-
-import java.util.List;
 
 /**
  * 功能：投递配置
- * 作者：@SmartSi
+ * <p>精简后仅保留投递特定参数，database/bucket/topic 等连接信息已在数据源 config 中。</p>
+ * <p>使用 @JsonProperty 映射前端 snake_case 字段名到后端 camelCase。</p>
+ *
+ * 作者：@Smartsi
  * 博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
  * 日期：2025/12/29 12:57
  */
 @Data
 public class ExportConfig {
+
+    // ========== 通用配置 ==========
+
+    /**
+     * 关联群组ID
+     */
+    @JsonProperty("group_id")
+    private String groupId;
+
     // ========== 数据源投递配置 ==========
 
     /**
      * 数据源ID
      */
+    @JsonProperty("datasource_id")
     private String datasourceId;
 
     /**
-     * 数据库名称
+     * 目标表名（JDBC 投递）
      */
-    private String database;
-
-    /**
-     * 表名
-     */
+    @JsonProperty("table_name")
     private String tableName;
 
     /**
-     * 写入模式：append-追加, upsert-覆盖
+     * 写入模式：append-追加, upsert-覆盖（JDBC 投递）
      */
+    @JsonProperty("write_mode")
     private String writeMode;
 
     /**
-     * 字段映射配置
+     * upsert key 列名（JDBC 投递，覆盖模式下使用）
      */
-    private List<FieldMapping> fieldMapping;
+    @JsonProperty("target_column")
+    private String targetColumn;
+
+    /**
+     * 对象路径模板（MinIO 投递），执行时替换 {groupId}/{timestamp} 等变量
+     */
+    @JsonProperty("object_path")
+    private String objectPath;
 
     // ========== 应用投递配置 ==========
 
     /**
      * 应用ID（应用投递时使用，export_mode=2 时有效）
      */
+    @JsonProperty("application_id")
     private String applicationId;
-
-    // ========== 文件存储配置（targetType=file）==========
-
-    /**
-     * 存储桶名称
-     */
-    private String bucket;
-
-    /**
-     * 对象路径
-     */
-    private String objectPath;
-
-    /**
-     * 文件格式：csv, parquet, json
-     */
-    private String fileFormat;
-
-    // ========== 消息队列配置（targetType=topic）==========
-
-    /**
-     * 主题名称
-     */
-    private String topic;
-
-    /**
-     * 消息格式：json, avro
-     */
-    private String messageFormat;
-
-    // ========== ES 索引配置（targetType=index）==========
-
-    /**
-     * 索引名称
-     */
-    private String indexName;
-
-    /**
-     * 字段映射配置
-     */
-    @Data
-    public static class FieldMapping {
-        /**
-         * 源字段名
-         */
-        private String sourceField;
-
-        /**
-         * 目标字段名
-         */
-        private String targetField;
-    }
 }

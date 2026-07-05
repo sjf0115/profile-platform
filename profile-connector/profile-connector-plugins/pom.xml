@@ -18,6 +18,8 @@
         <module>profile-connector-jdbc</module>
         <module>profile-connector-all</module>
         <module>profile-connector-mysql</module>
+        <module>profile-connector-minio</module>
+        <module>profile-connector-kafka</module>
     </modules>
 
     <properties>

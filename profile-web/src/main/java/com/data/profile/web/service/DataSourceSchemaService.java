@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  * 公众号：大数据生态
  * 日期：2024/7/7 15:44
  */
-
+@Deprecated
 @Slf4j
 @Service
 public class DataSourceSchemaService {

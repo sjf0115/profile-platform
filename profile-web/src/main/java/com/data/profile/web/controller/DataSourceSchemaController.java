@@ -22,6 +22,7 @@ import java.util.Optional;
  * 公众号：大数据生态
  * 日期：2024/7/2 07:13
  */
+@Deprecated
 @Slf4j
 @RestController
 @RequestMapping(value = "/datasource/schema", produces = MediaType.APPLICATION_JSON_VALUE)

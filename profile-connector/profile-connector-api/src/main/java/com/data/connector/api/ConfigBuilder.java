@@ -2,7 +2,7 @@ package com.data.connector.api;
 
 public interface ConfigBuilder {
 
-    String build(boolean isEn);
+    String build();
 
-    String buildErrorDataStorage(boolean isEn);
+    String buildErrorDataStorage();
 }

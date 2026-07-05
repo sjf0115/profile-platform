@@ -1,6 +1,7 @@
 package com.data.profile.web.service;
 
 import com.data.connector.api.ConnectorFactory;
+import com.data.connector.api.ExportConfigBuilder;
 import com.data.profile.web.dao.DataSourceMapper;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.security.RequestContext;
@@ -125,7 +126,8 @@ public class DataSourceService {
      * @param type 数据源类型
      */
     public String getConfigJson(String type) {
-        String config = PluginLoader.getPluginLoader(ConnectorFactory.class).getOrCreatePlugin(type).getConfigBuilder().build(false);
+        String config = PluginLoader.getPluginLoader(ConnectorFactory.class)
+                .getOrCreatePlugin(type).getConfigBuilder().build();
         log.info("根据插件类型 {} 获取展示配置: {}", type, config);
         return config;
     }
@@ -231,6 +233,65 @@ public class DataSourceService {
         } catch (SQLException e) {
             log.error("获取数据源 {} 下指定数据库 {} 特定表 {} 的数据列失败", dataSource.getDatasourceName(), database, table, e);
             throw new ProfileException("获取数据表列失败: " + e.getMessage());
+        }
+    }
+
+
+
+
+    /**
+     * 根据数据源ID获取投递配置表单定义
+     * @param datasourceId 数据源ID
+     */
+    public String getExportConfigJson(String datasourceId) {
+        DataSource ds = dataSourceMapper.selectByDatasourceId(datasourceId);
+        if (ds == null) {
+            throw new ProfileException("数据源不存在: " + datasourceId);
+        }
+        String type = ds.getDatasourceType();
+        ConnectorFactory factory = PluginLoader.getPluginLoader(ConnectorFactory.class)
+                .getOrCreatePlugin(type);
+        ExportConfigBuilder builder = factory.getExportConfigBuilder();
+        return builder != null ? builder.build() : "[]";
+    }
+
+    /**
+     * 简化版：根据数据源ID获取数据表列表（后端自动从 config 中提取 database）
+     * @param datasourceId 数据源ID
+     */
+    public List<TableInfo> getTableListByDatasource(String datasourceId) {
+        DataSource ds = getDetail(datasourceId);
+        String database = extractDatabaseFromConfig(ds.getConfig());
+        return getTableList(datasourceId, database);
+    }
+
+    /**
+     * 简化版：根据数据源ID和数据表查询数据列（后端自动从 config 中提取 database）
+     * @param datasourceId 数据源ID
+     * @param table 数据表名
+     */
+    public TableColumnInfo getColumnListByDatasource(String datasourceId, String table) {
+        DataSource ds = getDetail(datasourceId);
+        String database = extractDatabaseFromConfig(ds.getConfig());
+        return getColumnList(datasourceId, database, table);
+    }
+
+    /**
+     * 从数据源 config JSON 中提取 database 字段
+     */
+    private String extractDatabaseFromConfig(String configJson) {
+        if (StringUtils.isBlank(configJson)) {
+            throw new ProfileException("数据源配置为空");
+        }
+        try {
+            Map<String, Object> configMap = gson.fromJson(configJson, Map.class);
+            Object database = configMap.get("database");
+            if (database == null || StringUtils.isBlank(database.toString())) {
+                throw new ProfileException("数据源配置中未包含 database 字段");
+            }
+            return database.toString();
+        } catch (Exception e) {
+            throw new ProfileException("解析数据源配置失败: " + e.getMessage());
         }
     }
 

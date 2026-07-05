@@ -43,4 +43,9 @@ public abstract class AbstractJdbcConnectorFactory implements ConnectorFactory {
     public MetricScript getMetricScript() {
         return new JdbcMetricScript();
     }
+
+    @Override
+    public ExportConfigBuilder getExportConfigBuilder() {
+        return new JdbcExportConfigBuilder();
+    }
 }

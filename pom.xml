@@ -60,6 +60,7 @@
         <javax.mail.version>1.6.2</javax.mail.version>
         <seatunnel.version>2.3.8</seatunnel.version>
         <minio.version>8.5.14</minio.version>
+        <kafka.version>3.6.1</kafka.version>
         <mapstruct.version>1.6.3</mapstruct.version>
     </properties>
 
@@ -374,6 +375,13 @@
                 <groupId>io.minio</groupId>
                 <artifactId>minio</artifactId>
                 <version>${minio.version}</version>
+            </dependency>
+
+            <!-- Kafka -->
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>${kafka.version}</version>
             </dependency>
 
             <!-- 内部模块 - 消息 -->

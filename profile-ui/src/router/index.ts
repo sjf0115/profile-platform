@@ -209,25 +209,25 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'group/export',
         name: 'GroupExport',
-        component: () => import('@/views/group/export.vue'),
+        component: () => import('@/views/export/index.vue'),
         meta: { title: '群组投递' },
       },
       {
         path: 'group/export/create',
         name: 'CreateGroupExport',
-        component: () => import('@/views/group/export-create.vue'),
+        component: () => import('@/views/export/create.vue'),
         meta: { title: '创建投递' },
       },
       {
         path: 'group/export/edit/:id',
         name: 'EditGroupExport',
-        component: () => import('@/views/group/export-create.vue'),
+        component: () => import('@/views/export/create.vue'),
         meta: { title: '编辑投递' },
       },
       {
         path: 'group/export/detail/:id',
         name: 'GroupExportDetail',
-        component: () => import('@/views/group/export-detail.vue'),
+        component: () => import('@/views/export/detail.vue'),
         meta: { title: '投递详情' },
       },
       // 任务管理
