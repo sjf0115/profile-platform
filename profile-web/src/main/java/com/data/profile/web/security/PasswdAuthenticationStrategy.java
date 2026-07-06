@@ -1,6 +1,7 @@
 package com.data.profile.web.security;
 
 import com.data.profile.web.dto.UserLoginRequest;
+import com.data.profile.common.domain.Constant;
 import com.data.profile.common.exception.ProfileException;
 import com.data.profile.web.utils.PasswordUtil;
 import com.data.profile.web.dao.UserMapper;
@@ -26,14 +27,14 @@ public class PasswdAuthenticationStrategy implements IAuthenticationStrategy {
     @Autowired
     private UserMapper userMapper;
 
-    @Value("${user.default.passwordSalt:seatunnel}")
+    @Value("${user.default.passwordSalt:profile}")
     private String defaultSalt;
 
     // 密码验证
     @Override
     public User authenticate(UserLoginRequest request) {
         final String password = PasswordUtil.encryptWithSalt(defaultSalt, request.getPassword());
-        final User user = null; // userMapper.checkPassword(request.getUserName(), password, Constant.AUTHENTICATION_PROVIDER_PASSWORD);
+        final User user = userMapper.checkPassword(request.getUserName(), password, Constant.AUTHENTICATION_PROVIDER_PASSWORD);
         if (Objects.isNull(user)) {
             throw new ProfileException(USERNAME_PASSWORD_NO_MATCHED);
         }

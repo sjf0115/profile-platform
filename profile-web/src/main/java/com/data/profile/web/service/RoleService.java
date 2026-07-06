@@ -2,7 +2,7 @@ package com.data.profile.web.service;
 
 import com.data.profile.web.dao.RoleMapper;
 import com.data.profile.web.model.Role;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.utils.IDGenerator;
@@ -70,8 +70,8 @@ public class RoleService {
         String roleId = IDGenerator.getInstance().generate(ModelType.ROLE);
         role.setRoleId(roleId);
         role.setSourceType(SourceType.CUSTOM.getCode());
-        role.setCreator(RequestContext.currentUserId());
-        role.setModifier(RequestContext.currentUserId());
+        role.setCreator(UserContextHolder.currentUserId());
+        role.setModifier(UserContextHolder.currentUserId());
         log.info("新增角色: {}", JSONUtils.toJsonString(role));
         return roleMapper.insertSelective(role);
     }
@@ -81,7 +81,7 @@ public class RoleService {
      * @param role 角色
      */
     public int update(Role role) {
-        role.setModifier(RequestContext.currentUserId());
+        role.setModifier(UserContextHolder.currentUserId());
         log.info("更新角色: {}", JSONUtils.toJsonString(role));
         return roleMapper.updateByRoleIdSelective(role);
     }

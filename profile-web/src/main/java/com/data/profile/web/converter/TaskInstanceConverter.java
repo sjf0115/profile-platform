@@ -2,7 +2,7 @@ package com.data.profile.web.converter;
 
 import com.data.profile.web.dto.TaskInstanceDTO;
 import com.data.profile.web.model.TaskInstance;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.web.vo.TaskInstanceVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
@@ -34,8 +34,8 @@ public class TaskInstanceConverter {
         TaskInstance taskInstance = new TaskInstance();
         if (taskInstanceDTO != null) {
             taskInstance = DTO2DOConverterMapper.INSTANCE.convert(taskInstanceDTO);
-            taskInstance.setCreator(RequestContext.currentUserId());
-            taskInstance.setModifier(RequestContext.currentUserId());
+            taskInstance.setCreator(UserContextHolder.currentUserId());
+            taskInstance.setModifier(UserContextHolder.currentUserId());
         }
         return taskInstance;
     }

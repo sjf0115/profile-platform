@@ -4,7 +4,7 @@ import com.data.connector.api.ConnectorFactory;
 import com.data.connector.api.ExportConfigBuilder;
 import com.data.profile.web.dao.DataSourceMapper;
 import com.data.profile.web.model.DataSource;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.domain.connector.jdbc.DatabaseInfo;
 import com.data.profile.common.domain.connector.jdbc.TableColumnInfo;
 import com.data.profile.common.domain.connector.jdbc.TableInfo;
@@ -97,13 +97,13 @@ public class DataSourceService {
             datasource.setStatus(Status.ENABLE.getCode());
             datasource.setDatasourceId(datasourceId);
             datasource.setSourceType(SourceType.CUSTOM.getCode());
-            datasource.setOwner(RequestContext.currentUserId());
-            datasource.setCreator(RequestContext.currentUserId());
-            datasource.setModifier(RequestContext.currentUserId());
+            datasource.setOwner(UserContextHolder.currentUserId());
+            datasource.setCreator(UserContextHolder.currentUserId());
+            datasource.setModifier(UserContextHolder.currentUserId());
             return dataSourceMapper.insertSelective(datasource);
         } else {
             // 修改
-            datasource.setModifier(RequestContext.currentUserId());
+            datasource.setModifier(UserContextHolder.currentUserId());
             return dataSourceMapper.updateByDataSourceIdSelective(datasource);
         }
     }

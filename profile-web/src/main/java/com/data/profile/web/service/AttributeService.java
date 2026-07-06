@@ -2,7 +2,7 @@ package com.data.profile.web.service;
 
 import com.data.profile.web.dao.AttributeMapper;
 import com.data.profile.web.model.Attribute;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
@@ -72,13 +72,13 @@ public class AttributeService {
             }
             attr.setAttrId(attrId);
             attr.setStatus(Status.ENABLE.getCode());
-            attr.setCreator(RequestContext.currentUserId());
-            attr.setModifier(RequestContext.currentUserId());
+            attr.setCreator(UserContextHolder.currentUserId());
+            attr.setModifier(UserContextHolder.currentUserId());
             int result = attrMapper.insertSelective(attr);
             return result;
         } else {
             // 修改
-            attr.setModifier(RequestContext.currentUserId());
+            attr.setModifier(UserContextHolder.currentUserId());
             int result = attrMapper.updateByAttrIdSelective(attr);
             return result;
         }

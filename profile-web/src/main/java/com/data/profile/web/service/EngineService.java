@@ -7,7 +7,7 @@ import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.common.utils.StringUtils;
 import com.data.profile.web.dao.EngineMapper;
 import com.data.profile.web.model.Engine;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.web.vo.Item;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -131,8 +131,8 @@ public class EngineService {
             } else {
                 engine.setIsDefault(0);
             }
-            engine.setCreator(RequestContext.currentUserId());
-            engine.setModifier(RequestContext.currentUserId());
+            engine.setCreator(UserContextHolder.currentUserId());
+            engine.setModifier(UserContextHolder.currentUserId());
 
             log.info("新增引擎: {}", gson.toJson(engine));
             return engineMapper.insertSelective(engine);
@@ -143,7 +143,7 @@ public class EngineService {
                 clearDefaultRespectingCategory(engine.getEngineCategory());
             }
 
-            engine.setModifier(RequestContext.currentUserId());
+            engine.setModifier(UserContextHolder.currentUserId());
             log.info("更新引擎: {}", gson.toJson(engine));
             return engineMapper.updateByEngineIdSelective(engine);
         }

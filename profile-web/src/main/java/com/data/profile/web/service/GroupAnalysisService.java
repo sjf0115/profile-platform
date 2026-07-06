@@ -8,7 +8,7 @@ import com.data.profile.web.dao.LabelMapper;
 import com.data.profile.web.dto.GroupAnalysisRequest;
 import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.model.*;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.web.vo.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -103,14 +103,14 @@ public class GroupAnalysisService {
             analysis.setAnalysisId(analysisId);
             analysis.setStatus(Status.ENABLE.getCode());
             analysis.setSourceType(2);
-            analysis.setOwner(RequestContext.currentUserId());
-            analysis.setCreator(RequestContext.currentUserId());
-            analysis.setModifier(RequestContext.currentUserId());
+            analysis.setOwner(UserContextHolder.currentUserId());
+            analysis.setCreator(UserContextHolder.currentUserId());
+            analysis.setModifier(UserContextHolder.currentUserId());
             log.info("新增群组分析: {}", gson.toJson(analysis));
             return groupAnalysisMapper.insertSelective(analysis);
         } else {
             // 修改
-            analysis.setModifier(RequestContext.currentUserId());
+            analysis.setModifier(UserContextHolder.currentUserId());
             log.info("修改群组分析: {}", gson.toJson(analysis));
             return groupAnalysisMapper.updateByAnalysisIdSelective(analysis);
         }

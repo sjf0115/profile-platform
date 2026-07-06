@@ -2,12 +2,14 @@ package com.data.profile.web.service;
 
 import com.data.profile.web.config.AuthenticationProvidersConfig;
 import com.data.profile.common.domain.Constant;
+import com.data.profile.web.converter.UserConverter;
 import com.data.profile.web.dao.UserMapper;
+import com.data.profile.web.dto.UserRequest;
 import com.data.profile.web.model.*;
 import com.data.profile.web.security.IAuthenticationStrategy;
 import com.data.profile.web.security.LDAPAuthenticationStrategy;
 import com.data.profile.web.security.PasswdAuthenticationStrategy;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.web.dto.UserLoginRequest;
 import com.data.profile.common.enums.*;
 import com.data.profile.common.exception.ProfileException;
@@ -15,6 +17,7 @@ import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.utils.JwtUtil;
 import com.data.profile.common.utils.UserUtil;
+import com.data.profile.web.vo.UserLoginVO;
 import com.data.profile.web.vo.UserOverviewVO;
 import com.data.profile.web.vo.UserVO;
 import com.google.common.collect.Maps;
@@ -29,6 +32,7 @@ import javax.annotation.PostConstruct;
 import java.util.*;
 
 import static com.data.profile.common.enums.ResponseCode.INVALID_AUTHENTICATION_PROVIDER;
+import static net.sf.jsqlparser.util.validation.metadata.NamedObject.user;
 
 /**
  * 功能：用户服务
@@ -115,12 +119,11 @@ public class UserService {
 
     /**
      * 注册用户
-     * @param user 用户
-     * @param roleIds 角色ID列表
+     * @param userRequest 用户
      */
     @Transactional
-    public int create(User user, List<String> roleIds) {
-        List<User> users = userMapper.selectByUserName(user.getUserName());
+    public int create(UserRequest userRequest) {
+        List<User> users = userMapper.selectByUserName(userRequest.getUserName());
         if (!users.isEmpty()) {
             throw new RuntimeException("用户名已被占用");
         }
@@ -129,18 +132,17 @@ public class UserService {
         if (!Objects.equals(target, null)) {
             throw new RuntimeException("用户ID已经存在，不允许重复添加");
         }
+        User user = UserConverter.convert(userRequest);
         user.setUserId(userId);
         user.setUserName(UserUtil.generateRandomChineseNickname());
         user.setPassword(UserUtil.generateRandomPassword());
-        user.setCreator(RequestContext.currentUserId());
-        user.setModifier(RequestContext.currentUserId());
-        user.setSourceType(SourceType.CUSTOM.getCode());
         user.setStatus(UserStatus.REGISTER.getCode());
         int result = userMapper.insertSelective(user);
         log.info("新增用户: {}", JSONUtils.toJsonString(user));
         // 为用户设置角色
-        if (roleIds != null && !roleIds.isEmpty()) {
-            userRoleService.addRolesToUser(userId, roleIds);
+        List<String> roles = userRequest.getRoles();
+        if (roles != null && !roles.isEmpty()) {
+            userRoleService.addRolesToUser(userId, roles);
         }
         return result;
     }
@@ -152,7 +154,7 @@ public class UserService {
      */
     public int update(User user, List<String> roleIds) {
         // 修改用户信息
-        user.setModifier(RequestContext.currentUserId());
+        user.setModifier(UserContextHolder.currentUserId());
         int result = userMapper.updateByUserIdSelective(user);
         log.info("更新用户: {}", JSONUtils.toJsonString(user));
         // 修改用户角色
@@ -221,7 +223,7 @@ public class UserService {
     /**
      * 登录
      */
-    public UserVO login(UserLoginRequest userLoinRequest, String authType) {
+    public UserLoginVO login(UserLoginRequest userLoinRequest, String authType) {
         // 登录验证
         authType = StringUtils.isEmpty(authType) ? Constant.AUTHENTICATION_PROVIDER_PASSWORD : authType;
         if (!strategies.containsKey(authType)) {
@@ -244,6 +246,11 @@ public class UserService {
                 .userId(user.getUserId())
                 .build();
         userLoginService.save(userLogin);
-        return toVO(user);
+
+        // 构建登录响应（包含 token）
+        UserLoginVO loginVO = new UserLoginVO();
+        loginVO.setUser(toVO(user));
+        loginVO.setToken(token);
+        return loginVO;
     }
 }

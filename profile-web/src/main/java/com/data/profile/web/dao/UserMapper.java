@@ -3,6 +3,7 @@ package com.data.profile.web.dao;
 import com.data.profile.web.model.Role;
 import com.data.profile.web.model.User;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -14,6 +15,8 @@ public interface UserMapper {
     List<User> selectByParams(User User); //根据参数查询（自动加载角色）
     List<User> selectByKeyword(String keyword); // 模糊查询
     List<Role> selectRolesByUserId(String userId); // 根据用户ID查询角色
+    // 密码校验
+    User checkPassword(@Param("userName") String userName, @Param("password") String password, @Param("authType") String authType);
     // 统计
     /*int countTotal(); // 统计总用户数
     int countByStatus(Integer status); // 根据状态统计*/

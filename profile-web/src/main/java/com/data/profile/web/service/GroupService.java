@@ -11,7 +11,7 @@ import com.data.profile.web.utils.RuleToSqlTranslator;
 import com.data.profile.web.vo.DatasetVO;
 import com.data.profile.web.vo.GroupVO;
 import org.apache.commons.lang3.StringUtils;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.utils.IDGenerator;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -163,9 +163,9 @@ public class GroupService {
         group.setGroupId(groupId);
         group.setSourceType(SourceType.CUSTOM.getCode());
         group.setGroupStatus(Status.ENABLE.getCode());
-        group.setOwner(RequestContext.currentUserId());
-        group.setCreator(RequestContext.currentUserId());
-        group.setModifier(RequestContext.currentUserId());
+        group.setOwner(UserContextHolder.currentUserId());
+        group.setCreator(UserContextHolder.currentUserId());
+        group.setModifier(UserContextHolder.currentUserId());
 
         // 3. 群组预估人数
         long count = estimateGroupCount(group.getGroupRule());
@@ -234,7 +234,7 @@ public class GroupService {
     @Transactional
     public int update(Group group) {
         // 修改群组
-        group.setModifier(RequestContext.currentUserId());
+        group.setModifier(UserContextHolder.currentUserId());
         // 修改时预估人数
         long count = estimateGroupCount(group.getGroupRule());
         // TODO 优化 Long -> Int

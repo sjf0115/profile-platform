@@ -12,7 +12,7 @@ import com.data.profile.web.model.Task;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.vo.DatasetFieldVO;
 import com.data.profile.web.vo.DatasetVO;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.*;
 import com.data.profile.common.utils.IDGenerator;
 import com.google.gson.Gson;
@@ -246,9 +246,9 @@ public class DatasetService {
         dataset.setDatasetId(datasetId);
         dataset.setStatus(Status.ENABLE.getCode());
         dataset.setSourceType(SourceType.CUSTOM.getCode());
-        dataset.setOwner(RequestContext.currentUserId());
-        dataset.setCreator(RequestContext.currentUserId());
-        dataset.setModifier(RequestContext.currentUserId());
+        dataset.setOwner(UserContextHolder.currentUserId());
+        dataset.setCreator(UserContextHolder.currentUserId());
+        dataset.setModifier(UserContextHolder.currentUserId());
         datasetMapper.insertSelective(dataset);
 
         // 3. 数据集字段
@@ -285,7 +285,7 @@ public class DatasetService {
         }
 
         // 更新元数据
-        dataset.setModifier(RequestContext.currentUserId());
+        dataset.setModifier(UserContextHolder.currentUserId());
         datasetMapper.updateByDatasetIdSelective(dataset);
         log.info("更新数据集元数据: datasetId={}", datasetId);
 

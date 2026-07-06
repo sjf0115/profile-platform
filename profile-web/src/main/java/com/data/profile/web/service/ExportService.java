@@ -3,7 +3,7 @@ package com.data.profile.web.service;
 import com.data.profile.web.dao.ExportMapper;
 import com.data.profile.web.model.Export;
 import com.data.profile.web.model.TaskInstance;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
@@ -100,7 +100,7 @@ public class ExportService {
             export.setExportId(exportId);
             export.setStatus(Status.ENABLE.getCode());
             export.setSourceType(SourceType.CUSTOM.getCode());
-            String userId = RequestContext.currentUserId();
+            String userId = UserContextHolder.currentUserId();
             export.setOwner(userId); // 创建者即为负责人
             export.setCreator(userId);
             export.setModifier(userId);
@@ -114,7 +114,7 @@ public class ExportService {
             return exportMapper.insertSelective(export);
         } else {
             // 修改
-            export.setModifier(RequestContext.currentUserId());
+            export.setModifier(UserContextHolder.currentUserId());
             return exportMapper.updateByExportIdSelective(export);
         }
     }

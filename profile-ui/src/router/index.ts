@@ -1,8 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import MainLayout from '@/layouts/MainLayout.vue'
+import { isLoggedIn } from '@/utils/auth'
 
 const routes: RouteRecordRaw[] = [
+  // 登录页（不在 MainLayout 内）
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/login/index.vue'),
+    meta: { title: '登录' },
+  },
   {
     path: '/',
     component: MainLayout,
@@ -331,6 +339,24 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+// 全局前置守卫：未登录时跳转登录页
+router.beforeEach((to, _from, next) => {
+  if (to.path === '/login') {
+    // 已登录用户访问登录页，重定向到首页
+    if (isLoggedIn()) {
+      next('/')
+    } else {
+      next()
+    }
+  } else {
+    if (isLoggedIn()) {
+      next()
+    } else {
+      next('/login')
+    }
+  }
 })
 
 export default router

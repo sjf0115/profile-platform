@@ -2,7 +2,7 @@ package com.data.profile.web.service;
 
 import com.data.profile.web.dao.EntityIdentifierMapper;
 import com.data.profile.web.model.EntityIdentifier;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
@@ -77,13 +77,13 @@ public class EntityIdentifierService {
             entityIdentifier.setEntityIdentifierId(entityIdentifierId);
             entityIdentifier.setStatus(Status.ENABLE.getCode());
             entityIdentifier.setSourceType(SourceType.CUSTOM.getCode());
-            entityIdentifier.setCreator(RequestContext.currentUserId());
-            entityIdentifier.setModifier(RequestContext.currentUserId());
+            entityIdentifier.setCreator(UserContextHolder.currentUserId());
+            entityIdentifier.setModifier(UserContextHolder.currentUserId());
             log.info("新增实体标识: {}", gson.toJson(entityIdentifier));
             return entityIdentifierMapper.insertSelective(entityIdentifier);
         } else {
             // 修改
-            entityIdentifier.setModifier(RequestContext.currentUserId());
+            entityIdentifier.setModifier(UserContextHolder.currentUserId());
             log.info("更新实体标识: {}", gson.toJson(entityIdentifier));
             return entityIdentifierMapper.updateByEntityIdentifierIdSelective(entityIdentifier);
         }

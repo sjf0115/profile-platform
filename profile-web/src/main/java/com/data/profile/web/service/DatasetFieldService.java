@@ -2,7 +2,7 @@ package com.data.profile.web.service;
 
 import com.data.profile.web.dao.DatasetFieldMapper;
 import com.data.profile.web.model.DatasetField;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -86,13 +86,13 @@ public class DatasetFieldService {
                 log.error("数据集字段 {} 已经存在，不允许重复添加", fieldName);
                 throw new RuntimeException("数据集字段已经存在，不允许重复添加");
             }
-            datasetField.setCreator(RequestContext.currentUserId());
-            datasetField.setModifier(RequestContext.currentUserId());
+            datasetField.setCreator(UserContextHolder.currentUserId());
+            datasetField.setModifier(UserContextHolder.currentUserId());
             result = datasetFieldMapper.insertSelective(datasetField);
             log.info("新增数据集字段: {}", gson.toJson(datasetField));
         } else {
             // 修改
-            datasetField.setModifier(RequestContext.currentUserId());
+            datasetField.setModifier(UserContextHolder.currentUserId());
             result = datasetFieldMapper.updateByIdSelective(datasetField);
             log.info("更新数据集字段: {}", gson.toJson(datasetField));
         }

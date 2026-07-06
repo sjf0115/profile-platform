@@ -24,7 +24,7 @@ spring:
     password: test
   authentication:
     providers:
-      - passwd
+      - PASSWD
   jackson:
     property-naming-strategy: SNAKE_CASE
 
@@ -34,9 +34,10 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
   type-handlers-package: com.data.profile.web.handler
+
 jwt:
   expireTime: 86400
-  secretKey:
+  secretKey: profile-platform-secret-key-2026
   algorithm: HS256
 
 # 引擎全局配置参数

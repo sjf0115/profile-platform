@@ -4,7 +4,9 @@ import com.data.profile.web.model.User;
 
 /**
  * 请求上下文信息
+ * @deprecated 请使用 {@link UserContextHolder} 代替
  */
+@Deprecated
 public class RequestContext {
     private static final long  serialVersionUID  = -7330741781983030806L;
     private static final ThreadLocal<RequestContext> threadLocal = new ThreadLocal<RequestContext>();

@@ -2,7 +2,7 @@ package com.data.profile.web.service;
 
 import com.data.profile.web.dao.EventMapper;
 import com.data.profile.web.model.Event;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
@@ -90,9 +90,9 @@ public class EventService {
         event.setEventId(eventId);
         event.setStatus(Status.ENABLE.getCode());
         event.setSourceType(SourceType.CUSTOM.getCode());
-        event.setOwner(RequestContext.currentUserId());
-        event.setCreator(RequestContext.currentUserId());
-        event.setModifier(RequestContext.currentUserId());
+        event.setOwner(UserContextHolder.currentUserId());
+        event.setCreator(UserContextHolder.currentUserId());
+        event.setModifier(UserContextHolder.currentUserId());
         int result = eventMapper.insertSelective(event);
         return result;
     }
@@ -103,7 +103,7 @@ public class EventService {
      * @return
      */
     private int updateEvent(Event event) {
-        event.setModifier(RequestContext.currentUserId());
+        event.setModifier(UserContextHolder.currentUserId());
         int result = eventMapper.updateByEventIdSelective(event);
         return result;
     }

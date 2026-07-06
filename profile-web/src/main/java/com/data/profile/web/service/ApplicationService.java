@@ -4,7 +4,7 @@ import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.web.dao.ApplicationMapper;
 import com.data.profile.web.model.Application;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -62,7 +62,7 @@ public class ApplicationService {
      */
     @Transactional
     public Application save(Application application) throws RuntimeException {
-        String userId = RequestContext.currentUserId();
+        String userId = UserContextHolder.currentUserId();
         if (application.getId() == null) {
             // 新增
             // 检查应用名称是否重复
@@ -116,7 +116,7 @@ public class ApplicationService {
         Application update = new Application();
         update.setId(id);
         update.setAppSecret(newSecret);
-        update.setModifier(RequestContext.currentUserId());
+        update.setModifier(UserContextHolder.currentUserId());
         applicationMapper.updateByIdSelective(update);
         return newSecret;
     }

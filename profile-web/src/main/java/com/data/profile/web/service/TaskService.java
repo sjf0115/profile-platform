@@ -6,7 +6,7 @@ import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.web.dao.TaskMapper;
 import com.data.profile.web.model.Task;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -67,9 +67,9 @@ public class TaskService {
         task.setTaskId(taskId);
         task.setSourceType(SourceType.CUSTOM.getCode());
         task.setStatus(Status.ENABLE.getCode());
-        task.setOwner(RequestContext.currentUserId());
-        task.setCreator(RequestContext.currentUserId());
-        task.setModifier(RequestContext.currentUserId());
+        task.setOwner(UserContextHolder.currentUserId());
+        task.setCreator(UserContextHolder.currentUserId());
+        task.setModifier(UserContextHolder.currentUserId());
         log.info("创建调度任务: {}", task.getTaskName());
         return taskMapper.insertSelective(task);
     }
@@ -78,7 +78,7 @@ public class TaskService {
      * 修改调度任务
      */
     public int update(Task task) {
-        task.setModifier(RequestContext.currentUserId());
+        task.setModifier(UserContextHolder.currentUserId());
         log.info("修改调度任务: {}", task.getTaskId());
         return taskMapper.updateByTaskIdSelective(task);
     }

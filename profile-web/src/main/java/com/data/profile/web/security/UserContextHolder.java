@@ -22,9 +22,23 @@ public class UserContextHolder {
     public static UserContext getUserContext() {
         UserContext userContext = userContextHolder.get();
         if (userContext == null) {
-            throw new RuntimeException("User context not found");
+            throw new RuntimeException("User context not found, please login first");
         }
         return userContext;
+    }
+
+    /**
+     * 获取当前用户ID（便捷方法）
+     */
+    public static String currentUserId() {
+        return getUser().getUserId();
+    }
+
+    /**
+     * 获取当前用户名（便捷方法）
+     */
+    public static String currentUserName() {
+        return getUser().getUserName();
     }
 
     public static void clear() {

@@ -6,7 +6,7 @@ import com.data.profile.web.model.EntityIdentifier;
 import com.data.profile.web.model.FileImportLabelConfig;
 import com.data.profile.web.model.Label;
 import com.data.profile.web.vo.LabelVO;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.LabelStatus;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
@@ -135,9 +135,9 @@ public class LabelService {
             label.setLabelId(labelId);
             label.setIsValid(Status.ENABLE.getCode());
             label.setLabelStatus(LabelStatus.CREATED.getCode());
-            label.setOwner(RequestContext.currentUserId());
-            label.setCreator(RequestContext.currentUserId());
-            label.setModifier(RequestContext.currentUserId());
+            label.setOwner(UserContextHolder.currentUserId());
+            label.setCreator(UserContextHolder.currentUserId());
+            label.setModifier(UserContextHolder.currentUserId());
             log.info("新增标签: {}", gson.toJson(label));
 
             // 是否跳过数据集配置
@@ -146,7 +146,7 @@ public class LabelService {
                 DatasetField field = datasetFieldService.getListByDatasetIdAndFieldName(datasetId, datasetFieldName);
                 field.setRelatedId(labelId);
                 field.setGmtModified(new Date());
-                field.setModifier(RequestContext.currentUserId());
+                field.setModifier(UserContextHolder.currentUserId());
                 datasetFieldService.save(field);
             }
             return labelMapper.insertSelective(label);
@@ -157,12 +157,12 @@ public class LabelService {
                 DatasetField field = datasetFieldService.getListByDatasetIdAndFieldName(datasetId, datasetFieldName);
                 field.setRelatedId(labelId);
                 field.setGmtModified(new Date());
-                field.setModifier(RequestContext.currentUserId());
+                field.setModifier(UserContextHolder.currentUserId());
                 datasetFieldService.save(field);
             }
 
             // 修改
-            label.setModifier(RequestContext.currentUserId());
+            label.setModifier(UserContextHolder.currentUserId());
             log.info("修改标签: {}", gson.toJson(label));
             return labelMapper.updateByLabelId(label);
         }

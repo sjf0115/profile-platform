@@ -203,13 +203,13 @@
         <el-dropdown>
           <span class="user-info">
             <el-avatar :size="32" :icon="UserFilled" />
-            <span class="user-name">管理员</span>
+            <span class="user-name">{{ displayName }}</span>
             <el-icon class="el-icon--right"><ArrowDown /></el-icon>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item>个人中心</el-dropdown-item>
-              <el-dropdown-item divided>退出登录</el-dropdown-item>
+              <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -355,15 +355,24 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   DataLine, ArrowDown, Bell, QuestionFilled, Setting, Grid, User, UserFilled,
   View, Filter, DataAnalysis, Promotion, TrendCharts, Timer, Switch, PieChart, Share, Connection,
   Coin, FolderOpened, CollectionTag, Cpu, List
 } from '@element-plus/icons-vue'
+import { getLoginUser, removeToken } from '@/utils/auth'
+import { userApi } from '@/api/user'
 
 const route = useRoute()
 const router = useRouter()
 const activeMenu = computed(() => route.path)
+
+// 显示用户名
+const displayName = computed(() => {
+  const user = getLoginUser()
+  return user?.user_name || user?.userName || '用户'
+})
 
 // 当前激活的顶部导航
 const activeTopNav = computed(() => {
@@ -397,6 +406,27 @@ const isSettingsPage = computed(() => {
 // 打开帮助文档
 const openHelp = () => {
   window.open('https://docs.example.com', '_blank')
+}
+
+// 退出登录
+const handleLogout = async () => {
+  try {
+    await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+    try {
+      await userApi.logout()
+    } catch {
+      // 即使后端退出失败也清除本地 Token
+    }
+    removeToken()
+    ElMessage.success('已退出登录')
+    router.push('/login')
+  } catch {
+    // 用户取消
+  }
 }
 </script>
 

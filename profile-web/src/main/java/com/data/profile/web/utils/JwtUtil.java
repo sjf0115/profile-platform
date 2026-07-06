@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -15,14 +16,14 @@ import java.util.UUID;
 
 @Component
 public class JwtUtil implements InitializingBean {
-//    @Value("${jwt.expireTime}")
+    @Value("${jwt.expireTime:86400}")
     private int expireTime;
 
-//    @Value("${jwt.secretKey}")
-    private String secretKey = "";
+    @Value("${jwt.secretKey:profile-platform-secret}")
+    private String secretKey;
 
-//    @Value("${jwt.algorithm}")
-    private String algorithmString = "HS256";
+    @Value("${jwt.algorithm:HS256}")
+    private String algorithmString;
 
     private SignatureAlgorithm algorithm = null;
 

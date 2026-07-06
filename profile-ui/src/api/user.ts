@@ -1,6 +1,18 @@
 import request from '@/utils/request'
 import type { ApiResponse, UserProfileVO } from '@/types'
 
+// 登录请求参数
+export interface LoginParams {
+  user_name: string
+  password: string
+}
+
+// 登录响应
+export interface LoginResponse {
+  user: User
+  token: string
+}
+
 // 用户类型定义
 export interface User {
   id?: number
@@ -37,6 +49,16 @@ export interface UserOverview {
 
 // 用户相关接口
 export const userApi = {
+  // 登录
+  login: (data: LoginParams) => {
+    return request.post<ApiResponse<LoginResponse>>('/user/login', data)
+  },
+
+  // 退出登录
+  logout: () => {
+    return request.patch<ApiResponse<null>>('/user/logout')
+  },
+
   // 获取用户列表
   getList: (params?: UserQueryParams) => {
     return request.post<ApiResponse<User[]>>('/user/list', params || {})

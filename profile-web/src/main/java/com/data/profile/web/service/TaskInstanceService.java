@@ -7,7 +7,7 @@ import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.web.converter.TaskInstanceConverter;
 import com.data.profile.web.dao.TaskInstanceMapper;
 import com.data.profile.web.model.TaskInstance;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.web.vo.TaskInstanceVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -104,8 +104,8 @@ public class TaskInstanceService {
         instance.setEndTime(0L);
         instance.setDuration(0L);
         instance.setMessage("");
-        instance.setCreator(RequestContext.currentUserId());
-        instance.setModifier(RequestContext.currentUserId());
+        instance.setCreator(UserContextHolder.currentUserId());
+        instance.setModifier(UserContextHolder.currentUserId());
 
         instanceMapper.insertSelective(instance);
         log.info("创建任务实例: instanceId={}, taskId={}, relatedId={}, status={}, triggerMode={}", instanceId, taskId, instanceRelatedId, initialStatus, triggerMode);
@@ -145,7 +145,7 @@ public class TaskInstanceService {
         instance.setEndTime(endTime);
         instance.setDuration(endTime - instance.getStartTime());
         instance.setMessage(message != null ? message : "");
-        // instance.setModifier(RequestContext.currentUserId());
+        // instance.setModifier(UserContextHolder.currentUserId());
         instanceMapper.updateByInstanceIdSelective(instance);
         log.info("任务实例成功: instanceId={}, duration={}ms", instanceId, instance.getDuration());
     }
@@ -163,7 +163,7 @@ public class TaskInstanceService {
         instance.setEndTime(endTime);
         instance.setDuration(endTime - instance.getStartTime());
         instance.setMessage(errorMsg != null ? errorMsg : "");
-        // instance.setModifier(RequestContext.currentUserId());
+        // instance.setModifier(UserContextHolder.currentUserId());
         instanceMapper.updateByInstanceIdSelective(instance);
         log.info("任务实例失败: instanceId={}, duration={}ms, error={}", instanceId, instance.getDuration(), errorMsg);
     }

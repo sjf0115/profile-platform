@@ -3,6 +3,7 @@ package com.data.profile.web.interceptor;
 import com.data.profile.web.security.UserContext;
 import com.data.profile.web.security.UserContextHolder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
@@ -11,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import static com.data.profile.common.domain.Constant.SESSION_USER_CONTEXT;
 
 @Slf4j
+@Component
 public class UserContextInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {

@@ -4,7 +4,7 @@ import com.data.profile.web.dao.LabelCategoryMapper;
 import com.data.profile.web.dao.LabelMapper;
 import com.data.profile.web.model.Label;
 import com.data.profile.web.model.LabelCategory;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
@@ -82,8 +82,8 @@ public class LabelCategoryService {
         category.setCategoryLevel(Objects.equals(categoryLevel, null) ? 1 : categoryLevel + 1);
         category.setCategorySeq(Objects.equals(maxSeq, null) ? 1 : maxSeq + 1);
         category.setSourceType(SourceType.CUSTOM.getCode());
-        category.setCreator(RequestContext.currentUserId());
-        category.setModifier(RequestContext.currentUserId());
+        category.setCreator(UserContextHolder.currentUserId());
+        category.setModifier(UserContextHolder.currentUserId());
         log.info("添加标签类目：{}", gson.toJson(category));
         return categoryMapper.insertSelective(category);
     }
@@ -124,7 +124,7 @@ public class LabelCategoryService {
             // 移入未分类目录下
             for (Label label : labels) {
                 label.setLabelCategoryId(defaultCategory.getCategoryId());
-                label.setModifier(RequestContext.currentUserId());
+                label.setModifier(UserContextHolder.currentUserId());
                 labelMapper.updateByLabelIdSelective(label);
             }
         }
@@ -145,7 +145,7 @@ public class LabelCategoryService {
             throw new RuntimeException("标签类目不存在，不允许重命名");
         }
         category.setCategoryName(categoryName);
-        category.setModifier(RequestContext.currentUserId());
+        category.setModifier(UserContextHolder.currentUserId());
         log.info("标签类目 {} 重命名为 {}", categoryId, categoryName);
         return categoryMapper.updateByCategoryIdSelective(category);
     }

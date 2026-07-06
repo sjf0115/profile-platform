@@ -2,6 +2,7 @@ package com.data.profile.web.controller;
 
 import com.data.profile.web.vo.Response;
 import com.data.profile.web.vo.UserProfileVO;
+import com.data.profile.web.vo.UserLoginVO;
 import com.data.profile.web.dto.UserLoginRequest;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.common.utils.JSONUtils;
@@ -37,14 +38,14 @@ public class UserController {
     private UserProfileService userProfileService;
 
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody User user) {
+    public Response<List<UserVO>> getList(@RequestBody User user) {
         log.info("请求查询用户：{}", JSONUtils.toJsonString(user));
         List<UserVO> users = userService.getList(user);
         return Response.success(users);
     }
 
     @GetMapping(value = "/{userId}/detail")
-    public Response getDetail(@PathVariable(value = "userId") String userId) {
+    public Response<UserVO> getDetail(@PathVariable(value = "userId") String userId) {
         log.info("请求查询用户 {} 详细信息", userId);
         Optional<UserVO> userOptional = userService.getDetail(userId);
         if (userOptional.isPresent()) {
@@ -54,15 +55,9 @@ public class UserController {
     }
 
     @PostMapping
-    public Response create(@RequestBody UserRequest request) {
+    public Response<Integer> create(@RequestBody UserRequest request) {
         log.info("请求创建用户：{}", JSONUtils.toJsonString(request));
-        // 构建 User 对象
-        User user = new User();
-        user.setUserName(request.getUserName());
-        user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
-        
-        int result = userService.create(user, request.getRoles());
+        int result = userService.create(request);
         if (result > 0) {
             return Response.success(result);
         } else {
@@ -71,7 +66,7 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
-    public Response update(@PathVariable(value = "userId") String userId, @RequestBody UserRequest request) {
+    public Response<Integer> update(@PathVariable(value = "userId") String userId, @RequestBody UserRequest request) {
         log.info("请求更新用户：{}", JSONUtils.toJsonString(request));
         // 构建 User 对象
         User user = new User();
@@ -88,7 +83,7 @@ public class UserController {
     }
 
     @DeleteMapping(value = "/{userId}")
-    public Response delete(@PathVariable(value = "userId") String userId) {
+    public Response<Integer> delete(@PathVariable(value = "userId") String userId) {
         log.info("请求删除用户：{}", userId);
         int result = userService.delete(userId);
         if (result > 0) {
@@ -99,16 +94,16 @@ public class UserController {
     }
 
     @GetMapping(value = "/overview")
-    public Response getOverview() {
+    public Response<UserOverviewVO> getOverview() {
         log.info("请求查询用户概览统计");
         UserOverviewVO overview = userService.getOverview();
         return Response.success(overview);
     }
 
     @PostMapping(value = "/login")
-    public Response login(@RequestBody UserLoginRequest userLoinRequest, @RequestHeader(value = "auth-Type", required = false) String authType) {
-        UserVO user = userService.login(userLoinRequest, authType);
-        return Response.success(user);
+    public Response<UserLoginVO> login(@RequestBody UserLoginRequest userLoinRequest, @RequestHeader(value = "auth-Type", required = false) String authType) {
+        UserLoginVO loginVO = userService.login(userLoinRequest, authType);
+        return Response.success(loginVO);
     }
 
     @PatchMapping("/logout")

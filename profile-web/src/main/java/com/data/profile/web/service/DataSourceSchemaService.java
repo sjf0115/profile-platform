@@ -3,7 +3,7 @@ package com.data.profile.web.service;
 import com.data.profile.web.dao.DataSourceSchemaMapper;
 import com.data.profile.web.model.DataSourceCategory;
 import com.data.profile.web.model.DataSourceSchema;
-import com.data.profile.web.security.RequestContext;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.DataSourceSchemaType;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
@@ -81,13 +81,13 @@ public class DataSourceSchemaService {
             schema.setStatus(Status.ENABLE.getCode());
             schema.setSchemaId(schemaId);
             schema.setSourceType(SourceType.CUSTOM.getCode());
-            schema.setCreator(RequestContext.currentUserId());
-            schema.setModifier(RequestContext.currentUserId());
+            schema.setCreator(UserContextHolder.currentUserId());
+            schema.setModifier(UserContextHolder.currentUserId());
             int result = schemaMapper.insertSelective(schema);
             return result;
         } else {
             // 修改
-            schema.setModifier(RequestContext.currentUserId());
+            schema.setModifier(UserContextHolder.currentUserId());
             int result = schemaMapper.updateByDataSourceSchemaIdSelective(schema);
             return result;
         }

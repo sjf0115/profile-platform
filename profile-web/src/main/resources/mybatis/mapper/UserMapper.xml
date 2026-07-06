@@ -91,6 +91,14 @@
     where user_name LIKE CONCAT('%', #{userName,jdbcType=VARCHAR}, '%')
   </select>
 
+  <select id="checkPassword" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from profile_meta_user
+    where user_name = #{userName,jdbcType=VARCHAR}
+      AND password = #{password,jdbcType=VARCHAR}
+  </select>
+
   <!--<select id="countTotal" resultType="java.lang.Integer">
     select count(*) from profile_meta_user
   </select>
