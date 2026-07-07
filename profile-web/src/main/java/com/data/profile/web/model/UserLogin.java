@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 /**
- * 用户登录
+ * 用户登录历史
  */
 @Data
 @Builder
@@ -19,12 +19,12 @@ public class UserLogin {
     private Long id;
     // 用户ID
     private String userId;
-    // Token
-    private String token;
-    // Token状态：1-有效，0-无效
-    private Integer tokenStatus;
     // 登录时间
+    private Date loginTime;
+    // 登录IP
+    private String loginIp;
+    // 登录浏览器UserAgent
+    private String loginUa;
+    // 创建时间
     private Date gmtCreate;
-    // 修改时间
-    private Date gmtModified;
 }

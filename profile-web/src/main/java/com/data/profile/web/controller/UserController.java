@@ -101,8 +101,10 @@ public class UserController {
     }
 
     @PostMapping(value = "/login")
-    public Response<UserLoginVO> login(@RequestBody UserLoginRequest userLoinRequest, @RequestHeader(value = "auth-Type", required = false) String authType) {
-        UserLoginVO loginVO = userService.login(userLoinRequest, authType);
+    public Response<UserLoginVO> login(@RequestBody UserLoginRequest userLoinRequest,
+                                       @RequestHeader(value = "auth-Type", required = false) String authType,
+                                       javax.servlet.http.HttpServletRequest request) {
+        UserLoginVO loginVO = userService.login(userLoinRequest, authType, request);
         return Response.success(loginVO);
     }
 

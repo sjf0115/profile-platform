@@ -51,7 +51,7 @@
     <div v-else class="info-list">
       <div class="info-item">
         <span class="info-label">用户类型</span>
-        <span class="info-value">{{ user?.user_type || '普通用户' }}</span>
+        <span class="info-value">{{ userTypeText }}</span>
       </div>
       <div class="info-item">
         <span class="info-label">来源类型</span>
@@ -89,6 +89,14 @@ const maskedEmail = computed(() => {
 const sourceTypeText = computed(() => {
   const map: Record<number, string> = { 1: '系统内置', 2: '自定义' }
   return map[props.user?.source_type || 0] || '未知'
+})
+
+// 用户类型（从角色推导）
+const userTypeText = computed(() => {
+  const roles = props.user?.roles || []
+  if (roles.length === 0) return '普通用户'
+  const isAdmin = roles.some(r => String(r.role_type) === '1')
+  return isAdmin ? '管理员' : '普通用户'
 })
 
 // 动态提示信息

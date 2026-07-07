@@ -9,8 +9,6 @@ import java.util.List;
 public interface UserLoginMapper {
     UserLogin selectById(Long id);
 
-    UserLogin selectByUserId(String userId);
-
     List<UserLogin> selectByParams(UserLogin userLogin);
 
     int insert(UserLogin userLogin);
@@ -20,10 +18,4 @@ public interface UserLoginMapper {
     int deleteById(Long id);
 
     int deleteByUserId(String userId);
-
-    int updateByUserIdSelective(UserLogin userLogin);
-
-    int updateByUserId(UserLogin userLogin);
-
-    int updateTokenStatusByUserId(String userId, Integer tokenStatus);
 }

@@ -8,6 +8,9 @@ import com.data.profile.web.vo.UserVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * 功能：用户转换器
  * 作者：SmartSi
@@ -21,22 +24,29 @@ public class UserConverter {
 
     // DO -> VO
     public static UserVO convert(User user) {
-        UserVO userVO = new UserVO();
-        if (user != null) {
-            userVO = DO2VoConverterMapper.INSTANCE.convert(user);
+        if (user == null) {
+            return null;
         }
-        return userVO;
+        return DO2VoConverterMapper.INSTANCE.convert(user);
+    }
+
+    // List<DO> -> List<VO>
+    public static List<UserVO> convertList(List<User> users) {
+        if (users == null || users.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return DO2VoConverterMapper.INSTANCE.convertList(users);
     }
 
     // DTO -> DO
     public static User convert(UserRequest userRequest) {
-        User user = new User();
-        if (userRequest != null) {
-            user = DTO2DOConverterMapper.INSTANCE.convert(userRequest);
-            user.setCreator(UserContextHolder.currentUserId());
-            user.setModifier(UserContextHolder.currentUserId());
-            user.setSourceType(SourceType.CUSTOM.getCode());
+        if (userRequest == null) {
+            return null;
         }
+        User user = DTO2DOConverterMapper.INSTANCE.convert(userRequest);
+        user.setCreator(UserContextHolder.currentUserId());
+        user.setModifier(UserContextHolder.currentUserId());
+        user.setSourceType(SourceType.CUSTOM.getCode());
         return user;
     }
 

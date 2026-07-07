@@ -19,7 +19,6 @@ export interface User {
   user_id?: string
   user_name: string
   email?: string
-  user_type?: string
   password?: string
   status?: number
   source_type?: number
@@ -34,7 +33,6 @@ export interface User {
 export interface UserQueryParams {
   user_id?: string
   user_name?: string
-  user_type?: string
   status?: number
   source_type?: number
 }

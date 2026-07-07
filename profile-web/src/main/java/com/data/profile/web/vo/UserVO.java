@@ -19,7 +19,6 @@ public class UserVO {
     private String userId;
     private String userName;
     private String email;
-    private String userType;
     private Integer sourceType;
     private String creator;
     private String modifier;

@@ -402,7 +402,6 @@ export interface UserVO {
   user_id: string
   user_name: string
   email: string
-  user_type: string
   status: number
   source_type: number
   roles: RoleVO[]

@@ -1,12 +1,9 @@
 package com.data.profile.web.interceptor;
 
-import com.data.profile.common.enums.UserTokenStatus;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.model.User;
-import com.data.profile.web.model.UserLogin;
 import com.data.profile.web.security.AccessInfo;
 import com.data.profile.web.security.UserContext;
-import com.data.profile.web.service.UserLoginService;
 import com.data.profile.web.service.UserService;
 import com.data.profile.web.utils.JwtUtil;
 import com.data.profile.web.vo.Response;
@@ -24,7 +21,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.data.profile.common.domain.Constant.SESSION_USER_CONTEXT;
-import static com.data.profile.common.domain.Constant.USER_ID;
 
 /**
  * Token 认证拦截器
@@ -39,9 +35,6 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
 
     @Autowired
     private JwtUtil jwtUtil;
-
-    @Autowired
-    private UserLoginService userLoginService;
 
     @Autowired
     private UserService userService;
@@ -74,31 +67,23 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        // 校验 Token：与数据库中最新登录记录精确匹配
-        Optional<UserLogin> loginOptional = userLoginService.getByUserId(userId);
-        if (!loginOptional.isPresent()) {
-            writeUnauthorizedResponse(response, "用户未登录或登录记录不存在");
-            return false;
-        }
-        UserLogin userLogin = loginOptional.get();
-        if (!token.equals(userLogin.getToken()) || !UserTokenStatus.ENABLE.getCode().equals(userLogin.getTokenStatus())) {
-            writeUnauthorizedResponse(response, "Token 已失效，请重新登录");
-            return false;
-        }
-
-        // 查询用户信息
+        // 查询用户信息，检查用户是否被禁用
         Optional<com.data.profile.web.vo.UserVO> userVOOptional = userService.getDetail(userId);
         if (!userVOOptional.isPresent()) {
             writeUnauthorizedResponse(response, "用户不存在");
             return false;
         }
+        com.data.profile.web.vo.UserVO userVO = userVOOptional.get();
+        if (userVO.getStatus() != null && userVO.getStatus() != 1) {
+            writeUnauthorizedResponse(response, "用户已被禁用");
+            return false;
+        }
 
-        // 构建 User 对象（用于 RequestContext/UserContextHolder）
+        // 构建 User 对象（用于 UserContextHolder）
         User user = new User();
-        user.setUserId(userVOOptional.get().getUserId());
-        user.setUserName(userVOOptional.get().getUserName());
-        user.setStatus(userVOOptional.get().getStatus());
-        user.setUserType(userVOOptional.get().getUserType());
+        user.setUserId(userVO.getUserId());
+        user.setUserName(userVO.getUserName());
+        user.setStatus(userVO.getStatus());
 
         // 构建 AccessInfo
         AccessInfo accessInfo = new AccessInfo();
@@ -107,9 +92,6 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
         // 构建 UserContext 写入 request attribute（供 UserContextInterceptor 使用）
         UserContext userContext = new UserContext(user, accessInfo);
         request.setAttribute(SESSION_USER_CONTEXT, userContext);
-
-        // 设置 USER_ID 供 LogoutAspect 使用
-        request.setAttribute(USER_ID, userId);
 
         return true;
     }

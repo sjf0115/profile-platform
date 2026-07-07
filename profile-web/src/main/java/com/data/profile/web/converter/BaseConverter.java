@@ -1,5 +1,7 @@
 package com.data.profile.web.converter;
 
+import java.util.List;
+
 /**
  * 功能：POJO转换器
  * 作者：@SmartSi
@@ -9,5 +11,5 @@ package com.data.profile.web.converter;
  */
 public interface BaseConverter<IN, OUT> {
     OUT convert(IN in);
-    OUT convertList(IN in);
+    List<OUT> convertList(List<IN> inList);
 }

@@ -23,7 +23,6 @@ import com.data.profile.web.vo.UserVO;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,8 +82,13 @@ public class UserService {
     public List<UserVO> getList(User user) {
         List<User> users = userMapper.selectByParams(user);
         List<UserVO> userVOs = new ArrayList<>();
+        // TODO 优化
         for (User u : users) {
-            userVOs.add(toVO(u));
+            UserVO vo = UserConverter.convert(u);
+            // 增加角色信息
+            List<Role> roles = userMapper.selectRolesByUserId(vo.getUserId());
+            vo.setRoles(roles);
+            userVOs.add(vo);
         }
         log.info("根据查询条件获取 {} 个用户", userVOs.size());
         return userVOs;
@@ -100,21 +104,13 @@ public class UserService {
         if (user == null) {
             return Optional.empty();
         }
-        UserVO vo = toVO(user);
+
+        UserVO vo = UserConverter.convert(user);
+        // 增加角色信息
+        List<Role> roles = userMapper.selectRolesByUserId(vo.getUserId());
+        vo.setRoles(roles);
         log.info("根据用户ID {} 获取用户详细信息: {}", userId, JSONUtils.toJsonString(vo));
         return Optional.of(vo);
-    }
-
-    /**
-     * 将 User Model 转换为 UserVO（含角色查询）
-     */
-    private UserVO toVO(User user) {
-        UserVO vo = new UserVO();
-        BeanUtils.copyProperties(user, vo);
-        // 查询用户角色
-        List<Role> roles = userMapper.selectRolesByUserId(user.getUserId());
-        vo.setRoles(roles);
-        return vo;
     }
 
     /**
@@ -223,7 +219,7 @@ public class UserService {
     /**
      * 登录
      */
-    public UserLoginVO login(UserLoginRequest userLoinRequest, String authType) {
+    public UserLoginVO login(UserLoginRequest userLoinRequest, String authType, javax.servlet.http.HttpServletRequest request) {
         // 登录验证
         authType = StringUtils.isEmpty(authType) ? Constant.AUTHENTICATION_PROVIDER_PASSWORD : authType;
         if (!strategies.containsKey(authType)) {
@@ -236,21 +232,43 @@ public class UserService {
         userMap.put("id", user.getUserId());
         userMap.put("name", user.getUserName());
         userMap.put("status", user.getStatus());
-        userMap.put("type", user.getUserType());
         final String token = jwtUtil.genToken(userMap);
 
-        // 保存登录记录
+        // 记录登录历史
         UserLogin userLogin = UserLogin.builder()
-                .token(token)
-                .tokenStatus(UserTokenStatus.ENABLE.getCode())
                 .userId(user.getUserId())
+                .loginIp(getClientIp(request))
+                .loginUa(request.getHeader("User-Agent"))
                 .build();
         userLoginService.save(userLogin);
 
         // 构建登录响应（包含 token）
+        UserVO userVO = UserConverter.convert(user);
+        List<Role> roles = userMapper.selectRolesByUserId(user.getUserId());
+        userVO.setRoles(roles);
+
         UserLoginVO loginVO = new UserLoginVO();
-        loginVO.setUser(toVO(user));
+        loginVO.setUser(userVO);
         loginVO.setToken(token);
+        log.info("用户登录成功: {}", user.getUserId());
         return loginVO;
+    }
+
+    /**
+     * 获取客户端IP地址
+     */
+    private String getClientIp(javax.servlet.http.HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 多个代理时取第一个
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
     }
 }

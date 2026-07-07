@@ -4,13 +4,13 @@
   <resultMap id="BaseResultMap" type="com.data.profile.web.model.UserLogin">
     <id column="id" jdbcType="BIGINT" property="id" />
     <result column="user_id" jdbcType="VARCHAR" property="userId" />
-    <result column="token" jdbcType="LONGVARCHAR" property="token" />
-    <result column="token_status" jdbcType="TINYINT" property="tokenStatus" />
+    <result column="login_time" jdbcType="TIMESTAMP" property="loginTime" />
+    <result column="login_ip" jdbcType="VARCHAR" property="loginIp" />
+    <result column="login_ua" jdbcType="VARCHAR" property="loginUa" />
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
-    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
   </resultMap>
   <sql id="Base_Column_List">
-    id, user_id, token, token_status, gmt_create, gmt_modified
+    id, user_id, login_time, login_ip, login_ua, gmt_create
   </sql>
 
   <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
@@ -18,13 +18,6 @@
       <include refid="Base_Column_List" />
     from profile_meta_user_login
     where id = #{id,jdbcType=BIGINT}
-  </select>
-
-  <select id="selectByUserId" parameterType="java.lang.String" resultMap="BaseResultMap">
-    select
-      <include refid="Base_Column_List" />
-    from profile_meta_user_login
-    where user_id = #{userId,jdbcType=VARCHAR}
   </select>
 
   <select id="selectByParams" parameterType="com.data.profile.web.model.UserLogin" resultMap="BaseResultMap">
@@ -35,17 +28,15 @@
     <if test="userId != null and userId != ''">
       and user_id = #{userId,jdbcType=VARCHAR}
     </if>
-    <if test="tokenStatus != null">
-      and token_status = #{tokenStatus,jdbcType=TINYINT}
-    </if>
+    order by login_time desc
   </select>
 
   <insert id="insert" parameterType="com.data.profile.web.model.UserLogin">
-    insert into profile_meta_user_login (id, user_id, token,
-        token_status, gmt_create, gmt_modified
+    insert into profile_meta_user_login (id, user_id, login_time,
+        login_ip, login_ua, gmt_create
     )
-    values (#{id,jdbcType=BIGINT}, #{userId,jdbcType=VARCHAR}, #{token,jdbcType=LONGVARCHAR},
-            #{tokenStatus,jdbcType=TINYINT}, #{gmtCreate,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP}
+    values (#{id,jdbcType=BIGINT}, #{userId,jdbcType=VARCHAR}, #{loginTime,jdbcType=TIMESTAMP},
+            #{loginIp,jdbcType=VARCHAR}, #{loginUa,jdbcType=VARCHAR}, #{gmtCreate,jdbcType=TIMESTAMP}
            )
   </insert>
 
@@ -58,11 +49,14 @@
       <if test="userId != null and userId != ''">
         user_id,
       </if>
-      <if test="token != null and token != ''">
-        token,
+      <if test="loginTime != null">
+        login_time,
       </if>
-      <if test="tokenStatus != null">
-        token_status,
+      <if test="loginIp != null and loginIp != ''">
+        login_ip,
+      </if>
+      <if test="loginUa != null and loginUa != ''">
+        login_ua,
       </if>
     </trim>
     <trim prefix="values (" suffix=")" suffixOverrides=",">
@@ -72,11 +66,14 @@
       <if test="userId != null and userId != ''">
         #{userId,jdbcType=VARCHAR},
       </if>
-      <if test="token != null and token != ''">
-        #{token,jdbcType=LONGVARCHAR},
+      <if test="loginTime != null">
+        #{loginTime,jdbcType=TIMESTAMP},
       </if>
-      <if test="tokenStatus != null">
-        #{tokenStatus,jdbcType=TINYINT},
+      <if test="loginIp != null and loginIp != ''">
+        #{loginIp,jdbcType=VARCHAR},
+      </if>
+      <if test="loginUa != null and loginUa != ''">
+        #{loginUa,jdbcType=VARCHAR},
       </if>
     </trim>
   </insert>
@@ -90,32 +87,5 @@
     delete from profile_meta_user_login
     where user_id = #{userId,jdbcType=VARCHAR}
   </delete>
-
-  <update id="updateByUserId" parameterType="com.data.profile.web.model.UserLogin">
-    update profile_meta_user_login
-    set
-        token = #{token,jdbcType=LONGVARCHAR},
-        token_status = #{tokenStatus,jdbcType=TINYINT}
-    where user_id = #{userId,jdbcType=VARCHAR}
-  </update>
-
-  <update id="updateByUserIdSelective" parameterType="com.data.profile.web.model.UserLogin">
-    update profile_meta_user_login
-    <set>
-      <if test="token != null and token != ''">
-        token = #{token,jdbcType=LONGVARCHAR},
-      </if>
-      <if test="tokenStatus != null">
-        token_status = #{tokenStatus,jdbcType=TINYINT},
-      </if>
-    </set>
-    where user_id = #{userId,jdbcType=VARCHAR}
-  </update>
-
-  <update id="updateTokenStatusByUserId">
-    update profile_meta_user_login
-    set token_status = #{tokenStatus,jdbcType=TINYINT}
-    where user_id = #{userId,jdbcType=VARCHAR}
-  </update>
 
 </mapper>
