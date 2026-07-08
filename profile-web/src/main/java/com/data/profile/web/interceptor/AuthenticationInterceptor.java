@@ -6,6 +6,8 @@ import com.data.profile.web.security.AccessInfo;
 import com.data.profile.web.security.UserContext;
 import com.data.profile.web.service.UserService;
 import com.data.profile.web.utils.JwtUtil;
+import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.common.enums.UserStatus;
 import com.data.profile.web.vo.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static com.data.profile.common.domain.Constant.SESSION_USER_CONTEXT;
@@ -74,7 +77,7 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
             return false;
         }
         com.data.profile.web.vo.UserVO userVO = userVOOptional.get();
-        if (userVO.getStatus() != null && userVO.getStatus() != 1) {
+        if (!Objects.equals(userVO.getStatus(), UserStatus.ACTIVATED.getCode())) {
             writeUnauthorizedResponse(response, "用户已被禁用");
             return false;
         }
@@ -102,7 +105,7 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
     private void writeUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType("application/json;charset=UTF-8");
-        Response<?> errorResponse = Response.error(message, null);
+        Response<?> errorResponse = Response.error(message, ResponseCode.ERROR);
         errorResponse.setCode(HttpStatus.UNAUTHORIZED.value());
         response.getWriter().write(JSONUtils.toJsonString(errorResponse));
     }

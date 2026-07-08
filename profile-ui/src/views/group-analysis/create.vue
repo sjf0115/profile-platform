@@ -15,78 +15,106 @@
     </div>
 
     <div class="page-body">
-      <!-- 基本信息 -->
-      <div class="form-section">
-        <div class="section-header">
-          <span class="section-title">基本信息</span>
-        </div>
-        <el-form :model="form" label-width="100px" style="max-width: 600px">
-          <el-form-item label="分析名称" required>
-            <el-input v-model="form.analysis_name" placeholder="请输入分析名称" maxlength="50" show-word-limit />
-          </el-form-item>
-          <el-form-item label="分析描述">
-            <el-input
-              v-model="form.analysis_desc"
-              type="textarea"
-              placeholder="请输入分析描述（可选）"
-              :rows="3"
-              maxlength="200"
-              show-word-limit
+      <!-- 顶部选择区 -->
+      <div class="entity-group-bar">
+        <!-- 群体所属实体 -->
+        <div class="bar-item">
+          <span class="bar-label">群体所属实体</span>
+          <el-select
+            v-model="selectedEntityIdentifierId"
+            placeholder="请选择实体标识"
+            filterable
+            clearable
+            style="width: 220px"
+            @change="handleEntityIdentifierChange"
+          >
+            <el-option
+              v-for="item in entityIdentifierList"
+              :key="item.entity_identifier_id"
+              :label="`${item.entity_name} > ${item.entity_identifier_name}`"
+              :value="item.entity_identifier_id"
             />
-          </el-form-item>
-        </el-form>
+          </el-select>
+        </div>
+
+        <!-- 群组下拉 -->
+        <div class="bar-item">
+          <span class="bar-label">群组</span>
+          <el-select
+            v-model="form.group_id"
+            placeholder="选择主分析群组"
+            filterable
+            clearable
+            :disabled="!selectedEntityIdentifierId"
+            style="width: 220px"
+            @change="handleGroupChange"
+          >
+            <el-option
+              v-for="group in groupList"
+              :key="group.group_id"
+              :label="group.group_name"
+              :value="group.group_id"
+            >
+              <span>{{ group.group_name }}</span>
+              <span style="color: #909399; font-size: 12px; margin-left: 8px">
+                ({{ group.group_count || 0 }})
+              </span>
+            </el-option>
+          </el-select>
+        </div>
+
+        <!-- 数量展示 -->
+        <div class="bar-item bar-info" v-if="form.group_id">
+          <span class="group-count">数量：{{ selectedGroupCount }}</span>
+          <span class="group-coverage">{{ selectedGroupRate }}% 覆盖度</span>
+        </div>
+
+        <!-- 增加/删除对比群体按钮 -->
+        <div class="bar-item" v-if="form.group_id">
+          <el-button
+            v-if="!showCompareGroup"
+            type="primary"
+            plain
+            size="small"
+            @click="showCompareGroup = true"
+          >
+            <el-icon style="margin-right: 4px"><Plus /></el-icon>
+            增加对比群体
+          </el-button>
+          <el-button
+            v-else
+            type="danger"
+            plain
+            size="small"
+            @click="handleRemoveCompareGroup"
+          >
+            删除对比群体
+          </el-button>
+        </div>
       </div>
 
-      <!-- 群组选择 -->
-      <div class="form-section">
-        <div class="section-header">
-          <span class="section-title">选择群组</span>
-          <span class="section-desc">选择主分析群组及可选的对比群组</span>
-        </div>
-        <el-form label-width="100px" style="max-width: 600px">
-          <el-form-item label="分析群组" required>
-            <el-select
-              v-model="form.group_id"
-              placeholder="选择主分析群组"
-              filterable
-              style="width: 100%"
-              @change="handleGroupChange"
-            >
-              <el-option
-                v-for="group in groupList"
-                :key="group.group_id"
-                :label="group.group_name"
-                :value="group.group_id"
-              >
-                <span>{{ group.group_name }}</span>
-                <span style="color: #909399; font-size: 12px; margin-left: 8px">
-                  ({{ group.group_count || 0 }} · {{ group.entity_identifier_name || '-' }})
-                </span>
-              </el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="对比群组">
-            <el-select
-              v-model="form.compare_group_ids"
-              placeholder="选择对比群组（可选，可多选）"
-              filterable
-              clearable
-              multiple
-              collapse-tags
-              style="width: 100%"
-            >
-              <el-option
-                v-for="group in compareGroupOptions"
-                :key="group.group_id"
-                :label="group.group_name"
-                :value="group.group_id"
-              >
-                <span>{{ group.group_name }}</span>
-                <span style="color: #909399; font-size: 12px; margin-left: 8px">({{ group.group_count || 0 }})</span>
-              </el-option>
-            </el-select>
-          </el-form-item>
-        </el-form>
+      <!-- 对比群组下拉（下一行） -->
+      <div class="compare-group-bar" v-if="showCompareGroup">
+        <span class="bar-label">对比群体</span>
+        <el-select
+          v-model="form.compare_group_ids"
+          placeholder="选择对比群组（可多选）"
+          filterable
+          clearable
+          multiple
+          collapse-tags
+          style="width: 360px"
+        >
+          <el-option
+            v-for="group in compareGroupOptions"
+            :key="group.group_id"
+            :label="group.group_name"
+            :value="group.group_id"
+          >
+            <span>{{ group.group_name }}</span>
+            <span style="color: #909399; font-size: 12px; margin-left: 8px">({{ group.group_count || 0 }})</span>
+          </el-option>
+        </el-select>
       </div>
 
       <!-- 标签选择 -->
@@ -100,8 +128,8 @@
           v-model="form.label_ids"
           :labels="availableLabels"
         />
-        <el-empty v-else-if="!form.group_id" description="请先选择分析群组" :image-size="80" />
-        <el-empty v-else description="该群组暂无可用标签" :image-size="80" />
+        <el-empty v-else-if="!selectedEntityIdentifierId" description="请先选择群体所属实体" :image-size="80" />
+        <el-empty v-else description="该实体暂无可用标签" :image-size="80" />
       </div>
 
       <!-- 已选标签栏 -->
@@ -124,6 +152,7 @@
             v-for="dist in distributions"
             :key="dist.label_id"
             :distribution="dist"
+            :showExport="false"
             @remove="handleRemoveLabel"
           />
         </div>
@@ -135,6 +164,28 @@
           <el-empty description="勾选上方标签后立即展示分布图表" :image-size="80" />
         </div>
       </div>
+
+      <!-- 基本信息（放在最下方） -->
+      <div class="form-section">
+        <div class="section-header">
+          <span class="section-title">基本信息</span>
+        </div>
+        <el-form :model="form" label-width="100px" style="max-width: 600px">
+          <el-form-item label="分析名称" required>
+            <el-input v-model="form.analysis_name" placeholder="请输入分析名称" maxlength="50" show-word-limit />
+          </el-form-item>
+          <el-form-item label="分析描述">
+            <el-input
+              v-model="form.analysis_desc"
+              type="textarea"
+              placeholder="请输入分析描述（可选）"
+              :rows="3"
+              maxlength="200"
+              show-word-limit
+            />
+          </el-form-item>
+        </el-form>
+      </div>
     </div>
   </div>
 </template>
@@ -143,8 +194,9 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Loading } from '@element-plus/icons-vue'
+import { ArrowLeft, Loading, Plus } from '@element-plus/icons-vue'
 import { groupAnalysisApi } from '@/api/groupAnalysis'
+import { entityIdentifierApi, type EntityIdentifier } from '@/api/entity'
 import type { Group, AnalysisLabel, LabelDistribution } from '@/types'
 import LabelSelector from './components/LabelSelector.vue'
 import LabelDistributionChart from './components/LabelDistributionChart.vue'
@@ -161,9 +213,18 @@ const loading = ref(false)
 const saving = ref(false)
 const analyzing = ref(false)
 const initDone = ref(false)
+
+// 实体标识列表 & 选中项
+const entityIdentifierList = ref<EntityIdentifier[]>([])
+const selectedEntityIdentifierId = ref('')
+const showCompareGroup = ref(false)
+
+// 当前实体标识下的可分析群组
 const groupList = ref<Group[]>([])
 const availableLabels = ref<AnalysisLabel[]>([])
 const distributions = ref<LabelDistribution[]>([])
+// 标签分布缓存：labelId -> 分布数据
+const distributionCache = new Map<string, LabelDistribution>()
 
 // 表单
 const form = ref({
@@ -179,6 +240,19 @@ const form = ref({
 const compareGroupOptions = computed(() => {
   return groupList.value.filter(g => g.group_id !== form.value.group_id)
 })
+
+// 当前选中群组的数量 & 覆盖率
+const selectedGroupCount = computed(() => {
+  const g = groupList.value.find(x => x.group_id === form.value.group_id)
+  return g?.group_count ?? 0
+})
+const selectedGroupRate = computed(() => 100) // 暂时固定
+
+// 移除对比群组
+const handleRemoveCompareGroup = () => {
+  showCompareGroup.value = false
+  form.value.compare_group_ids = []
+}
 
 // 返回
 const goBack = () => {
@@ -200,14 +274,81 @@ const handleClearLabels = () => {
   form.value.label_ids = []
 }
 
-// 标签变化时获取分布数据（唯一触发点）
-watch(() => form.value.label_ids, (newIds) => {
-  console.log('[watch] label_ids changed:', newIds, 'initDone:', initDone.value)
+// ==================== 加载与联动 ====================
+
+// 实体标识变更：清空群组/对比群组/标签/分布，重新加载群组和标签
+const handleEntityIdentifierChange = async (identifierId: string) => {
+  form.value.group_id = ''
+  form.value.compare_group_ids = []
+  form.value.label_ids = []
+  distributions.value = []
+  distributionCache.clear()
+  showCompareGroup.value = false
+
+  if (!identifierId) {
+    groupList.value = []
+    availableLabels.value = []
+    return
+  }
+
+  loading.value = true
+  try {
+    // 并行加载群组和标签
+    const [groupsRes, labelsRes] = await Promise.all([
+      groupAnalysisApi.getGroups({ entity_identifier_id: identifierId }),
+      groupAnalysisApi.getLabels(identifierId),
+    ])
+    groupList.value = (groupsRes.data.data || []).filter(
+      (g: any) => g.group_count != null && g.group_count > 0
+    )
+    availableLabels.value = labelsRes.data.data || []
+  } catch (e) {
+    console.error('加载群组/标签失败:', e)
+    ElMessage.error('加载群组/标签失败')
+    groupList.value = []
+    availableLabels.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+// 群组变更：清空分布和缓存
+const handleGroupChange = async (groupId: string) => {
+  distributions.value = []
+  distributionCache.clear()
+  form.value.label_ids = []
+  if (groupId) {
+    form.value.compare_group_ids = form.value.compare_group_ids.filter(id => id !== groupId)
+  }
+}
+
+// 标签变化时增量获取分布数据
+watch(() => form.value.label_ids, (newIds, oldIds) => {
   if (!initDone.value) return
-  fetchDistribution([...newIds])
+
+  const oldSet = new Set(oldIds || [])
+  const newSet = new Set(newIds)
+
+  // 移除被删除标签的缓存
+  oldIds?.forEach(id => {
+    if (!newSet.has(id)) distributionCache.delete(id)
+  })
+
+  // 找出新增的标签
+  const addedIds = newIds.filter(id => !oldSet.has(id))
+
+  // 更新展示列表：复用缓存 + 请求新增
+  distributions.value = newIds
+    .map(id => distributionCache.get(id))
+    .filter((d): d is LabelDistribution => !!d)
+
+  // 请求新增标签的分布
+  if (addedIds.length > 0) {
+    fetchNewDistributions(addedIds)
+  }
 }, { deep: true })
 
-// 超时保护：如果 API 调用超过 15 秒未返回，强制重置 loading
+// 超时保护
 const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
   return Promise.race([
     promise,
@@ -217,75 +358,97 @@ const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
   ])
 }
 
-const fetchDistribution = async (labelIds: string[]) => {
-  console.log('[fetchDistribution] called with:', labelIds, 'groupId:', form.value.group_id)
-  if (!form.value.group_id || labelIds.length === 0) {
-    distributions.value = []
-    return
-  }
+// 增量获取新增标签的分布
+const fetchNewDistributions = async (labelIds: string[]) => {
+  if (!form.value.group_id) return
 
   analyzing.value = true
   try {
-    const res = await withTimeout(
-      groupAnalysisApi.getDistribution({
-        group_id: form.value.group_id,
-        label_ids: labelIds,
-        compare_group_ids: form.value.compare_group_ids.length > 0 ? form.value.compare_group_ids : undefined,
-      }),
-      15000
+    // 并行请求所有新增标签的分布
+    const results = await Promise.all(
+      labelIds.map(async (labelId) => {
+        try {
+          const res = await withTimeout(
+            groupAnalysisApi.getDistribution({
+              group_id: form.value.group_id,
+              label_id: labelId,
+              compare_group_ids: form.value.compare_group_ids.length > 0 ? form.value.compare_group_ids : undefined,
+            }),
+            15000
+          )
+          return res.data.data as LabelDistribution
+        } catch (err) {
+          console.error(`获取标签 ${labelId} 分布失败:`, err)
+          return null
+        }
+      })
     )
-    const data = res.data.data || []
-    console.log('[fetchDistribution] response data:', data.length, 'items')
-    distributions.value = data.map((dist: any) => {
-      const label = availableLabels.value.find(l => l.label_id === dist.label_id)
-      return {
-        ...dist,
-        label_name: label?.label_name || dist.label_name,
-        dataset_name: label?.dataset_name || dist.dataset_name,
-        update_type: '手动更新',
+
+    // 写入缓存
+    results.forEach((dist, i) => {
+      if (dist) {
+        const labelId = labelIds[i]
+        const label = availableLabels.value.find(l => l.label_id === labelId)
+        distributionCache.set(labelId, {
+          ...dist,
+          label_name: label?.label_name || dist.label_name,
+          dataset_name: label?.dataset_name || dist.dataset_name,
+          update_type: dist.update_type || '手动更新',
+        })
       }
     })
+
+    // 更新展示列表
+    distributions.value = form.value.label_ids
+      .map(id => distributionCache.get(id))
+      .filter((d): d is LabelDistribution => !!d)
   } catch (error: any) {
     console.error('获取标签分布失败:', error?.message || error)
-    distributions.value = []
     ElMessage.error(error?.message || '获取标签分布失败')
   } finally {
     analyzing.value = false
   }
 }
 
-// 获取群组列表
-const fetchGroups = async () => {
+// ==================== 初始化 ====================
+
+const initPage = async () => {
   loading.value = true
   try {
-    const res = await groupAnalysisApi.getGroups()
-    groupList.value = res.data.data || []
+    // 加载实体标识列表
+    const entityRes = await entityIdentifierApi.list()
+    entityIdentifierList.value = entityRes.data.data || []
 
-    // 编辑模式：加载已有分析数据
+    // 编辑模式：加载分析详情
     if (isEdit.value && editAnalysisId.value) {
       await loadAnalysisDetail(editAnalysisId.value)
     } else {
-      // 创建模式：检查 URL 中是否有 group_id 查询参数（从群组页跳转过来）
+      // 创建模式：检查 URL 中是否有 group_id（从群组页跳转过来）
       const queryGroupId = route.query.group_id as string
       if (queryGroupId) {
-        const exists = groupList.value.some(g => g.group_id === queryGroupId)
-        if (exists) {
+        // 需要先加载所有群组找到对应的 entity_identifier_id
+        const allGroupsRes = await groupAnalysisApi.getGroups()
+        const allGroups = allGroupsRes.data.data || []
+        const target = allGroups.find((g: any) => g.group_id === queryGroupId)
+        if (target?.entity_identifier_id) {
+          selectedEntityIdentifierId.value = target.entity_identifier_id
+          // handleEntityIdentifierChange 会加载该标识下的群组和标签
+          await handleEntityIdentifierChange(target.entity_identifier_id)
           form.value.group_id = queryGroupId
-          await handleGroupChange(queryGroupId)
         }
       }
     }
 
-    // 标记初始化完成，后续标签变化才触发分布请求
+    // 标记初始化完成
     initDone.value = true
 
-    // 编辑模式：如果有已选标签，立即获取分布
+    // 编辑模式：如果有已选标签，并行获取所有标签分布
     if (form.value.label_ids.length > 0 && form.value.group_id) {
-      await fetchDistribution(form.value.label_ids)
+      await fetchNewDistributions(form.value.label_ids)
     }
   } catch (error) {
-    console.error('获取群组列表失败:', error)
-    ElMessage.error('获取群组列表失败')
+    console.error('初始化失败:', error)
+    ElMessage.error('页面初始化失败')
   } finally {
     loading.value = false
   }
@@ -307,47 +470,29 @@ const loadAnalysisDetail = async (analysisId: string) => {
     form.value.group_id = data.group_id || ''
     form.value.compare_group_ids = data.compare_group_ids || []
     form.value.label_ids = data.label_ids || []
+    if (form.value.compare_group_ids.length > 0) {
+      showCompareGroup.value = true
+    }
 
-    // 如果选中了群组，自动加载标签
+    // 根据 group_id 反查 entity_identifier_id，加载该标识下的群组和标签
     if (form.value.group_id) {
-      await loadLabelsForGroup(form.value.group_id)
+      // 先加载所有群组找到对应的 entity_identifier_id
+      const allGroupsRes = await groupAnalysisApi.getGroups()
+      const allGroups = allGroupsRes.data.data || []
+      const target = allGroups.find((g: any) => g.group_id === form.value.group_id)
+      if (target?.entity_identifier_id) {
+        selectedEntityIdentifierId.value = target.entity_identifier_id
+        // 加载该标识下的群组和标签
+        await handleEntityIdentifierChange(target.entity_identifier_id)
+        // 恢复表单数据（handleEntityIdentifierChange 会清空）
+        form.value.group_id = data.group_id || ''
+        form.value.compare_group_ids = data.compare_group_ids || []
+        form.value.label_ids = data.label_ids || []
+      }
     }
   } catch (error) {
     console.error('加载分析详情失败:', error)
     ElMessage.error('加载分析详情失败')
-  }
-}
-
-// 群组变更时加载标签
-const handleGroupChange = async (groupId: string) => {
-  if (!groupId) {
-    availableLabels.value = []
-    return
-  }
-  // 清空分布和标签
-  distributions.value = []
-  form.value.label_ids = []
-  form.value.compare_group_ids = form.value.compare_group_ids.filter(id => id !== groupId)
-  await loadLabelsForGroup(groupId)
-}
-
-const loadLabelsForGroup = async (groupId: string) => {
-  const group = groupList.value.find(g => g.group_id === groupId)
-  if (!group) return
-
-  const entityIdentifierId = group.entity_identifier_id
-  if (!entityIdentifierId) {
-    ElMessage.warning('该群组未关联实体标识，无法选择标签')
-    availableLabels.value = []
-    return
-  }
-
-  try {
-    const res = await groupAnalysisApi.getLabels(entityIdentifierId)
-    availableLabels.value = res.data.data || []
-  } catch (error) {
-    console.error('获取标签失败:', error)
-    availableLabels.value = []
   }
 }
 
@@ -387,7 +532,7 @@ const handleSave = async () => {
 }
 
 onMounted(() => {
-  fetchGroups()
+  initPage()
 })
 </script>
 
@@ -424,6 +569,66 @@ onMounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 0 20px 20px;
+}
+
+/* 对比群组下拉（下一行） */
+.compare-group-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 20px;
+  background: #fff;
+  border-radius: 4px;
+  border: 1px solid #e4e7ed;
+
+  .bar-label {
+    font-size: 14px;
+    color: #606266;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}
+
+/* 顶部横向选择区 */
+.entity-group-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 14px 20px;
+  background: linear-gradient(to right, #f0f4fa, #e8ecf4);
+  border-radius: 4px;
+  border: 1px solid #d9dee8;
+
+  .bar-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .bar-label {
+      font-size: 14px;
+      color: #606266;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+  }
+
+  .bar-info {
+    gap: 12px;
+
+    .group-count {
+      font-size: 14px;
+      color: #303133;
+      font-weight: 500;
+    }
+
+    .group-coverage {
+      font-size: 13px;
+      color: #909399;
+    }
+  }
 }
 
 .form-section {

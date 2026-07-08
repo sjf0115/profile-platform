@@ -1,11 +1,9 @@
 package com.data.profile.web.controller;
 
 import com.data.profile.common.enums.ResponseCode;
-import com.data.profile.web.dao.LabelMapper;
 import com.data.profile.web.dto.GroupAnalysisRequest;
 import com.data.profile.web.model.Group;
 import com.data.profile.web.model.GroupAnalysis;
-import com.data.profile.web.model.Label;
 import com.data.profile.web.service.GroupAnalysisService;
 import com.data.profile.web.vo.*;
 import com.google.gson.Gson;
@@ -15,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
 import java.util.*;
 
 /**
@@ -32,8 +29,6 @@ public class GroupAnalysisController {
 
     @Autowired
     private GroupAnalysisService groupAnalysisService;
-    @Resource
-    private LabelMapper labelMapper;
 
     // ========== 群组分析 CRUD ==========
 
@@ -129,60 +124,20 @@ public class GroupAnalysisController {
     }
 
     /**
-     * 获取标签分布数据（Mock，后续补全Service层）
+     * 获取单个标签的分布数据
      */
     @PostMapping(value = "/distribution")
-    public Response<List<LabelDistributionVO>> getLabelDistribution(@RequestBody GroupAnalysisRequest request) {
-        log.info("请求获取标签分布(Mock): groupId={}, labelIds={}", request.getGroupId(), request.getLabelIds());
-        // 查找标签真实名称
-        Map<String, String> labelNameMap = new HashMap<>();
-        for (String labelId : request.getLabelIds()) {
-            Label label = labelMapper.selectByLabelId(labelId);
-            if (label != null) {
-                labelNameMap.put(labelId, label.getLabelName());
+    public Response<LabelDistributionVO> getLabelDistribution(@RequestBody GroupAnalysisRequest request) {
+        log.info("请求获取群组 [{}] 标签 [{}] 的分布", request.getGroupId(), request.getLabelId());
+        try {
+            LabelDistributionVO result = groupAnalysisService.getLabelDistribution(request);
+            if (result == null) {
+                return Response.error("获取标签分布失败，请连续管理员", ResponseCode.ERROR);
             }
+            return Response.success(result);
+        } catch (Exception e) {
+            log.error("获取标签分布失败", e);
+            return Response.error("获取标签分布失败: " + e.getMessage(), ResponseCode.ERROR);
         }
-        List<LabelDistributionVO> result = new ArrayList<>();
-        Random rand = new Random(42); // 固定种子保证同参数同结果
-        String[][] mockValues = {
-            {"北京", "上海", "广州", "深圳", "杭州", "成都", "武汉", "南京", "西安", "重庆"},
-            {"丰田", "大众", "本田", "日产", "宝马", "奔驰", "奥迪", "特斯拉", "比亚迪", "理想"},
-            {"男", "女"},
-            {"18-25岁", "26-35岁", "36-45岁", "46-55岁", "55岁以上"},
-            {"高", "中", "低"},
-            {"是", "否"}
-        };
-        for (String labelId : request.getLabelIds()) {
-            LabelDistributionVO dist = new LabelDistributionVO();
-            String labelName = labelNameMap.getOrDefault(labelId, labelId);
-            dist.setLabelId(labelId);
-            dist.setLabelName(labelName);
-            dist.setDatasetName("mock_dataset");
-            dist.setUpdateType("手动更新");
-            String[] values = mockValues[rand.nextInt(mockValues.length)];
-            List<DistributionItemVO> items = new ArrayList<>();
-            long totalCurrent = 0, totalAll = 0;
-            long[] currentCounts = new long[values.length];
-            long[] allCounts = new long[values.length];
-            for (int i = 0; i < values.length; i++) {
-                currentCounts[i] = rand.nextInt(500) + 20;
-                allCounts[i] = rand.nextInt(2000) + 100;
-                totalCurrent += currentCounts[i];
-                totalAll += allCounts[i];
-            }
-            for (int i = 0; i < values.length; i++) {
-                DistributionItemVO item = new DistributionItemVO();
-                item.setValue(values[i]);
-                item.setCurrentCount(currentCounts[i]);
-                item.setCurrentRate(totalCurrent > 0 ? (double) currentCounts[i] / totalCurrent * 100 : 0);
-                item.setAllCount(allCounts[i]);
-                item.setAllRate(totalAll > 0 ? (double) allCounts[i] / totalAll * 100 : 0);
-                items.add(item);
-            }
-            items.sort((a, b) -> Long.compare(b.getCurrentCount(), a.getCurrentCount()));
-            dist.setValues(items);
-            result.add(dist);
-        }
-        return Response.success(result);
     }
 }

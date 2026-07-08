@@ -49,7 +49,7 @@ public class EntityIdentifierService {
      */
     public Optional<EntityIdentifier> getDetail(String entityIdentifierId) {
         EntityIdentifier entityIdentifier = entityIdentifierMapper.selectByEntityIdentifierId(entityIdentifierId);
-        log.info("根据实体标识ID获取实体标识详细信息: {}", gson.toJson(entityIdentifier));
+        log.info("根据实体标识ID [{}] 获取实体标识详细信息: {}", entityIdentifierId, gson.toJson(entityIdentifier));
         if (entityIdentifier == null) {
             return Optional.empty();
         }

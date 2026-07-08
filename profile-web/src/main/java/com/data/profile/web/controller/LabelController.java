@@ -91,14 +91,24 @@ public class LabelController {
     }
 
     /**
-     * 获取可用标签列表，未被其他数据集绑定的标签
+     * 获取未绑定数据集的标签（数据集创建/编辑场景专用）
      * 编辑模式传入 dataset_id 可保留当前数据集已绑定标签
      */
-    @GetMapping(value = "/available")
-    public Response<List<LabelVO>> getAvailableLabels(@RequestParam(name = "entity_identifier_id") String entityIdentifierId,
+    @GetMapping(value = "/unbound")
+    public Response<List<LabelVO>> getUnboundLabels(@RequestParam(name = "entity_identifier_id") String entityIdentifierId,
             @RequestParam(name = "dataset_id", required = false) String datasetId) {
-        log.info("请求获取实体 [{}] 下未被 [{}] 之外数据集绑定的可用标签", entityIdentifierId, datasetId);
+        log.info("请求获取实体 [{}] 下未被 [{}] 之外数据集绑定的标签", entityIdentifierId, datasetId);
         List<LabelVO> labels = labelService.getAvailableList(entityIdentifierId, datasetId);
+        return Response.success(labels);
+    }
+
+    /**
+     * 获取已绑定数据集的线上可用标签（群组规则/分析场景专用）
+     */
+    @GetMapping(value = "/online")
+    public Response<List<LabelVO>> getOnlineLabels(@RequestParam(name = "entity_identifier_id") String entityIdentifierId) {
+        log.info("请求获取实体 [{}] 下已绑定数据集的线上可用标签", entityIdentifierId);
+        List<LabelVO> labels = labelService.getOnlineList(entityIdentifierId);
         return Response.success(labels);
     }
 

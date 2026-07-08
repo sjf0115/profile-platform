@@ -100,6 +100,8 @@ const analyzing = ref(false)
 const groupList = ref<Group[]>([])
 const availableLabels = ref<AnalysisLabel[]>([])
 const distributions = ref<LabelDistribution[]>([])
+// 标签分布缓存：labelId -> 分布数据
+const distributionCache = new Map<string, LabelDistribution>()
 
 // 分析记录数据
 const analysisName = ref('')
@@ -149,10 +151,30 @@ const handleClearLabels = () => {
   selectedLabelIds.value = []
 }
 
-// 标签变化时获取分布数据（唯一触发点）
-watch(selectedLabelIds, (newIds) => {
+// 标签变化时增量获取分布数据（唯一触发点）
+watch(selectedLabelIds, (newIds, oldIds) => {
   if (!initDone.value) return
-  fetchDistribution([...newIds])
+
+  const oldSet = new Set(oldIds || [])
+  const newSet = new Set(newIds)
+
+  // 移除被删除标签的缓存
+  oldIds?.forEach(id => {
+    if (!newSet.has(id)) distributionCache.delete(id)
+  })
+
+  // 找出新增的标签
+  const addedIds = newIds.filter(id => !oldSet.has(id))
+
+  // 更新展示列表：复用缓存 + 请求新增
+  distributions.value = newIds
+    .map(id => distributionCache.get(id))
+    .filter((d): d is LabelDistribution => !!d)
+
+  // 请求新增标签的分布
+  if (addedIds.length > 0) {
+    fetchNewDistributions(addedIds)
+  }
 }, { deep: true })
 
 // 超时保护：如果 API 调用超过 15 秒未返回，强制重置 loading
@@ -165,35 +187,51 @@ const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
   ])
 }
 
-const fetchDistribution = async (labelIds: string[]) => {
-  if (!currentGroupId.value || labelIds.length === 0) {
-    distributions.value = []
-    return
-  }
+// 增量获取新增标签的分布
+const fetchNewDistributions = async (labelIds: string[]) => {
+  if (!currentGroupId.value) return
 
   analyzing.value = true
   try {
-    const res = await withTimeout(
-      groupAnalysisApi.getDistribution({
-        group_id: currentGroupId.value,
-        label_ids: labelIds,
-        compare_group_ids: compareGroupIds.value.length > 0 ? compareGroupIds.value : undefined,
-      }),
-      15000
+    const results = await Promise.all(
+      labelIds.map(async (labelId) => {
+        try {
+          const res = await withTimeout(
+            groupAnalysisApi.getDistribution({
+              group_id: currentGroupId.value,
+              label_id: labelId,
+              compare_group_ids: compareGroupIds.value.length > 0 ? compareGroupIds.value : undefined,
+            }),
+            15000
+          )
+          return res.data.data as LabelDistribution
+        } catch (err) {
+          console.error(`获取标签 ${labelId} 分布失败:`, err)
+          return null
+        }
+      })
     )
-    const data = res.data.data || []
-    distributions.value = data.map((dist: any) => {
-      const label = availableLabels.value.find(l => l.label_id === dist.label_id)
-      return {
-        ...dist,
-        label_name: label?.label_name || dist.label_name,
-        dataset_name: label?.dataset_name || dist.dataset_name,
-        update_type: label?.update_type === 2 ? '周期更新' : '手动更新',
+
+    // 写入缓存
+    results.forEach((dist, i) => {
+      if (dist) {
+        const labelId = labelIds[i]
+        const label = availableLabels.value.find(l => l.label_id === labelId)
+        distributionCache.set(labelId, {
+          ...dist,
+          label_name: label?.label_name || dist.label_name,
+          dataset_name: label?.dataset_name || dist.dataset_name,
+          update_type: dist.update_type || '手动更新',
+        })
       }
     })
+
+    // 更新展示列表
+    distributions.value = selectedLabelIds.value
+      .map(id => distributionCache.get(id))
+      .filter((d): d is LabelDistribution => !!d)
   } catch (error: any) {
     console.error('获取标签分布失败:', error?.message || error)
-    distributions.value = []
     ElMessage.error(error?.message || '获取标签分布失败')
   } finally {
     analyzing.value = false
@@ -261,7 +299,7 @@ const init = async () => {
 
     // 如果有已选标签，立即获取分布
     if (selectedLabelIds.value.length > 0) {
-      await fetchDistribution(selectedLabelIds.value)
+      await fetchNewDistributions(selectedLabelIds.value)
     }
   } catch (error) {
     console.error('加载分析详情失败:', error)

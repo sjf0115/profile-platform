@@ -1,5 +1,6 @@
 package com.data.profile.web.controller;
 
+import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.service.TaskExecutionService;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.*;
@@ -132,7 +133,7 @@ public class GroupController {
     // 预估群组人数
     @PostMapping(value = "/estimate")
     public Response<Long> estimate(@RequestBody Group group) {
-        log.info("请求预估群组人数");
+        log.info("请求预估群组人数：{}", JSONUtils.toJsonString(group));
         try {
             long count = groupService.estimateGroupCount(group.getGroupRule());
             return Response.success(count);

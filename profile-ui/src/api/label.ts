@@ -22,10 +22,17 @@ export const labelApi = {
     return request.post<ApiResponse<Label[]>>('/label/list', params || {})
   },
 
-  // 获取可用标签列表（未被其他数据集绑定的标签）
-  getAvailable: (entity_identifier_id: string, dataset_id?: string) => {
-    return request.get<ApiResponse<Label[]>>('/label/available', {
+  // 获取未绑定数据集的标签（数据集创建/编辑场景专用）
+  getUnbound: (entity_identifier_id: string, dataset_id?: string) => {
+    return request.get<ApiResponse<Label[]>>('/label/unbound', {
       params: { entity_identifier_id, dataset_id }
+    })
+  },
+
+  // 获取已绑定数据集的线上可用标签（群组规则/分析场景专用）
+  getOnline: (entity_identifier_id: string) => {
+    return request.get<ApiResponse<Label[]>>('/label/online', {
+      params: { entity_identifier_id }
     })
   },
 

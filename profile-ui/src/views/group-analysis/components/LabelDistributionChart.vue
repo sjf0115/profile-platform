@@ -60,7 +60,7 @@
               <el-icon class="mi-icon"><Grid /></el-icon>
               <span class="mi-label">数据查看</span>
             </div>
-            <div class="menu-item" @click="doExportImage">
+            <div v-if="showExport" class="menu-item" @click="doExportImage">
               <el-icon class="mi-icon"><Download /></el-icon>
               <span class="mi-label">导出</span>
             </div>
@@ -129,12 +129,6 @@
           </template>
         </el-table-column>
         <el-table-column prop="current_count" label="当前人数" width="80" align="right" />
-        <el-table-column label="全体占比" width="80" align="right">
-          <template #default="{ row }">
-            <span style="color: #67C23A">{{ row.all_rate.toFixed(1) }}%</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="all_count" label="全体人数" width="80" align="right" />
       </el-table>
     </div>
   </div>
@@ -152,9 +146,12 @@ import type { LabelDistribution } from '@/types'
 
 use([BarChart, EPieChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   distribution: LabelDistribution
-}>()
+  showExport?: boolean
+}>(), {
+  showExport: true,
+})
 
 const emit = defineEmits<{
   'remove': [labelId: string]
@@ -224,7 +221,7 @@ const switchSortMode = (mode: 'count-desc' | 'count-asc' | 'alpha') => {
 const toggleDataTable = () => {
   showTable.value = !showTable.value
   popoverVisible.value = false
-  if (showTable.value) exportCSV()
+  if (showTable.value && props.showExport) exportCSV()
 }
 
 const doExportImage = () => {
@@ -235,9 +232,9 @@ const doExportImage = () => {
 // 导出 CSV
 const exportCSV = () => {
   const data = filteredData.value
-  const header = '标签值,当前人数,当前占比(%),全体人数,全体占比(%)\n'
+  const header = '标签值,当前人数,当前占比(%)\n'
   const rows = data.map(d =>
-    `${d.value || '(空)'},${d.current_count},${d.current_rate.toFixed(2)},${d.all_count},${d.all_rate.toFixed(2)}`
+    `${d.value || '(空)'},${d.current_count},${d.current_rate.toFixed(2)}`
   ).join('\n')
   const csv = '\uFEFF' + header + rows // BOM for Excel 中文兼容
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -269,7 +266,6 @@ const chartOption = computed(() => {
   const data = filteredData.value
   const categories = data.map(d => d.value || '(空)')
   const currentSeries = data.map(d => parseFloat(d.current_rate.toFixed(2)))
-  const allSeries = data.map(d => parseFloat(d.all_rate.toFixed(2)))
   const compareSeries = data.map(d => d.compare_rate != null ? parseFloat(d.compare_rate.toFixed(2)) : 0)
 
   // 饼图模式
@@ -318,13 +314,6 @@ const chartOption = computed(() => {
       type: 'bar',
       data: currentSeries,
       itemStyle: { color: '#409EFF', borderRadius: barRadius },
-      barMaxWidth: 18,
-    },
-    {
-      name: '全体人群',
-      type: 'bar',
-      data: allSeries,
-      itemStyle: { color: '#67C23A', borderRadius: barRadius },
       barMaxWidth: 18,
     },
   ]

@@ -460,7 +460,7 @@ const fetchTagList = async () => {
     return
   }
   try {
-    const res = await labelApi.getAvailable(props.entityIdentifierId)
+    const res = await labelApi.getOnline(props.entityIdentifierId)
     tagList.value = res.data.data || []
   } catch (error) {
     console.error('获取标签列表失败:', error)
@@ -778,19 +778,8 @@ const mapRuleTypeToBackend = (type: string): string => {
 
 // 映射操作符到后端
 const mapOperatorToBackend = (op?: string): string => {
-  const map: Record<string, string> = {
-    'eq': '=',
-    'ne': '!=',
-    'gt': '>',
-    'gte': '>=',
-    'lt': '<',
-    'lte': '<=',
-    'in': '=',
-    'not_in': '!=',
-    'contains': 'contains',
-    'not_contains': 'not_contains'
-  }
-  return map[op || ''] || '='
+  // 直接透传后端操作符名称，不做符号转换
+  return op || 'eq'
 }
 
 // 获取标签名称
@@ -835,6 +824,7 @@ const convertTimePeriod = (timeRange?: [Date, Date]) => {
  */
 const getGroupRule = () => {
   return {
+    type: 'rule',
     expression: {
       logic: groupsLogic.value,
       rule_groups: ruleGroups.value.map(group => ({

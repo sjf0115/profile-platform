@@ -588,15 +588,13 @@ export interface DistributionItem {
   value: string
   current_count: number
   current_rate: number
-  all_count: number
-  all_rate: number
   compare_count?: number
   compare_rate?: number
 }
 
-// 群组分析 - 分布请求
+// 群组分析 - 分布请求（单标签）
 export interface DistributionRequest {
   group_id: string
-  label_ids: string[]
+  label_id: string
   compare_group_ids?: string[]
 }

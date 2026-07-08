@@ -14,8 +14,8 @@ import java.util.List;
 public class GroupAnalysisRequest {
     // 当前群组ID
     private String groupId;
-    // 要分析的标签ID列表
-    private List<String> labelIds;
+    // 要分析的标签ID（单标签）
+    private String labelId;
     // 对比群组ID列表（可选）
     private List<String> compareGroupIds;
 }

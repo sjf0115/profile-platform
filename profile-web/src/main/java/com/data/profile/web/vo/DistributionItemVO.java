@@ -16,10 +16,6 @@ public class DistributionItemVO {
     private Long currentCount;
     // 当前人群占比
     private Double currentRate;
-    // 全体人群计数
-    private Long allCount;
-    // 全体人群占比
-    private Double allRate;
     // 对比群组计数（可选）
     private Long compareCount;
     // 对比群组占比（可选）

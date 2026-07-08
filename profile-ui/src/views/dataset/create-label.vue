@@ -436,15 +436,15 @@ const fetchEntityIdentifierList = async () => {
   }
 }
 
-// 获取可用标签列表（未被其他数据集绑定的标签）
+// 获取未绑定数据集的标签
 const fetchLabelList = async (entityIdentifierId: string) => {
   try {
     // 编辑模式传入 datasetId，创建模式传 undefined
-    const res = await labelApi.getAvailable(entityIdentifierId, isEditMode.value ? datasetId.value : undefined)
-    console.log('可用标签列表响应:', res)
+    const res = await labelApi.getUnbound(entityIdentifierId, isEditMode.value ? datasetId.value : undefined)
+    console.log('未绑定标签列表响应:', res)
     labelList.value = res.data.data || []
   } catch (error) {
-    console.error('获取可用标签列表失败:', error)
+    console.error('获取未绑定标签列表失败:', error)
     labelList.value = []
   }
 }

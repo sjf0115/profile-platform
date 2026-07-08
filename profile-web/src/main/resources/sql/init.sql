@@ -6,7 +6,7 @@ CREATE DATABASE profile;
 DROP Table `profile_meta_user`;
 CREATE TABLE IF NOT EXISTS `profile_meta_user`(
     `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:0-停用, 1-未激活,2-激活',
     `user_id` VARCHAR(40) NOT NULL COMMENT '用户ID',
     `user_name` VARCHAR(100) NOT NULL COMMENT '用户名称',
     `email` VARCHAR(100) COMMENT '邮箱',

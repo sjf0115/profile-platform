@@ -1,16 +1,12 @@
-package com.data.profile.web.vo;
+package com.data.profile.web.dto;
 
 import com.data.profile.web.model.LabelConfig;
 import lombok.Data;
 
 import java.util.Date;
 
-/**
- * 标签视图对象
- * <p>包含 Label DB 字段 + 关联查询字段（实体信息、数据集绑定信息）。</p>
- */
 @Data
-public class LabelVO {
+public class LabelRequest {
     private Long id;
     // 是否有效
     private Integer isValid;
@@ -38,9 +34,9 @@ public class LabelVO {
     private Integer labelTimeType;
     // 标签实体标识ID
     private String entityIdentifierId;
-    // 创建方式
+    // 创建方式: 1-系统内置,2-数据源导入,3-文件上传,4-四则运算,5-SQL计算,6-自定义规则,7-API导入,8-数据表导入
     private Integer sourceType;
-    // 标签计算规则
+    // 标签计算规则,不同创建方式不同规则
     private LabelConfig config;
     // 是否官方认证:0-否,1-是
     private Integer isOffice;
@@ -54,16 +50,4 @@ public class LabelVO {
     private Date gmtCreate;
     // 标签最后修改时间
     private Date gmtModified;
-    //----------------------------------------------------------
-    // 关联查询字段
-    // 实体标识名称
-    private String entityIdentifierName;
-    // 实体ID
-    private String entityId;
-    // 实体名称
-    private String entityName;
-    // 绑定的数据集ID
-    private String datasetId;
-    // 绑定的数据集字段名称
-    private String datasetFieldName;
 }

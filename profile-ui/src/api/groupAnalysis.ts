@@ -48,8 +48,8 @@ export const groupAnalysisApi = {
     })
   },
 
-  // 获取标签分布数据
+  // 获取单个标签的分布数据
   getDistribution: (data: DistributionRequest) => {
-    return request.post<ApiResponse<LabelDistribution[]>>('/group/analysis/distribution', data)
+    return request.post<ApiResponse<LabelDistribution>>('/group/analysis/distribution', data)
   }
 }

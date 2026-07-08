@@ -31,8 +31,6 @@ public class Label {
     private Integer labelProduceType;
     // 标签时效性类型: 0-未知,1-离线标签,2-实时标签
     private Integer labelTimeType;
-    // 标签实体标识ID
-    private String entityIdentifierId;
     // 创建方式: 1-系统内置,2-数据源导入,3-文件上传,4-四则运算,5-SQL计算,6-自定义规则,7-API导入,8-数据表导入
     private Integer sourceType;
     // 标签计算规则,不同创建方式不同规则
@@ -49,4 +47,12 @@ public class Label {
     private Date gmtCreate;
     // 标签最后修改时间
     private Date gmtModified;
+    // 标签实体标识ID
+    private String entityIdentifierId;
+    // 实体标识名称
+    private String entityIdentifierName;
+    // 实体ID
+    private String entityId;
+    // 实体名称
+    private String entityName;
 }

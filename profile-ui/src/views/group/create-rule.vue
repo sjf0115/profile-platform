@@ -142,9 +142,10 @@
           <div class="estimate-area">
             <el-button link type="primary" @click="handleEstimate" :loading="estimating">
               <el-icon><Refresh /></el-icon>
-              预估人数
+              预估数量
             </el-button>
-            <span class="estimate-count">{{ estimatedCount }}</span>
+            <span v-if="estimatedCount !== null" class="estimate-count">预估：<strong>{{ estimatedCount.toLocaleString() }}</strong> 人</span>
+            <span v-if="estimateError" class="estimate-error">{{ estimateError }}</span>
           </div>
         </div>
         <div class="section-content">
@@ -189,15 +190,34 @@ const basicFormRef = ref<FormInstance>()
 const ruleConfigRef = ref()
 
 // 预估人数
-const estimatedCount = ref(0)
+const estimatedCount = ref<number | null>(null)
 const estimating = ref(false)
+const estimateError = ref('')
 
 // 预估人数方法
 const handleEstimate = async () => {
+  if (!basicForm.entity_identifier_id) {
+    ElMessage.warning('请先选择分析主体')
+    return
+  }
+  // 验证规则配置
+  const ruleValid = ruleConfigRef.value?.validate()
+  if (!ruleValid) {
+    ElMessage.warning('请先配置规则')
+    return
+  }
   estimating.value = true
+  estimatedCount.value = null
+  estimateError.value = ''
   try {
-    await new Promise(resolve => setTimeout(resolve, 500))
-    estimatedCount.value = Math.floor(Math.random() * 10000)
+    const groupRule = ruleConfigRef.value?.getGroupRule()
+    const res = await groupApi.estimate({
+      entity_identifier_id: basicForm.entity_identifier_id,
+      group_rule: groupRule,
+    })
+    estimatedCount.value = res.data.data ?? 0
+  } catch (e: any) {
+    estimateError.value = e?.response?.data?.msg || e.message || '预估失败'
   } finally {
     estimating.value = false
   }
@@ -507,8 +527,16 @@ onMounted(() => {
       
       .estimate-count {
         font-size: 14px;
-        color: #409eff;
-        font-weight: 500;
+        color: #67c23a;
+        
+        strong {
+          font-size: 16px;
+        }
+      }
+      
+      .estimate-error {
+        font-size: 13px;
+        color: #f56c6c;
       }
     }
   }
