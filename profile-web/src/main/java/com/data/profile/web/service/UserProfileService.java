@@ -1,5 +1,6 @@
 package com.data.profile.web.service;
 
+import com.data.profile.web.converter.UserConverter;
 import com.data.profile.web.converter.UserLabelConverter;
 import com.data.profile.web.converter.UserProfileConverter;
 import com.data.profile.web.dao.DatasetFieldMapper;
@@ -64,13 +65,13 @@ public class UserProfileService {
         // 3. 构建 DTO
         UserProfileDTO profileDTO = new UserProfileDTO();
         // 获取用户基础信息
-        Optional<UserVO> userOpt = userService.getDetail(userId);
-        profileDTO.setUser(userOpt.orElse(null));
+        Optional<com.data.profile.web.dto.UserDTO> userOpt = userService.getDetail(userId);
+        profileDTO.setUser(userOpt.map(UserConverter::dto2vo).orElse(null));
         profileDTO.setLabels(labelDTOs);
         profileDTO.setGroups(new ArrayList<>()); // TODO: 后续实现用户所属人群查询
 
         // 4. DTO → VO 转换
-        UserProfileVO vo = UserProfileConverter.toVO(profileDTO);
+        UserProfileVO vo = UserProfileConverter.dto2vo(profileDTO);
 
         // 5. 填充类目分组（特殊处理：扁平列表 → 分组结构）
         vo.setLabelCategories(buildLabelCategories(categoryMap));
@@ -122,7 +123,7 @@ public class UserProfileService {
                     category.setCategoryName(entry.getValue().get(0).getCategoryName());
                     category.setSortOrder(entry.getValue().get(0).getSortOrder());
                     category.setLabels(entry.getValue().stream()
-                            .map(UserLabelConverter::toVO)
+                            .map(UserLabelConverter::dto2vo)
                             .collect(Collectors.toList()));
                     return category;
                 })

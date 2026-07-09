@@ -31,13 +31,13 @@ public class AttributeController {
     private AttributeService attrService;
 
     @GetMapping(value = "/list")
-    public Response getList(@RequestBody Attribute attr) {
+    public Response<List<Attribute>> getList(@RequestBody Attribute attr) {
         List<Attribute> attrs = attrService.getList(attr);
         return Response.success(attrs);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam String entityId) {
+    public Response<Attribute> getDetail(@RequestParam String entityId) {
         Optional<Attribute> optional = attrService.getDetail(entityId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -47,7 +47,7 @@ public class AttributeController {
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody Attribute attr) {
+    public Response<Integer> save(@RequestBody Attribute attr) {
         int result = attrService.save(attr);
         if (result > 0) {
             return Response.success(result);

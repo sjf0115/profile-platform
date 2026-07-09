@@ -27,13 +27,13 @@ public class EntityController {
     private EntityService entityService;
 
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody Entity entity) {
+    public Response<List<Entity>> getList(@RequestBody Entity entity) {
         List<Entity> entities = entityService.getList(entity);
         return Response.success(entities);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam(name = "entity_id") String entityId) {
+    public Response<Entity> getDetail(@RequestParam(name = "entity_id") String entityId) {
         Optional<Entity> optional = entityService.getDetail(entityId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -43,7 +43,7 @@ public class EntityController {
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody Entity entity) {
+    public Response<Integer> save(@RequestBody Entity entity) {
         int result = entityService.save(entity);
         if (result > 0) {
             return Response.success(result);
@@ -53,7 +53,7 @@ public class EntityController {
     }
 
     @DeleteMapping(value = "/delete")
-    public Response delete(@RequestParam(name = "entity_id", required = true) String entityId) {
+    public Response<Integer> delete(@RequestParam(name = "entity_id", required = true) String entityId) {
         int result = entityService.delete(entityId);
         if (result > 0) {
             return Response.success(result);

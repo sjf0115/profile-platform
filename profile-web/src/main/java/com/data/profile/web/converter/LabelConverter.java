@@ -1,13 +1,11 @@
 package com.data.profile.web.converter;
 
 import com.data.profile.common.enums.SourceType;
+import com.data.profile.web.dto.LabelParam;
 import com.data.profile.web.dto.LabelRequest;
-import com.data.profile.web.dto.UserRequest;
 import com.data.profile.web.model.Label;
-import com.data.profile.web.model.User;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.web.vo.LabelVO;
-import com.data.profile.web.vo.UserVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
@@ -26,7 +24,7 @@ public class LabelConverter {
     }
 
     // DO -> VO
-    public static LabelVO convert(Label label) {
+    public static LabelVO do2vo(Label label) {
         if (label == null) {
             return null;
         }
@@ -34,23 +32,31 @@ public class LabelConverter {
     }
 
     // List<DO> -> List<VO>
-    public static List<LabelVO> convertList(List<Label> labels) {
+    public static List<LabelVO> do2voList(List<Label> labels) {
         if (labels == null || labels.isEmpty()) {
             return Collections.emptyList();
         }
         return DO2VoConverterMapper.INSTANCE.convertList(labels);
     }
 
-    // DTO -> DO
-    public static Label convert(LabelRequest labelRequest) {
+    // Request -> DO
+    public static Label request2do(LabelRequest labelRequest) {
         if (labelRequest == null) {
             return null;
         }
-        Label label = DTO2DOConverterMapper.INSTANCE.convert(labelRequest);
+        Label label = Request2DOMapper.INSTANCE.convert(labelRequest);
         label.setCreator(UserContextHolder.currentUserId());
         label.setModifier(UserContextHolder.currentUserId());
         label.setSourceType(SourceType.CUSTOM.getCode());
         return label;
+    }
+
+    // Param -> DO
+    public static Label param2do(LabelParam param) {
+        if (param == null) {
+            return null;
+        }
+        return Param2DOMapper.INSTANCE.convert(param);
     }
 
     // DO -> VO
@@ -61,11 +67,19 @@ public class LabelConverter {
         LabelVO convert(Label label);
     }
 
-    // DTO -> DO
+    // Request -> DO
     @Mapper
-    public interface DTO2DOConverterMapper extends BaseConverter<LabelRequest, Label> {
-        DTO2DOConverterMapper INSTANCE = Mappers.getMapper(DTO2DOConverterMapper.class);
+    public interface Request2DOMapper extends BaseConverter<LabelRequest, Label> {
+        Request2DOMapper INSTANCE = Mappers.getMapper(Request2DOMapper.class);
         @Override
         Label convert(LabelRequest request);
+    }
+
+    // Param -> DO
+    @Mapper
+    public interface Param2DOMapper extends BaseConverter<LabelParam, Label> {
+        Param2DOMapper INSTANCE = Mappers.getMapper(Param2DOMapper.class);
+        @Override
+        Label convert(LabelParam param);
     }
 }

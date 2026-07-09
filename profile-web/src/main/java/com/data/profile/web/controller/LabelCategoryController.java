@@ -4,8 +4,7 @@ import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.model.LabelCategory;
 import com.data.profile.web.service.LabelCategoryService;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.data.profile.common.utils.JSONUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -25,19 +24,18 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/labelCategory", produces = MediaType.APPLICATION_JSON_VALUE)
 public class LabelCategoryController {
-    private static final Gson gson = new GsonBuilder().create();
     @Autowired
     private LabelCategoryService categoryService;
 
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody LabelCategory category) {
-        log.info("根据类目信息请求查询标签类目: {}", gson.toJson(category));
+    public Response<List<LabelCategory>> getList(@RequestBody LabelCategory category) {
+        log.info("根据类目信息请求查询标签类目: {}", JSONUtils.toJsonString(category));
         List<LabelCategory> categories = categoryService.getList(category);
         return Response.success(categories);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam(name = "category_id") String categoryId) {
+    public Response<LabelCategory> getDetail(@RequestParam(name = "category_id") String categoryId) {
         log.info("根据类目ID查询标签类目: {}", categoryId);
         Optional<LabelCategory> optional = categoryService.getDetail(categoryId);
         if (optional.isPresent()) {
@@ -48,7 +46,7 @@ public class LabelCategoryController {
     }
 
     @GetMapping(value = "/add")
-    public Response add(@RequestParam(name = "category_name") String categoryName, @RequestParam(name = "parent_category_id") String parentCategoryId) {
+    public Response<Integer> add(@RequestParam(name = "category_name") String categoryName, @RequestParam(name = "parent_category_id") String parentCategoryId) {
         log.info("在父类目ID {} 下添加标签类目: {}", parentCategoryId, categoryName);
         int result = categoryService.add(categoryName, parentCategoryId);
         if (result > 0) {
@@ -59,7 +57,7 @@ public class LabelCategoryController {
     }
 
     @GetMapping(value = "/delete")
-    public Response delete(@RequestParam(name = "category_id") String categoryId) {
+    public Response<Integer> delete(@RequestParam(name = "category_id") String categoryId) {
         log.info("删除标签类目: {}", categoryId);
         int result = categoryService.delete(categoryId);
         if (result > 0) {
@@ -70,7 +68,7 @@ public class LabelCategoryController {
     }
 
     @GetMapping(value = "/rename")
-    public Response rename(@RequestParam(name = "category_id") String categoryId, @RequestParam(name = "category_name") String categoryName) {
+    public Response<Integer> rename(@RequestParam(name = "category_id") String categoryId, @RequestParam(name = "category_name") String categoryName) {
         log.info("对标签类目ID {} 重名为: {}", categoryId, categoryName);
         int result = categoryService.rename(categoryId, categoryName);
         if (result > 0) {

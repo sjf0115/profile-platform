@@ -3,13 +3,12 @@ package com.data.profile.web.controller;
 import com.data.profile.web.vo.Response;
 import com.data.profile.web.vo.TaskInstanceVO;
 import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.web.converter.TaskInstanceConverter;
+import com.data.profile.web.dto.TaskInstanceParam;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.service.TaskInstanceService;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.data.profile.common.utils.JSONUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -28,24 +27,24 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/instance", produces = MediaType.APPLICATION_JSON_VALUE)
 public class TaskInstanceController {
-    private static final Gson gson = new GsonBuilder().create();
     @Autowired
     private TaskInstanceService instanceService;
 
     // 实例列表
     @PostMapping(value = "/list")
-    public Response<List<TaskInstanceVO>> getList(@RequestBody TaskInstance instance) {
-        log.info("根据任务执行实例信息请求查询任务执行实例: {}", gson.toJson(instance));
-        List<TaskInstanceVO> instances = instanceService.getListVO(instance);
-        return Response.success(instances);
+    public Response<List<TaskInstanceVO>> getList(@RequestBody TaskInstanceParam param) {
+        log.info("根据任务执行实例信息查询任务执行实例: {}", JSONUtils.toJsonString(param));
+        TaskInstance instance = TaskInstanceConverter.param2do(param);
+        List<TaskInstance> instances = instanceService.getList(instance);
+        return Response.success(TaskInstanceConverter.do2voList(instances));
     }
 
     // 实例详情
     @GetMapping(value = "/{instanceId}/detail")
     public Response<TaskInstanceVO> getDetail(@PathVariable(value = "instanceId") String instanceId) {
-        Optional<TaskInstanceVO> optional = instanceService.getDetailVO(instanceId);
+        Optional<TaskInstance> optional = instanceService.getDetail(instanceId);
         if (optional.isPresent()) {
-            return Response.success(optional.get());
+            return Response.success(TaskInstanceConverter.do2vo(optional.get()));
         } else {
             return Response.error("请求的任务实例不存在", ResponseCode.ERROR);
         }
@@ -53,10 +52,10 @@ public class TaskInstanceController {
 
     // 根据任务ID查询实例列表
     @GetMapping(value = "/{taskId}/list")
-    public Response<List<TaskInstanceVO>> listByTaskId(@RequestParam(name = "taskId") String taskId) {
+    public Response<List<TaskInstanceVO>> listByTaskId(@PathVariable(name = "taskId") String taskId) {
         TaskInstance query = new TaskInstance();
         query.setTaskId(taskId);
-        List<TaskInstanceVO> instances = instanceService.getListVO(query);
-        return Response.success(instances);
+        List<TaskInstance> instances = instanceService.getList(query);
+        return Response.success(TaskInstanceConverter.do2voList(instances));
     }
 }

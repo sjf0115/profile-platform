@@ -1,6 +1,8 @@
 package com.data.profile.web.interceptor;
 
 import com.data.profile.common.utils.JSONUtils;
+import com.data.profile.web.converter.UserConverter;
+import com.data.profile.web.dto.UserDTO;
 import com.data.profile.web.model.User;
 import com.data.profile.web.security.AccessInfo;
 import com.data.profile.web.security.UserContext;
@@ -71,28 +73,23 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
         }
 
         // 查询用户信息，检查用户是否被禁用
-        Optional<com.data.profile.web.vo.UserVO> userVOOptional = userService.getDetail(userId);
-        if (!userVOOptional.isPresent()) {
+        Optional<UserDTO> userOpt = userService.getDetail(userId);
+        if (!userOpt.isPresent()) {
             writeUnauthorizedResponse(response, "用户不存在");
             return false;
         }
-        com.data.profile.web.vo.UserVO userVO = userVOOptional.get();
-        if (!Objects.equals(userVO.getStatus(), UserStatus.ACTIVATED.getCode())) {
+        UserDTO userDTO = userOpt.get();
+        if (!Objects.equals(userDTO.getStatus(), UserStatus.ACTIVATED.getCode())) {
             writeUnauthorizedResponse(response, "用户已被禁用");
             return false;
         }
 
-        // 构建 User 对象（用于 UserContextHolder）
-        User user = new User();
-        user.setUserId(userVO.getUserId());
-        user.setUserName(userVO.getUserName());
-        user.setStatus(userVO.getStatus());
-
         // 构建 AccessInfo
         AccessInfo accessInfo = new AccessInfo();
-        accessInfo.setUserName(user.getUserName());
+        accessInfo.setUserName(userDTO.getUserName());
 
         // 构建 UserContext 写入 request attribute（供 UserContextInterceptor 使用）
+        User user = UserConverter.dto2do(userDTO);
         UserContext userContext = new UserContext(user, accessInfo);
         request.setAttribute(SESSION_USER_CONTEXT, userContext);
 

@@ -8,8 +8,8 @@ import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.engine.ScheduleEngineService;
 import com.data.profile.web.model.*;
 import com.data.profile.web.utils.RuleToSqlTranslator;
-import com.data.profile.web.vo.DatasetVO;
-import com.data.profile.web.vo.GroupVO;
+import com.data.profile.web.dto.GroupDTO;
+import com.data.profile.web.dto.DatasetDTO;
 import org.apache.commons.lang3.StringUtils;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.utils.IDGenerator;
@@ -67,16 +67,16 @@ public class GroupService {
     /**
      * 根据查询条件获取群组列表（含关联信息）
      * @param group 群组查询条件
-     * @return 群组 VO 列表
+     * @return 群组 DTO 列表
      */
-    public List<GroupVO> getList(Group group) {
+    public List<GroupDTO> getList(Group group) {
         List<Group> groups = groupMapper.selectByParams(group);
-        List<GroupVO> targets = groups.stream().map(target -> {
-            GroupVO vo = toVO(target);
+        List<GroupDTO> targets = groups.stream().map(target -> {
+            GroupDTO dto = toDTO(target);
             // 查询最新任务实例
             TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(target.getGroupId());
-            vo.setTaskInstance(TaskInstanceConverter.convert(latestInstance));
-            return vo;
+            dto.setTaskInstance(TaskInstanceConverter.do2vo(latestInstance));
+            return dto;
         }).collect(Collectors.toList());
         log.info("根据查询条件获取 {} 个群组", groups.size());
         return targets;
@@ -85,28 +85,28 @@ public class GroupService {
     /**
      * 根据群组ID获取群组详细信息（含关联信息）
      * @param groupId 群组ID
-     * @return 群组 VO
+     * @return 群组 DTO
      */
-    public Optional<GroupVO> getDetail(String groupId) {
+    public Optional<GroupDTO> getDetail(String groupId) {
         Group group = groupMapper.selectByGroupId(groupId);
         if (group == null) {
             return Optional.empty();
         }
-        GroupVO vo = toVO(group);
+        GroupDTO dto = toDTO(group);
         // 获取群组调度配置
         Task task = taskService.getDetailByRelatedId(groupId);
         if (!Objects.equals(task, null)) {
-            vo.setTaskId(task.getTaskId());
-            vo.setTriggerType(task.getTriggerType());
-            vo.setTriggerCron(task.getTriggerCron());
-            vo.setTriggerStartTime(task.getTriggerStartTime());
-            vo.setTriggerEndTime(task.getTriggerEndTime());
+            dto.setTaskId(task.getTaskId());
+            dto.setTriggerType(task.getTriggerType());
+            dto.setTriggerCron(task.getTriggerCron());
+            dto.setTriggerStartTime(task.getTriggerStartTime());
+            dto.setTriggerEndTime(task.getTriggerEndTime());
         }
         // 查询最新任务实例
         TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(groupId);
-        vo.setTaskInstance(TaskInstanceConverter.convert(latestInstance));
-        log.info("根据群组ID获取群组详细信息: {}", gson.toJson(vo));
-        return Optional.of(vo);
+        dto.setTaskInstance(TaskInstanceConverter.do2vo(latestInstance));
+        log.info("根据群组ID获取群组详细信息: {}", gson.toJson(dto));
+        return Optional.of(dto);
     }
 
     /**
@@ -123,21 +123,21 @@ public class GroupService {
     }
 
     /**
-     * 将 Group Model 转换为 GroupVO（填充实体关联信息）
+     * 将 Group Model 转换为 GroupDTO（填充实体关联信息）
      */
-    private GroupVO toVO(Group group) {
-        GroupVO vo = new GroupVO();
-        BeanUtils.copyProperties(group, vo);
+    private GroupDTO toDTO(Group group) {
+        GroupDTO dto = new GroupDTO();
+        BeanUtils.copyProperties(group, dto);
         // 获取群组实体信息
         String entityIdentifierId = group.getEntityIdentifierId();
         Optional<EntityIdentifier> entityIdentifierOp = entityIdentifierService.getDetail(entityIdentifierId);
         if (entityIdentifierOp.isPresent()) {
             EntityIdentifier entityIdentifier = entityIdentifierOp.get();
-            vo.setEntityId(entityIdentifier.getEntityId());
-            vo.setEntityName(entityIdentifier.getEntityName());
-            vo.setEntityIdentifierName(entityIdentifier.getEntityIdentifierName());
+            dto.setEntityId(entityIdentifier.getEntityId());
+            dto.setEntityName(entityIdentifier.getEntityName());
+            dto.setEntityIdentifierName(entityIdentifier.getEntityIdentifierName());
         }
-        return vo;
+        return dto;
     }
 
     /**
@@ -327,11 +327,11 @@ public class GroupService {
 
     /**
      * 获取 SQL 创建可用的数据集表和字段列表
-     * <p>查询已就绪的数据集（含字段），直接返回 DatasetVO 列表。</p>
+     * <p>查询已就绪的数据集（含字段），返回 DatasetDTO 列表。</p>
      *
      * @param entityIdentifierId 实体标识ID
      */
-    public List<DatasetVO> getAvailableTables(String entityIdentifierId) {
+    public List<DatasetDTO> getAvailableTables(String entityIdentifierId) {
         Dataset query = new Dataset();
         // entityIdentifierId 实际为实体标识ID
         query.setEntityId(entityIdentifierId);
@@ -519,7 +519,7 @@ public class GroupService {
 
         // 数据集信息
         String datasetId = field.getDatasetId();
-        Optional<Dataset> datasetOpt = datasetService.getDetailModel(datasetId);
+        Optional<Dataset> datasetOpt = datasetService.getDetail(datasetId);
         if (!datasetOpt.isPresent()) {
             throw new IllegalStateException("数据集不存在: " + datasetId);
         }

@@ -59,6 +59,29 @@
         WHERE ur.user_id = #{userId}
     </select>
 
+    <!-- 批量查询多用户的角色（IN 查询，解决 N+1） -->
+    <select id="selectRolesByUserIds" resultType="com.data.profile.web.model.Role">
+        SELECT
+            ur.user_id AS userId,
+            r.id,
+            r.role_id AS roleId,
+            r.role_name AS roleName,
+            r.role_type AS roleType,
+            r.role_desc AS roleDesc,
+            r.source_type AS sourceType,
+            r.creator,
+            r.modifier,
+            r.gmt_create AS gmtCreate,
+            r.gmt_modified AS gmtModified
+        FROM profile_meta_role r
+        INNER JOIN profile_meta_user_role ur
+        ON r.role_id = ur.role_id
+        WHERE ur.user_id IN
+        <foreach item="uid" collection="userIds" open="(" separator="," close=")">
+            #{uid}
+        </foreach>
+    </select>
+
   <select id="selectByParams" parameterType="com.data.profile.web.model.User" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List" />

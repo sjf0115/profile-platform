@@ -15,6 +15,12 @@ public interface UserMapper {
     List<User> selectByParams(User User); //根据参数查询（自动加载角色）
     List<User> selectByKeyword(String keyword); // 模糊查询
     List<Role> selectRolesByUserId(String userId); // 根据用户ID查询角色
+
+    /**
+     * 批量查询多用户的角色（IN 查询，解决 N+1）
+     * 返回的 Role 中 userId 字段用于按用户分组
+     */
+    List<Role> selectRolesByUserIds(@Param("userIds") List<String> userIds);
     // 密码校验
     User checkPassword(@Param("userName") String userName, @Param("password") String password, @Param("authType") String authType);
     // 统计

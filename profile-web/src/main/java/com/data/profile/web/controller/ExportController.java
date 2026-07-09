@@ -31,25 +31,25 @@ public class ExportController {
     private ExportTask exportTask;
 
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody Export export) {
+    public Response<List<Export>> getList(@RequestBody Export export) {
         List<Export> exports = exportService.getList(export);
         return Response.success(exports);
     }
 
     @GetMapping(value = "/name")
-    public Response getByName(@RequestParam String exportName) {
+    public Response<List<Export>> getByName(@RequestParam String exportName) {
         List<Export> exports = exportService.getByName(exportName);
         return Response.success(exports);
     }
 
     @GetMapping(value = "/keyword")
-    public Response getByKeyword(@RequestParam String keyword) {
+    public Response<List<Export>> getByKeyword(@RequestParam String keyword) {
         List<Export> exports = exportService.getByKeyword(keyword);
         return Response.success(exports);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam String exportId) {
+    public Response<Export> getDetail(@RequestParam String exportId) {
         Optional<Export> optional = exportService.getDetail(exportId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -59,7 +59,7 @@ public class ExportController {
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody Export export) {
+    public Response<Integer> save(@RequestBody Export export) {
         int result = exportService.save(export);
         if (result > 0) {
             return Response.success(result);
@@ -69,7 +69,7 @@ public class ExportController {
     }
 
     @DeleteMapping(value = "/delete")
-    public Response delete(@RequestParam String exportId) {
+    public Response<Integer> delete(@RequestParam String exportId) {
         int result = exportService.delete(exportId);
         if (result > 0) {
             return Response.success(result);
@@ -82,7 +82,7 @@ public class ExportController {
      * 立即执行投递
      */
     @PostMapping(value = "/execute")
-    public Response execute(@RequestParam String exportId) {
+    public Response<String> execute(@RequestParam String exportId) {
         try {
             exportTask.executeExport(exportId);
             return Response.success("投递执行成功");

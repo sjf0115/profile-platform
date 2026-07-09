@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { userApi } from '@/api/user'
+import { userProfileApi } from '@/api/user-profile'
 import type { UserProfileVO } from '@/types'
 import { ElMessage } from 'element-plus'
 
@@ -16,7 +16,7 @@ export function useUserProfile(userId: string) {
   const fetchProfile = async () => {
     loading.value = true
     try {
-      const res = await userApi.getUserProfile(userId)
+      const res = await userProfileApi.getUserProfile(userId)
       profile.value = res.data.data
     } catch (error) {
       console.error('获取用户画像失败:', error)
@@ -31,7 +31,7 @@ export function useUserProfile(userId: string) {
    */
   const handleAddLabel = async (labelId: string, labelValue: string) => {
     try {
-      await userApi.addUserLabel(userId, { label_id: labelId, label_value: labelValue })
+      await userProfileApi.addUserLabel(userId, { label_id: labelId, label_value: labelValue })
       ElMessage.success('标签添加成功')
       await fetchProfile()
     } catch (error) {
@@ -44,7 +44,7 @@ export function useUserProfile(userId: string) {
    */
   const handleDeleteLabel = async (labelId: string) => {
     try {
-      await userApi.deleteUserLabel(userId, labelId)
+      await userProfileApi.deleteUserLabel(userId, labelId)
       ElMessage.success('标签删除成功')
       await fetchProfile()
     } catch (error) {
@@ -57,7 +57,7 @@ export function useUserProfile(userId: string) {
    */
   const handleCategorySort = async (categoryIds: string[]) => {
     try {
-      await userApi.updateCategorySort(userId, categoryIds)
+      await userProfileApi.updateCategorySort(userId, categoryIds)
       await fetchProfile()
     } catch (error) {
       console.error('更新类目排序失败:', error)
@@ -69,7 +69,7 @@ export function useUserProfile(userId: string) {
    */
   const handleDeleteCategory = async (categoryId: string) => {
     try {
-      await userApi.deleteCategory(userId, categoryId)
+      await userProfileApi.deleteCategory(userId, categoryId)
       ElMessage.success('类目删除成功')
       await fetchProfile()
     } catch (error) {

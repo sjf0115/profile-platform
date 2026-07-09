@@ -4,6 +4,9 @@ import com.data.profile.web.config.AuthenticationProvidersConfig;
 import com.data.profile.common.domain.Constant;
 import com.data.profile.web.converter.UserConverter;
 import com.data.profile.web.dao.UserMapper;
+import com.data.profile.web.dto.UserDTO;
+import com.data.profile.web.dto.UserLoginDTO;
+import com.data.profile.web.dto.UserOverviewDTO;
 import com.data.profile.web.dto.UserRequest;
 import com.data.profile.web.model.*;
 import com.data.profile.web.security.IAuthenticationStrategy;
@@ -17,18 +20,17 @@ import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.utils.JwtUtil;
 import com.data.profile.common.utils.UserUtil;
-import com.data.profile.web.vo.UserLoginVO;
-import com.data.profile.web.vo.UserOverviewVO;
-import com.data.profile.web.vo.UserVO;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.data.profile.common.enums.ResponseCode.INVALID_AUTHENTICATION_PROVIDER;
 import static net.sf.jsqlparser.util.validation.metadata.NamedObject.user;
@@ -75,42 +77,42 @@ public class UserService {
     }
 
     /**
-     * 根据查询条件获取用户列表（含角色信息）
+     * 根据查询条件获取用户列表（含角色，批量 IN 查询避免 N+1）
      * @param user 用户查询条件
-     * @return 用户 VO 列表
+     * @return 用户 DTO 列表（含 roles）
      */
-    public List<UserVO> getList(User user) {
+    public List<UserDTO> getList(User user) {
         List<User> users = userMapper.selectByParams(user);
-        List<UserVO> userVOs = new ArrayList<>();
-        // TODO 优化
-        for (User u : users) {
-            UserVO vo = UserConverter.convert(u);
-            // 增加角色信息
-            List<Role> roles = userMapper.selectRolesByUserId(vo.getUserId());
-            vo.setRoles(roles);
-            userVOs.add(vo);
+        if (users.isEmpty()) {
+            return Collections.emptyList();
         }
-        log.info("根据查询条件获取 {} 个用户", userVOs.size());
-        return userVOs;
+        // 批量查角色（2 条 SQL 代替 N+1）
+        List<String> userIds = users.stream().map(User::getUserId).collect(Collectors.toList());
+        Map<String, List<Role>> roleMap = getRolesByUserIds(userIds);
+        // 组装 DTO
+        return users.stream().map(u -> {
+            UserDTO dto = new UserDTO();
+            BeanUtils.copyProperties(u, dto);
+            dto.setRoles(roleMap.getOrDefault(u.getUserId(), Collections.emptyList()));
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     /**
-     * 根据用户ID获取用户详细信息
+     * 根据用户ID获取用户详细信息（含角色）
      * @param userId 用户ID
-     * @return 用户 VO
+     * @return 用户 DTO
      */
-    public Optional<UserVO> getDetail(String userId) {
+    public Optional<UserDTO> getDetail(String userId) {
         User user = userMapper.selectByUserId(userId);
         if (user == null) {
             return Optional.empty();
         }
-
-        UserVO vo = UserConverter.convert(user);
-        // 增加角色信息
-        List<Role> roles = userMapper.selectRolesByUserId(vo.getUserId());
-        vo.setRoles(roles);
-        log.info("根据用户ID {} 获取用户详细信息: {}", userId, JSONUtils.toJsonString(vo));
-        return Optional.of(vo);
+        UserDTO dto = new UserDTO();
+        BeanUtils.copyProperties(user, dto);
+        dto.setRoles(userMapper.selectRolesByUserId(userId));
+        log.info("根据用户ID {} 获取用户详细信息", userId);
+        return Optional.of(dto);
     }
 
     /**
@@ -128,7 +130,7 @@ public class UserService {
         if (!Objects.equals(target, null)) {
             throw new RuntimeException("用户ID已经存在，不允许重复添加");
         }
-        User user = UserConverter.convert(userRequest);
+        User user = UserConverter.request2do(userRequest);
         user.setUserId(userId);
         user.setUserName(UserUtil.generateRandomChineseNickname());
         user.setPassword(UserUtil.generateRandomPassword());
@@ -182,44 +184,29 @@ public class UserService {
     }
 
     /**
-     * 获取用户概览统计
+     * 获取用户概览统计（复用 getList 批量角色查询）
      */
-    public UserOverviewVO getOverview() {
-        List<UserVO> userVOs = getList(new User());
-        // 已加入用户数
-        int totalCount = userVOs.size();
-        // 管理员用户数
-        int adminCount = 0;
-        // 成员数量
-        int memberCount = 0;
-        for (UserVO userVO : userVOs) {
-            List<Role> roles = userVO.getRoles();
-            boolean isAdmin = false;
-            boolean isMember = false;
-            for (Role role : roles) {
-                if (Objects.equals(role.getRoleType(), RoleType.ADMIN.getCode())) {
-                    isAdmin = true;
-                } else if (Objects.equals(role.getRoleType(), RoleType.MEMBER.getCode())) {
-                    isMember = true;
-                }
-            }
-            adminCount += isAdmin ? 1 : 0;
-            memberCount += isMember ? 1 : 0;
+    public UserOverviewDTO getOverview() {
+        List<UserDTO> users = getList(new User());
+        int adminCount = 0, memberCount = 0;
+        for (UserDTO u : users) {
+            boolean isAdmin = u.getRoles().stream().anyMatch(r -> Objects.equals(r.getRoleType(), RoleType.ADMIN.getCode()));
+            boolean isMember = u.getRoles().stream().anyMatch(r -> Objects.equals(r.getRoleType(), RoleType.MEMBER.getCode()));
+            if (isAdmin) adminCount++;
+            if (isMember) memberCount++;
         }
-        // 无权限用户
-        int noPermissionCount = 0;
-        return UserOverviewVO.builder()
-                .totalCount(totalCount)
+        return UserOverviewDTO.builder()
+                .totalCount(users.size())
                 .adminCount(adminCount)
                 .memberCount(memberCount)
-                .noPermissionCount(noPermissionCount)
+                .noPermissionCount(0)
                 .build();
     }
 
     /**
      * 登录
      */
-    public UserLoginVO login(UserLoginRequest userLoinRequest, String authType, javax.servlet.http.HttpServletRequest request) {
+    public UserLoginDTO login(UserLoginRequest userLoinRequest, String authType, javax.servlet.http.HttpServletRequest request) {
         // 登录验证
         authType = StringUtils.isEmpty(authType) ? Constant.AUTHENTICATION_PROVIDER_PASSWORD : authType;
         if (!strategies.containsKey(authType)) {
@@ -242,16 +229,36 @@ public class UserService {
                 .build();
         userLoginService.save(userLogin);
 
-        // 构建登录响应（包含 token）
-        UserVO userVO = UserConverter.convert(user);
+        // 查询角色
         List<Role> roles = userMapper.selectRolesByUserId(user.getUserId());
-        userVO.setRoles(roles);
 
-        UserLoginVO loginVO = new UserLoginVO();
-        loginVO.setUser(userVO);
-        loginVO.setToken(token);
+        // 构建登录聚合结果
+        UserLoginDTO loginDTO = new UserLoginDTO();
+        loginDTO.setUser(user);
+        loginDTO.setToken(token);
+        loginDTO.setRoles(roles);
         log.info("用户登录成功: {}", user.getUserId());
-        return loginVO;
+        return loginDTO;
+    }
+
+    /**
+     * 登出（记录登出事件，JWT 无状态架构下服务端不撤销 Token，由客户端清除）
+     */
+    public void logout() {
+        String userId = UserContextHolder.currentUserId();
+        log.info("用户登出: {}", userId);
+    }
+
+    /**
+     * 批量查询多用户的角色并按 userId 分组（解决 N+1）
+     */
+    private Map<String, List<Role>> getRolesByUserIds(List<String> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<Role> allRoles = userMapper.selectRolesByUserIds(userIds);
+        return allRoles.stream()
+                .collect(Collectors.groupingBy(Role::getUserId));
     }
 
     /**

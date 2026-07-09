@@ -90,7 +90,7 @@ public class DiEngineService {
      * @param datasetId 数据集ID
      */
     public void executeDatasetSync(String datasetId) throws Exception {
-        Optional<Dataset> opt = datasetService.getDetailModel(datasetId);
+        Optional<Dataset> opt = datasetService.getDetail(datasetId);
         if (!opt.isPresent()) {
             throw new IllegalStateException("数据集不存在: " + datasetId);
         }

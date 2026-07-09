@@ -1,39 +1,49 @@
 package com.data.profile.web.dto;
 
 import com.data.profile.web.model.GroupRule;
+import com.data.profile.web.vo.TaskInstanceVO;
 import lombok.Data;
 
 import java.util.Date;
 
-// 群组
+/**
+ * 群组聚合传输对象（Service 层出参）
+ * 包含 Group DB 字段 + 关联查询字段（实体信息、调度信息、任务实例）
+ */
 @Data
 public class GroupDTO {
-    // 群组 ID
+    private Long id;
     private String groupId;
-    // 群组状态: 1-启用,2-停用
     private Integer groupStatus;
-    // 群组名称
     private String groupName;
-    // 群组类型: 1-规则筛选,2-文件上传,3-SQL创建
     private Integer groupType;
-    // 群组描述
     private String groupDesc;
-    // 群组规则
     private GroupRule groupRule;
-    // 群组覆盖规模
     private Integer groupCount;
-    // 群组主体标识ID
     private String entityIdentifierId;
-    // 创建方式: 1-系统内置,2-自定义
     private Integer sourceType;
-    // 群组负责人
     private String owner;
-    // 创建者
     private String creator;
-    // 修改者
     private String modifier;
-    // 创建时间
     private Date gmtCreate;
-    // 修改时间
     private Date gmtModified;
+
+    //----------------------------------------------------------
+    // 调度任务查询时关联
+    private String taskId;
+    private Integer triggerType;
+    private String triggerCron;
+    private String triggerUrl;
+    private String triggerStartTime;
+    private String triggerEndTime;
+
+    //----------------------------------------------------------
+    // 最新任务实例（查询时关联）
+    private TaskInstanceVO taskInstance;
+
+    //----------------------------------------------------------
+    // 实体
+    private String entityIdentifierName;
+    private String entityId;
+    private String entityName;
 }

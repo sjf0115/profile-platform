@@ -1,6 +1,5 @@
 package com.data.profile.web.service;
 
-import com.data.profile.web.converter.TaskInstanceConverter;
 import com.data.profile.web.dao.DatasetMapper;
 import com.data.profile.web.dto.ScheduleConfigRequest;
 import com.data.profile.web.engine.AnalysisEngineService;
@@ -9,9 +8,8 @@ import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;
 import com.data.profile.web.model.Task;
-import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.vo.DatasetFieldVO;
-import com.data.profile.web.vo.DatasetVO;
+import com.data.profile.web.dto.DatasetDTO;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.*;
 import com.data.profile.common.utils.IDGenerator;
@@ -61,58 +59,35 @@ public class DatasetService {
     /**
      * 根据查询条件获取数据集列表（仅元数据，不含字段）
      */
-    public List<DatasetVO> getList(Dataset dataset) {
+    public List<Dataset> getList(Dataset dataset) {
         List<Dataset> datasets = datasetMapper.selectByParams(dataset);
-        List<DatasetVO> vos = new ArrayList<>();
-        for (Dataset ds : datasets) {
-            vos.add(toVO(ds));
-        }
         log.info("根据查询条件获取 {} 个数据集", datasets.size());
-        return vos;
+        return datasets;
     }
 
     /**
-     * 根据查询条件获取数据集列表（含字段详情）
-     * <p>每个 DatasetVO 附带已导入的字段列表（importStatus=1）。</p>
+     * 根据查询条件获取数据集列表（含字段详情，跨表聚合）
      *
      * @param dataset 查询条件
-     * @return 带字段的数据集 VO 列表
+     * @return 带字段的数据集 DTO 列表
      */
-    public List<DatasetVO> getListWithFields(Dataset dataset) {
+    public List<DatasetDTO> getListWithFields(Dataset dataset) {
         List<Dataset> datasets = datasetMapper.selectByParams(dataset);
-        List<DatasetVO> vos = new ArrayList<>();
+        List<DatasetDTO> dtos = new ArrayList<>();
         for (Dataset ds : datasets) {
-            DatasetVO vo = toVO(ds);
+            DatasetDTO dto = toDTO(ds);
             List<DatasetField> fields = datasetFieldService.getListByDatasetId(ds.getDatasetId());
-            vo.setFields(toFieldVOList(fields, ds.getEntityField()));
-            vos.add(vo);
+            dto.setFields(toFieldVOList(fields, ds.getEntityField()));
+            dtos.add(dto);
         }
         log.info("根据查询条件获取 {} 个数据集（含字段）", datasets.size());
-        return vos;
+        return dtos;
     }
 
     /**
-     * 根据数据集ID获取数据集详细信息（含字段和最新实例）
+     * 根据数据集ID获取数据集 Model（单表查询）
      */
-    public Optional<DatasetVO> getDetail(String datasetId) {
-        Dataset dataset = datasetMapper.selectByDatasetId(datasetId);
-        if (dataset == null) {
-            return Optional.empty();
-        }
-        DatasetVO vo = toVO(dataset);
-        // 查询数据集字段
-        List<DatasetField> fields = datasetFieldService.getListByDatasetId(datasetId);
-        vo.setFields(toFieldVOList(fields, dataset.getEntityField()));
-        // 查询最新任务实例
-        TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(datasetId);
-        vo.setLatestInstance(TaskInstanceConverter.convert(latestInstance));
-        return Optional.of(vo);
-    }
-
-    /**
-     * 根据数据集ID获取数据集纯 Model（供内部调用）
-     */
-    public Optional<Dataset> getDetailModel(String datasetId) {
+    public Optional<Dataset> getDetail(String datasetId) {
         Dataset dataset = datasetMapper.selectByDatasetId(datasetId);
         if (dataset == null) {
             return Optional.empty();
@@ -121,13 +96,13 @@ public class DatasetService {
     }
 
     /**
-     * 将 Dataset Model 转换为 DatasetVO
+     * 将 Dataset Model 转换为 DatasetDTO
      */
-    private DatasetVO toVO(Dataset dataset) {
-        DatasetVO vo = new DatasetVO();
-        BeanUtils.copyProperties(dataset, vo);
-        vo.setEngineTableName(ENGINE_DATASET_TABLE_PREFIX + dataset.getDatasetId());
-        return vo;
+    private DatasetDTO toDTO(Dataset dataset) {
+        DatasetDTO dto = new DatasetDTO();
+        BeanUtils.copyProperties(dataset, dto);
+        dto.setEngineTableName(ENGINE_DATASET_TABLE_PREFIX + dataset.getDatasetId());
+        return dto;
     }
 
     /**

@@ -1,12 +1,9 @@
 package com.data.profile.web.service;
 
-import com.data.profile.web.converter.LabelConverter;
 import com.data.profile.web.dao.LabelMapper;
 import com.data.profile.web.model.DatasetField;
-import com.data.profile.web.model.EntityIdentifier;
 import com.data.profile.web.model.FileImportLabelConfig;
 import com.data.profile.web.model.Label;
-import com.data.profile.web.vo.LabelVO;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.LabelStatus;
 import com.data.profile.common.enums.ModelType;
@@ -16,10 +13,7 @@ import com.data.profile.common.utils.IDGenerator;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,62 +37,30 @@ public class LabelService {
     private LabelMapper labelMapper;
     @Resource
     private DatasetFieldService datasetFieldService;
-    @Autowired
-    private EntityIdentifierService entityIdentifierService;
 
     /**
-     * 根据查询条件获取标签列表（含实体关联信息）
+     * 根据查询条件获取标签列表
      * @param label 标签查询条件
-     * @return 标签 VO 列表
+     * @return 标签 Model 列表
      */
-    public List<LabelVO> getList(Label label) {
+    public List<Label> getList(Label label) {
         List<Label> labels = labelMapper.selectByParams(label);
-        List<LabelVO> labelVOS = LabelConverter.convertList(labels);
-        // TODO Mapper 补充实体信息？
-        List<LabelVO> result = Lists.newArrayList();
-        for (LabelVO labelVO : labelVOS) {
-            Optional<EntityIdentifier> eiOp = entityIdentifierService.getDetail(labelVO.getEntityIdentifierId());
-            if (eiOp.isPresent()) {
-                EntityIdentifier identifier = eiOp.get();
-                labelVO.setEntityIdentifierName(identifier.getEntityIdentifierName());
-                labelVO.setEntityId(identifier.getEntityId());
-                labelVO.setEntityName(identifier.getEntityName());
-            }
-            result.add(labelVO);
-        }
         log.info("根据查询条件获取 {} 个标签", labels.size());
-        return result;
+        return labels;
     }
 
     /**
-     * 根据标签ID获取标签详细信息（含实体和数据集关联）
+     * 根据标签ID获取标签详细信息
      * @param labelId 标签ID
-     * @return 标签 VO
+     * @return 标签 Model
      */
-    public Optional<LabelVO> getDetail(String labelId) {
+    public Optional<Label> getDetail(String labelId) {
         Label label = getDetailInternal(labelId);
         if (label == null) {
             return Optional.empty();
         }
-        LabelVO labelVO = LabelConverter.convert(label);
-        // TODO 关联查询
-        // 关联实体信息
-        Optional<EntityIdentifier> eiOp = entityIdentifierService.getDetail(label.getEntityIdentifierId());
-        if (eiOp.isPresent()) {
-            EntityIdentifier identifier = eiOp.get();
-            labelVO.setEntityIdentifierName(identifier.getEntityIdentifierName());
-            labelVO.setEntityId(identifier.getEntityId());
-            labelVO.setEntityName(identifier.getEntityName());
-        }
-
-        // 查询绑定的数据集和字段
-        DatasetField datasetField = datasetFieldService.getDetailByRelatedId(labelId);
-        if (!Objects.equals(datasetField, null)) {
-            labelVO.setDatasetId(datasetField.getDatasetId());
-            labelVO.setDatasetFieldName(datasetField.getFieldName());
-        }
         log.info("根据标签ID {} 获取标签详细信息", labelId);
-        return Optional.of(labelVO);
+        return Optional.of(label);
     }
 
     /**
@@ -201,9 +163,9 @@ public class LabelService {
      * 获取未被其他数据集绑定的标签
      * @param entityIdentifierId 实体标识ID
      * @param datasetId 数据集ID（编辑数据集必填，创建数据集为 null）
-     * @return 可用标签 VO 列表
+     * @return 可用标签 Model 列表
      */
-    public List<LabelVO> getAvailableList(String entityIdentifierId, String datasetId) {
+    public List<Label> getAvailableList(String entityIdentifierId, String datasetId) {
         // 如果有 datasetId 表示是编辑数据集获取可用标签，则获取未被其他数据集绑定的标签，本数据集绑定的标签可以返回
         // 如果没有 datasetId 表示创建数据集获取可用标签，则获取所有未被绑定的标签
 
@@ -223,9 +185,8 @@ public class LabelService {
                 .collect(Collectors.toSet());
 
         // 4. 过滤掉被其他数据集绑定的标签
-        List<LabelVO> availableLabels = allLabels.stream()
+        List<Label> availableLabels = allLabels.stream()
                 .filter(label -> !relatedLabelIds.contains(label.getLabelId()))
-                .map(LabelConverter::convert)
                 .collect(Collectors.toList());
 
         log.info("获取实体 [{}] 下未被 [{}] 之外数据集绑定的可用标签：{} 个", entityIdentifierId, datasetId, availableLabels.size());
@@ -235,9 +196,9 @@ public class LabelService {
     /**
      * 获取实体标识下已绑定数据集的线上可用标签
      * @param entityIdentifierId 实体标识ID
-     * @return 线上可用标签 VO 列表
+     * @return 线上可用标签 Model 列表
      */
-    public List<LabelVO> getOnlineList(String entityIdentifierId) {
+    public List<Label> getOnlineList(String entityIdentifierId) {
         // 1. 查询实体标识下的标签
         Label query = new Label();
         query.setEntityIdentifierId(entityIdentifierId);
@@ -250,10 +211,9 @@ public class LabelService {
                 .map(DatasetField::getRelatedId)
                 .collect(Collectors.toSet());
 
-        // 3. 过滤出已绑定数据集的标签并转换
-        List<LabelVO> onlineLabels = allLabels.stream()
+        // 3. 过滤出已绑定数据集的标签
+        List<Label> onlineLabels = allLabels.stream()
                 .filter(label -> boundLabelIds.contains(label.getLabelId()))
-                .map(LabelConverter::convert)
                 .collect(Collectors.toList());
 
         log.info("获取实体 [{}] 下已绑定数据集的线上可用标签：{} 个", entityIdentifierId, onlineLabels.size());

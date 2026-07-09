@@ -6,14 +6,14 @@ import com.data.profile.web.service.EngineService;
 import com.data.profile.web.engine.ScheduleEngineService;
 import com.data.profile.web.vo.Item;
 import com.data.profile.web.vo.Response;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.data.profile.common.utils.JSONUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -26,7 +26,6 @@ import java.util.Objects;
 @RestController
 @RequestMapping(value = "/engine", produces = MediaType.APPLICATION_JSON_VALUE)
 public class EngineController {
-    private static final Gson gson = new GsonBuilder().create();
 
     @Autowired
     private EngineService engineService;
@@ -38,8 +37,8 @@ public class EngineController {
      * 获取引擎列表
      */
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody Engine engine) {
-        log.info("请求查询引擎列表: {}", gson.toJson(engine));
+    public Response<List<Engine>> getList(@RequestBody Engine engine) {
+        log.info("请求查询引擎列表: {}", JSONUtils.toJsonString(engine));
         List<Engine> engines = engineService.getList(engine);
         return Response.success(engines);
     }
@@ -48,7 +47,7 @@ public class EngineController {
      * 获取引擎详情
      */
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam(name = "engine_id") String engineId) {
+    public Response<Engine> getDetail(@RequestParam(name = "engine_id") String engineId) {
         log.info("根据引擎ID {} 请求查看引擎信息", engineId);
         Engine engine = engineService.getDetail(engineId);
         if (!Objects.equals(engine, null)) {
@@ -62,7 +61,7 @@ public class EngineController {
      * 获取默认引擎（如果不存在则返回null）
      */
     @GetMapping(value = "/default")
-    public Response getDefaultEngine() {
+    public Response<Engine> getDefaultEngine() {
         log.info("请求获取默认引擎");
         Engine engine = engineService.getDefaultEngine();
         return Response.success(engine);
@@ -72,8 +71,8 @@ public class EngineController {
      * 保存引擎（新增/修改）
      */
     @PostMapping(value = "/save")
-    public Response save(@RequestBody Engine engine) {
-        log.info("请求创建/修改引擎: {}", gson.toJson(engine));
+    public Response<Integer> save(@RequestBody Engine engine) {
+        log.info("请求创建/修改引擎: {}", JSONUtils.toJsonString(engine));
         try {
             int result = engineService.save(engine);
             if (result > 0) {
@@ -91,7 +90,7 @@ public class EngineController {
      * 删除引擎
      */
     @DeleteMapping(value = "/delete")
-    public Response delete(@RequestParam(name = "engine_id") String engineId) {
+    public Response<Integer> delete(@RequestParam(name = "engine_id") String engineId) {
         log.info("根据引擎ID {} 请求删除引擎", engineId);
         try {
             int result = engineService.delete(engineId);
@@ -110,7 +109,7 @@ public class EngineController {
      * 设置默认引擎
      */
     @PostMapping(value = "/{engineId}/set-default")
-    public Response setDefaultEngine(@PathVariable String engineId) {
+    public Response<String> setDefaultEngine(@PathVariable String engineId) {
         log.info("设置引擎 {} 为默认引擎", engineId);
         try {
             engineService.setDefaultEngine(engineId);
@@ -125,7 +124,7 @@ public class EngineController {
      * 获取所有支持的引擎类型
      */
     @GetMapping(value = "/type/list")
-    public Response getEngineTypeList() {
+    public Response<List<Item>> getEngineTypeList() {
         log.info("请求获取引擎类型列表");
         List<Item> engineTypes = engineService.getEngineTypeList();
         return Response.success(engineTypes);
@@ -136,10 +135,10 @@ public class EngineController {
      * 测试指定引擎（category=schedule）与 DolphinScheduler 服务的连通性
      */
     @PostMapping(value = "/{engineId}/schedule-connect")
-    public Response testScheduleConnection(@PathVariable String engineId) {
+    public Response<Map<String, Object>> testScheduleConnection(@PathVariable String engineId) {
         log.info("测试调度引擎联通性: engineId={}", engineId);
         try {
-            java.util.Map<String, Object> result = scheduleEngineService.testConnection(engineId);
+            Map<String, Object> result = scheduleEngineService.testConnection(engineId);
             Boolean connected = (Boolean) result.get("connected");
             if (Boolean.TRUE.equals(connected)) {
                 return Response.success(result);

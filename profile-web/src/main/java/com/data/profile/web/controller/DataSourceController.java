@@ -7,12 +7,11 @@ import com.data.profile.common.domain.connector.jdbc.TableInfo;
 import com.data.profile.common.domain.connector.request.ConnectorResponse;
 import com.data.profile.common.domain.connector.request.TestConnectionRequestParam;
 import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.common.utils.StringUtils;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.service.DataSourceService;
 import com.data.profile.web.vo.Item;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -32,14 +31,13 @@ import java.util.Objects;
 @RestController
 @RequestMapping(value = "/datasource", produces = MediaType.APPLICATION_JSON_VALUE)
 public class DataSourceController {
-    private final static Gson gson = new GsonBuilder().create();
 
     @Autowired
     private DataSourceService dataSourceService;
 
     @PostMapping(value = "/test", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Response<String> testConnection(@RequestBody TestConnectionRequestParam param)  {
-        log.info("数据源请求测试连接: {}", gson.toJson(param));
+        log.info("数据源请求测试连接: {}", JSONUtils.toJsonString(param));
 
         ConnectorResponse response = dataSourceService.testConnect(param);
 
@@ -79,7 +77,7 @@ public class DataSourceController {
 
     @PostMapping(value = "/save")
     public Response<Integer> save(@RequestBody DataSource datasource) {
-        log.info("请求创建/修改数据源: {}", gson.toJson(datasource));
+        log.info("请求创建/修改数据源: {}", JSONUtils.toJsonString(datasource));
         int result = dataSourceService.save(datasource);
         if (result > 0) {
             return Response.success(result);

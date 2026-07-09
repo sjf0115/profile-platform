@@ -28,14 +28,14 @@ public class RoleController {
     private RoleService roleService;
 
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody Role role) {
+    public Response<List<Role>> getList(@RequestBody Role role) {
         log.info("请求查询角色：{}", JSONUtils.toJsonString(role));
         List<Role> roles = roleService.getList(role);
         return Response.success(roles);
     }
 
     @GetMapping(value = "/{roleId}/detail")
-    public Response getDetail(@PathVariable(value = "roleId") String roleId) {
+    public Response<Role> getDetail(@PathVariable(value = "roleId") String roleId) {
         log.info("请求查询角色 {} 详细信息", roleId);
         Optional<Role> optional = roleService.getDetail(roleId);
         if (optional.isPresent()) {
@@ -46,7 +46,7 @@ public class RoleController {
     }
 
     @PostMapping
-    public Response create(@RequestBody Role role) {
+    public Response<Integer> create(@RequestBody Role role) {
         log.info("请求创建角色：{}", JSONUtils.toJsonString(role));
         int result = roleService.create(role);
         if (result > 0) {
@@ -57,7 +57,7 @@ public class RoleController {
     }
 
     @PutMapping("/{roleId}")
-    public Response update(@PathVariable(value = "roleId") String roleId, @RequestBody Role role) {
+    public Response<Integer> update(@PathVariable(value = "roleId") String roleId, @RequestBody Role role) {
         role.setRoleId(roleId);
         log.info("请求更新角色：{}", JSONUtils.toJsonString(role));
         int result = roleService.update(role);
@@ -69,7 +69,7 @@ public class RoleController {
     }
 
     @DeleteMapping(value = "/{roleId}")
-    public Response delete(@PathVariable(value = "roleId") String roleId) {
+    public Response<Integer> delete(@PathVariable(value = "roleId") String roleId) {
         log.info("请求删除角色：{}", roleId);
         int result = roleService.delete(roleId);
         if (result > 0) {

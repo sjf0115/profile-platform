@@ -17,12 +17,11 @@ public class UserProfileConverter {
     }
 
     // DTO -> VO
-    public static UserProfileVO toVO(UserProfileDTO dto) {
-        UserProfileVO vo = new UserProfileVO();
-        if (dto != null) {
-            vo = DTO2VOMapper.INSTANCE.convert(dto);
+    public static UserProfileVO dto2vo(UserProfileDTO dto) {
+        if (dto == null) {
+            return null;
         }
-        return vo;
+        return DTO2VOMapper.INSTANCE.convert(dto);
     }
 
     // DTO -> VO

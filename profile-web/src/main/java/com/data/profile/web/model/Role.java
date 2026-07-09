@@ -35,4 +35,9 @@ public class Role {
     private Date gmtCreate;
     // 修改时间
     private Date gmtModified;
+
+    /**
+     * 仅用于批量角色查询（selectRolesByUserIds）结果映射，不参与持久化
+     */
+    private String userId;
 }

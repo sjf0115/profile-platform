@@ -4,8 +4,7 @@ import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.model.DatasetField;
 import com.data.profile.web.service.DatasetFieldService;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.data.profile.common.utils.JSONUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -26,26 +25,25 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/field", produces = MediaType.APPLICATION_JSON_VALUE)
 public class DatasetFieldController {
-    private static final Gson gson = new GsonBuilder().create();
     @Autowired
     private DatasetFieldService datasetFieldService;
 
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody DatasetField datasetField) {
-        log.info("根据查询条件请求获取数据集字段: {}", gson.toJson(datasetField));
+    public Response<List<DatasetField>> getList(@RequestBody DatasetField datasetField) {
+        log.info("根据查询条件请求获取数据集字段: {}", JSONUtils.toJsonString(datasetField));
         List<DatasetField> datasetFields = datasetFieldService.getList(datasetField);
         return Response.success(datasetFields);
     }
 
     @GetMapping(value = "/listByDataset")
-    public Response getListByDataset(@RequestParam(name = "dataset_id") String datasetId) {
+    public Response<List<DatasetField>> getListByDataset(@RequestParam(name = "dataset_id") String datasetId) {
         log.info("根据数据集ID请求获取数据集字段: {}", datasetId);
         List<DatasetField> datasetFields = datasetFieldService.getListByDatasetId(datasetId);
         return Response.success(datasetFields);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam(name = "id") Long id) {
+    public Response<DatasetField> getDetail(@RequestParam(name = "id") Long id) {
         log.info("根据数据集字段ID请求获取数据集字段详细信息: {}", id);
         Optional<DatasetField> optional = datasetFieldService.getDetail(id);
         if (optional.isPresent()) {
@@ -56,8 +54,8 @@ public class DatasetFieldController {
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody DatasetField datasetField) {
-        log.info("请求保存数据集字段: {}", gson.toJson(datasetField));
+    public Response<Integer> save(@RequestBody DatasetField datasetField) {
+        log.info("请求保存数据集字段: {}", JSONUtils.toJsonString(datasetField));
         int result = datasetFieldService.save(datasetField);
         if (result > 0) {
             return Response.success(result);
@@ -67,7 +65,7 @@ public class DatasetFieldController {
     }
 
     @DeleteMapping(value = "/delete")
-    public Response delete(@RequestParam(name = "id") Long id) {
+    public Response<Integer> delete(@RequestParam(name = "id") Long id) {
         log.info("根据数据集字段ID请求删除数据集字段: {}", id);
         int result = datasetFieldService.deleteById(id);
         if (result > 0) {
@@ -78,7 +76,7 @@ public class DatasetFieldController {
     }
 
     @DeleteMapping(value = "/deleteByDataset")
-    public Response deleteByDataset(@RequestParam(name = "dataset_id") String datasetId) {
+    public Response<Integer> deleteByDataset(@RequestParam(name = "dataset_id") String datasetId) {
         log.info("根据数据集ID请求删除所有字段: {}", datasetId);
         int result = datasetFieldService.deleteByDatasetId(datasetId);
         if (result > 0) {
@@ -89,7 +87,7 @@ public class DatasetFieldController {
     }
 
     @GetMapping(value = "/detail/label")
-    public Response getDetail(@RequestParam(name = "label_id") String labelId) {
+    public Response<DatasetField> getDetail(@RequestParam(name = "label_id") String labelId) {
         log.info("根据标签ID [{}] 请求获取数据集字段详细信息", labelId);
         DatasetField datasetField = datasetFieldService.getDetailByRelatedId(labelId);
         return Response.success(datasetField);

@@ -25,19 +25,17 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/event", produces = MediaType.APPLICATION_JSON_VALUE)
 public class EventController {
-    private static Logger LOG = LoggerFactory.getLogger(EventController.class);
-
     @Autowired
     private EventService eventService;
 
     @GetMapping(value = "/list")
-    public Response getList(@RequestBody Event event) {
+    public Response<List<Event>> getList(@RequestBody Event event) {
         List<Event> events = eventService.getList(event);
         return Response.success(events);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam String eventId) {
+    public Response<Event> getDetail(@RequestParam String eventId) {
         Optional<Event> optional = eventService.getDetail(eventId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -47,7 +45,7 @@ public class EventController {
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody Event event) {
+    public Response<Integer> save(@RequestBody Event event) {
         int result = eventService.save(event);
         if (result > 0) {
             return Response.success(result);

@@ -8,8 +8,7 @@ import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.service.TaskExecutionService;
 import com.data.profile.web.engine.ScheduleEngineService;
 import com.data.profile.web.service.TaskService;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.data.profile.common.utils.JSONUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -29,7 +28,6 @@ import java.util.Optional;
 @RestController
 @RequestMapping(value = "/task", produces = MediaType.APPLICATION_JSON_VALUE)
 public class TaskController {
-    private static Gson gson = new GsonBuilder().create();
     @Autowired
     private TaskService taskService;
     @Autowired
@@ -40,7 +38,7 @@ public class TaskController {
     // 任务列表
     @PostMapping(value = "/list")
     public Response<List<Task>> getList(@RequestBody Task task) {
-        log.info("根据任务参数请求查询任务: {}", gson.toJson(task));
+        log.info("根据任务参数请求查询任务: {}", JSONUtils.toJsonString(task));
         List<Task> tasks = taskService.getList(task);
         return Response.success(tasks);
     }
@@ -60,7 +58,7 @@ public class TaskController {
     // 创建调度任务
     @PostMapping
     public Response<Integer> create(@RequestBody Task task) {
-        log.info("请求创建任务: {}", gson.toJson(task));
+        log.info("请求创建任务: {}", JSONUtils.toJsonString(task));
         int result = taskService.create(task);
         if (result > 0) {
             return Response.success(result);
@@ -73,7 +71,7 @@ public class TaskController {
     @PutMapping("/{taskId}")
     public Response<Integer> update(@PathVariable(value = "taskId") String taskId, @RequestBody Task task) {
         task.setTaskId(taskId);
-        log.info("请求修改任务: {}", gson.toJson(task));
+        log.info("请求修改任务: {}", JSONUtils.toJsonString(task));
         int result = taskService.update(task);
         if (result > 0) {
             return Response.success(result);

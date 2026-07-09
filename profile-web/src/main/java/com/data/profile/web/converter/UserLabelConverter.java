@@ -6,6 +6,9 @@ import com.data.profile.web.vo.UserLabelVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * 功能：用户标签转换器
  * 作者：SmartSi
@@ -18,30 +21,43 @@ public class UserLabelConverter {
     }
 
     // DO -> DTO
-    public static UserLabelDTO toDTO(UserLabel userLabel) {
-        UserLabelDTO dto = new UserLabelDTO();
-        if (userLabel != null) {
-            dto = DO2DTOMapper.INSTANCE.convert(userLabel);
+    public static UserLabelDTO do2dto(UserLabel userLabel) {
+        if (userLabel == null) {
+            return null;
         }
-        return dto;
+        return DO2DTOMapper.INSTANCE.convert(userLabel);
     }
 
     // DTO -> VO
-    public static UserLabelVO toVO(UserLabelDTO userLabelDTO) {
-        UserLabelVO vo = new UserLabelVO();
-        if (userLabelDTO != null) {
-            vo = DTO2VOMapper.INSTANCE.convert(userLabelDTO);
+    public static UserLabelVO dto2vo(UserLabelDTO userLabelDTO) {
+        if (userLabelDTO == null) {
+            return null;
         }
-        return vo;
+        return DTO2VOMapper.INSTANCE.convert(userLabelDTO);
+    }
+
+    // List<DTO> -> List<VO>
+    public static List<UserLabelVO> dto2voList(List<UserLabelDTO> dtos) {
+        if (dtos == null || dtos.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return DTO2VOMapper.INSTANCE.convertList(dtos);
     }
 
     // DO -> VO
-    public static UserLabelVO toVO(UserLabel userLabel) {
-        UserLabelVO vo = new UserLabelVO();
-        if (userLabel != null) {
-            vo = DO2VOMapper.INSTANCE.convert(userLabel);
+    public static UserLabelVO do2vo(UserLabel userLabel) {
+        if (userLabel == null) {
+            return null;
         }
-        return vo;
+        return DO2VOMapper.INSTANCE.convert(userLabel);
+    }
+
+    // List<DO> -> List<VO>
+    public static List<UserLabelVO> do2voList(List<UserLabel> userLabels) {
+        if (userLabels == null || userLabels.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return DO2VOMapper.INSTANCE.convertList(userLabels);
     }
 
     // DO -> DTO

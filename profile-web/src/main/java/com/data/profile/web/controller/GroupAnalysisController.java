@@ -1,19 +1,30 @@
 package com.data.profile.web.controller;
 
 import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.common.utils.JSONUtils;
+import com.data.profile.web.converter.GroupConverter;
+import com.data.profile.web.dto.AnalysisLabelDTO;
+import com.data.profile.web.dto.DistributionItemDTO;
+import com.data.profile.web.dto.GroupAnalysisDTO;
 import com.data.profile.web.dto.GroupAnalysisRequest;
+import com.data.profile.web.dto.GroupDTO;
+import com.data.profile.web.dto.LabelDistributionDTO;
 import com.data.profile.web.model.Group;
 import com.data.profile.web.model.GroupAnalysis;
 import com.data.profile.web.service.GroupAnalysisService;
+import com.data.profile.web.service.GroupService;
 import com.data.profile.web.vo.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 功能：群组分析
@@ -29,6 +40,8 @@ public class GroupAnalysisController {
 
     @Autowired
     private GroupAnalysisService groupAnalysisService;
+    @Autowired
+    private GroupService groupService;
 
     // ========== 群组分析 CRUD ==========
 
@@ -39,8 +52,9 @@ public class GroupAnalysisController {
     public Response<List<GroupAnalysisVO>> getAnalysisList(@RequestBody(required = false) GroupAnalysis query) {
         log.info("请求获取群组分析列表");
         try {
-            List<GroupAnalysisVO> list = groupAnalysisService.getAnalysisList(query != null ? query : new GroupAnalysis());
-            return Response.success(list);
+            List<GroupAnalysis> list = groupAnalysisService.getAnalysisList(query != null ? query : new GroupAnalysis());
+            List<GroupAnalysisVO> voList = list.stream().map(this::toAnalysisVO).collect(Collectors.toList());
+            return Response.success(voList);
         } catch (Exception e) {
             log.error("获取群组分析列表失败", e);
             return Response.error("获取群组分析列表失败: " + e.getMessage(), ResponseCode.ERROR);
@@ -53,9 +67,9 @@ public class GroupAnalysisController {
     @GetMapping(value = "/{analysisId}/detail")
     public Response<GroupAnalysisVO> getAnalysisDetail(@PathVariable(name = "analysisId") String analysisId) {
         log.info("请求获取群组分析详情: {}", analysisId);
-        Optional<GroupAnalysisVO> opt = groupAnalysisService.getAnalysisDetail(analysisId);
+        Optional<GroupAnalysis> opt = groupAnalysisService.getAnalysisDetail(analysisId);
         if (opt.isPresent()) {
-            return Response.success(opt.get());
+            return Response.success(toAnalysisVO(opt.get()));
         } else {
             return Response.error("群组分析不存在", ResponseCode.ERROR);
         }
@@ -66,7 +80,7 @@ public class GroupAnalysisController {
      */
     @PostMapping(value = "/save")
     public Response<Integer> saveAnalysis(@RequestBody GroupAnalysis analysis) {
-        log.info("请求保存群组分析: {}", gson.toJson(analysis));
+        log.info("请求保存群组分析: {}", JSONUtils.toJsonString(analysis));
         try {
             int result = groupAnalysisService.saveAnalysis(analysis);
             return Response.success(result);
@@ -100,8 +114,8 @@ public class GroupAnalysisController {
     public Response<List<GroupVO>> getAnalyzableGroups(@RequestBody(required = false) Group query) {
         log.info("请求获取可分析群组列表");
         try {
-            List<GroupVO> groups = groupAnalysisService.getAnalyzableGroups(query != null ? query : new Group());
-            return Response.success(groups);
+            List<GroupDTO> dtos = groupAnalysisService.getAnalyzableGroups(query != null ? query : new Group());
+            return Response.success(GroupConverter.dto2voList(dtos));
         } catch (Exception e) {
             log.error("获取可分析群组列表失败", e);
             return Response.error("获取可分析群组列表失败: " + e.getMessage(), ResponseCode.ERROR);
@@ -115,8 +129,13 @@ public class GroupAnalysisController {
     public Response<List<AnalysisLabelVO>> getAvailableLabels(@RequestParam(name = "entity_identifier_id") String entityIdentifierId) {
         log.info("请求获取实体 [{}] 的可分析标签", entityIdentifierId);
         try {
-            List<AnalysisLabelVO> labels = groupAnalysisService.getAvailableLabels(entityIdentifierId);
-            return Response.success(labels);
+            List<AnalysisLabelDTO> dtos = groupAnalysisService.getAvailableLabels(entityIdentifierId);
+            List<AnalysisLabelVO> voList = dtos.stream().map(dto -> {
+                AnalysisLabelVO vo = new AnalysisLabelVO();
+                BeanUtils.copyProperties(dto, vo);
+                return vo;
+            }).collect(Collectors.toList());
+            return Response.success(voList);
         } catch (Exception e) {
             log.error("获取可分析标签失败", e);
             return Response.error("获取可分析标签失败: " + e.getMessage(), ResponseCode.ERROR);
@@ -130,14 +149,61 @@ public class GroupAnalysisController {
     public Response<LabelDistributionVO> getLabelDistribution(@RequestBody GroupAnalysisRequest request) {
         log.info("请求获取群组 [{}] 标签 [{}] 的分布", request.getGroupId(), request.getLabelId());
         try {
-            LabelDistributionVO result = groupAnalysisService.getLabelDistribution(request);
-            if (result == null) {
+            LabelDistributionDTO dto = groupAnalysisService.getLabelDistribution(request);
+            if (dto == null) {
                 return Response.error("获取标签分布失败，请连续管理员", ResponseCode.ERROR);
             }
-            return Response.success(result);
+            LabelDistributionVO vo = new LabelDistributionVO();
+            vo.setLabelId(dto.getLabelId());
+            vo.setLabelName(dto.getLabelName());
+            vo.setDatasetName(dto.getDatasetName());
+            vo.setUpdateType(dto.getUpdateType());
+            if (dto.getValues() != null) {
+                vo.setValues(dto.getValues().stream().map(item -> {
+                    DistributionItemVO itemVO = new DistributionItemVO();
+                    BeanUtils.copyProperties(item, itemVO);
+                    return itemVO;
+                }).collect(Collectors.toList()));
+            }
+            return Response.success(vo);
         } catch (Exception e) {
             log.error("获取标签分布失败", e);
             return Response.error("获取标签分布失败: " + e.getMessage(), ResponseCode.ERROR);
+        }
+    }
+
+    // ========== 私有转换方法 ==========
+
+    /**
+     * 将 GroupAnalysis Model 转换为 GroupAnalysisVO（含 JSON 解析 + 群组信息填充）
+     */
+    private GroupAnalysisVO toAnalysisVO(GroupAnalysis analysis) {
+        GroupAnalysisVO vo = new GroupAnalysisVO();
+        BeanUtils.copyProperties(analysis, vo);
+        // 解析 JSON 数组
+        vo.setCompareGroupIds(parseJsonArray(analysis.getCompareGroupIds()));
+        vo.setLabelIds(parseJsonArray(analysis.getLabelIds()));
+        // 填充群组信息
+        Optional<GroupDTO> groupOpt = groupService.getDetail(analysis.getGroupId());
+        if (groupOpt.isPresent()) {
+            GroupDTO group = groupOpt.get();
+            vo.setGroupName(group.getGroupName());
+            vo.setGroupCount(group.getGroupCount());
+            vo.setGroupType(group.getGroupType());
+            vo.setGroupStatus(group.getGroupStatus());
+            vo.setEntityIdentifierName(group.getEntityIdentifierName());
+            vo.setEntityName(group.getEntityName());
+        }
+        return vo;
+    }
+
+    private List<String> parseJsonArray(String json) {
+        if (json == null || json.isEmpty()) return Collections.emptyList();
+        try {
+            return gson.fromJson(json, new TypeToken<List<String>>(){}.getType());
+        } catch (Exception e) {
+            log.warn("解析 JSON 数组失败: {}", json);
+            return Collections.emptyList();
         }
     }
 }

@@ -50,4 +50,10 @@ public class LabelRequest {
     private Date gmtCreate;
     // 标签最后修改时间
     private Date gmtModified;
+    //----------------------------------------------------------
+    // 关联写入字段
+    // 绑定的数据集ID
+    private String datasetId;
+    // 绑定的数据集字段名称
+    private String datasetFieldName;
 }

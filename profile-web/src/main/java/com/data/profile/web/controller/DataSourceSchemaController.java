@@ -33,13 +33,13 @@ public class DataSourceSchemaController {
     private DataSourceSchemaService schemaService;
 
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody DataSourceSchema schema) {
+    public Response<List<DataSourceSchema>> getList(@RequestBody DataSourceSchema schema) {
         List<DataSourceSchema> schemas = schemaService.getList(schema);
         return Response.success(schemas);
     }
 
     @GetMapping(value = "/detail")
-    public Response getDetail(@RequestParam(name = "schema_id") String schemaId) {
+    public Response<DataSourceSchema> getDetail(@RequestParam(name = "schema_id") String schemaId) {
         Optional<DataSourceSchema> optional = schemaService.getDetail(schemaId);
         if (optional.isPresent()) {
             return Response.success(optional.get());
@@ -49,7 +49,7 @@ public class DataSourceSchemaController {
     }
 
     @PostMapping(value = "/save")
-    public Response save(@RequestBody DataSourceSchema schema) {
+    public Response<Integer> save(@RequestBody DataSourceSchema schema) {
         int result = schemaService.save(schema);
         if (result > 0) {
             return Response.success(result);
@@ -59,7 +59,7 @@ public class DataSourceSchemaController {
     }
 
     @DeleteMapping(value = "/delete")
-    public Response delete(@RequestParam String schemaId) {
+    public Response<Integer> delete(@RequestParam String schemaId) {
         int result = schemaService.delete(schemaId);
         if (result > 0) {
             return Response.success(result);
@@ -69,7 +69,7 @@ public class DataSourceSchemaController {
     }
 
     @GetMapping(value = "/category")
-    public Response getCategory() {
+    public Response<List<DataSourceCategory>> getCategory() {
         List<DataSourceCategory> schemas = schemaService.getCategory();
         return Response.success(schemas);
     }

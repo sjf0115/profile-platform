@@ -3,8 +3,6 @@ package com.data.profile.web.controller;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.engine.ScheduleEngineService;
 import com.data.profile.web.vo.Response;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -23,14 +21,13 @@ import java.util.Map;
 @RestController
 @RequestMapping(value = "/schedule", produces = MediaType.APPLICATION_JSON_VALUE)
 public class ScheduleEngineController {
-    private static final Gson gson = new GsonBuilder().create();
 
     @Autowired
     private ScheduleEngineService engineService;
 
     // 调度引擎联通测试
     @GetMapping(value = "/test")
-    public Response testScheduleConnection(@RequestParam(name = "engine_id") String engineId) {
+    public Response<Map<String, Object>> testScheduleConnection(@RequestParam(name = "engine_id") String engineId) {
         log.info("测试调度引擎 {} 联通性", engineId);
         try {
             Map<String, Object> result = engineService.testConnection(engineId);

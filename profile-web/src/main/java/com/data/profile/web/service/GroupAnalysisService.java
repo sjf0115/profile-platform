@@ -2,20 +2,21 @@ package com.data.profile.web.service;
 
 import com.data.profile.common.enums.*;
 import com.data.profile.common.utils.IDGenerator;
-import com.data.profile.web.converter.GroupAnalysisConverter;
 import com.data.profile.web.dao.GroupAnalysisMapper;
 import com.data.profile.web.dao.LabelMapper;
+import com.data.profile.web.dto.AnalysisLabelDTO;
+import com.data.profile.web.dto.DistributionItemDTO;
 import com.data.profile.web.dto.GroupAnalysisRequest;
+import com.data.profile.web.dto.GroupDTO;
+import com.data.profile.web.dto.LabelDistributionDTO;
 import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.engine.SqlTemplateEngine;
 import com.data.profile.web.model.*;
 import com.data.profile.web.security.UserContextHolder;
-import com.data.profile.web.vo.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,9 +61,9 @@ public class GroupAnalysisService {
     /**
      * 获取可分析的群组列表（groupCount > 0）
      */
-    public List<GroupVO> getAnalyzableGroups(Group query) {
-        List<GroupVO> allGroups = groupService.getList(query);
-        List<GroupVO> analyzable = allGroups.stream()
+    public List<GroupDTO> getAnalyzableGroups(Group query) {
+        List<GroupDTO> allGroups = groupService.getList(query);
+        List<GroupDTO> analyzable = allGroups.stream()
                 .filter(g -> g.getGroupCount() != null && g.getGroupCount() > 0)
                 .collect(Collectors.toList());
         log.info("获取可分析群组: 共 {} 个", analyzable.size());
@@ -72,24 +73,23 @@ public class GroupAnalysisService {
     // ========== 群组分析 CRUD ==========
 
     /**
-     * 获取群组分析列表
+     * 获取群组分析列表（单表查询）
      */
-    public List<GroupAnalysisVO> getAnalysisList(GroupAnalysis query) {
+    public List<GroupAnalysis> getAnalysisList(GroupAnalysis query) {
         List<GroupAnalysis> list = groupAnalysisMapper.selectByParams(query);
-        List<GroupAnalysisVO> vos = list.stream().map(this::toAnalysisVO).collect(Collectors.toList());
-        log.info("获取群组分析列表: {} 个", vos.size());
-        return vos;
+        log.info("获取群组分析列表: {} 个", list.size());
+        return list;
     }
 
     /**
-     * 获取群组分析详情
+     * 获取群组分析详情（单表查询）
      */
-    public Optional<GroupAnalysisVO> getAnalysisDetail(String analysisId) {
+    public Optional<GroupAnalysis> getAnalysisDetail(String analysisId) {
         GroupAnalysis analysis = groupAnalysisMapper.selectByAnalysisId(analysisId);
         if (analysis == null) {
             return Optional.empty();
         }
-        return Optional.of(toAnalysisVO(analysis));
+        return Optional.of(analysis);
     }
 
     /**
@@ -137,11 +137,11 @@ public class GroupAnalysisService {
 
 
     /**
-     * 获取可分析标签列表
+     * 获取可分析标签列表（三方 JOIN 聚合）
      * <p>路径: entityIdentifierId -> Dataset(entityId) -> DatasetField(relatedId=labelId) -> Label</p>
      * <p>过滤: labelDistType==1(枚举型) + labelStatus==1(启用)</p>
      */
-    public List<AnalysisLabelVO> getAvailableLabels(String entityIdentifierId) {
+    public List<AnalysisLabelDTO> getAvailableLabels(String entityIdentifierId) {
         // 1. 查询该实体标识下所有启用且枚举型标签
         Label query = new Label();
         query.setEntityIdentifierId(entityIdentifierId);
@@ -165,7 +165,7 @@ public class GroupAnalysisService {
 
         // 5. 对每个标签查找 datasetField -> dataset
         // TODO 绑定标签需要更新状态
-        List<AnalysisLabelVO> result = new ArrayList<>();
+        List<AnalysisLabelDTO> result = new ArrayList<>();
         for (Label label : labels) {
             DatasetField field = datasetFieldService.getDetailByRelatedId(label.getLabelId());
             if (field == null) {
@@ -175,7 +175,7 @@ public class GroupAnalysisService {
 
             String datasetId = field.getDatasetId();
             Dataset dataset = datasetCache.computeIfAbsent(datasetId, id -> {
-                Optional<Dataset> opt = datasetService.getDetailModel(id);
+                Optional<Dataset> opt = datasetService.getDetail(id);
                 return opt.orElse(null);
             });
             if (dataset == null) {
@@ -183,14 +183,18 @@ public class GroupAnalysisService {
                 continue;
             }
 
-            // 构建 VO
-            AnalysisLabelVO vo = GroupAnalysisConverter.toAnalysisLabelVO(label);
-            vo.setDatasetId(datasetId);
-            vo.setDatasetName(dataset.getDatasetName());
-            vo.setFieldName(field.getFieldName());
-            vo.setLabelCategoryName(categoryNameMap.getOrDefault(label.getLabelCategoryId(), "未分类"));
+            // 构建 DTO
+            AnalysisLabelDTO dto = new AnalysisLabelDTO();
+            dto.setLabelId(label.getLabelId());
+            dto.setLabelName(label.getLabelName());
+            dto.setLabelCategoryId(label.getLabelCategoryId());
+            dto.setLabelDataType(label.getLabelDataType());
+            dto.setDatasetId(datasetId);
+            dto.setDatasetName(dataset.getDatasetName());
+            dto.setFieldName(field.getFieldName());
+            dto.setLabelCategoryName(categoryNameMap.getOrDefault(label.getLabelCategoryId(), "未分类"));
 
-            result.add(vo);
+            result.add(dto);
         }
 
         log.info("可分析标签: {} 个", result.size());
@@ -198,9 +202,9 @@ public class GroupAnalysisService {
     }
 
     /**
-     * 获取单个标签的分布数据
+     * 获取单个标签的分布数据（计算型聚合）
      */
-    public LabelDistributionVO getLabelDistribution(GroupAnalysisRequest request) {
+    public LabelDistributionDTO getLabelDistribution(GroupAnalysisRequest request) {
         String groupId = request.getGroupId();
         String labelId = request.getLabelId();
         List<String> compareGroupIds = request.getCompareGroupIds();
@@ -242,8 +246,8 @@ public class GroupAnalysisService {
             // 合并结果
             Map<String, long[]> merged = mergeDistribution(currentRows, compareRows);
 
-            // 构建响应 VO
-            LabelDistributionVO dist = new LabelDistributionVO();
+            // 构建响应 DTO
+            LabelDistributionDTO dist = new LabelDistributionDTO();
             dist.setLabelId(labelId);
             dist.setLabelName(meta.labelName);
             dist.setDatasetName(meta.datasetName);
@@ -252,9 +256,9 @@ public class GroupAnalysisService {
             long currentTotal = merged.values().stream().mapToLong(v -> v[0]).sum();
             long compareTotal = merged.values().stream().mapToLong(v -> v[1]).sum();
 
-            List<DistributionItemVO> items = new ArrayList<>();
+            List<DistributionItemDTO> items = new ArrayList<>();
             for (Map.Entry<String, long[]> valEntry : merged.entrySet()) {
-                DistributionItemVO item = new DistributionItemVO();
+                DistributionItemDTO item = new DistributionItemDTO();
                 item.setValue(valEntry.getKey());
                 long[] counts = valEntry.getValue();
                 item.setCurrentCount(counts[0]);
@@ -275,29 +279,6 @@ public class GroupAnalysisService {
             log.error("查询标签 {} 分布失败: {}", labelId, e.getMessage(), e);
             throw new RuntimeException("查询标签分布失败: " + e.getMessage(), e);
         }
-    }
-
-    /**
-     * 将 GroupAnalysis DO 转换为 VO（填充群组关联信息）
-     */
-    private GroupAnalysisVO toAnalysisVO(GroupAnalysis analysis) {
-        GroupAnalysisVO vo = new GroupAnalysisVO();
-        BeanUtils.copyProperties(analysis, vo);
-        // 解析 JSON 数组
-        vo.setCompareGroupIds(parseJsonArray(analysis.getCompareGroupIds()));
-        vo.setLabelIds(parseJsonArray(analysis.getLabelIds()));
-        // 填充群组信息
-        Optional<GroupVO> groupOpt = groupService.getDetail(analysis.getGroupId());
-        if (groupOpt.isPresent()) {
-            GroupVO group = groupOpt.get();
-            vo.setGroupName(group.getGroupName());
-            vo.setGroupCount(group.getGroupCount());
-            vo.setGroupType(group.getGroupType());
-            vo.setGroupStatus(group.getGroupStatus());
-            vo.setEntityIdentifierName(group.getEntityIdentifierName());
-            vo.setEntityName(group.getEntityName());
-        }
-        return vo;
     }
 
     private List<String> parseJsonArray(String json) {
@@ -326,7 +307,7 @@ public class GroupAnalysisService {
             return null;
         }
 
-        Optional<Dataset> datasetOpt = datasetService.getDetailModel(field.getDatasetId());
+        Optional<Dataset> datasetOpt = datasetService.getDetail(field.getDatasetId());
         if (!datasetOpt.isPresent()) {
             log.warn("标签 {} 关联的数据集不存在", labelId);
             return null;

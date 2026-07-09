@@ -4,6 +4,12 @@ import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.service.TaskExecutionService;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.*;
+import com.data.profile.web.converter.GroupConverter;
+import com.data.profile.web.dto.GroupDTO;
+import com.data.profile.web.converter.DatasetConverter;
+import com.data.profile.web.dto.DatasetDTO;
+import com.data.profile.web.dto.GroupParam;
+import com.data.profile.web.dto.GroupRequest;
 import com.data.profile.web.model.Group;
 import com.data.profile.web.model.GroupRule;
 import com.data.profile.web.model.LabelOperator;
@@ -11,8 +17,6 @@ import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.vo.DatasetVO;
 import com.data.profile.web.vo.GroupVO;
 import com.data.profile.web.service.GroupService;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,36 +40,36 @@ import java.util.*;
 @RestController
 @RequestMapping(value = "/group", produces = MediaType.APPLICATION_JSON_VALUE)
 public class GroupController {
-    private static final Gson gson = new GsonBuilder().create();
     @Autowired
     private GroupService groupService;
     @Autowired
     private TaskExecutionService taskExecutionService;
 
     @PostMapping(value = "/list")
-    public Response getList(@RequestBody Group group) {
-        log.info("根据群组条件请求查询群组信息: {}", gson.toJson(group));
-        List<GroupVO> groups = groupService.getList(group);
-        return Response.success(groups);
+    public Response<List<GroupVO>> getList(@RequestBody GroupParam param) {
+        log.info("根据群组条件请求查询群组信息: {}", JSONUtils.toJsonString(param));
+        Group group = GroupConverter.param2do(param);
+        List<GroupDTO> dtos = groupService.getList(group);
+        return Response.success(GroupConverter.dto2voList(dtos));
     }
 
     @GetMapping(value = "/{groupId}/detail")
     public Response<GroupVO> getDetail(@PathVariable(name = "groupId") String groupId) {
         log.info("根据群组ID请求查询群组信息: {}", groupId);
-        Optional<GroupVO> optional = groupService.getDetail(groupId);
+        Optional<GroupDTO> optional = groupService.getDetail(groupId);
         if (optional.isPresent()) {
-            return Response.success(optional.get());
+            return Response.success(GroupConverter.dto2vo(optional.get()));
         } else {
             return Response.error("请求的群组不存在", ResponseCode.ERROR);
         }
     }
 
     @PostMapping(value = "/save")
-    public Response<Integer> save(@RequestBody Group group) {
+    public Response<Integer> save(@RequestBody GroupRequest request) {
+        Group group = GroupConverter.request2do(request);
         String groupId = group.getGroupId();
         if (StringUtils.isEmpty(groupId)) {
-            // 创建群组
-            log.info("请求创建群组: {}", gson.toJson(group));
+            log.info("请求创建群组: {}", JSONUtils.toJsonString(request));
             int result = groupService.create(group);
             if (result > 0) {
                 return Response.success(result);
@@ -73,8 +77,7 @@ public class GroupController {
                 return Response.error("创建群组失败", ResponseCode.ERROR);
             }
         } else {
-            // 修改群组
-            log.info("请求修改群组: {}", gson.toJson(group));
+            log.info("请求修改群组: {}", JSONUtils.toJsonString(request));
             int result = groupService.update(group);
             if (result > 0) {
                 return Response.success(result);
@@ -95,7 +98,6 @@ public class GroupController {
         }
     }
 
-    // 文件上传
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Response<GroupRule> upload(@RequestPart("file") MultipartFile file) {
         GroupRule groupRule = groupService.upload(file);
@@ -106,7 +108,6 @@ public class GroupController {
         }
     }
 
-    // 取消上传
     @DeleteMapping(value = "/cancel-upload")
     public Response<Void> cancelUploaded(@RequestParam(name = "file_key") String fileKey) {
         log.info("删除已上传文件: {}", fileKey);
@@ -114,8 +115,6 @@ public class GroupController {
         return Response.success(null);
     }
 
-    // 下载 CSV 上传模板
-    // TODO 优化
     @GetMapping(value = "/template/download")
     public void downloadTemplate(HttpServletResponse response) throws IOException {
         response.setContentType("text/csv;charset=UTF-8");
@@ -130,11 +129,11 @@ public class GroupController {
         writer.flush();
     }
 
-    // 预估群组人数
     @PostMapping(value = "/estimate")
-    public Response<Long> estimate(@RequestBody Group group) {
-        log.info("请求预估群组人数：{}", JSONUtils.toJsonString(group));
+    public Response<Long> estimate(@RequestBody GroupRequest request) {
+        log.info("请求预估群组人数：{}", JSONUtils.toJsonString(request));
         try {
+            Group group = GroupConverter.request2do(request);
             long count = groupService.estimateGroupCount(group.getGroupRule());
             return Response.success(count);
         } catch (Exception e) {
@@ -143,7 +142,6 @@ public class GroupController {
         }
     }
 
-    // 立即执行群组圈选
     @PostMapping(value = "/{groupId}/execute")
     public Response<String> execute(@PathVariable(value = "groupId") String groupId) {
         log.info("请求手动立即执行群组 [{}] 圈选", groupId);
@@ -156,18 +154,16 @@ public class GroupController {
         }
     }
 
-    // 获取 SQL 创建可用的数据集表和字段列表
     @GetMapping(value = "/available-tables")
     public Response<List<DatasetVO>> getAvailableTables(@RequestParam(name = "entity_identifier_id") String entityIdentifierId) {
         log.info("根据实体ID [{}] 请求获取可用数据集表和字段", entityIdentifierId);
-        List<DatasetVO> tables = groupService.getAvailableTables(entityIdentifierId);
-        return Response.success(tables);
+        List<DatasetDTO> dtos = groupService.getAvailableTables(entityIdentifierId);
+        return Response.success(DatasetConverter.dto2voList(dtos));
     }
 
     @GetMapping(value = "/config/label")
     public Response<List<LabelOperator>> getLabelConfig() {
         log.info("请求获取群组配置: 标签操作符");
-        // 1-文本型,2-数值型,3-时间型
         List<LabelOperator> ops = Arrays.asList(
                 LabelOperator.builder().code("eq").name("=").types(Arrays.asList(1, 2, 3)).build(),
                 LabelOperator.builder().code("ne").name("≠").types(Arrays.asList(1, 2, 3)).build(),
@@ -181,7 +177,6 @@ public class GroupController {
                 LabelOperator.builder().code("is_not_null").name("不为空").types(Arrays.asList(1)).build(),
                 LabelOperator.builder().code("in").name("在范围内").types(Arrays.asList(2, 3)).build(),
                 LabelOperator.builder().code("not_in").name("不在范围内").types(Arrays.asList(2, 3)).build()
-                // 以xxx开始/结束
         );
         return Response.success(ops);
     }

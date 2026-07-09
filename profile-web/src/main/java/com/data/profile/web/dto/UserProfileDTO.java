@@ -1,6 +1,6 @@
 package com.data.profile.web.dto;
 
-import com.data.profile.web.vo.GroupVO;
+import com.data.profile.web.dto.GroupDTO;
 import com.data.profile.web.vo.UserVO;
 import lombok.Data;
 
@@ -18,5 +18,5 @@ public class UserProfileDTO {
     // 标签列表（扁平，Service层按类目分组）
     private List<UserLabelDTO> labels;
     // 所属人群
-    private List<GroupVO> groups;
+    private List<GroupDTO> groups;
 }
