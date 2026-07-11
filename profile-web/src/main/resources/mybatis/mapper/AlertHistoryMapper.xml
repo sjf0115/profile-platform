@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.web.dao.AlertHistoryMapper">
+
+  <resultMap id="BaseResultMap" type="com.data.profile.web.model.AlertHistory">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="history_id" jdbcType="VARCHAR" property="historyId" />
+    <result column="task_id" jdbcType="VARCHAR" property="taskId" />
+    <result column="instance_id" jdbcType="VARCHAR" property="instanceId" />
+    <result column="alert_condition" jdbcType="VARCHAR" property="alertCondition" />
+    <result column="alert_channel" jdbcType="VARCHAR" property="alertChannel" />
+    <result column="receivers" jdbcType="VARCHAR" property="receivers" />
+    <result column="subject" jdbcType="VARCHAR" property="subject" />
+    <result column="content" jdbcType="LONGVARCHAR" property="content" />
+    <result column="send_status" jdbcType="TINYINT" property="sendStatus" />
+    <result column="send_message" jdbcType="VARCHAR" property="sendMessage" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    id, history_id, task_id, instance_id, alert_condition, alert_channel,
+    receivers, subject, content, send_status, send_message,
+    creator, modifier, gmt_create, gmt_modified
+  </sql>
+
+  <select id="selectByTaskId" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" />
+    from profile_meta_alert_history
+    where task_id = #{taskId,jdbcType=VARCHAR}
+    order by gmt_create desc
+  </select>
+
+  <select id="selectByParams" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" />
+    from profile_meta_alert_history
+    where task_id = #{taskId,jdbcType=VARCHAR}
+    <if test="instanceId != null and instanceId != ''">
+      and instance_id = #{instanceId,jdbcType=VARCHAR}
+    </if>
+    order by gmt_create desc
+  </select>
+
+  <insert id="insertSelective" parameterType="com.data.profile.web.model.AlertHistory">
+    insert into profile_meta_alert_history
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="historyId != null">history_id,</if>
+      <if test="taskId != null">task_id,</if>
+      <if test="instanceId != null">instance_id,</if>
+      <if test="alertCondition != null">alert_condition,</if>
+      <if test="alertChannel != null">alert_channel,</if>
+      <if test="receivers != null">receivers,</if>
+      <if test="subject != null">subject,</if>
+      <if test="content != null">content,</if>
+      <if test="sendStatus != null">send_status,</if>
+      <if test="sendMessage != null">send_message,</if>
+      <if test="creator != null">creator,</if>
+      <if test="modifier != null">modifier,</if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="historyId != null">#{historyId,jdbcType=VARCHAR},</if>
+      <if test="taskId != null">#{taskId,jdbcType=VARCHAR},</if>
+      <if test="instanceId != null">#{instanceId,jdbcType=VARCHAR},</if>
+      <if test="alertCondition != null">#{alertCondition,jdbcType=VARCHAR},</if>
+      <if test="alertChannel != null">#{alertChannel,jdbcType=VARCHAR},</if>
+      <if test="receivers != null">#{receivers,jdbcType=VARCHAR},</if>
+      <if test="subject != null">#{subject,jdbcType=VARCHAR},</if>
+      <if test="content != null">#{content,jdbcType=LONGVARCHAR},</if>
+      <if test="sendStatus != null">#{sendStatus,jdbcType=TINYINT},</if>
+      <if test="sendMessage != null">#{sendMessage,jdbcType=VARCHAR},</if>
+      <if test="creator != null">#{creator,jdbcType=VARCHAR},</if>
+      <if test="modifier != null">#{modifier,jdbcType=VARCHAR},</if>
+    </trim>
+  </insert>
+
+</mapper>

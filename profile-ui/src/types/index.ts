@@ -472,6 +472,7 @@ export interface Application {
   ip_whitelist?: string
   source_type?: number
   owner?: string
+  owner_name?: string
   creator?: string
   modifier?: string
   gmt_create?: string
@@ -483,6 +484,17 @@ export interface ApplicationQueryParams {
   status?: number
   app_name?: string
   source_type?: number
+}
+
+// 应用创建/编辑请求
+export interface ApplicationRequest {
+  app_name: string
+  app_desc?: string
+  owner?: string
+  target_config?: string
+  webhook_url?: string
+  rate_limit?: number
+  ip_whitelist?: string
 }
 
 // 投递

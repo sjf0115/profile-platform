@@ -8,6 +8,7 @@ import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;
 import com.data.profile.web.model.Task;
+import com.data.profile.web.enums.AssetType;
 import com.data.profile.web.vo.DatasetFieldVO;
 import com.data.profile.web.dto.DatasetDTO;
 import com.data.profile.web.security.UserContextHolder;
@@ -57,6 +58,8 @@ public class DatasetService {
     private ScheduleEngineService scheduleEngineService;
     @Autowired
     private ResourceGrantService resourceGrantService;
+    @Autowired
+    private LineageService lineageService;
 
     /**
      * 根据查询条件获取数据集列表（仅元数据，不含字段）
@@ -116,10 +119,44 @@ public class DatasetService {
     @Transactional
     public String save(Dataset dataset, List<DatasetField> fields) {
         if (StringUtils.isBlank(dataset.getDatasetId())) {
-            return createDataset(dataset, fields);
+            String datasetId = createDataset(dataset, fields);
+            lineageService.refreshLineage(AssetType.DATASET.getCode(), datasetId);
+            // 刷新新建字段关联的标签血缘
+            if (fields != null) {
+                for (DatasetField f : fields) {
+                    if (f.getRelatedId() != null && !f.getRelatedId().isEmpty()) {
+                        lineageService.refreshLineage(AssetType.LABEL.getCode(), f.getRelatedId());
+                    }
+                }
+            }
+            return datasetId;
         } else {
+            String datasetId = dataset.getDatasetId();
+            // 更新前：收集旧的标签关联
+            Set<String> oldLabelIds = new HashSet<>();
+            List<DatasetField> oldFields = datasetFieldService.getListByDatasetId(datasetId);
+            for (DatasetField f : oldFields) {
+                if (f.getRelatedId() != null && !f.getRelatedId().isEmpty()) {
+                    oldLabelIds.add(f.getRelatedId());
+                }
+            }
             updateDataset(dataset, fields);
-            return dataset.getDatasetId();
+            lineageService.refreshLineage(AssetType.DATASET.getCode(), datasetId);
+            // 刷新受影响的标签血缘（旧 ∪ 新）
+            Set<String> newLabelIds = new HashSet<>();
+            if (fields != null) {
+                for (DatasetField f : fields) {
+                    if (f.getRelatedId() != null && !f.getRelatedId().isEmpty()) {
+                        newLabelIds.add(f.getRelatedId());
+                    }
+                }
+            }
+            Set<String> allLabelIds = new HashSet<>(oldLabelIds);
+            allLabelIds.addAll(newLabelIds);
+            for (String labelId : allLabelIds) {
+                lineageService.refreshLineage(AssetType.LABEL.getCode(), labelId);
+            }
+            return datasetId;
         }
     }
 
@@ -138,6 +175,18 @@ public class DatasetService {
             throw new RuntimeException("内置数据集不允许删除");
         }
 
+        // 删除前：收集关联标签ID（用于刷新血缘）
+        Set<String> labelIds = new HashSet<>();
+        List<DatasetField> fields = datasetFieldService.getListByDatasetId(datasetId);
+        for (DatasetField f : fields) {
+            if (f.getRelatedId() != null && !f.getRelatedId().isEmpty()) {
+                labelIds.add(f.getRelatedId());
+            }
+        }
+
+        // 删除保护：检查下游依赖
+        lineageService.checkDeletable(AssetType.DATASET.getCode(), datasetId);
+
         // 1. 删除引擎表
         analysisEngineService.dropDatasetTable(datasetId);
 
@@ -147,8 +196,18 @@ public class DatasetService {
         // 3. 删除数据集字段
         datasetFieldService.deleteByDatasetId(datasetId);
 
-        // 4. TODO 删除调度任务
-        return datasetMapper.deleteByDatasetId(datasetId);
+        // 4. 删除血缘
+        lineageService.removeLineage(AssetType.DATASET.getCode(), datasetId);
+
+        // 5. 删除数据集
+        int result = datasetMapper.deleteByDatasetId(datasetId);
+
+        // 6. 刷新受影响标签的血缘（上游 dataset 已删除，label→dataset 边被清除）
+        for (String labelId : labelIds) {
+            lineageService.refreshLineage(AssetType.LABEL.getCode(), labelId);
+        }
+
+        return result;
     }
 
     /**

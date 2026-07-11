@@ -42,6 +42,12 @@ public class Task {
     private String scheduleId;
     // 上游任务ID列表(逗号分隔)
     private String upstreamTaskIds;
+    // 告警触发条件:failure/success/finished(空=未配置)
+    private String alertCondition;
+    // 报警方式(逗号分隔):sms,email,phone,dingtalk,webhook
+    private String alertChannels;
+    // 接收人JSON条目:[{"type":"owner"},{"type":"user","value":"userId"}]
+    private String alertReceivers;
     // 创建方式: 1-系统内置,2-自定义
     private Integer sourceType;
     // 负责人

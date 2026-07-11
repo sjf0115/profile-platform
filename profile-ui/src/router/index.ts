@@ -144,6 +144,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/entity/index.vue'),
         meta: { title: '实体管理' },
       },
+      // 数据血缘
+      {
+        path: 'lineage',
+        name: 'Lineage',
+        component: () => import('@/views/lineage/index.vue'),
+        meta: { title: '数据血缘' },
+      },
       // 设置 - 角色管理
       {
         path: 'settings/roles',
@@ -336,13 +343,13 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '创建应用' },
       },
       {
-        path: 'application/edit/:id',
+        path: 'application/edit/:appKey',
         name: 'EditApplication',
         component: () => import('@/views/application/create.vue'),
         meta: { title: '编辑应用' },
       },
       {
-        path: 'application/detail/:id',
+        path: 'application/detail/:appKey',
         name: 'ApplicationDetail',
         component: () => import('@/views/application/detail.vue'),
         meta: { title: '应用详情' },

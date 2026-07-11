@@ -4,6 +4,7 @@ import com.beust.jcommander.internal.Lists;
 import com.data.profile.common.enums.*;
 import com.data.profile.web.converter.TaskInstanceConverter;
 import com.data.profile.web.dao.GroupMapper;
+import com.data.profile.web.enums.AssetType;
 import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.engine.ScheduleEngineService;
 import com.data.profile.web.model.*;
@@ -65,6 +66,8 @@ public class GroupService {
     private TaskService taskService;
     @Autowired
     private TaskInstanceService taskInstanceService;
+    @Autowired
+    private LineageService lineageService;
 
     /**
      * 根据查询条件获取群组列表（含关联信息）
@@ -218,6 +221,9 @@ public class GroupService {
         // 自动授权 MANAGE 给创建者
         resourceGrantService.grantOwner("09", groupId, UserContextHolder.currentUserId());
 
+        // 血缘采集
+        lineageService.refreshLineage(AssetType.GROUP.getCode(), groupId);
+
         // 创建群组引擎表 TODO 原子性
         createGroupEngineTable(group);
 
@@ -248,6 +254,7 @@ public class GroupService {
         int result = groupMapper.updateByGroupIdSelective(group);
         // TODO 优化 同步调度到调度引擎
         scheduleGroupIfNeeded(group);
+        lineageService.refreshLineage(AssetType.GROUP.getCode(), group.getGroupId());
         return result;
     }
 
@@ -267,6 +274,9 @@ public class GroupService {
             throw new RuntimeException("内置群组不允许删除");
         }
 
+        // 检查是否能删除 检查下游依赖
+        lineageService.checkDeletable(AssetType.GROUP.getCode(), groupId);
+
         // 删除调度任务
         taskService.deleteByRelatedId(groupId);
 
@@ -275,6 +285,7 @@ public class GroupService {
 
         // 删除群组元数据
         log.info("删除群组: {}", groupId);
+        lineageService.removeLineage(AssetType.GROUP.getCode(), groupId);
         return groupMapper.deleteByGroupId(groupId);
     }
 

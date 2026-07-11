@@ -49,6 +49,10 @@ public enum ModelType {
     GRANT("23", "授权"),
     // 权限申请
     AUTH_APPLY("24", "权限申请"),
+    // 告警
+    ALERT("25", "告警"),
+    // 资产血缘关系
+    LINEAGE("26", "血缘关系"),
     ;
 
     private String code;

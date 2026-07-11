@@ -20,7 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+
 
 import static com.data.profile.common.domain.Constant.ENGINE_GROUP_TABLE_PREFIX;
 
@@ -215,12 +215,12 @@ public class ExportTask {
         if (StringUtils.isBlank(applicationId)) {
             throw new RuntimeException("应用投递未配置 applicationId: " + export.getExportId());
         }
-        Long appId = Long.parseLong(applicationId);
-        Optional<Application> appOpt = applicationService.getDetail(appId);
-        if (!appOpt.isPresent()) {
+        // applicationId 存储的是 appKey
+        Application app = applicationService.getByAppKey(applicationId);
+        if (app == null) {
             throw new RuntimeException("应用不存在: " + applicationId);
         }
-        ExportConfig appConfig = parseExportConfig(appOpt.get().getTargetConfig());
+        ExportConfig appConfig = parseExportConfig(app.getTargetConfig());
         if (appConfig == null) {
             throw new RuntimeException("应用投递目标配置解析失败: " + applicationId);
         }

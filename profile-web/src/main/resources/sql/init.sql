@@ -336,6 +336,9 @@ CREATE TABLE IF NOT EXISTS `profile_meta_task`(
     `trigger_end_time` VARCHAR(20) COMMENT '触发调度有效结束时间:只有周期自动触发更新才有',
     `schedule_id` VARCHAR(100) COMMENT '调度引擎侧的调度标识',
     `upstream_task_ids` VARCHAR(500) COMMENT '上游任务ID列表(逗号分隔)',
+    `alert_condition` VARCHAR(20) COMMENT '告警触发条件:failure-执行失败,success-执行成功,finished-执行完成(空=未配置)',
+    `alert_channels` VARCHAR(100) COMMENT '报警方式(逗号分隔):sms,email,phone,dingtalk,webhook。本期仅email生效',
+    `alert_receivers` VARCHAR(1000) COMMENT '接收人JSON条目:[{"type":"owner"},{"type":"user","value":"userId"}]',
     `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
     `owner` VARCHAR(100) NOT NULL COMMENT '任务负责人',
     `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
@@ -662,3 +665,53 @@ CREATE TABLE IF NOT EXISTS `profile_meta_system_config`(
     PRIMARY KEY (`id`),
     UNIQUE(`config_group`, `config_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-系统配置';
+
+-- ==============================
+-- 告警发送记录
+-- ==============================
+DROP TABLE IF EXISTS `profile_meta_alert_history`;
+CREATE TABLE IF NOT EXISTS `profile_meta_alert_history`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `history_id` VARCHAR(40) NOT NULL COMMENT '告警记录ID',
+    `task_id` VARCHAR(40) NOT NULL COMMENT '任务ID',
+    `instance_id` VARCHAR(40) COMMENT '触发的任务实例ID',
+    `alert_condition` VARCHAR(20) NOT NULL COMMENT '命中的触发条件',
+    `alert_channel` VARCHAR(20) NOT NULL COMMENT '发送通道:email等',
+    `receivers` VARCHAR(500) COMMENT '实际接收人(邮箱,逗号分隔)',
+    `subject` VARCHAR(200) COMMENT '告警标题',
+    `content` TEXT COMMENT '告警内容',
+    `send_status` TINYINT NOT NULL DEFAULT 0 COMMENT '发送状态:0-失败,1-成功,2-跳过(通道未实现/无接收人)',
+    `send_message` VARCHAR(500) COMMENT '发送结果说明',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE (`history_id`),
+    KEY `idx_task` (`task_id`),
+    KEY `idx_instance` (`instance_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-告警发送记录';
+
+-- ==============================
+-- 数据资产血缘关系
+-- ==============================
+DROP TABLE IF EXISTS `profile_meta_lineage`;
+CREATE TABLE IF NOT EXISTS `profile_meta_lineage`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `lineage_id` VARCHAR(40) NOT NULL COMMENT '血缘关系ID',
+    `upstream_type` VARCHAR(20) NOT NULL COMMENT '被依赖方类型:datasource/dataset/label/event/group/analysis/export/application',
+    `upstream_id` VARCHAR(64) NOT NULL COMMENT '被依赖方业务ID',
+    `downstream_type` VARCHAR(20) NOT NULL COMMENT '引用方类型',
+    `downstream_id` VARCHAR(64) NOT NULL COMMENT '引用方业务ID',
+    `relation_type` VARCHAR(30) NOT NULL DEFAULT 'reference' COMMENT '关系语义:derive-派生,reference-引用,consume-消费,export-投递',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式:1-系统自动采集,2-手动登记',
+    `remark` VARCHAR(255) DEFAULT NULL COMMENT '关系备注',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_edge` (`upstream_type`,`upstream_id`,`downstream_type`,`downstream_id`,`relation_type`),
+    KEY `idx_upstream` (`upstream_type`,`upstream_id`),
+    KEY `idx_downstream` (`downstream_type`,`downstream_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像资产血缘关系表';

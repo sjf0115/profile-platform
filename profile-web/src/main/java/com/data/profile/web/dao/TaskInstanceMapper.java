@@ -1,9 +1,11 @@
 package com.data.profile.web.dao;
 
 import com.data.profile.web.model.TaskInstance;
+import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
 
+@Mapper
 public interface TaskInstanceMapper {
     // 查询
     TaskInstance selectByInstanceId(String instanceId); // 根据ID查询

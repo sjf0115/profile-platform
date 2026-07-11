@@ -1,9 +1,11 @@
 package com.data.profile.web.dao;
 
 import com.data.profile.web.model.Attribute;
+import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
 
+@Mapper
 public interface AttributeMapper {
     // 查询
     Attribute selectByAttrId(String attrId); // 根据ID查询

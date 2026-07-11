@@ -32,6 +32,9 @@
             <el-descriptions-item label="修改时间">
               {{ formatDateTime(application.gmt_modified) }}
             </el-descriptions-item>
+            <el-descriptions-item label="负责人">
+              {{ application.owner_name || application.owner || '-' }}
+            </el-descriptions-item>
             <el-descriptions-item label="创建人">
               {{ application.creator || '-' }}
             </el-descriptions-item>
@@ -174,12 +177,13 @@ import { ArrowLeft } from '@element-plus/icons-vue'
 import type { Application, DataSource } from '@/types'
 import { applicationApi } from '@/api/application'
 import { dataSourceApi } from '@/api/datasource'
+import { checkLineageDeletable } from '@/api/lineage'
 
 const route = useRoute()
 const router = useRouter()
 
-// 应用 ID
-const appId = computed(() => Number(route.params.id))
+// 应用 appKey
+const appKey = computed(() => route.params.appKey as string)
 
 // 加载状态
 const loading = ref(false)
@@ -275,10 +279,10 @@ const fetchDatasourceList = async () => {
 
 // 获取应用详情
 const fetchDetail = async () => {
-  if (!appId.value) return
+  if (!appKey.value) return
   loading.value = true
   try {
-    const res = await applicationApi.getDetail(appId.value)
+    const res = await applicationApi.getDetail(appKey.value)
     application.value = res.data.data
   } catch (error) {
     console.error('获取应用详情失败:', error)
@@ -301,7 +305,7 @@ const handleResetSecret = () => {
   )
     .then(async () => {
       try {
-        const res = await applicationApi.resetSecret(appId.value)
+        const res = await applicationApi.resetSecret(appKey.value)
         const newSecret = res.data.data
         ElMessageBox.alert(
           `新的 AppSecret 为：<strong>${newSecret}</strong><br/><br/>请妥善保存，关闭后将无法再次查看。`,
@@ -333,7 +337,7 @@ const handleToggleStatus = () => {
   })
     .then(async () => {
       try {
-        await applicationApi.save({ id: app.id, status: newStatus })
+        await applicationApi.updateStatus(appKey.value, newStatus)
         ElMessage.success(`${action}成功`)
         fetchDetail()
       } catch (error) {
@@ -344,7 +348,8 @@ const handleToggleStatus = () => {
 }
 
 // 删除
-const handleDelete = () => {
+const handleDelete = async () => {
+  if (!await checkLineageDeletable('application', appKey.value, application.value?.app_name)) return
   ElMessageBox.confirm(
     `确定要删除应用 "${application.value?.app_name}" 吗？`,
     '提示',
@@ -356,7 +361,7 @@ const handleDelete = () => {
   )
     .then(async () => {
       try {
-        await applicationApi.delete(appId.value)
+        await applicationApi.delete(appKey.value)
         ElMessage.success('删除成功')
         router.push('/application')
       } catch (error: any) {
@@ -373,7 +378,7 @@ const handleBack = () => {
 
 // 编辑
 const handleEdit = () => {
-  router.push(`/application/edit/${appId.value}`)
+  router.push(`/application/edit/${appKey.value}`)
 }
 
 onMounted(() => {

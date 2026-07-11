@@ -22,7 +22,7 @@ public class Application {
     private String appName;
     // 应用描述
     private String appDesc;
-    // 应用Key（唯一标识 + API凭证）
+    // 应用Key
     private String appKey;
     // 应用Secret（API密钥）
     private String appSecret;

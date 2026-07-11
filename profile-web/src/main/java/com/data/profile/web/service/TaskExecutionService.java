@@ -40,6 +40,8 @@ public class TaskExecutionService {
     private TaskService taskService;
     @Resource
     private TaskInstanceService taskInstanceService;
+    @Resource
+    private AlertService alertService;
 
     /**
      * 任务执行器映射（策略模式）
@@ -157,9 +159,23 @@ public class TaskExecutionService {
             taskInstanceService.markSuccess(instanceId, "执行成功");
             executor.onSuccess(context);
 
+            // 触发告警（成功）
+            try {
+                alertService.trigger(task, instance, InstanceStatus.SUCCESS);
+            } catch (Exception alertEx) {
+                log.warn("告警触发异常(不影响主流程): instanceId={}", instanceId, alertEx);
+            }
+
         } catch (Exception e) {
             log.error("任务执行失败: taskId={}, instanceId={}", taskId, instanceId, e);
             taskInstanceService.markFailed(instanceId, e.getMessage());
+
+            // 触发告警（失败）
+            try {
+                alertService.trigger(task, instance, InstanceStatus.FAILED);
+            } catch (Exception alertEx) {
+                log.warn("告警触发异常(不影响主流程): instanceId={}", instanceId, alertEx);
+            }
 
             // 尝试回调 onFailure（如果执行器存在）
             try {

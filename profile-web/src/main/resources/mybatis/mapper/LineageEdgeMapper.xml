@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.web.dao.LineageEdgeMapper">
+
+  <resultMap id="BaseResultMap" type="com.data.profile.web.model.LineageEdge">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="lineage_id" jdbcType="VARCHAR" property="lineageId" />
+    <result column="upstream_type" jdbcType="VARCHAR" property="upstreamType" />
+    <result column="upstream_id" jdbcType="VARCHAR" property="upstreamId" />
+    <result column="downstream_type" jdbcType="VARCHAR" property="downstreamType" />
+    <result column="downstream_id" jdbcType="VARCHAR" property="downstreamId" />
+    <result column="relation_type" jdbcType="VARCHAR" property="relationType" />
+    <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+    <result column="remark" jdbcType="VARCHAR" property="remark" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    id, lineage_id, upstream_type, upstream_id, downstream_type, downstream_id,
+    relation_type, source_type, remark, creator, modifier, gmt_create, gmt_modified
+  </sql>
+
+  <select id="selectByUpstream" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" />
+    from profile_meta_lineage
+    where upstream_type = #{type} and upstream_id = #{id}
+  </select>
+
+  <select id="selectByDownstream" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" />
+    from profile_meta_lineage
+    where downstream_type = #{type} and downstream_id = #{id}
+  </select>
+
+  <!-- 批量查上游边：按 type 分组拼 OR 条件 -->
+  <select id="selectUpstreamEdgesBatch" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" />
+    from profile_meta_lineage
+    where
+    <foreach collection="nodes" item="node" separator=" OR " open="(" close=")">
+      (downstream_type = #{node.type} and downstream_id = #{node.id})
+    </foreach>
+  </select>
+
+  <!-- 批量查下游边：按 type 分组拼 OR 条件 -->
+  <select id="selectDownstreamEdgesBatch" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" />
+    from profile_meta_lineage
+    where
+    <foreach collection="nodes" item="node" separator=" OR " open="(" close=")">
+      (upstream_type = #{node.type} and upstream_id = #{node.id})
+    </foreach>
+  </select>
+
+  <insert id="batchInsert" parameterType="java.util.List">
+    insert into profile_meta_lineage
+    (lineage_id, upstream_type, upstream_id, downstream_type, downstream_id,
+     relation_type, source_type, remark, creator, modifier)
+    values
+    <foreach collection="list" item="edge" separator=",">
+      (#{edge.lineageId}, #{edge.upstreamType}, #{edge.upstreamId},
+       #{edge.downstreamType}, #{edge.downstreamId}, #{edge.relationType},
+       #{edge.sourceType}, #{edge.remark}, #{edge.creator}, #{edge.modifier})
+    </foreach>
+  </insert>
+
+  <delete id="deleteByDownstream">
+    delete from profile_meta_lineage
+    where downstream_type = #{type} and downstream_id = #{id}
+  </delete>
+
+  <delete id="deleteByNode">
+    delete from profile_meta_lineage
+    where (upstream_type = #{type} and upstream_id = #{id})
+       or (downstream_type = #{type} and downstream_id = #{id})
+  </delete>
+
+  <delete id="deleteAll">
+    delete from profile_meta_lineage
+  </delete>
+
+</mapper>

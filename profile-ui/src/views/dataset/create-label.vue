@@ -616,9 +616,8 @@ const fetchDatasetDetail = async () => {
   }
 }
 
-onMounted(() => {
-  fetchDatasourceList()
-  fetchEntityIdentifierList()
+onMounted(async () => {
+  await Promise.all([fetchDatasourceList(), fetchEntityIdentifierList()])
   fetchDatasetDetail()
 })
 </script>

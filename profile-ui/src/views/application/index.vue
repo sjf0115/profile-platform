@@ -51,7 +51,7 @@
         border
         style="width: 100%"
       >
-        <el-table-column label="应用信息" min-width="200">
+        <el-table-column label="应用" min-width="200">
           <template #default="{ row }">
             <div class="app-info">
               <div class="app-name">{{ row.app_name }}</div>
@@ -69,15 +69,9 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="投递目标" min-width="180">
+        <el-table-column label="负责人" width="120">
           <template #default="{ row }">
-            <div v-if="getTargetType(row.target_config)" class="target-info">
-              <el-tag size="small" :type="getTargetTypeTag(row.target_config)">
-                {{ getTargetTypeLabel(row.target_config) }}
-              </el-tag>
-              <span class="target-datasource">{{ getTargetDatasourceName(row.target_config) }}</span>
-            </div>
-            <span v-else class="empty-text">未配置</span>
+            {{ row.owner_name || row.owner || '-' }}
           </template>
         </el-table-column>
         <el-table-column label="状态" width="100" align="center">
@@ -92,20 +86,24 @@
             {{ formatDateTime(row.gmt_create) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="240" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleView(row)">
-              详情
+            <el-button link type="primary" @click="handleView(row)">查看</el-button>
+            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button link type="primary" @click="handleToggleStatus(row)">
+              {{ row.status === 1 ? '禁用' : '启用' }}
             </el-button>
-            <el-button link type="primary" @click="handleEdit(row)">
-              编辑
-            </el-button>
-            <el-button link type="warning" @click="handleResetSecret(row)">
-              重置Secret
-            </el-button>
-            <el-button link type="danger" @click="handleDelete(row)">
-              删除
-            </el-button>
+            <el-dropdown trigger="click">
+              <el-button link type="primary">
+                <el-icon><More /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="handleResetSecret(row)">重置秘钥</el-dropdown-item>
+                  <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </template>
         </el-table-column>
 
@@ -157,10 +155,10 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Refresh, CircleCheckFilled } from '@element-plus/icons-vue'
-import type { Application, ApplicationQueryParams, DataSource } from '@/types'
+import { Plus, Search, Refresh, CircleCheckFilled, More } from '@element-plus/icons-vue'
+import type { Application, ApplicationQueryParams } from '@/types'
 import { applicationApi } from '@/api/application'
-import { dataSourceApi } from '@/api/datasource'
+import { checkLineageDeletable } from '@/api/lineage'
 
 const router = useRouter()
 
@@ -190,9 +188,6 @@ const queryParams = reactive<ApplicationQueryParams>({
   app_name: '',
 })
 
-// 数据源列表
-const datasourceList = ref<DataSource[]>([])
-
 // 创建成功弹窗
 const showCreateDialog = ref(false)
 const createdAppKey = ref('')
@@ -209,65 +204,6 @@ const fetchData = async () => {
   } finally {
     loading.value = false
   }
-}
-
-// 获取数据源列表
-const fetchDatasourceList = async () => {
-  try {
-    const res = await dataSourceApi.getList()
-    datasourceList.value = res.data.data || []
-  } catch (error) {
-    console.error('获取数据源列表失败:', error)
-  }
-}
-
-// 获取目标类型
-const getTargetType = (targetConfig?: string): string => {
-  if (!targetConfig) return ''
-  try {
-    const config = JSON.parse(targetConfig)
-    return config.targetType || ''
-  } catch (e) {
-    return ''
-  }
-}
-
-// 获取目标数据源名称
-const getTargetDatasourceName = (targetConfig?: string): string => {
-  if (!targetConfig) return ''
-  try {
-    const config = JSON.parse(targetConfig)
-    const dsId = config.datasourceId
-    if (!dsId) return ''
-    const ds = datasourceList.value.find(d => d.datasource_id === dsId)
-    return ds ? ds.datasource_name : dsId
-  } catch (e) {
-    return ''
-  }
-}
-
-// 获取目标类型标签
-const getTargetTypeLabel = (targetConfig?: string): string => {
-  const typeMap: Record<string, string> = {
-    table: '数据表',
-    file: '文件存储',
-    topic: '消息队列',
-    index: 'ES索引',
-  }
-  const type = getTargetType(targetConfig)
-  return typeMap[type] || type
-}
-
-// 获取目标类型标签颜色
-const getTargetTypeTag = (targetConfig?: string): string => {
-  const tagMap: Record<string, string> = {
-    table: '',
-    file: 'success',
-    topic: 'warning',
-    index: 'info',
-  }
-  const type = getTargetType(targetConfig)
-  return tagMap[type] || 'info'
 }
 
 // 掩码 AppKey
@@ -316,12 +252,34 @@ const handleAdd = () => {
 
 // 查看详情
 const handleView = (row: Application) => {
-  router.push(`/application/detail/${row.id}`)
+  router.push(`/application/detail/${row.app_key}`)
 }
 
 // 编辑
 const handleEdit = (row: Application) => {
-  router.push(`/application/edit/${row.id}`)
+  router.push(`/application/edit/${row.app_key}`)
+}
+
+// 禁用/启用
+const handleToggleStatus = (row: Application) => {
+  const newStatus = row.status === 1 ? 2 : 1
+  const action = newStatus === 1 ? '启用' : '禁用'
+
+  ElMessageBox.confirm(`确定要${action}应用 "${row.app_name}" 吗？`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+    .then(async () => {
+      try {
+        await applicationApi.updateStatus(row.app_key!, newStatus)
+        ElMessage.success(`${action}成功`)
+        fetchData()
+      } catch (error) {
+        console.error(`${action}失败:`, error)
+      }
+    })
+    .catch(() => {})
 }
 
 // 重置 Secret
@@ -337,7 +295,7 @@ const handleResetSecret = (row: Application) => {
   )
     .then(async () => {
       try {
-        const res = await applicationApi.resetSecret(row.id!)
+        const res = await applicationApi.resetSecret(row.app_key!)
         const newSecret = res.data.data
         ElMessageBox.alert(
           `新的 AppSecret 为：<strong>${newSecret}</strong><br/><br/>请妥善保存，关闭后将无法再次查看。`,
@@ -356,7 +314,8 @@ const handleResetSecret = (row: Application) => {
 }
 
 // 删除
-const handleDelete = (row: Application) => {
+const handleDelete = async (row: Application) => {
+  if (!await checkLineageDeletable('application', row.app_key!, row.app_name)) return
   ElMessageBox.confirm(
     `确定要删除应用 "${row.app_name}" 吗？`,
     '提示',
@@ -368,7 +327,7 @@ const handleDelete = (row: Application) => {
   )
     .then(async () => {
       try {
-        await applicationApi.delete(row.id!)
+        await applicationApi.delete(row.app_key!)
         ElMessage.success('删除成功')
         fetchData()
       } catch (error: any) {
@@ -379,19 +338,24 @@ const handleDelete = (row: Application) => {
 }
 
 onMounted(() => {
-  fetchDatasourceList()
   fetchData()
 })
 
 // 监听路由参数，检查是否从创建页面返回
 const checkCreateResult = () => {
-  const state = history.state
-  if (state?.createdApp) {
-    createdAppKey.value = state.createdApp.app_key
-    createdAppSecret.value = state.createdApp.app_secret
-    showCreateDialog.value = true
-    // 清除 state 防止刷新再次弹出
-    history.replaceState({}, '')
+  const raw = sessionStorage.getItem('createdApp')
+  if (raw) {
+    try {
+      const createdApp = JSON.parse(raw)
+      createdAppKey.value = createdApp.app_key
+      createdAppSecret.value = createdApp.app_secret
+      showCreateDialog.value = true
+    } catch {
+      // 解析失败忽略
+    } finally {
+      // 读取后立即清除，防止刷新或路由跳转后反复弹出
+      sessionStorage.removeItem('createdApp')
+    }
   }
 }
 
@@ -455,21 +419,6 @@ onMounted(() => {
       font-family: monospace;
       color: #606266;
     }
-  }
-
-  .target-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    .target-datasource {
-      font-size: 12px;
-      color: #909399;
-    }
-  }
-
-  .empty-text {
-    color: #909399;
   }
 
   .create-success {

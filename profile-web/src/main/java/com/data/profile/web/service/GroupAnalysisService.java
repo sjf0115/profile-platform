@@ -1,5 +1,6 @@
 package com.data.profile.web.service;
 
+import com.data.profile.web.enums.AssetType;
 import com.data.profile.common.enums.*;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.web.dao.GroupAnalysisMapper;
@@ -59,6 +60,8 @@ public class GroupAnalysisService {
     private AnalysisEngineService analysisEngineService;
     @Autowired
     private SqlTemplateEngine sqlTemplateEngine;
+    @Autowired
+    private LineageService lineageService;
 
     /**
      * 获取可分析的群组列表（groupCount > 0）
@@ -97,6 +100,7 @@ public class GroupAnalysisService {
     /**
      * 保存群组分析（新增/修改）
      */
+    @Transactional
     public int saveAnalysis(GroupAnalysis analysis) {
         // 将 List<String> 转为 JSON 字符串存储
         if (analysis.getCompareGroupIdList() != null) {
@@ -118,24 +122,31 @@ public class GroupAnalysisService {
             int result = groupAnalysisMapper.insertSelective(analysis);
             // 自动授权 MANAGE 给创建者
             resourceGrantService.grantOwner("22", analysisId, UserContextHolder.currentUserId());
+            lineageService.refreshLineage(AssetType.ANALYSIS.getCode(), analysisId);
             return result;
         } else {
             // 修改
             analysis.setModifier(UserContextHolder.currentUserId());
             log.info("修改群组分析: {}", gson.toJson(analysis));
-            return groupAnalysisMapper.updateByAnalysisIdSelective(analysis);
+            int result = groupAnalysisMapper.updateByAnalysisIdSelective(analysis);
+            lineageService.refreshLineage(AssetType.ANALYSIS.getCode(), analysis.getAnalysisId());
+            return result;
         }
     }
 
     /**
      * 删除群组分析
      */
+    @Transactional
     public int deleteAnalysis(String analysisId) {
         GroupAnalysis analysis = groupAnalysisMapper.selectByAnalysisId(analysisId);
         if (analysis == null) {
             throw new RuntimeException("群组分析不存在");
         }
+        // 删除保护：检查下游依赖
+        lineageService.checkDeletable(AssetType.ANALYSIS.getCode(), analysisId);
         log.info("删除群组分析: {}", analysisId);
+        lineageService.removeLineage(AssetType.ANALYSIS.getCode(), analysisId);
         return groupAnalysisMapper.deleteByAnalysisId(analysisId);
     }
 

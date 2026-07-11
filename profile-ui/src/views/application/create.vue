@@ -42,6 +42,23 @@
               style="width: 400px"
             />
           </el-form-item>
+
+          <el-form-item label="负责人">
+            <el-select
+              v-model="formData.owner"
+              filterable
+              clearable
+              placeholder="请选择负责人（默认为当前用户）"
+              style="width: 400px"
+            >
+              <el-option
+                v-for="u in userOptions"
+                :key="u.user_id"
+                :label="u.user_name"
+                :value="u.user_id"
+              />
+            </el-select>
+          </el-form-item>
         </div>
 
         <!-- 投递目标配置 -->
@@ -224,15 +241,18 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import type { Application, DataSource, DatabaseInfo, TableInfo } from '@/types'
+import type { ApplicationRequest, DataSource, DatabaseInfo, TableInfo } from '@/types'
 import { applicationApi } from '@/api/application'
 import { dataSourceApi } from '@/api/datasource'
+import { userApi } from '@/api/user'
+import type { User } from '@/api/user'
+import { getLoginUser } from '@/utils/auth'
 
 const route = useRoute()
 const router = useRouter()
 
 // 是否编辑模式
-const isEdit = computed(() => !!route.params.id)
+const isEdit = computed(() => !!route.params.appKey)
 
 // 表单引用
 const formRef = ref<FormInstance>()
@@ -242,6 +262,9 @@ const submitting = ref(false)
 
 // 数据源列表
 const datasourceList = ref<DataSource[]>([])
+
+// 用户列表（负责人选择）
+const userOptions = ref<User[]>([])
 
 // 数据库列表
 const databaseList = ref<DatabaseInfo[]>([])
@@ -253,6 +276,7 @@ const tableList = ref<TableInfo[]>([])
 const formData = reactive<{
   app_name: string
   app_desc: string
+  owner: string
   datasource_id: string
   database: string
   table_name: string
@@ -269,6 +293,7 @@ const formData = reactive<{
 }>({
   app_name: '',
   app_desc: '',
+  owner: '',
   datasource_id: '',
   database: '',
   table_name: '',
@@ -319,6 +344,16 @@ const inferredTargetType = computed((): string => {
   }
   return ''
 })
+
+// 获取用户列表（负责人选择）
+const fetchUserOptions = async () => {
+  try {
+    const res = await userApi.getList()
+    userOptions.value = res.data.data || []
+  } catch {
+    userOptions.value = []
+  }
+}
 
 // 获取数据源列表
 const fetchDatasourceList = async () => {
@@ -373,11 +408,11 @@ const handleDatabaseChange = (database: string) => {
 // 获取应用详情（编辑模式）
 const fetchDetail = async () => {
   if (!isEdit.value) return
-  const id = Number(route.params.id)
-  if (!id) return
+  const appKey = route.params.appKey as string
+  if (!appKey) return
 
   try {
-    const res = await applicationApi.getDetail(id)
+    const res = await applicationApi.getDetail(appKey)
     const data = res.data.data
     if (!data) {
       ElMessage.error('应用不存在')
@@ -387,6 +422,7 @@ const fetchDetail = async () => {
     // 回填基础信息
     formData.app_name = data.app_name
     formData.app_desc = data.app_desc || ''
+    formData.owner = data.owner || ''
     formData.webhook_url = data.webhook_url || ''
     formData.rate_limit = data.rate_limit ?? 100
     formData.ip_whitelist = data.ip_whitelist || ''
@@ -465,37 +501,30 @@ const handleSubmit = async () => {
 
     submitting.value = true
     try {
-      const params: Partial<Application> = {
+      const params: ApplicationRequest = {
         app_name: formData.app_name,
         app_desc: formData.app_desc || undefined,
+        owner: formData.owner || undefined,
         webhook_url: formData.webhook_url || undefined,
         rate_limit: formData.rate_limit,
         ip_whitelist: formData.ip_whitelist || undefined,
         target_config: buildTargetConfig(),
       }
 
-      // 编辑模式传入 id
       if (isEdit.value) {
-        params.id = Number(route.params.id)
-      }
-
-      const res = await applicationApi.save(params)
-
-      if (isEdit.value) {
+        const appKey = route.params.appKey as string
+        await applicationApi.update(appKey, params)
         ElMessage.success('保存成功')
         router.push('/application')
       } else {
-        // 创建成功，传递凭证信息到列表页弹窗
+        const res = await applicationApi.create(params)
+        // 创建成功，通过 sessionStorage 传递凭证信息到列表页弹窗（避免 history.state 被路由缓存导致反复弹出）
         const savedApp = res.data.data
-        router.push({
-          path: '/application',
-          state: {
-            createdApp: {
-              app_key: savedApp?.app_key,
-              app_secret: savedApp?.app_secret,
-            },
-          },
-        })
+        sessionStorage.setItem('createdApp', JSON.stringify({
+          app_key: savedApp?.app_key,
+          app_secret: savedApp?.app_secret,
+        }))
+        router.push('/application')
       }
     } catch (error) {
       console.error('保存失败:', error)
@@ -506,9 +535,16 @@ const handleSubmit = async () => {
 }
 
 onMounted(() => {
+  fetchUserOptions()
   fetchDatasourceList()
   if (isEdit.value) {
     fetchDetail()
+  } else {
+    // 创建模式：默认填充当前登录用户为负责人
+    const currentUser = getLoginUser()
+    if (currentUser?.user_id) {
+      formData.owner = currentUser.user_id
+    }
   }
 })
 </script>

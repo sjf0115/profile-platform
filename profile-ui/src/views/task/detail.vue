@@ -67,6 +67,36 @@
         </el-descriptions>
       </el-card>
 
+      <!-- 告警配置 -->
+      <el-card class="detail-card">
+        <template #header>
+          <div class="card-header">
+            <span>告警配置</span>
+            <el-button type="primary" link @click="openAlertDialog">
+              <el-icon><Edit /></el-icon>
+              <span style="margin-left: 4px">编辑</span>
+            </el-button>
+          </div>
+        </template>
+        <el-descriptions :column="3" border>
+          <el-descriptions-item label="触发条件">
+            {{ getConditionLabel(alertConfig.alert_condition) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="报警方式">
+            <template v-if="alertConfig.alert_channels">
+              <el-tag v-for="ch in parseChannels(alertConfig.alert_channels)" :key="ch" size="small" type="success" style="margin-right: 4px">
+                {{ getChannelLabel(ch) }}
+              </el-tag>
+            </template>
+            <span v-else>未配置</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="接收人">
+            <span v-if="alertConfig.alert_receivers">{{ formatReceivers(alertConfig.alert_receivers) }}</span>
+            <span v-else>未配置</span>
+          </el-descriptions-item>
+        </el-descriptions>
+      </el-card>
+
       <!-- 关联信息 -->
       <el-card class="detail-card">
         <template #header>
@@ -96,6 +126,57 @@
         </el-descriptions>
       </el-card>
     </div>
+
+    <!-- 告警配置编辑对话框 -->
+    <el-dialog v-model="alertDialogVisible" title="告警配置" width="600px" :close-on-click-modal="false">
+      <el-form :model="alertForm" label-width="100px">
+        <el-divider content-position="left">触发方式</el-divider>
+        <el-form-item label="触发条件">
+          <el-select v-model="alertForm.alert_condition" placeholder="选择触发条件" style="width: 100%">
+            <el-option label="执行失败" value="failure" />
+            <el-option label="执行成功" value="success" />
+            <el-option label="执行完成" value="finished" />
+          </el-select>
+        </el-form-item>
+
+        <el-divider content-position="left">报警行为</el-divider>
+        <el-alert type="info" :closable="false" show-icon
+          title="如未收到告警信息，请参考文档进行排查。" style="margin-bottom: 16px" />
+
+        <el-form-item label="报警方式">
+          <el-checkbox-group v-model="alertForm.alert_channels">
+            <el-checkbox value="sms" disabled>短信</el-checkbox>
+            <el-checkbox value="email">邮件</el-checkbox>
+            <el-checkbox value="phone" disabled>电话</el-checkbox>
+            <el-tooltip content="敬请期待" placement="top">
+              <el-checkbox value="dingtalk" disabled>钉钉群机器人</el-checkbox>
+            </el-tooltip>
+            <el-tooltip content="敬请期待" placement="top">
+              <el-checkbox value="webhook" disabled>WebHook</el-checkbox>
+            </el-tooltip>
+          </el-checkbox-group>
+        </el-form-item>
+
+        <el-form-item label="接收人">
+          <div style="width: 100%">
+            <el-checkbox v-model="alertForm.notify_owner">任务责任人</el-checkbox>
+            <div style="display: flex; align-items: center; margin-top: 8px">
+              <el-checkbox v-model="alertForm.enable_other">其他</el-checkbox>
+              <el-select v-model="alertForm.other_receivers" multiple filterable
+                :disabled="!alertForm.enable_other" placeholder="请输入接收人名字/ID"
+                style="flex: 1; margin-left: 8px">
+                <el-option v-for="u in userOptions" :key="u.user_id"
+                  :label="u.user_name" :value="u.user_id" />
+              </el-select>
+            </div>
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="alertDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSaveAlert" :loading="alertSaving">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -103,9 +184,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ArrowLeft, Edit } from '@element-plus/icons-vue'
 import type { Task } from '@/types'
 import { taskApi } from '@/api/task'
+import { alertApi, type AlertReceiver } from '@/api/alert'
+import { userApi } from '@/api/user'
 
 const route = useRoute()
 const router = useRouter()
@@ -113,6 +196,23 @@ const taskId = computed(() => route.params.id as string)
 
 const loading = ref(false)
 const taskInfo = ref<Partial<Task>>({})
+
+// 告警配置
+const alertConfig = ref({
+  alert_condition: '',
+  alert_channels: '',
+  alert_receivers: ''
+})
+const alertDialogVisible = ref(false)
+const alertSaving = ref(false)
+const alertForm = ref({
+  alert_condition: '' as string,
+  alert_channels: [] as string[],
+  notify_owner: false,
+  enable_other: false,
+  other_receivers: [] as string[]
+})
+const userOptions = ref<any[]>([])
 
 // 格式化日期时间
 const formatDateTime = (dateStr?: string) => {
@@ -201,8 +301,137 @@ const handleViewInstance = () => {
   })
 }
 
+// ---------- 告警配置 ----------
+
+const getConditionLabel = (code: string) => {
+  const map: Record<string, string> = { failure: '执行失败', success: '执行成功', finished: '执行完成' }
+  return map[code] || '未配置'
+}
+
+const parseChannels = (channels: string) => {
+  if (!channels) return []
+  return channels.split(',').filter(c => c.trim())
+}
+
+const getChannelLabel = (code: string) => {
+  const map: Record<string, string> = {
+    sms: '短信', email: '邮件', phone: '电话', dingtalk: '钉钉群机器人', webhook: 'WebHook'
+  }
+  return map[code] || code
+}
+
+const formatReceivers = (json: string) => {
+  if (!json) return '未配置'
+  try {
+    const receivers: AlertReceiver[] = JSON.parse(json)
+    if (!receivers || receivers.length === 0) return '未配置'
+    return receivers.map(r => {
+      if (r.type === 'owner') return '任务责任人'
+      if (r.type === 'user') return `用户(${r.value})`
+      return r.type
+    }).join(', ')
+  } catch {
+    return json
+  }
+}
+
+/** 获取告警配置 */
+const fetchAlertConfig = async () => {
+  if (!taskId.value) return
+  try {
+    const res = await alertApi.getAlertConfig(taskId.value)
+    const data = res.data.data
+    if (data) {
+      alertConfig.value = {
+        alert_condition: data.alert_condition || '',
+        alert_channels: data.alert_channels || '',
+        alert_receivers: data.alert_receivers || ''
+      }
+    }
+  } catch (e) {
+    // 未配置或接口异常，忽略
+  }
+}
+
+/** 获取用户列表（用于接收人下拉） */
+const fetchUserOptions = async () => {
+  try {
+    const res = await userApi.getList()
+    userOptions.value = res.data.data || []
+  } catch {
+    userOptions.value = []
+  }
+}
+
+/** 打开编辑对话框（回显当前配置） */
+const openAlertDialog = () => {
+  const cfg = alertConfig.value
+  alertForm.value.alert_condition = cfg.alert_condition || ''
+  alertForm.value.alert_channels = cfg.alert_channels ? cfg.alert_channels.split(',').filter(c => c.trim()) : []
+
+  // 解析接收人
+  alertForm.value.notify_owner = false
+  alertForm.value.enable_other = false
+  alertForm.value.other_receivers = []
+  if (cfg.alert_receivers) {
+    try {
+      const receivers: AlertReceiver[] = JSON.parse(cfg.alert_receivers)
+      for (const r of receivers) {
+        if (r.type === 'owner') alertForm.value.notify_owner = true
+        if (r.type === 'user' && r.value) {
+          alertForm.value.enable_other = true
+          alertForm.value.other_receivers.push(r.value)
+        }
+      }
+    } catch { /* ignore */ }
+  }
+  alertDialogVisible.value = true
+}
+
+/** 保存告警配置 */
+const handleSaveAlert = async () => {
+  const form = alertForm.value
+  if (!form.alert_condition) {
+    ElMessage.warning('请选择触发条件')
+    return
+  }
+  if (form.alert_channels.length === 0) {
+    ElMessage.warning('请选择至少一种报警方式')
+    return
+  }
+
+  // 组装接收人
+  const receivers: AlertReceiver[] = []
+  if (form.notify_owner) receivers.push({ type: 'owner' })
+  if (form.enable_other) {
+    for (const uid of form.other_receivers) {
+      receivers.push({ type: 'user', value: uid })
+    }
+  }
+
+  const data = {
+    alert_condition: form.alert_condition,
+    alert_channels: form.alert_channels.join(','),
+    alert_receivers: JSON.stringify(receivers)
+  }
+
+  alertSaving.value = true
+  try {
+    await alertApi.saveAlertConfig(taskId.value, data)
+    ElMessage.success('告警配置已保存')
+    alertConfig.value = data
+    alertDialogVisible.value = false
+  } catch (e) {
+    ElMessage.error('保存失败')
+  } finally {
+    alertSaving.value = false
+  }
+}
+
 onMounted(() => {
   fetchTaskDetail()
+  fetchAlertConfig()
+  fetchUserOptions()
 })
 </script>
 

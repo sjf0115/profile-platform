@@ -131,6 +131,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, QuestionFilled, More } from '@element-plus/icons-vue'
 import { exportApi } from '@/api/export'
+import { checkLineageDeletable } from '@/api/lineage'
 import { dataSourceApi } from '@/api/datasource'
 import { groupApi } from '@/api/group'
 import type { Export, ExportConfig, DataSource, Group } from '@/types'
@@ -310,7 +311,8 @@ const handleToggleStatus = async (row: Export) => {
 }
 
 // 删除
-const handleDelete = (row: Export) => {
+const handleDelete = async (row: Export) => {
+  if (!await checkLineageDeletable('export', row.export_id!, row.export_name)) return
   ElMessageBox.confirm('确认删除该投递吗？', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',

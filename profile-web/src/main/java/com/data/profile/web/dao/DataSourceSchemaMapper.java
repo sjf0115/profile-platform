@@ -3,9 +3,11 @@ package com.data.profile.web.dao;
 
 import com.data.profile.web.model.DataSourceCategory;
 import com.data.profile.web.model.DataSourceSchema;
+import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
 
+@Mapper
 public interface DataSourceSchemaMapper {
     // 查询
     DataSourceSchema selectByDataSourceSchemaId(String schemaId); // 根据ID查询

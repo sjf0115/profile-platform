@@ -1,6 +1,7 @@
 package com.data.profile.web.service;
 
 import com.data.profile.web.dao.ExportMapper;
+import com.data.profile.web.enums.AssetType;
 import com.data.profile.web.model.Export;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.security.UserContextHolder;
@@ -35,6 +36,8 @@ public class ExportService {
     private ExportMapper exportMapper;
     @Resource
     private TaskInstanceService taskInstanceService;
+    @Autowired
+    private LineageService lineageService;
 
     /**
      * 根据查询条件获取投递列表
@@ -117,11 +120,14 @@ public class ExportService {
             int result = exportMapper.insertSelective(export);
             // 自动授权 MANAGE 给创建者
             resourceGrantService.grantOwner("10", exportId, userId);
+            lineageService.refreshLineage(AssetType.EXPORT.getCode(), exportId);
             return result;
         } else {
             // 修改
             export.setModifier(UserContextHolder.currentUserId());
-            return exportMapper.updateByExportIdSelective(export);
+            int result = exportMapper.updateByExportIdSelective(export);
+            lineageService.refreshLineage(AssetType.EXPORT.getCode(), export.getExportId());
+            return result;
         }
     }
 
@@ -130,12 +136,16 @@ public class ExportService {
      * @param exportId
      * @return
      */
+    @Transactional
     public int delete(String exportId) {
         Export export = exportMapper.selectSimpleByExportId(exportId);
         if (Objects.equals(export.getSourceType(), SourceType.BUILT_IN.getCode())) {
             throw new RuntimeException("内置投递不允许删除");
         }
+        // 删除保护：检查下游依赖
+        lineageService.checkDeletable(AssetType.EXPORT.getCode(), exportId);
         // TODO 检查依赖确保无下游使用
+        lineageService.removeLineage(AssetType.EXPORT.getCode(), exportId);
         return exportMapper.deleteByExportId(exportId);
     }
 }

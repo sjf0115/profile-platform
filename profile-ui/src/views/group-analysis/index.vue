@@ -98,6 +98,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, QuestionFilled, Plus } from '@element-plus/icons-vue'
 import { groupAnalysisApi } from '@/api/groupAnalysis'
+import { checkLineageDeletable } from '@/api/lineage'
 import type { GroupAnalysis } from '@/types'
 
 const router = useRouter()
@@ -172,6 +173,7 @@ const handleEdit = (row: GroupAnalysis) => {
 
 // 删除
 const handleDelete = async (row: GroupAnalysis) => {
+  if (!await checkLineageDeletable('analysis', row.analysis_id!, row.analysis_name)) return
   try {
     await ElMessageBox.confirm(
       `确定要删除群组分析「${row.analysis_name}」吗？`,

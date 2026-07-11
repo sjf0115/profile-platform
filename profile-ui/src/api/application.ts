@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { ApiResponse, Application, ApplicationQueryParams } from '@/types'
+import type { ApiResponse, Application, ApplicationQueryParams, ApplicationRequest } from '@/types'
 
 // 应用管理相关接口
 export const applicationApi = {
@@ -8,36 +8,35 @@ export const applicationApi = {
     return request.post<ApiResponse<Application[]>>('/application/list', params || {})
   },
 
-  // 模糊查询
-  getByKeyword: (keyword: string) => {
-    return request.get<ApiResponse<Application[]>>('/application/keyword', {
-      params: { keyword }
-    })
-  },
-
   // 获取应用详情
-  getDetail: (id: number) => {
-    return request.get<ApiResponse<Application>>('/application/detail', {
-      params: { id }
-    })
+  getDetail: (appKey: string) => {
+    return request.get<ApiResponse<Application>>(`/application/${appKey}/detail`)
   },
 
-  // 保存应用（新增/修改）
-  save: (data: Partial<Application>) => {
-    return request.post<ApiResponse<Application>>('/application/save', data)
+  // 创建应用
+  create: (data: ApplicationRequest) => {
+    return request.post<ApiResponse<Application>>('/application', data)
+  },
+
+  // 更新应用
+  update: (appKey: string, data: ApplicationRequest) => {
+    return request.put<ApiResponse<number>>(`/application/${appKey}`, data)
   },
 
   // 删除应用
-  delete: (id: number) => {
-    return request.delete<ApiResponse<number>>('/application/delete', {
-      params: { id }
-    })
+  delete: (appKey: string) => {
+    return request.delete<ApiResponse<number>>(`/application/${appKey}`)
   },
 
   // 重置 AppSecret
-  resetSecret: (id: number) => {
-    return request.post<ApiResponse<string>>('/application/reset-secret', null, {
-      params: { id }
+  resetSecret: (appKey: string) => {
+    return request.post<ApiResponse<string>>(`/application/${appKey}/reset-secret`)
+  },
+
+  // 更新应用状态（启用/停用）
+  updateStatus: (appKey: string, status: number) => {
+    return request.put<ApiResponse<number>>(`/application/${appKey}/status`, null, {
+      params: { status }
     })
   },
 }

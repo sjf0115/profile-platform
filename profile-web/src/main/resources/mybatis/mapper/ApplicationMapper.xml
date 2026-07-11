@@ -34,14 +34,6 @@
         where app_key = #{appKey,jdbcType=VARCHAR}
     </select>
 
-    <!-- 根据 ID 查询 -->
-    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
-        select
-        <include refid="Base_Column_List" />
-        from profile_meta_application as t1
-        where id = #{id,jdbcType=BIGINT}
-    </select>
-
     <!-- 根据参数查询 -->
     <select id="selectByParams" parameterType="com.data.profile.web.model.Application" resultMap="BaseResultMap">
         select
@@ -123,6 +115,11 @@
         delete from profile_meta_application where id = #{id,jdbcType=BIGINT}
     </delete>
 
+    <!-- 根据 appKey 删除 -->
+    <delete id="deleteByAppKey" parameterType="java.lang.String">
+        delete from profile_meta_application where app_key = #{appKey,jdbcType=VARCHAR}
+    </delete>
+
     <!-- 根据 ID 选择性更新 -->
     <update id="updateByIdSelective" parameterType="com.data.profile.web.model.Application">
         update profile_meta_application
@@ -140,6 +137,24 @@
         where id = #{id,jdbcType=BIGINT}
     </update>
 
+    <!-- 根据 appKey 选择性更新 -->
+    <update id="updateByAppKeySelective" parameterType="com.data.profile.web.model.Application">
+        update profile_meta_application
+        <set>
+            <if test="status != null">status = #{status,jdbcType=INTEGER},</if>
+            <if test="appName != null and appName != ''">app_name = #{appName,jdbcType=VARCHAR},</if>
+            <if test="appDesc != null">app_desc = #{appDesc,jdbcType=VARCHAR},</if>
+            <if test="targetConfig != null">target_config = #{targetConfig,jdbcType=LONGVARCHAR},</if>
+            <if test="webhookUrl != null">webhook_url = #{webhookUrl,jdbcType=VARCHAR},</if>
+            <if test="rateLimit != null">rate_limit = #{rateLimit,jdbcType=INTEGER},</if>
+            <if test="ipWhitelist != null">ip_whitelist = #{ipWhitelist,jdbcType=LONGVARCHAR},</if>
+            <if test="modifier != null and modifier != ''">modifier = #{modifier,jdbcType=VARCHAR},</if>
+            <if test="appSecret != null and appSecret != ''">app_secret = #{appSecret,jdbcType=VARCHAR},</if>
+            <if test="owner != null and owner != ''">owner = #{owner,jdbcType=VARCHAR},</if>
+        </set>
+        where app_key = #{appKey,jdbcType=VARCHAR}
+    </update>
+
     <!-- 根据 ID 更新全部 -->
     <update id="updateById" parameterType="com.data.profile.web.model.Application">
         update profile_meta_application
@@ -153,4 +168,13 @@
             modifier = #{modifier,jdbcType=VARCHAR}
         where id = #{id,jdbcType=BIGINT}
     </update>
+
+    <!-- 检查应用名称是否重复（排除自身） -->
+    <select id="countByAppName" resultType="java.lang.Integer">
+        select count(*) from profile_meta_application
+        where app_name = #{appName,jdbcType=VARCHAR}
+        <if test="excludeAppKey != null and excludeAppKey != ''">
+            and app_key != #{excludeAppKey,jdbcType=VARCHAR}
+        </if>
+    </select>
 </mapper>

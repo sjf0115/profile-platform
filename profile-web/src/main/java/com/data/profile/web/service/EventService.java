@@ -2,6 +2,7 @@ package com.data.profile.web.service;
 
 import com.data.profile.web.dao.EventMapper;
 import com.data.profile.web.model.Event;
+import com.data.profile.web.enums.AssetType;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
@@ -11,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -30,6 +32,8 @@ import java.util.Optional;
 public class EventService {
     @Autowired
     private ResourceGrantService resourceGrantService;
+    @Autowired
+    private LineageService lineageService;
     @Resource
     private EventMapper eventMapper;
 
@@ -62,13 +66,18 @@ public class EventService {
      * @return
      * @throws RuntimeException
      */
+    @Transactional
     public int save(Event event) throws RuntimeException {
         if (StringUtils.isBlank(event.getEventId())) {
             // 创建事件
-            return createEvent(event);
+            int result = createEvent(event);
+            lineageService.refreshLineage(AssetType.EVENT.getCode(), event.getEventId());
+            return result;
         } else {
             // 修改事件
-            return updateEvent(event);
+            int result = updateEvent(event);
+            lineageService.refreshLineage(AssetType.EVENT.getCode(), event.getEventId());
+            return result;
         }
     }
 

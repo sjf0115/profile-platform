@@ -240,6 +240,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, More, CollectionTag, Mouse, DataAnalysis, Cpu } from '@element-plus/icons-vue'
 import type { Dataset, DatasetQueryParams, Task } from '@/types'
 import { datasetApi } from '@/api/dataset'
+import { checkLineageDeletable } from '@/api/lineage'
 
 const router = useRouter()
 
@@ -535,7 +536,8 @@ const handleHistory = (row: Dataset) => {
 }
 
 // 删除数据集
-const handleDelete = (row: Dataset) => {
+const handleDelete = async (row: Dataset) => {
+  if (!await checkLineageDeletable('dataset', row.dataset_id, row.dataset_name)) return
   ElMessageBox.confirm(
     `确定要删除数据集 "${row.dataset_name}" 吗？`,
     '提示',

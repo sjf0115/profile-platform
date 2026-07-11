@@ -168,9 +168,9 @@
               >
                 <el-option
                   v-for="app in applicationList"
-                  :key="app.id"
+                  :key="app.app_key"
                   :label="app.app_name"
-                  :value="String(app.id)"
+                  :value="app.app_key"
                 >
                   <span>{{ app.app_name }}</span>
                   <span style="color: #909399; font-size: 12px; margin-left: 8px;">{{ app.app_key }}</span>
@@ -350,7 +350,7 @@ const fieldLoaders: Record<string, (dsId: string, form: Record<string, any>) => 
 // 选中的应用
 const selectedApplication = computed(() => {
   if (!formData.application_id) return null
-  return applicationList.value.find(app => String(app.id) === formData.application_id) || null
+  return applicationList.value.find(app => app.app_key === formData.application_id) || null
 })
 
 // 获取应用投递目标信息

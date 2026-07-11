@@ -136,6 +136,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, QuestionFilled, More } from '@element-plus/icons-vue'
 import { groupApi } from '@/api/group'
+import { checkLineageDeletable } from '@/api/lineage'
 import type { Group } from '@/types'
 import CreateTypeDialog from './components/CreateTypeDialog.vue'
 
@@ -283,7 +284,8 @@ const handleViewUsers = (row: Group) => {
   ElMessage.info('查看用户列表功能开发中')
 }
 
-const handleDelete = (row: Group) => {
+const handleDelete = async (row: Group) => {
+  if (!await checkLineageDeletable('group', row.group_id, row.group_name)) return
   ElMessageBox.confirm('确认删除该分群吗？', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',

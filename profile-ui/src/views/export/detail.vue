@@ -214,7 +214,7 @@ const getDatasourceName = (datasourceId?: string): string => {
 // 获取应用名称
 const getApplicationName = (applicationId?: string): string => {
   if (!applicationId) return '-'
-  const app = applicationList.value.find(a => String(a.id) === applicationId)
+  const app = applicationList.value.find(a => a.app_key === applicationId)
   return app ? app.app_name : applicationId
 }
 

@@ -4,6 +4,7 @@ import com.data.profile.web.dao.LabelMapper;
 import com.data.profile.web.model.DatasetField;
 import com.data.profile.web.model.FileImportLabelConfig;
 import com.data.profile.web.model.Label;
+import com.data.profile.web.enums.AssetType;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.LabelStatus;
 import com.data.profile.common.enums.ModelType;
@@ -40,6 +41,8 @@ public class LabelService {
     private LabelMapper labelMapper;
     @Resource
     private DatasetFieldService datasetFieldService;
+    @Autowired
+    private LineageService lineageService;
 
     /**
      * 根据查询条件获取标签列表
@@ -118,6 +121,7 @@ public class LabelService {
             int result = labelMapper.insertSelective(label);
             // 自动授权 MANAGE 给创建者
             resourceGrantService.grantOwner("08", labelId, UserContextHolder.currentUserId());
+            lineageService.refreshLineage(AssetType.LABEL.getCode(), labelId);
             return result;
         } else {
             // 是否跳过数据集配置
@@ -133,7 +137,9 @@ public class LabelService {
             // 修改
             label.setModifier(UserContextHolder.currentUserId());
             log.info("修改标签: {}", gson.toJson(label));
-            return labelMapper.updateByLabelId(label);
+            int result = labelMapper.updateByLabelId(label);
+            lineageService.refreshLineage(AssetType.LABEL.getCode(), label.getLabelId());
+            return result;
         }
     }
 
@@ -154,6 +160,9 @@ public class LabelService {
             throw new RuntimeException("内置标签不允许删除");
         }
 
+        // 删除保护：检查下游依赖
+        lineageService.checkDeletable(AssetType.LABEL.getCode(), labelId);
+
         // 通过数据集绑定字段方式：标签解除绑定数据集
         DatasetField boundField = datasetFieldService.getDetailByRelatedId(labelId);
         if (boundField != null && Objects.equals(label.getSourceType(), 2)) {
@@ -162,6 +171,7 @@ public class LabelService {
 
         // TODO 检查依赖确保无下游使用
         log.info("删除标签：{}({})", label.getLabelName(), labelId);
+        lineageService.removeLineage(AssetType.LABEL.getCode(), labelId);
         return labelMapper.deleteByLabelId(labelId);
     }
 

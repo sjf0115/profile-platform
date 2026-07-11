@@ -145,6 +145,10 @@
                 <el-icon><Connection /></el-icon>
                 <span>应用管理</span>
               </el-dropdown-item>
+              <el-dropdown-item @click="router.push('/lineage')">
+                <el-icon><Share /></el-icon>
+                <span>数据血缘</span>
+              </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -321,6 +325,10 @@
               <el-icon><Connection /></el-icon>
               <span>应用管理</span>
             </el-menu-item>
+            <el-menu-item index="/lineage">
+              <el-icon><Share /></el-icon>
+              <span>数据血缘</span>
+            </el-menu-item>
           </template>
 
           <!-- 设置子菜单 -->
@@ -397,6 +405,7 @@ const activeTopNav = computed(() => {
   if (path.startsWith('/dataset')) return '/project'
   if (path.startsWith('/datasource')) return '/project'
   if (path.startsWith('/application')) return '/project'
+  if (path.startsWith('/lineage')) return '/project'
   if (path.startsWith('/settings')) return '/settings'
   return '/home'
 })

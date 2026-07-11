@@ -1,9 +1,11 @@
 package com.data.profile.web.dao;
 
 import com.data.profile.web.model.Label;
+import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
 
+@Mapper
 public interface LabelMapper {
     // 查询
     Label selectByLabelId(String labelId); // 根据ID查询

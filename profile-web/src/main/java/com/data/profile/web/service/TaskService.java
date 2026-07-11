@@ -117,4 +117,29 @@ public class TaskService {
         log.info("根据关联ID删除调度任务: relatedId={}", relatedId);
         taskMapper.deleteByRelatedId(relatedId);*/
     }
+
+    /**
+     * 保存告警配置
+     */
+    public int saveAlertConfig(String taskId, String alertCondition, String alertChannels, String alertReceivers) {
+        Task alertPart = new Task();
+        alertPart.setTaskId(taskId);
+        alertPart.setAlertCondition(alertCondition);
+        alertPart.setAlertChannels(alertChannels);
+        alertPart.setAlertReceivers(alertReceivers);
+        alertPart.setModifier(UserContextHolder.currentUserId());
+        log.info("保存告警配置: taskId={}", taskId);
+        return taskMapper.updateByTaskIdSelective(alertPart);
+    }
+
+    /**
+     * 获取告警配置
+     */
+    public Optional<Task> getAlertConfig(String taskId) {
+        Task task = taskMapper.selectByTaskId(taskId);
+        if (task == null) {
+            return Optional.empty();
+        }
+        return Optional.of(task);
+    }
 }

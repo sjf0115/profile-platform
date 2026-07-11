@@ -254,6 +254,7 @@ import {
   Plus, Search, Folder, Grid, More, Coin, Setting, Document, Upload
 } from '@element-plus/icons-vue'
 import { labelApi, type LabelConfigResponse } from '@/api/label'
+import { checkLineageDeletable } from '@/api/lineage'
 import { labelCategoryApi } from '@/api/labelCategory'
 import type { Label, LabelCategory } from '@/types'
 
@@ -610,7 +611,8 @@ const handleUpdate = (row: Label) => {
 }
 
 // 删除标签
-const handleDelete = (row: Label) => {
+const handleDelete = async (row: Label) => {
+  if (!await checkLineageDeletable('label', row.label_id, row.label_name)) return
   ElMessageBox.confirm(
     `确定要删除标签 "${row.label_name}" 吗？`,
     '提示',

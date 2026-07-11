@@ -1,9 +1,11 @@
 package com.data.profile.web.dao;
 
 import com.data.profile.web.model.GroupAnalysis;
+import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
 
+@Mapper
 public interface GroupAnalysisMapper {
     // 查询
     GroupAnalysis selectByAnalysisId(String analysisId);

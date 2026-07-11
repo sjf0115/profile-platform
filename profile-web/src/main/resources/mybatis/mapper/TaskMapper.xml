@@ -28,7 +28,7 @@
     <sql id="Base_Column_List">
         id, status, task_id, task_name, task_desc, task_type, task_related_id, trigger_target_id,
         trigger_type, trigger_cron, trigger_url, trigger_start_time, trigger_end_time, schedule_id,
-        upstream_task_ids, source_type,
+        upstream_task_ids, alert_condition, alert_channels, alert_receivers, source_type,
         owner, creator, modifier, gmt_create, gmt_modified
     </sql>
 
@@ -180,6 +180,15 @@
       <if test="upstreamTaskIds != null">
         upstream_task_ids,
       </if>
+      <if test="alertCondition != null">
+        alert_condition,
+      </if>
+      <if test="alertChannels != null">
+        alert_channels,
+      </if>
+      <if test="alertReceivers != null">
+        alert_receivers,
+      </if>
       <if test="sourceType != null">
         source_type,
       </if>
@@ -241,6 +250,15 @@
       </if>
       <if test="upstreamTaskIds != null">
         #{upstreamTaskIds,jdbcType=VARCHAR},
+      </if>
+      <if test="alertCondition != null">
+        #{alertCondition,jdbcType=VARCHAR},
+      </if>
+      <if test="alertChannels != null">
+        #{alertChannels,jdbcType=VARCHAR},
+      </if>
+      <if test="alertReceivers != null">
+        #{alertReceivers,jdbcType=VARCHAR},
       </if>
       <if test="sourceType != null">
         #{sourceType,jdbcType=INTEGER},
@@ -328,6 +346,15 @@
       </if>
       <if test="upstreamTaskIds != null">
         upstream_task_ids = #{upstreamTaskIds,jdbcType=VARCHAR},
+      </if>
+      <if test="alertCondition != null">
+        alert_condition = #{alertCondition,jdbcType=VARCHAR},
+      </if>
+      <if test="alertChannels != null">
+        alert_channels = #{alertChannels,jdbcType=VARCHAR},
+      </if>
+      <if test="alertReceivers != null">
+        alert_receivers = #{alertReceivers,jdbcType=VARCHAR},
       </if>
       <if test="sourceType != null">
         source_type = #{sourceType,jdbcType=INTEGER},

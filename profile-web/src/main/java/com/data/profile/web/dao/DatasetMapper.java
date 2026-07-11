@@ -2,9 +2,11 @@ package com.data.profile.web.dao;
 
 
 import com.data.profile.web.model.Dataset;
+import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
 
+@Mapper
 public interface DatasetMapper {
     // 查询
     Dataset selectByDatasetId(String datasetId); // 根据ID查询
