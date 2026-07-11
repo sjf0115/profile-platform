@@ -1,5 +1,6 @@
 package com.data.profile.web.controller;
 
+import com.data.profile.web.annotation.RequiresPermission;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.*;
 import com.data.profile.common.utils.JSONUtils;
@@ -67,6 +68,7 @@ public class LabelController {
         return Response.success(vo);
     }
 
+    @RequiresPermission(code = "label:edit", name = "标签-编辑")
     @PostMapping(value = "/save")
     public Response<Integer> save(@RequestBody LabelRequest request) {
         log.info("请求保存/更新标签信息: {}", JSONUtils.toJsonString(request));
@@ -79,6 +81,7 @@ public class LabelController {
         }
     }
 
+    @RequiresPermission(code = "label:edit", name = "标签-编辑")
     @PostMapping(value = "/update")
     public Response<Integer> update(@RequestBody LabelRequest request) {
         log.info("请求更新标签信息: {}", JSONUtils.toJsonString(request));
@@ -91,6 +94,7 @@ public class LabelController {
         }
     }
 
+    @RequiresPermission(code = "label:delete", name = "标签-删除")
     @DeleteMapping(value = "/delete")
     public Response<Integer> delete(@RequestParam(name = "label_id") String labelId) {
         log.info("请求删除标签: {}", labelId);

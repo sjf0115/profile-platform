@@ -1,5 +1,6 @@
 package com.data.profile.web.controller;
 
+import com.data.profile.web.annotation.RequiresPermission;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.domain.connector.jdbc.DatabaseInfo;
 import com.data.profile.common.domain.connector.jdbc.TableColumnInfo;
@@ -75,6 +76,7 @@ public class DataSourceController {
         }
     }
 
+    @RequiresPermission(code = "datasource:edit", name = "数据源-编辑")
     @PostMapping(value = "/save")
     public Response<Integer> save(@RequestBody DataSource datasource) {
         log.info("请求创建/修改数据源: {}", JSONUtils.toJsonString(datasource));
@@ -86,6 +88,7 @@ public class DataSourceController {
         }
     }
 
+    @RequiresPermission(code = "datasource:delete", name = "数据源-删除")
     @DeleteMapping(value = "/delete")
     public Response<Integer> delete(@RequestParam(name = "datasource_id") String datasourceId) {
         int result = dataSourceService.delete(datasourceId);

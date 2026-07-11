@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.web.dao.AuthApplyMapper">
+
+    <resultMap id="BaseResultMap" type="com.data.profile.web.model.AuthApply">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="apply_id" property="applyId" jdbcType="VARCHAR"/>
+        <result column="applicant" property="applicant" jdbcType="VARCHAR"/>
+        <result column="apply_reason" property="applyReason" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="approver" property="approver" jdbcType="VARCHAR"/>
+        <result column="approve_time" property="approveTime" jdbcType="TIMESTAMP"/>
+        <result column="approve_remark" property="approveRemark" jdbcType="VARCHAR"/>
+        <result column="creator" property="creator" jdbcType="VARCHAR"/>
+        <result column="gmt_create" property="gmtCreate" jdbcType="TIMESTAMP"/>
+        <result column="gmt_modified" property="gmtModified" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, apply_id, applicant, apply_reason, status, approver,
+        approve_time, approve_remark, creator, gmt_create, gmt_modified
+    </sql>
+
+    <insert id="insertSelective" parameterType="com.data.profile.web.model.AuthApply"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO profile_meta_auth_apply
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="applyId != null">apply_id,</if>
+            <if test="applicant != null">applicant,</if>
+            <if test="applyReason != null">apply_reason,</if>
+            <if test="status != null">status,</if>
+            <if test="approver != null">approver,</if>
+            <if test="approveTime != null">approve_time,</if>
+            <if test="approveRemark != null">approve_remark,</if>
+            <if test="creator != null">creator,</if>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="applyId != null">#{applyId,jdbcType=VARCHAR},</if>
+            <if test="applicant != null">#{applicant,jdbcType=VARCHAR},</if>
+            <if test="applyReason != null">#{applyReason,jdbcType=VARCHAR},</if>
+            <if test="status != null">#{status,jdbcType=INTEGER},</if>
+            <if test="approver != null">#{approver,jdbcType=VARCHAR},</if>
+            <if test="approveTime != null">#{approveTime,jdbcType=TIMESTAMP},</if>
+            <if test="approveRemark != null">#{approveRemark,jdbcType=VARCHAR},</if>
+            <if test="creator != null">#{creator,jdbcType=VARCHAR},</if>
+        </trim>
+    </insert>
+
+    <select id="selectByApplyId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM profile_meta_auth_apply
+        WHERE apply_id = #{applyId}
+    </select>
+
+    <select id="selectByApplicant" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM profile_meta_auth_apply
+        WHERE applicant = #{applicant}
+        ORDER BY gmt_create DESC
+    </select>
+
+    <select id="selectPendingList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM profile_meta_auth_apply
+        WHERE status = 1
+        ORDER BY gmt_create DESC
+    </select>
+
+    <select id="selectApprovedList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM profile_meta_auth_apply
+        WHERE approver = #{approver} AND status IN (2, 3)
+        ORDER BY approve_time DESC
+    </select>
+
+    <update id="updateStatus">
+        UPDATE profile_meta_auth_apply
+        SET status = #{status},
+            approver = #{approver},
+            approve_time = NOW(),
+            approve_remark = #{approveRemark}
+        WHERE apply_id = #{applyId}
+    </update>
+
+</mapper>

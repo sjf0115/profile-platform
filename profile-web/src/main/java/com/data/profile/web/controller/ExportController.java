@@ -1,5 +1,6 @@
 package com.data.profile.web.controller;
 
+import com.data.profile.web.annotation.RequiresPermission;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.model.Export;
@@ -58,6 +59,7 @@ public class ExportController {
         }
     }
 
+    @RequiresPermission(code = "export:edit", name = "投递-编辑")
     @PostMapping(value = "/save")
     public Response<Integer> save(@RequestBody Export export) {
         int result = exportService.save(export);
@@ -68,6 +70,7 @@ public class ExportController {
         }
     }
 
+    @RequiresPermission(code = "export:delete", name = "投递-删除")
     @DeleteMapping(value = "/delete")
     public Response<Integer> delete(@RequestParam String exportId) {
         int result = exportService.delete(exportId);
@@ -81,6 +84,7 @@ public class ExportController {
     /**
      * 立即执行投递
      */
+    @RequiresPermission(code = "export:execute", name = "投递-执行")
     @PostMapping(value = "/execute")
     public Response<String> execute(@RequestParam String exportId) {
         try {

@@ -1,6 +1,7 @@
 package com.data.profile.web.service;
 
 import com.data.profile.web.dao.RoleMapper;
+import com.data.profile.web.dao.RolePermissionMapper;
 import com.data.profile.web.model.Role;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.ModelType;
@@ -32,6 +33,8 @@ public class RoleService {
     private RoleMapper roleMapper;
     @Autowired
     private UserRoleService userRoleService;
+    @Autowired
+    private RolePermissionMapper rolePermissionMapper;
 
     /**
      * 根据查询条件获取角色列表
@@ -108,6 +111,8 @@ public class RoleService {
 
         // 删除角色下的用户关系
         userRoleService.deleteByRoleId(roleId);
+        // 删除角色下的权限关联
+        rolePermissionMapper.deleteByRoleId(roleId);
         // 删除角色
         log.info("删除角色: {}", roleId);
         return roleMapper.deleteByRoleId(roleId);

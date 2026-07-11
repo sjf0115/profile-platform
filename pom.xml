@@ -396,6 +396,24 @@
                 <artifactId>profile-notification-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-notification-plugin-email</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-notification-plugin-dingtalk</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.data</groupId>
+                <artifactId>profile-notification-plugin-wecom</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

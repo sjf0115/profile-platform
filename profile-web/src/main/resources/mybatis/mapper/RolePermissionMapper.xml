@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.web.dao.RolePermissionMapper">
+  <resultMap id="BaseResultMap" type="com.data.profile.web.model.RolePermission">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="role_id" jdbcType="VARCHAR" property="roleId" />
+    <result column="permission_id" jdbcType="VARCHAR" property="permissionId" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+  </resultMap>
+
+  <select id="selectByRoleId" resultMap="BaseResultMap">
+    select id, role_id, permission_id, creator, gmt_create
+    from profile_meta_role_permission
+    where role_id = #{roleId,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectPermissionIdsByRoleId" resultType="java.lang.String">
+    select permission_id
+    from profile_meta_role_permission
+    where role_id = #{roleId,jdbcType=VARCHAR}
+  </select>
+
+  <delete id="deleteByRoleId">
+    delete from profile_meta_role_permission
+    where role_id = #{roleId,jdbcType=VARCHAR}
+  </delete>
+
+  <insert id="batchInsert" parameterType="java.util.List">
+    insert into profile_meta_role_permission (role_id, permission_id, creator)
+    values
+    <foreach item="item" collection="list" separator=",">
+      (#{item.roleId,jdbcType=VARCHAR}, #{item.permissionId,jdbcType=VARCHAR}, #{item.creator,jdbcType=VARCHAR})
+    </foreach>
+  </insert>
+
+</mapper>

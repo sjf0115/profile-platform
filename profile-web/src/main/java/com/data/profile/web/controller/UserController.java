@@ -1,5 +1,7 @@
 package com.data.profile.web.controller;
 
+import com.data.profile.web.annotation.RequiresPermission;
+import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.web.vo.Response;
 import com.data.profile.web.vo.UserLoginVO;
 import com.data.profile.web.dto.UserDTO;
@@ -17,12 +19,14 @@ import com.data.profile.web.vo.UserVO;
 import com.data.profile.web.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * 功能：用户
@@ -56,6 +60,7 @@ public class UserController {
         return Response.success(UserConverter.dto2vo(opt.get()));
     }
 
+    @RequiresPermission(code = "user:create", name = "用户-创建")
     @PostMapping
     public Response<Integer> create(@RequestBody UserRequest request) {
         log.info("请求创建用户：{}", JSONUtils.toJsonString(request));
@@ -67,6 +72,7 @@ public class UserController {
         }
     }
 
+    @RequiresPermission(code = "user:edit", name = "用户-编辑")
     @PutMapping("/{userId}")
     public Response<Integer> update(@PathVariable(value = "userId") String userId, @RequestBody UserRequest request) {
         log.info("请求更新用户：{}", JSONUtils.toJsonString(request));
@@ -81,6 +87,7 @@ public class UserController {
         }
     }
 
+    @RequiresPermission(code = "user:delete", name = "用户-删除")
     @DeleteMapping(value = "/{userId}")
     public Response<Integer> delete(@PathVariable(value = "userId") String userId) {
         log.info("请求删除用户：{}", userId);
@@ -118,5 +125,21 @@ public class UserController {
     public Response<Void> logout() {
         userService.logout();
         return Response.success(null);
+    }
+
+    /**
+     * 获取当前用户权限码集合（任意已登录用户可调，不加 @RequiresPermission）
+     * 返回: { codes: [...], enabled: true/false }
+     */
+    @Value("${profile.permission.enabled:false}")
+    private boolean permissionEnabled;
+
+    @GetMapping("/permissions")
+    public Response<java.util.Map<String, Object>> getPermissions() {
+        Set<String> permissions = UserContextHolder.getAccessInfo().getPermissions();
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("codes", permissions);
+        result.put("enabled", permissionEnabled);
+        return Response.success(result);
     }
 }

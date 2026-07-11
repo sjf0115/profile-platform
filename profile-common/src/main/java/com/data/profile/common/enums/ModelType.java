@@ -43,6 +43,12 @@ public enum ModelType {
     ENGINE("20", "计算引擎"),
     // 应用
     APPLICATION("21", "应用"),
+    // 群组分析
+    GROUP_ANALYSIS("22", "群组分析"),
+    // 授权
+    GRANT("23", "授权"),
+    // 权限申请
+    AUTH_APPLY("24", "权限申请"),
     ;
 
     private String code;

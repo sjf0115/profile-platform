@@ -19,7 +19,7 @@ public class Role {
     private Integer id;
     // 角色ID
     private String roleId;
-    // 角色类型：1-管理员,2-成员
+    // 角色类型：1-管理员(跳过权限验证),2-普通成员(需要验证权限)
     private Integer roleType;
     // 角色名称
     private String roleName;

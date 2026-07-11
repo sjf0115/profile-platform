@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.web.dao.ResourceGrantMapper">
+
+    <resultMap id="BaseResultMap" type="com.data.profile.web.model.ResourceGrant">
+        <id column="id" property="id"/>
+        <result column="grant_id" property="grantId"/>
+        <result column="resource_type" property="resourceType"/>
+        <result column="resource_id" property="resourceId"/>
+        <result column="grantee_type" property="granteeType"/>
+        <result column="grantee_id" property="granteeId"/>
+        <result column="action" property="action"/>
+        <result column="expire_time" property="expireTime"/>
+        <result column="creator" property="creator"/>
+        <result column="gmt_create" property="gmtCreate"/>
+        <result column="gmt_modified" property="gmtModified"/>
+    </resultMap>
+
+    <select id="selectByResource" resultMap="BaseResultMap">
+        SELECT * FROM profile_meta_resource_grant
+        WHERE resource_type = #{resourceType} AND resource_id = #{resourceId}
+    </select>
+
+    <select id="selectByGrantee" resultMap="BaseResultMap">
+        SELECT * FROM profile_meta_resource_grant
+        WHERE grantee_type = #{granteeType} AND grantee_id = #{granteeId}
+    </select>
+
+    <insert id="insertSelective" parameterType="com.data.profile.web.model.ResourceGrant"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO profile_meta_resource_grant
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="grantId != null">grant_id,</if>
+            <if test="resourceType != null">resource_type,</if>
+            <if test="resourceId != null">resource_id,</if>
+            <if test="granteeType != null">grantee_type,</if>
+            <if test="granteeId != null">grantee_id,</if>
+            <if test="action != null">action,</if>
+            <if test="expireTime != null">expire_time,</if>
+            <if test="creator != null">creator,</if>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="grantId != null">#{grantId},</if>
+            <if test="resourceType != null">#{resourceType},</if>
+            <if test="resourceId != null">#{resourceId},</if>
+            <if test="granteeType != null">#{granteeType},</if>
+            <if test="granteeId != null">#{granteeId},</if>
+            <if test="action != null">#{action},</if>
+            <if test="expireTime != null">#{expireTime},</if>
+            <if test="creator != null">#{creator},</if>
+        </trim>
+    </insert>
+
+    <delete id="deleteByGrantId">
+        DELETE FROM profile_meta_resource_grant WHERE grant_id = #{grantId}
+    </delete>
+
+    <delete id="deleteByResource">
+        DELETE FROM profile_meta_resource_grant
+        WHERE resource_type = #{resourceType} AND resource_id = #{resourceId}
+    </delete>
+
+    <select id="selectAuthorizedResourceIds" resultType="java.lang.String">
+        SELECT DISTINCT resource_id FROM profile_meta_resource_grant
+        WHERE resource_type = #{resourceType}
+          AND grantee_type = #{granteeType}
+          AND grantee_id = #{granteeId}
+          AND (action = #{action} OR action = 4)
+          AND (expire_time IS NULL OR expire_time &gt; NOW())
+    </select>
+
+    <select id="selectAuthorizedIdsFromList" resultType="java.lang.String">
+        SELECT DISTINCT resource_id FROM profile_meta_resource_grant
+        WHERE resource_type = #{resourceType}
+          AND resource_id IN
+          <foreach collection="resourceIds" item="rid" open="(" separator="," close=")">
+              #{rid}
+          </foreach>
+          AND grantee_type = #{granteeType}
+          AND grantee_id = #{granteeId}
+          AND (action = #{action} OR action = 4)
+          AND (expire_time IS NULL OR expire_time &gt; NOW())
+    </select>
+
+</mapper>

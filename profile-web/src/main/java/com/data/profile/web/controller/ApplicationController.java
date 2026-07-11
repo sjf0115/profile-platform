@@ -1,6 +1,7 @@
 package com.data.profile.web.controller;
 
 import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.web.annotation.RequiresPermission;
 import com.data.profile.web.model.Application;
 import com.data.profile.web.service.ApplicationService;
 import com.data.profile.web.vo.Response;
@@ -59,6 +60,7 @@ public class ApplicationController {
     /**
      * 创建/编辑应用
      */
+    @RequiresPermission(code = "application:edit", name = "应用-编辑")
     @PostMapping(value = "/save")
     public Response<Application> save(@RequestBody Application application) {
         try {
@@ -72,6 +74,7 @@ public class ApplicationController {
     /**
      * 删除应用
      */
+    @RequiresPermission(code = "application:delete", name = "应用-删除")
     @DeleteMapping(value = "/delete")
     public Response<Integer> delete(@RequestParam Long id) {
         try {

@@ -14,6 +14,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,8 @@ import java.util.stream.Collectors;
 @Service
 public class LabelService {
     private static final Gson gson = new GsonBuilder().create();
+    @Autowired
+    private ResourceGrantService resourceGrantService;
     @Resource
     private LabelMapper labelMapper;
     @Resource
@@ -112,7 +115,10 @@ public class LabelService {
                 field.setModifier(UserContextHolder.currentUserId());
                 datasetFieldService.save(field);
             }
-            return labelMapper.insertSelective(label);
+            int result = labelMapper.insertSelective(label);
+            // 自动授权 MANAGE 给创建者
+            resourceGrantService.grantOwner("08", labelId, UserContextHolder.currentUserId());
+            return result;
         } else {
             // 是否跳过数据集配置
             if (StringUtils.isNotEmpty(datasetFieldName) && Objects.equals(label.getSourceType(), 2)) {

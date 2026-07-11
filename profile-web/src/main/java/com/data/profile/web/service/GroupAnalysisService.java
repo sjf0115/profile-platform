@@ -42,6 +42,8 @@ public class GroupAnalysisService {
     @Autowired
     private GroupService groupService;
     @Autowired
+    private ResourceGrantService resourceGrantService;
+    @Autowired
     private LabelMapper labelMapper;
     @Autowired
     private LabelService labelService;
@@ -113,7 +115,10 @@ public class GroupAnalysisService {
             analysis.setCreator(UserContextHolder.currentUserId());
             analysis.setModifier(UserContextHolder.currentUserId());
             log.info("新增群组分析: {}", gson.toJson(analysis));
-            return groupAnalysisMapper.insertSelective(analysis);
+            int result = groupAnalysisMapper.insertSelective(analysis);
+            // 自动授权 MANAGE 给创建者
+            resourceGrantService.grantOwner("22", analysisId, UserContextHolder.currentUserId());
+            return result;
         } else {
             // 修改
             analysis.setModifier(UserContextHolder.currentUserId());

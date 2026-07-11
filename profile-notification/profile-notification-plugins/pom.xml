@@ -13,6 +13,8 @@
     <name>profile-notification-plugins</name>
     <modules>
         <module>profile-notification-plugin-email</module>
+        <module>profile-notification-plugin-dingtalk</module>
+        <module>profile-notification-plugin-wecom</module>
     </modules>
 
     <properties>

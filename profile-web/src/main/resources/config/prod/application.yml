@@ -49,6 +49,8 @@ profile:
     sync-error-record: 0
     sync-batch-size: 1000
     sync-write-mode: insert
+  permission:
+    enabled: false
 
 # MinIO 配置
 minio:

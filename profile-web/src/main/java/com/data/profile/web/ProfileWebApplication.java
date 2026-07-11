@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication(
-        scanBasePackages = "com.data.profile",
+        scanBasePackages = {"com.data.profile", "com.data.notification"},
         excludeName = {
                 "com.hazelcast.spring.boot.HazelcastAutoConfiguration",
                 "com.hazelcast.spring.boot.HazelcastClientAutoConfiguration",

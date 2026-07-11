@@ -9,6 +9,7 @@ import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -27,6 +28,8 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class EventService {
+    @Autowired
+    private ResourceGrantService resourceGrantService;
     @Resource
     private EventMapper eventMapper;
 
@@ -94,6 +97,8 @@ public class EventService {
         event.setCreator(UserContextHolder.currentUserId());
         event.setModifier(UserContextHolder.currentUserId());
         int result = eventMapper.insertSelective(event);
+        // 自动授权 MANAGE 给创建者
+        resourceGrantService.grantOwner("12", eventId, UserContextHolder.currentUserId());
         return result;
     }
 

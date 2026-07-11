@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.web.dao.SystemConfigMapper">
+
+    <resultMap id="BaseResultMap" type="com.data.profile.web.model.SystemConfig">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="config_group" jdbcType="VARCHAR" property="configGroup" />
+        <result column="config_key" jdbcType="VARCHAR" property="configKey" />
+        <result column="config_value" jdbcType="LONGVARCHAR" property="configValue" />
+        <result column="config_desc" jdbcType="VARCHAR" property="configDesc" />
+        <result column="creator" jdbcType="VARCHAR" property="creator" />
+        <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, config_group, config_key, config_value, config_desc, creator, modifier, gmt_create, gmt_modified
+    </sql>
+
+    <select id="selectByGroup" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM profile_meta_system_config
+        WHERE config_group = #{configGroup,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM profile_meta_system_config
+    </select>
+
+    <select id="selectByKey" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM profile_meta_system_config
+        WHERE config_group = #{configGroup,jdbcType=VARCHAR}
+          AND config_key = #{configKey,jdbcType=VARCHAR}
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO profile_meta_system_config
+            (config_group, config_key, config_value, config_desc, creator, modifier)
+        VALUES
+            (#{configGroup}, #{configKey}, #{configValue}, #{configDesc}, #{creator}, #{modifier})
+        ON DUPLICATE KEY UPDATE
+            config_value = VALUES(config_value),
+            config_desc = VALUES(config_desc),
+            modifier = VALUES(modifier)
+    </insert>
+
+    <insert id="batchUpsert">
+        INSERT INTO profile_meta_system_config
+            (config_group, config_key, config_value, config_desc, creator, modifier)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.configGroup}, #{item.configKey}, #{item.configValue}, #{item.configDesc}, #{item.creator}, #{item.modifier})
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            config_value = VALUES(config_value),
+            config_desc = VALUES(config_desc),
+            modifier = VALUES(modifier)
+    </insert>
+
+    <delete id="deleteByGroup">
+        DELETE FROM profile_meta_system_config
+        WHERE config_group = #{configGroup,jdbcType=VARCHAR}
+    </delete>
+
+</mapper>

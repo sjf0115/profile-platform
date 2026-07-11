@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.web.dao.PermissionMapper">
+  <resultMap id="BaseResultMap" type="com.data.profile.web.model.Permission">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+    <result column="permission_id" jdbcType="VARCHAR" property="permissionId" />
+    <result column="permission_name" jdbcType="VARCHAR" property="permissionName" />
+    <result column="permission_code" jdbcType="VARCHAR" property="permissionCode" />
+    <result column="permission_type" jdbcType="INTEGER" property="permissionType" />
+    <result column="parent_id" jdbcType="VARCHAR" property="parentId" />
+    <result column="menu_path" jdbcType="VARCHAR" property="menuPath" />
+    <result column="api_pattern" jdbcType="VARCHAR" property="apiPattern" />
+    <result column="sort" jdbcType="INTEGER" property="sort" />
+    <result column="source_type" jdbcType="INTEGER" property="sourceType" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    id, status, permission_id, permission_name, permission_code, permission_type,
+    parent_id, menu_path, api_pattern, sort, source_type, creator, modifier, gmt_create, gmt_modified
+  </sql>
+
+  <select id="selectAll" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" />
+    from profile_meta_permission
+    order by sort asc
+  </select>
+
+  <select id="selectByPermissionIds" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" />
+    from profile_meta_permission
+    where permission_id in
+    <foreach item="pid" collection="permissionIds" open="(" separator="," close=")">
+      #{pid}
+    </foreach>
+  </select>
+
+  <select id="selectByPermissionId" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" />
+    from profile_meta_permission
+    where permission_id = #{permissionId,jdbcType=VARCHAR}
+  </select>
+
+  <select id="selectByPermissionCode" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" />
+    from profile_meta_permission
+    where permission_code = #{permissionCode,jdbcType=VARCHAR}
+  </select>
+
+  <insert id="insertSelective" parameterType="com.data.profile.web.model.Permission">
+    insert into profile_meta_permission
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="status != null">status,</if>
+      <if test="permissionId != null and permissionId != ''">permission_id,</if>
+      <if test="permissionName != null and permissionName != ''">permission_name,</if>
+      <if test="permissionCode != null and permissionCode != ''">permission_code,</if>
+      <if test="permissionType != null">permission_type,</if>
+      <if test="parentId != null and parentId != ''">parent_id,</if>
+      <if test="menuPath != null and menuPath != ''">menu_path,</if>
+      <if test="apiPattern != null and apiPattern != ''">api_pattern,</if>
+      <if test="sort != null">sort,</if>
+      <if test="sourceType != null">source_type,</if>
+      <if test="creator != null and creator != ''">creator,</if>
+      <if test="modifier != null and modifier != ''">modifier,</if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="status != null">#{status,jdbcType=INTEGER},</if>
+      <if test="permissionId != null and permissionId != ''">#{permissionId,jdbcType=VARCHAR},</if>
+      <if test="permissionName != null and permissionName != ''">#{permissionName,jdbcType=VARCHAR},</if>
+      <if test="permissionCode != null and permissionCode != ''">#{permissionCode,jdbcType=VARCHAR},</if>
+      <if test="permissionType != null">#{permissionType,jdbcType=INTEGER},</if>
+      <if test="parentId != null and parentId != ''">#{parentId,jdbcType=VARCHAR},</if>
+      <if test="menuPath != null and menuPath != ''">#{menuPath,jdbcType=VARCHAR},</if>
+      <if test="apiPattern != null and apiPattern != ''">#{apiPattern,jdbcType=VARCHAR},</if>
+      <if test="sort != null">#{sort,jdbcType=INTEGER},</if>
+      <if test="sourceType != null">#{sourceType,jdbcType=INTEGER},</if>
+      <if test="creator != null and creator != ''">#{creator,jdbcType=VARCHAR},</if>
+      <if test="modifier != null and modifier != ''">#{modifier,jdbcType=VARCHAR},</if>
+    </trim>
+  </insert>
+
+  <update id="updateByPermissionIdSelective" parameterType="com.data.profile.web.model.Permission">
+    update profile_meta_permission
+    <set>
+      <if test="status != null">status = #{status,jdbcType=INTEGER},</if>
+      <if test="permissionName != null and permissionName != ''">permission_name = #{permissionName,jdbcType=VARCHAR},</if>
+      <if test="permissionType != null">permission_type = #{permissionType,jdbcType=INTEGER},</if>
+      <if test="parentId != null and parentId != ''">parent_id = #{parentId,jdbcType=VARCHAR},</if>
+      <if test="menuPath != null">menu_path = #{menuPath,jdbcType=VARCHAR},</if>
+      <if test="apiPattern != null">api_pattern = #{apiPattern,jdbcType=VARCHAR},</if>
+      <if test="sort != null">sort = #{sort,jdbcType=INTEGER},</if>
+      <if test="modifier != null and modifier != ''">modifier = #{modifier,jdbcType=VARCHAR},</if>
+    </set>
+    where permission_id = #{permissionId,jdbcType=VARCHAR}
+  </update>
+
+  <delete id="deleteByPermissionId" parameterType="java.lang.String">
+    delete from profile_meta_permission
+    where permission_id = #{permissionId,jdbcType=VARCHAR}
+  </delete>
+
+  <!-- 根据角色ID查询权限码列表（JOIN role_permission） -->
+  <select id="selectPermissionCodesByRoleId" resultType="java.lang.String">
+    select p.permission_code
+    from profile_meta_permission p
+    inner join profile_meta_role_permission rp on p.permission_id = rp.permission_id
+    where rp.role_id = #{roleId,jdbcType=VARCHAR}
+      and p.status = 1
+  </select>
+
+  <!-- 根据角色ID列表查询所有权限码（去重） -->
+  <select id="selectPermissionCodesByRoleIds" resultType="java.lang.String">
+    select distinct p.permission_code
+    from profile_meta_permission p
+    inner join profile_meta_role_permission rp on p.permission_id = rp.permission_id
+    where rp.role_id in
+    <foreach item="rid" collection="roleIds" open="(" separator="," close=")">
+      #{rid}
+    </foreach>
+    and p.status = 1
+  </select>
+
+</mapper>

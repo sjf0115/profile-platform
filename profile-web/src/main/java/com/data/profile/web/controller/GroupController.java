@@ -4,6 +4,7 @@ import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.service.TaskExecutionService;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.*;
+import com.data.profile.web.annotation.RequiresPermission;
 import com.data.profile.web.converter.GroupConverter;
 import com.data.profile.web.dto.GroupDTO;
 import com.data.profile.web.converter.DatasetConverter;
@@ -64,6 +65,7 @@ public class GroupController {
         }
     }
 
+    @RequiresPermission(code = "group:edit", name = "群组-编辑")
     @PostMapping(value = "/save")
     public Response<Integer> save(@RequestBody GroupRequest request) {
         Group group = GroupConverter.request2do(request);
@@ -87,6 +89,7 @@ public class GroupController {
         }
     }
 
+    @RequiresPermission(code = "group:delete", name = "群组-删除")
     @DeleteMapping(value = "/delete")
     public Response<Integer> delete(@RequestParam(name = "group_id") String groupId) {
         log.info("根据群组ID {} 请求删除群组", groupId);
@@ -142,6 +145,7 @@ public class GroupController {
         }
     }
 
+    @RequiresPermission(code = "group:execute", name = "群组-执行")
     @PostMapping(value = "/{groupId}/execute")
     public Response<String> execute(@PathVariable(value = "groupId") String groupId) {
         log.info("请求手动立即执行群组 [{}] 圈选", groupId);

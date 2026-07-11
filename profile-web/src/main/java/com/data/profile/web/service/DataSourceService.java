@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -38,6 +39,8 @@ import java.util.*;
 @Service
 public class DataSourceService {
     private static Gson gson = new GsonBuilder().create();
+    @Autowired
+    private ResourceGrantService resourceGrantService;
 
     @Resource
     private DataSourceMapper dataSourceMapper;
@@ -100,7 +103,10 @@ public class DataSourceService {
             datasource.setOwner(UserContextHolder.currentUserId());
             datasource.setCreator(UserContextHolder.currentUserId());
             datasource.setModifier(UserContextHolder.currentUserId());
-            return dataSourceMapper.insertSelective(datasource);
+            int result = dataSourceMapper.insertSelective(datasource);
+            // 自动授权 MANAGE 给创建者
+            resourceGrantService.grantOwner("05", datasourceId, UserContextHolder.currentUserId());
+            return result;
         } else {
             // 修改
             datasource.setModifier(UserContextHolder.currentUserId());

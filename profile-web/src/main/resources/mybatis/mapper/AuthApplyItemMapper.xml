@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.data.profile.web.dao.AuthApplyItemMapper">
+
+    <resultMap id="BaseResultMap" type="com.data.profile.web.model.AuthApplyItem">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="item_id" property="itemId" jdbcType="VARCHAR"/>
+        <result column="apply_id" property="applyId" jdbcType="VARCHAR"/>
+        <result column="resource_type" property="resourceType" jdbcType="VARCHAR"/>
+        <result column="resource_id" property="resourceId" jdbcType="VARCHAR"/>
+        <result column="action" property="action" jdbcType="INTEGER"/>
+        <result column="expire_time" property="expireTime" jdbcType="TIMESTAMP"/>
+        <result column="creator" property="creator" jdbcType="VARCHAR"/>
+        <result column="gmt_create" property="gmtCreate" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, item_id, apply_id, resource_type, resource_id, action,
+        expire_time, creator, gmt_create
+    </sql>
+
+    <insert id="insertSelective" parameterType="com.data.profile.web.model.AuthApplyItem"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO profile_meta_auth_apply_item
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="itemId != null">item_id,</if>
+            <if test="applyId != null">apply_id,</if>
+            <if test="resourceType != null">resource_type,</if>
+            <if test="resourceId != null">resource_id,</if>
+            <if test="action != null">action,</if>
+            <if test="expireTime != null">expire_time,</if>
+            <if test="creator != null">creator,</if>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="itemId != null">#{itemId,jdbcType=VARCHAR},</if>
+            <if test="applyId != null">#{applyId,jdbcType=VARCHAR},</if>
+            <if test="resourceType != null">#{resourceType,jdbcType=VARCHAR},</if>
+            <if test="resourceId != null">#{resourceId,jdbcType=VARCHAR},</if>
+            <if test="action != null">#{action,jdbcType=INTEGER},</if>
+            <if test="expireTime != null">#{expireTime,jdbcType=TIMESTAMP},</if>
+            <if test="creator != null">#{creator,jdbcType=VARCHAR},</if>
+        </trim>
+    </insert>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO profile_meta_auth_apply_item
+        (item_id, apply_id, resource_type, resource_id, action, expire_time, creator)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.itemId}, #{item.applyId}, #{item.resourceType}, #{item.resourceId},
+             #{item.action}, #{item.expireTime}, #{item.creator})
+        </foreach>
+    </insert>
+
+    <select id="selectByApplyId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM profile_meta_auth_apply_item
+        WHERE apply_id = #{applyId}
+        ORDER BY id
+    </select>
+
+</mapper>

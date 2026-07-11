@@ -10,6 +10,7 @@ import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,8 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class ExportService {
+    @Autowired
+    private ResourceGrantService resourceGrantService;
     @Resource
     private ExportMapper exportMapper;
     @Resource
@@ -111,7 +114,10 @@ public class ExportService {
             } catch (SchedulerException e) {
                 throw new RuntimeException("创建投递调度任务失败", e.getCause());
             }*/
-            return exportMapper.insertSelective(export);
+            int result = exportMapper.insertSelective(export);
+            // 自动授权 MANAGE 给创建者
+            resourceGrantService.grantOwner("10", exportId, userId);
+            return result;
         } else {
             // 修改
             export.setModifier(UserContextHolder.currentUserId());

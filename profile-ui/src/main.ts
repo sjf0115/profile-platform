@@ -6,8 +6,12 @@ import 'element-plus/dist/index.css'
 
 import App from './App.vue'
 import router from './router'
+import { vPermission } from '@/directives/permission'
 
 const app = createApp(App)
+
+// 注册 v-permission 指令
+app.directive('permission', vPermission)
 
 // 注册所有图标
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { isLoggedIn } from '@/utils/auth'
+import { usePermissionStore } from '@/stores/permission'
 
 const routes: RouteRecordRaw[] = [
   // 登录页（不在 MainLayout 内）
@@ -10,6 +11,13 @@ const routes: RouteRecordRaw[] = [
     name: 'Login',
     component: () => import('@/views/login/index.vue'),
     meta: { title: '登录' },
+  },
+  // 403 无权限页（不在 MainLayout 内）
+  {
+    path: '/403',
+    name: 'Forbidden',
+    component: () => import('@/views/error/403.vue'),
+    meta: { title: '无权限' },
   },
   {
     path: '/',
@@ -141,20 +149,27 @@ const routes: RouteRecordRaw[] = [
         path: 'settings/roles',
         name: 'RoleManagement',
         component: () => import('@/views/role/index.vue'),
-        meta: { title: '角色管理' },
+        meta: { title: '角色管理', permission: 'role:edit' },
       },
       // 设置 - 用户管理
       {
         path: 'settings/users',
         name: 'UserManagement',
         component: () => import('@/views/user/index.vue'),
-        meta: { title: '用户管理' },
+        meta: { title: '用户管理', permission: 'user:edit' },
+      },
+      // 设置 - 数据访问控制
+      {
+        path: 'settings/data-access',
+        name: 'DataAccess',
+        component: () => import('@/views/data-access/index.vue'),
+        meta: { title: '数据访问控制', permission: 'grant:edit' },
       },
       // 设置 - 通用配置
       {
         path: 'settings/general',
         name: 'GeneralSettings',
-        component: () => import('@/views/role/index.vue'),
+        component: () => import('@/views/settings/general.vue'),
         meta: { title: '通用配置' },
       },
       // 设置 - 计算引擎（单例，直接显示编辑页面）
@@ -341,22 +356,36 @@ const router = createRouter({
   routes,
 })
 
-// 全局前置守卫：未登录时跳转登录页
-router.beforeEach((to, _from, next) => {
+// 全局前置守卫：登录检查 + 权限加载 + 功能权限校验
+router.beforeEach(async (to, _from, next) => {
   if (to.path === '/login') {
-    // 已登录用户访问登录页，重定向到首页
     if (isLoggedIn()) {
       next('/')
     } else {
       next()
     }
-  } else {
-    if (isLoggedIn()) {
-      next()
-    } else {
-      next('/login')
-    }
+    return
   }
+
+  if (!isLoggedIn()) {
+    next('/login')
+    return
+  }
+
+  // 首次进入时加载权限码
+  const permissionStore = usePermissionStore()
+  if (!permissionStore.loaded) {
+    await permissionStore.loadPermissions()
+  }
+
+  // 路由级权限检查（meta.permission 为所需权限码）
+  const requiredPermission = to.meta.permission as string | undefined
+  if (requiredPermission && permissionStore.loaded && !permissionStore.hasPermission(requiredPermission)) {
+    next('/403')
+    return
+  }
+
+  next()
 })
 
 export default router

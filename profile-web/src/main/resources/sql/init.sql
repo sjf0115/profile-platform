@@ -499,4 +499,166 @@ CREATE TABLE IF NOT EXISTS `profile_meta_group_analysis`(
     `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`),
     UNIQUE (`analysis_id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-群组分析';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-群组分析';
+
+-- 23. 角色表
+DROP TABLE IF EXISTS `profile_meta_role`;
+CREATE TABLE IF NOT EXISTS `profile_meta_role`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `role_id` VARCHAR(40) NOT NULL COMMENT '角色ID',
+    `role_type` INT NOT NULL DEFAULT 2 COMMENT '角色类型：1-管理员(跳过权限验证),2-普通成员(需要验证权限)',
+    `role_name` VARCHAR(100) NOT NULL COMMENT '角色名称',
+    `role_desc` VARCHAR(255) COMMENT '角色描述',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式:1-系统内置,2-自定义',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`role_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-角色';
+
+-- 24. 用户角色关联表
+DROP TABLE IF EXISTS `profile_meta_user_role`;
+CREATE TABLE IF NOT EXISTS `profile_meta_user_role`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `user_id` VARCHAR(40) NOT NULL COMMENT '用户ID',
+    `role_id` VARCHAR(40) NOT NULL COMMENT '角色ID',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`user_id`,`role_id`),
+    KEY `idx_user_id` (`user_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-用户角色关联';
+
+-- 25. 权限点表
+DROP TABLE IF EXISTS `profile_meta_permission`;
+CREATE TABLE IF NOT EXISTS `profile_meta_permission`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+    `permission_id` VARCHAR(40) NOT NULL COMMENT '权限点ID',
+    `permission_name` VARCHAR(100) NOT NULL COMMENT '权限点名称',
+    `permission_code` VARCHAR(100) NOT NULL COMMENT '权限码,如 label:create',
+    `permission_type` INT NOT NULL DEFAULT 2 COMMENT '权限类型:1-菜单,2-按钮,3-API',
+    `parent_id` VARCHAR(40) NOT NULL DEFAULT '0' COMMENT '父权限ID(菜单树),顶层为0',
+    `menu_path` VARCHAR(200) COMMENT '前端路由路径(菜单类)',
+    `api_pattern` VARCHAR(200) COMMENT 'API匹配模式,如 POST:/label/save',
+    `sort` INT NOT NULL DEFAULT 0 COMMENT '同级排序',
+    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式:1-系统内置,2-自定义',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`permission_id`),
+    UNIQUE(`permission_code`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-权限点';
+
+-- 26. 角色-权限关联表
+DROP TABLE IF EXISTS `profile_meta_role_permission`;
+CREATE TABLE IF NOT EXISTS `profile_meta_role_permission`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `role_id` VARCHAR(40) NOT NULL COMMENT '角色ID',
+    `permission_id` VARCHAR(40) NOT NULL COMMENT '权限点ID',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`role_id`,`permission_id`),
+    KEY `idx_role_id` (`role_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-角色权限关联';
+
+-- ==============================
+-- 资源授权表（P1 数据权限）
+-- ==============================
+DROP TABLE IF EXISTS `profile_meta_resource_grant`;
+CREATE TABLE IF NOT EXISTS `profile_meta_resource_grant`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `grant_id` VARCHAR(40) NOT NULL COMMENT '授权ID',
+    `resource_type` VARCHAR(10) NOT NULL COMMENT '资源类型（ModelType编码）',
+    `resource_id` VARCHAR(40) NOT NULL COMMENT '资源ID',
+    `grantee_type` INT NOT NULL COMMENT '受权者类型：1=用户 2=角色',
+    `grantee_id` VARCHAR(40) NOT NULL COMMENT '受权者ID',
+    `action` INT NOT NULL COMMENT '权限动作：1=READ 2=WRITE 3=EXPORT 4=MANAGE',
+    `expire_time` DATETIME DEFAULT NULL COMMENT '过期时间（NULL表示永久）',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`grant_id`),
+    KEY `idx_resource` (`resource_type`, `resource_id`),
+    KEY `idx_grantee` (`grantee_type`, `grantee_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-资源授权';
+
+-- ==============================
+-- 权限申请主表（P2 审批流）
+-- ==============================
+DROP TABLE IF EXISTS `profile_meta_auth_apply`;
+CREATE TABLE IF NOT EXISTS `profile_meta_auth_apply`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `apply_id` VARCHAR(40) NOT NULL COMMENT '申请单ID',
+    `applicant` VARCHAR(40) NOT NULL COMMENT '申请人ID',
+    `apply_reason` VARCHAR(500) COMMENT '申请理由',
+    `status` INT NOT NULL DEFAULT 1 COMMENT '状态：1=待审批 2=已通过 3=已拒绝 4=已取消',
+    `approver` VARCHAR(40) COMMENT '审批人ID',
+    `approve_time` DATETIME COMMENT '审批时间',
+    `approve_remark` VARCHAR(500) COMMENT '审批备注',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`apply_id`),
+    KEY `idx_applicant` (`applicant`),
+    KEY `idx_approver` (`approver`),
+    KEY `idx_status` (`status`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-权限申请单';
+
+-- ==============================
+-- 权限申请明细表（P2 审批流）
+-- ==============================
+DROP TABLE IF EXISTS `profile_meta_auth_apply_item`;
+CREATE TABLE IF NOT EXISTS `profile_meta_auth_apply_item`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `item_id` VARCHAR(40) NOT NULL COMMENT '明细ID',
+    `apply_id` VARCHAR(40) NOT NULL COMMENT '所属申请单ID',
+    `resource_type` VARCHAR(10) NOT NULL COMMENT '资源类型（ModelType编码）',
+    `resource_id` VARCHAR(40) NOT NULL COMMENT '资源ID',
+    `action` INT NOT NULL COMMENT '权限动作：1=READ 2=WRITE 3=EXPORT 4=MANAGE',
+    `expire_time` DATETIME DEFAULT NULL COMMENT '申请过期时间（NULL表示永久）',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`item_id`),
+    KEY `idx_apply_id` (`apply_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-权限申请明细';
+
+-- ==============================
+-- 预置角色种子数据
+-- ==============================
+INSERT INTO `profile_meta_role` (`role_id`, `role_type`, `role_name`, `role_desc`, `source_type`, `creator`, `modifier`)
+VALUES
+('role_admin',   1, '管理员',   '拥有系统所有权限，可管理用户、角色及全部业务功能', 1, 'system', 'system'),
+('role_analyst', 2, '分析师',   '可使用标签、群组、数据集、分析等业务功能，无系统管理权限', 1, 'system', 'system'),
+('role_viewer',  2, '只读用户', '仅有查看权限，不可执行任何写操作',                  1, 'system', 'system')
+ON DUPLICATE KEY UPDATE `role_name` = VALUES(`role_name`);
+
+-- 管理员账号绑定管理员角色
+INSERT INTO `profile_meta_user_role` (`user_id`, `role_id`)
+VALUES ('100000', 'role_admin')
+ON DUPLICATE KEY UPDATE `role_id` = VALUES(`role_id`);
+
+-- ==============================
+-- 系统配置（Key-Value）
+-- ==============================
+CREATE TABLE IF NOT EXISTS `profile_meta_system_config`(
+    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
+    `config_group` VARCHAR(50) NOT NULL COMMENT '配置分组: smtp/platform/appearance ...',
+    `config_key` VARCHAR(100) NOT NULL COMMENT '配置键',
+    `config_value` TEXT COMMENT '配置值（敏感字段加密存储）',
+    `config_desc` VARCHAR(200) COMMENT '配置说明',
+    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
+    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
+    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    PRIMARY KEY (`id`),
+    UNIQUE(`config_group`, `config_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='画像-系统配置';

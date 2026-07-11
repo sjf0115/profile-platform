@@ -8,6 +8,7 @@ import com.data.profile.web.security.UserContextHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,8 @@ import java.util.Optional;
 public class ApplicationService {
     @Resource
     private ApplicationMapper applicationMapper;
+    @Autowired
+    private ResourceGrantService resourceGrantService;
 
     /**
      * 根据查询条件获取应用列表
@@ -81,6 +84,8 @@ public class ApplicationService {
             application.setCreator(userId);
             application.setModifier(userId);
             applicationMapper.insertSelective(application);
+            // 自动授权 MANAGE 给创建者
+            resourceGrantService.grantOwner("21", application.getAppKey(), userId);
             return application; // 返回包含 appKey 和 appSecret 的完整对象
         } else {
             // 修改

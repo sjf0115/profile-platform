@@ -3,6 +3,7 @@ package com.data.profile.web.controller;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.model.Event;
+import com.data.profile.web.annotation.RequiresPermission;
 import com.data.profile.web.service.EventService;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -44,6 +45,7 @@ public class EventController {
         }
     }
 
+    @RequiresPermission(code = "event:edit", name = "事件-编辑")
     @PostMapping(value = "/save")
     public Response<Integer> save(@RequestBody Event event) {
         int result = eventService.save(event);

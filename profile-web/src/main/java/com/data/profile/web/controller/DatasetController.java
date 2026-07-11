@@ -6,6 +6,7 @@ import com.data.profile.web.service.TaskInstanceService;
 import com.data.profile.web.service.DatasetFieldService;
 import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.web.annotation.RequiresPermission;
 import com.data.profile.web.converter.DatasetConverter;
 import com.data.profile.web.converter.TaskInstanceConverter;
 import com.data.profile.web.dto.DatasetParam;
@@ -85,6 +86,7 @@ public class DatasetController {
         return Response.success(vo);
     }
 
+    @RequiresPermission(code = "dataset:edit", name = "数据集-编辑")
     @PostMapping(value = "/save")
     public Response<String> save(@RequestBody DatasetRequest req) {
         log.info("请求保存/更新数据集: {}", JSONUtils.toJsonString(req));
@@ -93,6 +95,7 @@ public class DatasetController {
         return Response.success(datasetId);
     }
 
+    @RequiresPermission(code = "dataset:delete", name = "数据集-删除")
     @DeleteMapping(value = "/delete")
     public Response<Integer> delete(@RequestParam(name = "dataset_id") String datasetId) {
         log.info("根据数据集ID {} 请求删除数据集", datasetId);
@@ -105,6 +108,7 @@ public class DatasetController {
     }
 
     // 立即执行数据集同步
+    @RequiresPermission(code = "dataset:execute", name = "数据集-执行")
     @PostMapping(value = "/{datasetId}/execute")
     public Response<TaskInstance> execute(@PathVariable(value = "datasetId") String datasetId) {
         log.info("请求手动立即执行数据集 [{}] 同步", datasetId);

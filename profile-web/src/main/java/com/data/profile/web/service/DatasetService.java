@@ -55,6 +55,8 @@ public class DatasetService {
     private TaskInstanceService taskInstanceService;
     @Autowired
     private ScheduleEngineService scheduleEngineService;
+    @Autowired
+    private ResourceGrantService resourceGrantService;
 
     /**
      * 根据查询条件获取数据集列表（仅元数据，不含字段）
@@ -242,6 +244,8 @@ public class DatasetService {
         createSyncTask(datasetId, dataset.getDatasetName());
 
         log.info("成功创建数据集: {}", gson.toJson(dataset));
+        // 自动授权 MANAGE 给创建者
+        resourceGrantService.grantOwner("06", datasetId, UserContextHolder.currentUserId());
         return datasetId;
     }
 

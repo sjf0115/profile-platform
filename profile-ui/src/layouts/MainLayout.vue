@@ -186,13 +186,17 @@
               <el-dropdown-item divided />
               <div class="settings-group">
                 <div class="settings-group-title">权限管理</div>
-                <el-dropdown-item @click="router.push('/settings/users')">
+                <el-dropdown-item v-permission="'user:edit'" @click="router.push('/settings/users')">
                   <el-icon><User /></el-icon>
                   <span>用户管理</span>
                 </el-dropdown-item>
-                <el-dropdown-item @click="router.push('/settings/roles')">
+                <el-dropdown-item v-permission="'role:edit'" @click="router.push('/settings/roles')">
                   <el-icon><UserFilled /></el-icon>
                   <span>角色管理</span>
+                </el-dropdown-item>
+                <el-dropdown-item v-permission="'grant:edit'" @click="router.push('/settings/data-access')">
+                  <el-icon><Lock /></el-icon>
+                  <span>数据访问控制</span>
                 </el-dropdown-item>
               </div>
             </el-dropdown-menu>
@@ -331,13 +335,17 @@
               <span>计算引擎</span>
             </el-menu-item>
             <div class="menu-group-title" style="margin-top: 16px;">权限管理</div>
-            <el-menu-item index="/settings/users">
+            <el-menu-item v-permission="'user:edit'" index="/settings/users">
               <el-icon><User /></el-icon>
               <span>用户管理</span>
             </el-menu-item>
-            <el-menu-item index="/settings/roles">
+            <el-menu-item v-permission="'role:edit'" index="/settings/roles">
               <el-icon><UserFilled /></el-icon>
               <span>角色管理</span>
+            </el-menu-item>
+            <el-menu-item v-permission="'grant:edit'" index="/settings/data-access">
+              <el-icon><Lock /></el-icon>
+              <span>数据访问控制</span>
             </el-menu-item>
           </template>
         </el-menu>
@@ -359,10 +367,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   DataLine, ArrowDown, Bell, QuestionFilled, Setting, Grid, User, UserFilled,
   View, Filter, DataAnalysis, Promotion, TrendCharts, Timer, Switch, PieChart, Share, Connection,
-  Coin, FolderOpened, CollectionTag, Cpu, List
+  Coin, FolderOpened, CollectionTag, Cpu, List, Lock
 } from '@element-plus/icons-vue'
 import { getLoginUser, removeToken } from '@/utils/auth'
 import { userApi } from '@/api/user'
+import { usePermissionStore } from '@/stores/permission'
 
 const route = useRoute()
 const router = useRouter()
@@ -422,6 +431,7 @@ const handleLogout = async () => {
       // 即使后端退出失败也清除本地 Token
     }
     removeToken()
+    usePermissionStore().reset()
     ElMessage.success('已退出登录')
     router.push('/login')
   } catch {

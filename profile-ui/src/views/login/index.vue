@@ -58,6 +58,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { DataLine, User, Lock } from '@element-plus/icons-vue'
 import { userApi } from '@/api/user'
 import { setToken, setLoginUser } from '@/utils/auth'
+import { usePermissionStore } from '@/stores/permission'
 
 const router = useRouter()
 const formRef = ref<FormInstance>()
@@ -88,6 +89,8 @@ const handleLogin = async () => {
     // 存储 Token 和用户信息
     setToken(token)
     setLoginUser(user)
+    // 登录后立即加载权限码
+    await usePermissionStore().loadPermissions()
     ElMessage.success('登录成功')
     router.push('/')
   } catch (e: any) {

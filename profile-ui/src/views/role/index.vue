@@ -78,10 +78,13 @@
             {{ formatDateTime(row.gmt_modified) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="handleEdit(row)">
               编辑
+            </el-button>
+            <el-button link type="primary" @click="handleAssignPermission(row)">
+              分配权限
             </el-button>
             <el-button link type="danger" @click="handleDelete(row)">
               删除
@@ -147,15 +150,41 @@
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 分配权限抽屉 -->
+    <el-drawer
+      v-model="permDrawerVisible"
+      title="分配权限"
+      size="480px"
+      destroy-on-close
+    >
+      <div v-loading="permTreeLoading" class="perm-tree-wrapper">
+        <el-tree
+          ref="permTreeRef"
+          :data="permTreeData"
+          :props="{ label: 'permission_name', children: 'children' }"
+          show-checkbox
+          node-key="permission_id"
+          default-expand-all
+          :default-checked-keys="checkedPermIds"
+        />
+      </div>
+      <template #footer>
+        <el-button @click="permDrawerVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSavePermissions">保存</el-button>
+      </template>
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { ElTree } from 'element-plus'
 import { Plus, Search, Refresh } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { roleApi, type Role, type RoleQueryParams } from '@/api/role'
+import { permissionApi, type PermissionNode } from '@/api/permission'
 
 // 格式化日期时间
 const formatDateTime = (dateStr?: string) => {
@@ -335,6 +364,48 @@ const handleDelete = (row: Role) => {
 onMounted(() => {
   fetchData()
 })
+
+// ========== 分配权限抽屉 ==========
+const permDrawerVisible = ref(false)
+const permTreeLoading = ref(false)
+const permTreeData = ref<PermissionNode[]>([])
+const checkedPermIds = ref<string[]>([])
+const currentPermRoleId = ref<string>('')
+const permTreeRef = ref<InstanceType<typeof ElTree>>()
+
+const handleAssignPermission = async (row: Role) => {
+  if (!row.role_id) return
+  currentPermRoleId.value = row.role_id
+  permDrawerVisible.value = true
+  permTreeLoading.value = true
+  try {
+    const [treeRes, checkedRes] = await Promise.all([
+      permissionApi.getPermissionTree(),
+      permissionApi.getRolePermissions(row.role_id),
+    ])
+    permTreeData.value = treeRes.data.data || []
+    checkedPermIds.value = checkedRes.data.data || []
+  } catch {
+    ElMessage.error('加载权限树失败')
+  } finally {
+    permTreeLoading.value = false
+  }
+}
+
+const handleSavePermissions = async () => {
+  if (!permTreeRef.value || !currentPermRoleId.value) return
+  // 获取全选中 + 半选中节点作为最终权限ID
+  const checked = permTreeRef.value.getCheckedKeys() as string[]
+  const halfChecked = permTreeRef.value.getHalfCheckedKeys() as string[]
+  const allIds = [...checked, ...halfChecked]
+  try {
+    await permissionApi.saveRolePermissions(currentPermRoleId.value, allIds)
+    ElMessage.success('权限配置保存成功')
+    permDrawerVisible.value = false
+  } catch {
+    ElMessage.error('保存权限失败')
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -383,5 +454,10 @@ onMounted(() => {
     display: flex;
     justify-content: flex-end;
   }
+}
+
+.perm-tree-wrapper {
+  min-height: 200px;
+  padding: 0 8px;
 }
 </style>

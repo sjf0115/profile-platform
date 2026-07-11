@@ -1,6 +1,7 @@
 package com.data.profile.web.controller;
 
 import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.web.annotation.RequiresPermission;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.converter.GroupConverter;
 import com.data.profile.web.dto.AnalysisLabelDTO;
@@ -78,6 +79,7 @@ public class GroupAnalysisController {
     /**
      * 保存群组分析（新增/修改）
      */
+    @RequiresPermission(code = "groupAnalysis:edit", name = "群组分析-编辑")
     @PostMapping(value = "/save")
     public Response<Integer> saveAnalysis(@RequestBody GroupAnalysis analysis) {
         log.info("请求保存群组分析: {}", JSONUtils.toJsonString(analysis));
@@ -93,6 +95,7 @@ public class GroupAnalysisController {
     /**
      * 删除群组分析
      */
+    @RequiresPermission(code = "groupAnalysis:delete", name = "群组分析-删除")
     @DeleteMapping(value = "/delete")
     public Response<Integer> deleteAnalysis(@RequestParam(name = "analysis_id") String analysisId) {
         log.info("请求删除群组分析: {}", analysisId);

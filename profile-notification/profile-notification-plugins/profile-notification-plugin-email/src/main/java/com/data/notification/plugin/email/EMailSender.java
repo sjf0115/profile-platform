@@ -1,10 +1,8 @@
 package com.data.notification.plugin.email;
 
-import com.data.notification.api.entity.SlaNotificationResultRecord;
-import com.data.notification.api.entity.SlaSenderMessage;
+import com.data.notification.api.entity.NotificationResultRecord;
+import com.data.notification.api.entity.NotificationSenderConfig;
 import com.data.profile.common.utils.JSONUtils;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.sun.mail.smtp.SMTPProvider;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,7 +19,6 @@ import javax.mail.Session;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -30,7 +27,7 @@ import static java.util.Objects.requireNonNull;
 @Data
 public class EMailSender {
 
-    private String mailProtocol = "SMTP";
+    private String mailProtocol = "smtp";
 
     private String mailSmtpHost;
 
@@ -50,9 +47,9 @@ public class EMailSender {
 
     private String sslTrust;
 
-    private String mustNotNull = "must not be null";
+    private final String mustNotNull = "must not be null";
 
-    public EMailSender(SlaSenderMessage senderMessage) {
+    public EMailSender(NotificationSenderConfig senderMessage) {
         String configString = senderMessage.getConfig();
         Map<String, String> config = JSONUtils.toMap(configString);
 
@@ -83,15 +80,13 @@ public class EMailSender {
         requireNonNull(sslTrust, "smtpSslTrust" + mustNotNull);
     }
 
-    public SlaNotificationResultRecord sendMails(Set<String> receiverSet, Set<String> copyReceiverSet, String subject, String message){
-        SlaNotificationResultRecord result = new SlaNotificationResultRecord();
-        // if there is no receivers && no receiversCc, no need to process
+    public NotificationResultRecord sendMails(Set<String> receiverSet, Set<String> copyReceiverSet, String subject, String message) {
+        NotificationResultRecord result = new NotificationResultRecord();
         if (CollectionUtils.isEmpty(receiverSet)) {
             return result;
         }
         receiverSet.removeIf(StringUtils::isEmpty);
         Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-        // send email
         HtmlEmail email = new HtmlEmail();
         try {
             Session session = getSession();
@@ -99,27 +94,25 @@ public class EMailSender {
             email.setFrom(mailSenderEmail);
             email.setCharset("UTF-8");
             if (CollectionUtils.isNotEmpty(receiverSet)) {
-                // receivers mail
                 for (String receiver : receiverSet) {
                     email.addTo(receiver);
                 }
             }
             if (CollectionUtils.isNotEmpty(copyReceiverSet)) {
-                //cc
                 for (String receiverCc : copyReceiverSet) {
                     email.addCc(receiverCc);
                 }
             }
-            // sender mail
-            String textMessageContent = getTextTypeMessage(message);
-            email.setMsg(textMessageContent);
+            if (message != null && message.trim().startsWith("<!")) {
+                email.setMsg(message);
+            } else {
+                email.setMsg(wrapHtml(message));
+            }
             email.setSubject(subject);
-            // send
-            email.setDebug(true);
+            email.setDebug(false);
             email.send();
             result.setStatus(true);
             return result;
-
         } catch (Exception e) {
             log.error("email send error", e);
         }
@@ -127,7 +120,6 @@ public class EMailSender {
     }
 
     private Session getSession() {
-        // support multiple email format
         MailcapCommandMap mc = (MailcapCommandMap) CommandMap.getDefaultCommandMap();
         mc.addMailcap("text/html;; x-java-content-handler=com.sun.mail.handlers.text_html");
         mc.addMailcap("text/xml;; x-java-content-handler=com.sun.mail.handlers.text_xml");
@@ -144,14 +136,13 @@ public class EMailSender {
         props.setProperty("mail.smtp.ssl.protocols", "TLSv1.2");
         props.setProperty("mail.smtp.starttls.enable", mailUseStartTLS);
         props.setProperty("mail.smtp.ssl.enable", mailUseSSL);
-        if (Boolean.TRUE == Boolean.parseBoolean(sslTrust)) {
+        if (Boolean.parseBoolean(sslTrust)) {
             props.setProperty("mail.smtp.ssl.trust", mailSmtpHost);
         }
 
         Authenticator auth = new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                // mail username and password
                 return new PasswordAuthentication(mailUser, mailPasswd);
             }
         };
@@ -161,23 +152,13 @@ public class EMailSender {
         return session;
     }
 
-    private String getTextTypeMessage(String content) {
-        if (StringUtils.isNotEmpty(content)) {
-            ArrayNode list = JSONUtils.parseArray(content);
-            StringBuilder contents = new StringBuilder(100);
-            for (JsonNode jsonNode : list) {
-                String nodeMessage = jsonNode.toString().replace("\"", "");
-                contents.append(EmailConstants.TR);
-                if (nodeMessage.startsWith("Task Execution Record")||nodeMessage.startsWith("任务执行记录")){
-                    String formatMessage = String.format("%s : <a href=\"%s\">%s</a>", nodeMessage.substring(0,nodeMessage.indexOf(" : ")),nodeMessage.substring(nodeMessage.indexOf(":")+2),nodeMessage.substring(nodeMessage.indexOf(":")+2));
-                    contents.append(EmailConstants.TD).append(formatMessage).append(EmailConstants.TD_END);
-                }else {
-                    contents.append(EmailConstants.TD).append(jsonNode.toString().replace("\"", "")).append(EmailConstants.TD_END);
-                }
-                contents.append(EmailConstants.TR_END);
-            }
-            return EmailConstants.HTML_HEADER_PREFIX + contents + EmailConstants.TABLE_HTML_TAIL + EmailConstants.BODY_HTML_TAIL;
+    private String wrapHtml(String content) {
+        if (StringUtils.isEmpty(content)) {
+            return content;
         }
-        return content;
+        return EmailConstants.HTML_HEADER_PREFIX
+                + EmailConstants.TR + EmailConstants.TD + content + EmailConstants.TD_END + EmailConstants.TR_END
+                + EmailConstants.TABLE_HTML_TAIL
+                + EmailConstants.BODY_HTML_TAIL;
     }
 }

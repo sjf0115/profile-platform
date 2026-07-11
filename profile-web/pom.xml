@@ -106,6 +106,17 @@
             <artifactId>profile-engine-all</artifactId>
         </dependency>
 
+        <!-- 通知模块 -->
+        <dependency>
+            <groupId>com.data</groupId>
+            <artifactId>profile-notification-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.data</groupId>
+            <artifactId>profile-notification-plugin-email</artifactId>
+        </dependency>
+
         <!--<dependency>
             <groupId>com.data</groupId>
             <artifactId>profile-engine-common</artifactId>
@@ -122,6 +133,13 @@
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
+        </dependency>
+
+        <!-- Caffeine 本地缓存 -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>2.9.3</version>
         </dependency>
     </dependencies>
 

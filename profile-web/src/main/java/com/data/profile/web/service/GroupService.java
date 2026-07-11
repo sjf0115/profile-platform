@@ -42,6 +42,8 @@ import static com.data.profile.common.domain.Constant.ENGINE_GROUP_TABLE_PREFIX;
 @Service
 public class GroupService {
     private static final Gson gson = new GsonBuilder().create();
+    @Autowired
+    private ResourceGrantService resourceGrantService;
     @Resource
     private GroupMapper groupMapper;
 
@@ -212,6 +214,9 @@ public class GroupService {
 
         int result = groupMapper.insertSelective(group);
         log.info("新增群组: {}", gson.toJson(group));
+
+        // 自动授权 MANAGE 给创建者
+        resourceGrantService.grantOwner("09", groupId, UserContextHolder.currentUserId());
 
         // 创建群组引擎表 TODO 原子性
         createGroupEngineTable(group);
