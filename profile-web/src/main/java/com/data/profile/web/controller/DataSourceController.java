@@ -182,9 +182,9 @@ public class DataSourceController {
     /**
      * 获取数据库列表
      */
-    @GetMapping(value = "/{id}/databases")
-    public Response<List<DatabaseInfo>> getDatabases(@PathVariable String id) {
-        List<DatabaseInfo> databases = dataSourceService.getDatabaseList(id);
+    @GetMapping(value = "/{dataSourceId}/databases")
+    public Response<List<DatabaseInfo>> getDatabases(@PathVariable String dataSourceId) {
+        List<DatabaseInfo> databases = dataSourceService.getDatabaseList(dataSourceId);
         if (Objects.equals(databases, null) || databases.isEmpty()) {
             return Response.error("没有获取到数据库", ResponseCode.ERROR);
         } else {
@@ -195,9 +195,9 @@ public class DataSourceController {
     /**
      * 获取数据表列表
      */
-    @GetMapping(value = "/{id}/{database}/tables")
-    public Response<List<TableInfo>> getTables(@PathVariable String id, @PathVariable String database) {
-        List<TableInfo> tables = dataSourceService.getTableList(id, database);
+    @GetMapping(value = "/{dataSourceId}/{database}/tables")
+    public Response<List<TableInfo>> getTables(@PathVariable String dataSourceId, @PathVariable String database) {
+        List<TableInfo> tables = dataSourceService.getTableList(dataSourceId, database);
         if (Objects.equals(tables, null) || tables.isEmpty()) {
             return Response.error("没有获取到数据表", ResponseCode.ERROR);
         } else {
@@ -208,9 +208,9 @@ public class DataSourceController {
     /**
      * 获取数据列
      */
-    @GetMapping(value = "/{id}/{database}/{table}/columns")
-    public Response<TableColumnInfo> getColumns(@PathVariable String id, @PathVariable String database, @PathVariable String table) {
-        TableColumnInfo columns = dataSourceService.getColumnList(id, database, table);
+    @GetMapping(value = "/{dataSourceId}/{database}/{table}/columns")
+    public Response<TableColumnInfo> getColumns(@PathVariable String dataSourceId, @PathVariable String database, @PathVariable String table) {
+        TableColumnInfo columns = dataSourceService.getColumnList(dataSourceId, database, table);
         if (Objects.equals(columns, null) || columns.getColumns().isEmpty()) {
             return Response.error("没有获取到数据列", ResponseCode.ERROR);
         } else {
@@ -223,7 +223,7 @@ public class DataSourceController {
      */
     @GetMapping(value = "/export-config/{datasourceId}")
     public Response<String> getExportConfigJson(@PathVariable String datasourceId) {
-        log.info("请求获取投递配置表单: datasourceId={}", datasourceId);
+        log.info("请求获取数据源的投递配置表单: {}", datasourceId);
         String config = dataSourceService.getExportConfigJson(datasourceId);
         return Response.success(config);
     }
@@ -231,6 +231,7 @@ public class DataSourceController {
     /**
      * 简化版：获取数据表列表（后端自动提取 database）
      */
+    // TODO
     @GetMapping(value = "/tables/{datasourceId}")
     public Response<List<TableInfo>> getTablesByDatasource(@PathVariable String datasourceId) {
         List<TableInfo> tables = dataSourceService.getTableListByDatasource(datasourceId);
@@ -244,6 +245,7 @@ public class DataSourceController {
     /**
      * 简化版：获取数据列（后端自动提取 database）
      */
+    // TODO
     @GetMapping(value = "/columns/{datasourceId}/{table}")
     public Response<TableColumnInfo> getColumnsByDatasource(@PathVariable String datasourceId, @PathVariable String table) {
         TableColumnInfo columns = dataSourceService.getColumnListByDatasource(datasourceId, table);
