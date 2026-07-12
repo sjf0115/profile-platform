@@ -111,8 +111,12 @@ public class DataSourceService {
         if (StringUtils.isBlank(request.getDatasourceType())) {
             throw new RuntimeException("数据源类型不能为空");
         }
-
         String datasourceId = IDGenerator.getInstance().generate(ModelType.DATASOURCE);
+        if (dataSourceMapper.selectByDatasourceId(datasourceId) != null) {
+            log.error("数据源ID [{}] 已经存在，不允许重复创建", datasourceId);
+            throw new RuntimeException("数据源ID已经存在，不允许重复添加");
+        }
+
         DataSource dataSource = DataSourceConverter.request2do(request);
         dataSource.setDatasourceId(datasourceId);
         dataSource.setStatus(Status.ENABLE.getCode());
@@ -122,22 +126,24 @@ public class DataSourceService {
         dataSource.setModifier(userId);
 
         dataSourceMapper.insertSelective(dataSource);
+        // TODO
         resourceGrantService.grantOwner("05", datasourceId, userId);
-
-        DataSourceDTO dto = DataSourceConverter.do2dto(dataSource);
-        return dto;
+        log.info("创建数据源成功：{}", JSONUtils.toJsonString(dataSource));
+        return DataSourceConverter.do2dto(dataSource);
     }
 
     /**
      * 更新数据源
      */
     public int update(String datasourceId, DataSourceRequest request) {
+        if (request.getDatasourceName() == null) {
+            throw new RuntimeException("数据源名称不能为空");
+        }
         DataSource existing = dataSourceMapper.selectSimpleByDatasourceId(datasourceId);
         if (existing == null) {
             throw new RuntimeException("数据源不存在");
         }
-        // 检查名称重复（排除自身）
-        if (request.getDatasourceName() != null && !request.getDatasourceName().equals(existing.getDatasourceName())) {
+        if (!Objects.equals(request.getDatasourceName(), existing.getDatasourceName())) {
             List<DataSource> dup = dataSourceMapper.selectSimpleByDatasourceName(request.getDatasourceName());
             if (!dup.isEmpty()) {
                 throw new RuntimeException("数据源名称已存在");
@@ -202,7 +208,6 @@ public class DataSourceService {
         log.info("获取所有支持的插件类型: {}", gson.toJson(items));
         return items;
     }
-
 
     /**
      * 根据数据源ID获取数据库
