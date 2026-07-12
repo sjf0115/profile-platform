@@ -145,6 +145,23 @@
             />
           </el-form-item>
 
+          <el-form-item label="负责人">
+            <el-select
+              v-model="formData.owner"
+              filterable
+              clearable
+              placeholder="请选择负责人（默认为当前用户）"
+              style="width: 400px"
+            >
+              <el-option
+                v-for="u in userOptions"
+                :key="u.user_id"
+                :label="u.user_name"
+                :value="u.user_id"
+              />
+            </el-select>
+          </el-form-item>
+
           <div class="section-title">实体标识配置</div>
 
           <el-form-item required>
@@ -269,6 +286,9 @@ import { datasetApi } from '@/api/dataset'
 import { dataSourceApi } from '@/api/datasource'
 import { entityIdentifierApi, type EntityIdentifier } from '@/api/entity'
 import { labelApi } from '@/api/label'
+import { userApi } from '@/api/user'
+import type { User } from '@/api/user'
+import { getLoginUser } from '@/utils/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -335,6 +355,7 @@ const formData = reactive({
   table_name: '',
   dataset_name: '',
   dataset_desc: '',
+  owner: '',
   has_partition: 0,
   partition_field: '',
   partition_format: '${yyyyMMdd}',
@@ -342,6 +363,9 @@ const formData = reactive({
   entity_id: '',
   fields: [] as DatasetFieldItem[]
 })
+
+// 用户列表（负责人选择）
+const userOptions = ref<User[]>([])
 
 // 过滤后的字段列表
 const filteredFieldList = computed(() => {
@@ -536,6 +560,7 @@ const handleSubmit = async () => {
       dataset_desc: formData.dataset_desc,
       dataset_type: 1, // 标签数据集
       datasource_id: formData.datasource_id,
+      owner: formData.owner || undefined,
       table_name: fullTableName,
       partition_field: formData.has_partition === 1 ? formData.partition_field : undefined,
       partition_format: formData.has_partition === 1 ? formData.partition_format : undefined,
@@ -584,6 +609,7 @@ const fetchDatasetDetail = async () => {
       
       formData.dataset_name = dataset.dataset_name || ''
       formData.dataset_desc = dataset.dataset_desc || ''
+      formData.owner = dataset.owner || ''
       formData.has_partition = dataset.partition_field ? 1 : 0
       formData.partition_field = dataset.partition_field || ''
       formData.partition_format = dataset.partition_format || '${yyyyMMdd}'
@@ -616,8 +642,25 @@ const fetchDatasetDetail = async () => {
   }
 }
 
+// 获取用户列表（负责人选择）
+const fetchUserOptions = async () => {
+  try {
+    const res = await userApi.getList()
+    userOptions.value = res.data.data || []
+  } catch {
+    userOptions.value = []
+  }
+}
+
 onMounted(async () => {
-  await Promise.all([fetchDatasourceList(), fetchEntityIdentifierList()])
+  await Promise.all([fetchDatasourceList(), fetchEntityIdentifierList(), fetchUserOptions()])
+  // 创建模式：默认填充当前登录用户为负责人
+  if (!isEditMode.value) {
+    const currentUser = getLoginUser()
+    if (currentUser?.user_id) {
+      formData.owner = currentUser.user_id
+    }
+  }
   fetchDatasetDetail()
 })
 </script>

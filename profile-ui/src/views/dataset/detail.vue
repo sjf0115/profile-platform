@@ -110,23 +110,32 @@
         </el-table>
       </el-card>
 
-      <!-- 实例信息 -->
-      <el-card class="detail-card" v-if="datasetInfo.instance_id">
+      <!-- 任务执行信息 -->
+      <el-card class="detail-card" v-if="datasetInfo.latest_instance">
         <template #header>
           <div class="card-header">
-            <span>实例信息</span>
+            <span>任务执行信息</span>
           </div>
         </template>
         <el-descriptions :column="3" border>
-          <el-descriptions-item label="实例ID">{{ datasetInfo.instance_id }}</el-descriptions-item>
-          <el-descriptions-item label="实例状态">
-            <el-tag v-if="datasetInfo.instance_status === 1" type="success">运行中</el-tag>
-            <el-tag v-else-if="datasetInfo.instance_status === 2" type="warning">已停止</el-tag>
-            <el-tag v-else type="info">未知</el-tag>
+          <el-descriptions-item label="执行状态">
+            <el-tag v-if="datasetInfo.latest_instance.status === 1" type="info">未运行</el-tag>
+            <el-tag v-else-if="datasetInfo.latest_instance.status === 2" type="warning">运行中</el-tag>
+            <el-tag v-else-if="datasetInfo.latest_instance.status === 3" type="danger">运行失败</el-tag>
+            <el-tag v-else-if="datasetInfo.latest_instance.status === 4" type="success">运行成功</el-tag>
+            <span v-else>-</span>
           </el-descriptions-item>
-          <el-descriptions-item label="实例消息">{{ datasetInfo.instance_msg || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="开始时间">{{ formatDateTime(datasetInfo.instance_start_time) }}</el-descriptions-item>
-          <el-descriptions-item label="结束时间">{{ formatDateTime(datasetInfo.instance_end_time) }}</el-descriptions-item>
+          <el-descriptions-item label="触发模式">
+            <span v-if="datasetInfo.latest_instance.trigger_mode === 1">手动触发</span>
+            <span v-else-if="datasetInfo.latest_instance.trigger_mode === 2">定时调度</span>
+            <span v-else-if="datasetInfo.latest_instance.trigger_mode === 3">API触发</span>
+            <span v-else>-</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="执行时长">
+            {{ formatDuration(datasetInfo.latest_instance.duration) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="开始时间">{{ formatDateTime(datasetInfo.latest_instance.start_time) }}</el-descriptions-item>
+          <el-descriptions-item label="结束时间">{{ formatDateTime(datasetInfo.latest_instance.end_time) }}</el-descriptions-item>
         </el-descriptions>
       </el-card>
 
@@ -188,9 +197,9 @@ const getLabelName = (labelId?: string) => {
 }
 
 // 格式化日期时间
-const formatDateTime = (dateStr?: string) => {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
+const formatDateTime = (dateVal?: string | number) => {
+  if (!dateVal) return '-'
+  const date = new Date(dateVal)
   return new Intl.DateTimeFormat('zh-CN', {
     year: 'numeric',
     month: '2-digit',
@@ -199,6 +208,17 @@ const formatDateTime = (dateStr?: string) => {
     minute: '2-digit',
     second: '2-digit'
   }).format(date).replace(/\//g, '-')
+}
+
+// 格式化执行时长（毫秒转分钟）
+const formatDuration = (durationMs?: number) => {
+  if (!durationMs && durationMs !== 0) return '-'
+  const minutes = Math.floor(durationMs / 60000)
+  const seconds = Math.floor((durationMs % 60000) / 1000)
+  if (minutes > 0) {
+    return `${minutes}分${seconds}秒`
+  }
+  return `${seconds}秒`
 }
 
 // 获取数据集详情

@@ -38,7 +38,6 @@ public class Application {
     private Integer sourceType;
     // 负责人
     private String owner;
-    // 负责人名称（SQL JOIN 查询映射，非数据库列）
     private String ownerName;
     // 创建者
     private String creator;

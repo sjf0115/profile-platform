@@ -20,12 +20,13 @@
             </template>
           </el-input>
           <el-select v-model="queryParams.dataset_type" placeholder="数据集类型" clearable style="width: 140px">
-            <el-option label="离线数据集" :value="1" />
-            <el-option label="实时数据集" :value="2" />
+            <el-option label="标签数据集" :value="1" />
+            <el-option label="行为数据集" :value="2" />
+            <el-option label="统计数据集" :value="3" />
           </el-select>
           <el-select v-model="queryParams.dataset_status" placeholder="数据集状态" clearable style="width: 140px">
             <el-option label="启用" :value="1" />
-            <el-option label="禁用" :value="0" />
+            <el-option label="停用" :value="2" />
           </el-select>
           <el-button type="primary" :icon="Search" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
@@ -45,10 +46,10 @@
         <el-table-column type="selection" width="55" />
         <el-table-column prop="dataset_name" label="数据集名称" min-width="150" show-overflow-tooltip />
         <el-table-column prop="dataset_desc" label="数据集描述" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="status" label="数据集状态" width="100">
+        <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag v-if="row.status === 1" type="success" size="small">启用</el-tag>
-            <el-tag v-else type="danger" size="small">禁用</el-tag>
+            <el-tag v-else type="danger" size="small">停用</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="dataset_type" label="数据集类型" width="120">
@@ -56,14 +57,25 @@
             <span v-if="row.dataset_type === 1">标签数据集</span>
             <span v-else-if="row.dataset_type === 2">行为数据集</span>
             <span v-else-if="row.dataset_type === 3">统计数据集</span>
-            <span v-else-if="row.dataset_type === 3">特征数据集</span>
             <span v-else>-</span>
           </template>
         </el-table-column>
         <el-table-column prop="owner_name" label="负责人" width="120" />
-        <el-table-column label="数据更新时间" width="160">
+        <el-table-column label="执行状态" width="100">
           <template #default="{ row }">
-            {{ formatDateTime(row.gmt_modified) }}
+            <template v-if="row.latest_instance">
+              <el-tag v-if="row.latest_instance.status === 1" type="info" size="small">未运行</el-tag>
+              <el-tag v-else-if="row.latest_instance.status === 2" type="warning" size="small">运行中</el-tag>
+              <el-tag v-else-if="row.latest_instance.status === 3" type="danger" size="small">运行失败</el-tag>
+              <el-tag v-else-if="row.latest_instance.status === 4" type="success" size="small">运行成功</el-tag>
+              <span v-else>-</span>
+            </template>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="执行时间" width="160">
+          <template #default="{ row }">
+            {{ row.latest_instance?.start_time ? formatDateTime(row.latest_instance.start_time) : '-' }}
           </template>
         </el-table-column>
         <el-table-column label="创建时间" width="160">
@@ -71,8 +83,11 @@
             {{ formatDateTime(row.gmt_create) }}
           </template>
         </el-table-column>
-        <el-table-column prop="datasource_name" label="数据源名称" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="table_name" label="数据表名" min-width="150" show-overflow-tooltip />
+        <el-table-column label="修改时间" width="160">
+          <template #default="{ row }">
+            {{ formatDateTime(row.gmt_modified) }}
+          </template>
+        </el-table-column>
         
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
@@ -90,7 +105,7 @@
                   <el-dropdown-item @click="handleRun(row)">立即执行</el-dropdown-item>
                   <el-dropdown-item @click="handleSchedule(row)">配置调度</el-dropdown-item>
                   <el-dropdown-item @click="handleBindLabel(row)">绑定标签</el-dropdown-item>
-                  <el-dropdown-item @click="handleHistory(row)">调度历史</el-dropdown-item>
+                  <el-dropdown-item @click="handleHistory(row)">执行历史</el-dropdown-item>
                   <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -266,7 +281,7 @@ const queryParams = reactive<DatasetQueryParams>({
 const createDialogVisible = ref(false)
 
 // 格式化日期时间
-const formatDateTime = (dateStr?: string) => {
+const formatDateTime = (dateStr?: string | number) => {
   if (!dateStr) return '-'
   const date = new Date(dateStr)
   return date.toLocaleString('zh-CN', {
@@ -371,14 +386,11 @@ const handleEdit = (row: Dataset) => {
 
 // 启用/禁用数据集
 const handleToggleStatus = async (row: Dataset) => {
-  const newStatus = row.status === 1 ? 0 : 1
+  const newStatus = row.status === 1 ? 2 : 1
   const actionText = newStatus === 1 ? '启用' : '禁用'
   
   try {
-    await datasetApi.update({
-      ...row,
-      status: newStatus
-    })
+    await datasetApi.updateStatus(row.dataset_id, newStatus)
     ElMessage.success(`${actionText}成功`)
     fetchDatasetList()
   } catch (error) {
@@ -532,7 +544,7 @@ const handleScheduleSubmit = async () => {
 
 // 历史
 const handleHistory = (row: Dataset) => {
-  ElMessage.info(`执行历史功能开发中: ${row.dataset_name}`)
+  router.push({ path: '/task/instance', query: { dataset_id: row.dataset_id } })
 }
 
 // 删除数据集

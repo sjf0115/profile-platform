@@ -44,12 +44,14 @@ public class ScheduleEngineService {
      * <p>完整流程：获取调度引擎 → 加载 SPI 插件 → 注册/更新调度 → 上线/下线 → 更新 Task 元数据。</p>
      *
      * @param taskId 任务ID
-     * @param triggerType 调度类型: 1-手动触发, 3-日周期, 4-小时周期
-     * @param cron Cron 表达式（周期调度时必填）
-     * @param startTime 生效开始时间
-     * @param endTime 生效结束时间
      */
-    public void configureSchedule(String taskId, int triggerType, String cron, String startTime, String endTime) {
+    public void configureSchedule(String taskId, ScheduleContext context) {
+        String triggerType = context.getTriggerType();
+        Integer triggerTypeCode = context.getTriggerTypeCode();
+        String startTime = context.getStartTime();
+        String endTime = context.getEndTime();
+        String cronExpression = context.getCronExpression();
+
         Task task = taskService.getDetail(taskId)
                 .orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
 
@@ -62,7 +64,11 @@ public class ScheduleEngineService {
                 .getOrCreatePlugin(pluginName);
 
         // 3. 构建 ScheduleContext
-        ScheduleContext context = buildScheduleContext(task, triggerType, cron, startTime, endTime, scheduleEngine);
+        // ScheduleContext context = buildScheduleContext(task, triggerType, cron, startTime, endTime, scheduleEngine);
+
+        // 回调 URL：调度引擎触发时回调此地址
+        String callbackUrl = buildCallbackUrl(task.getTaskId(), scheduleEngine);
+        context.setCallbackUrl(callbackUrl);
 
         // 4. 获取 TaskRegistrar 并注册/更新调度
         ScheduleTaskRegistrar registrar = factory.getTaskRegistrar();
@@ -80,7 +86,7 @@ public class ScheduleEngineService {
         }
 
         // 5. 上线/下线
-        if (triggerType == TriggerType.MANUAL.getCode()) {
+        if (triggerTypeCode == TriggerType.MANUAL.getCode()) {
             // 手动触发：下线调度（仅保留 Workflow 定义，不自动执行）
             if (StringUtils.isNotBlank(task.getScheduleId())) {
                 registrar.offline(task.getScheduleId());
@@ -91,11 +97,36 @@ public class ScheduleEngineService {
         }
 
         // 6. 更新 Task 元数据
-        task.setTriggerType(triggerType);
-        task.setTriggerCron(cron);
+        task.setTriggerType(triggerTypeCode);
+        task.setTriggerCron(cronExpression);
         task.setTriggerStartTime(startTime);
         task.setTriggerEndTime(endTime);
         taskService.update(task);
+    }
+
+    // 临时过渡
+    public void configureSchedule(String taskId, int triggerType, String cron, String startTime, String endTime) {
+        Task task = taskService.getDetail(taskId)
+                .orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
+
+        String triggerTypeStr = "manual";
+        if (triggerType == TriggerType.DAY_REPEAT.getCode()) {
+            triggerTypeStr = "day_repeat";
+        } else if (triggerType == TriggerType.HOUR_REPEAT.getCode()) {
+            triggerTypeStr = "hour_repeat";
+        }
+
+        ScheduleContext scheduleContext = ScheduleContext.builder()
+                .taskId(taskId)
+                .taskName(task.getTaskName())
+                .triggerType(triggerTypeStr)
+                .triggerTypeCode(triggerType)
+                .cronExpression(cron)
+                .startTime(startTime)
+                .endTime(endTime)
+                .build();
+
+        configureSchedule(taskId, scheduleContext);
     }
 
     /**

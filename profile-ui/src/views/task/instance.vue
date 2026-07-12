@@ -187,6 +187,7 @@ const router = useRouter()
 
 const currentTaskId = computed(() => route.query.task_id as string)
 const currentTaskName = computed(() => route.query.task_name as string)
+const currentDatasetId = computed(() => route.query.dataset_id as string)
 
 // 格式化时间戳
 const formatTime = (timestamp?: number) => {
@@ -228,6 +229,7 @@ const queryParams = reactive<TaskInstanceQueryParams>({
   instance_name: '',
   status: undefined,
   task_id: currentTaskId.value,
+  instance_related_id: currentDatasetId.value,
 })
 
 // 筛选标签
@@ -280,6 +282,7 @@ const fetchData = async () => {
       instance_name: queryParams.instance_name || undefined,
       status: queryParams.status ?? undefined,
       task_id: currentTaskId.value || undefined,
+      instance_related_id: currentDatasetId.value || undefined,
     }
     const res = await taskInstanceApi.getList(params)
     tableData.value = res.data.data || []

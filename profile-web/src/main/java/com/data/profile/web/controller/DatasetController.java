@@ -23,10 +23,12 @@ import com.data.profile.web.vo.DatasetVO;
 import com.data.profile.web.service.DatasetService;
 import com.data.profile.common.utils.JSONUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,7 +59,13 @@ public class DatasetController {
         log.info("根据数据集信息请求查询数据集: {}", JSONUtils.toJsonString(param));
         Dataset dataset = DatasetConverter.param2do(param);
         List<Dataset> datasets = datasetService.getList(dataset);
-        return Response.success(DatasetConverter.do2voList(datasets));
+        List<DatasetVO> voList = DatasetConverter.do2voList(datasets);
+        // 填充最新任务实例
+        for (int i = 0; i < datasets.size(); i++) {
+            TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(datasets.get(i).getDatasetId());
+            voList.get(i).setLatestInstance(TaskInstanceConverter.do2vo(latestInstance));
+        }
+        return Response.success(voList);
     }
 
     @GetMapping(value = "/detail")
@@ -65,21 +73,6 @@ public class DatasetController {
         log.info("根据数据集ID请求查看数据集信息: {}", datasetId);
         DatasetDTO datasetDTO = datasetService.getDetail(datasetId);
         DatasetVO vo = DatasetConverter.dto2vo(datasetDTO);
-        // 计算引擎表名
-        vo.setEngineTableName(ENGINE_DATASET_TABLE_PREFIX + datasetId);
-        // 填充字段列表
-        List<DatasetField> fields = datasetFieldService.getListByDatasetId(datasetId);
-        List<DatasetFieldVO> fieldVOs = new java.util.ArrayList<>();
-        for (DatasetField f : fields) {
-            DatasetFieldVO fvo = new DatasetFieldVO();
-            org.springframework.beans.BeanUtils.copyProperties(f, fvo);
-            fvo.setEntityField(f.getFieldName() != null && f.getFieldName().equals(datasetDTO.getEntityField()));
-            fieldVOs.add(fvo);
-        }
-        vo.setFields(fieldVOs);
-        // 填充最新任务实例
-        TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(datasetId);
-        vo.setLatestInstance(TaskInstanceConverter.do2vo(latestInstance));
         return Response.success(vo);
     }
 
@@ -90,6 +83,17 @@ public class DatasetController {
         Dataset dataset = DatasetConverter.request2do(req);
         String datasetId = datasetService.save(dataset, req.getFields());
         return Response.success(datasetId);
+    }
+
+    @PutMapping(value = "/{datasetId}/status")
+    public Response<Integer> updateStatus(@PathVariable(value = "datasetId") String datasetId, @RequestParam Integer status) {
+        log.info("请求更新数据集 {} 状态为：{}", datasetId, status);
+        try {
+            int result = datasetService.updateStatus(datasetId, status);
+            return Response.success(result);
+        } catch (RuntimeException e) {
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
+        }
     }
 
     @RequiresPermission(code = "dataset:delete", name = "数据集-删除")

@@ -61,6 +61,18 @@ public class DataSourceConverter {
         return Param2DOMapper.INSTANCE.convert(param);
     }
 
+    // DO -> VO
+    public static DataSourceVO do2vo(DataSource dataSource) {
+        if (dataSource == null) return null;
+        return DO2VoMapper.INSTANCE.convert(dataSource);
+    }
+
+    // List<DO> -> List<VO>
+    public static List<DataSourceVO> do2voList(List<DataSource> list) {
+        if (list == null || list.isEmpty()) return Collections.emptyList();
+        return DO2VoMapper.INSTANCE.convertList(list);
+    }
+
     //------------------------------------------------------------------------------------------------------------------
 
     @Mapper
@@ -96,5 +108,13 @@ public class DataSourceConverter {
         Param2DOMapper INSTANCE = Mappers.getMapper(Param2DOMapper.class);
         @Override
         DataSource convert(DataSourceParam param);
+    }
+
+    // DO -> VO
+    @Mapper
+    public interface DO2VoMapper extends BaseConverter<DataSource, DataSourceVO> {
+        DO2VoMapper INSTANCE = Mappers.getMapper(DO2VoMapper.class);
+        @Override
+        DataSourceVO convert(DataSource dataSource);
     }
 }

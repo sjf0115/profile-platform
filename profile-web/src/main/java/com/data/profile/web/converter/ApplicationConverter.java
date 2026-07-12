@@ -52,6 +52,30 @@ public class ApplicationConverter {
         return DTO2VoConverterMapper.INSTANCE.convertList(dtos);
     }
 
+    // DO -> VO
+    public static ApplicationVO do2vo(Application application) {
+        if (application == null) {
+            return null;
+        }
+        return DO2VoConverterMapper.INSTANCE.convert(application);
+    }
+
+    // List<DO> -> List<VO>
+    public static List<ApplicationVO> do2voList(List<Application> applications) {
+        if (applications == null || applications.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return DO2VoConverterMapper.INSTANCE.convertList(applications);
+    }
+
+    // DTO -> DO
+    public static Application dto2do(ApplicationDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        return DTO2DOConverterMapper.INSTANCE.convert(dto);
+    }
+
     // Request -> DO
     public static Application request2do(ApplicationRequest request) {
         if (request == null) {
@@ -86,6 +110,14 @@ public class ApplicationConverter {
         ApplicationVO convert(ApplicationDTO dto);
     }
 
+    // DO -> VO
+    @Mapper
+    public interface DO2VoConverterMapper extends BaseConverter<Application, ApplicationVO> {
+        DO2VoConverterMapper INSTANCE = Mappers.getMapper(DO2VoConverterMapper.class);
+        @Override
+        ApplicationVO convert(Application application);
+    }
+
     // Request -> DO
     @Mapper
     public interface Request2DOConverterMapper extends BaseConverter<ApplicationRequest, Application> {
@@ -100,5 +132,13 @@ public class ApplicationConverter {
         Param2DOMapper INSTANCE = Mappers.getMapper(Param2DOMapper.class);
         @Override
         Application convert(ApplicationParam param);
+    }
+
+    // DTO -> DO
+    @Mapper
+    public interface DTO2DOConverterMapper extends BaseConverter<ApplicationDTO, Application> {
+        DTO2DOConverterMapper INSTANCE = Mappers.getMapper(DTO2DOConverterMapper.class);
+        @Override
+        Application convert(ApplicationDTO dto);
     }
 }

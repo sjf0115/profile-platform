@@ -55,6 +55,24 @@ public class ExportConverter {
         return Param2DOMapper.INSTANCE.convert(param);
     }
 
+    // DO -> VO
+    public static ExportVO do2vo(Export export) {
+        if (export == null) return null;
+        return DO2VoMapper.INSTANCE.convert(export);
+    }
+
+    // List<DO> -> List<VO>
+    public static List<ExportVO> do2voList(List<Export> exports) {
+        if (exports == null || exports.isEmpty()) return Collections.emptyList();
+        return DO2VoMapper.INSTANCE.convertList(exports);
+    }
+
+    // DTO -> DO
+    public static Export dto2do(ExportDTO dto) {
+        if (dto == null) return null;
+        return DTO2DOMapper.INSTANCE.convert(dto);
+    }
+
     //------------------------------------------------------------------------------------------------------------------
 
     @Mapper
@@ -83,5 +101,21 @@ public class ExportConverter {
         Param2DOMapper INSTANCE = Mappers.getMapper(Param2DOMapper.class);
         @Override
         Export convert(ExportParam param);
+    }
+
+    // DO -> VO
+    @Mapper
+    public interface DO2VoMapper extends BaseConverter<Export, ExportVO> {
+        DO2VoMapper INSTANCE = Mappers.getMapper(DO2VoMapper.class);
+        @Override
+        ExportVO convert(Export export);
+    }
+
+    // DTO -> DO
+    @Mapper
+    public interface DTO2DOMapper extends BaseConverter<ExportDTO, Export> {
+        DTO2DOMapper INSTANCE = Mappers.getMapper(DTO2DOMapper.class);
+        @Override
+        Export convert(ExportDTO dto);
     }
 }

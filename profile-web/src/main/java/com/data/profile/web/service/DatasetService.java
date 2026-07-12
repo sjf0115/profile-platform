@@ -1,16 +1,18 @@
 package com.data.profile.web.service;
 
+import com.data.engine.api.ScheduleContext;
+import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.converter.DataSourceConverter;
 import com.data.profile.web.converter.DatasetConverter;
+import com.data.profile.web.converter.DatasetFieldConverter;
+import com.data.profile.web.converter.TaskInstanceConverter;
 import com.data.profile.web.dao.DatasetMapper;
 import com.data.profile.web.dto.DataSourceDTO;
+import com.data.profile.web.dto.DatasetFieldDTO;
 import com.data.profile.web.dto.ScheduleConfigRequest;
 import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.engine.ScheduleEngineService;
-import com.data.profile.web.model.DataSource;
-import com.data.profile.web.model.Dataset;
-import com.data.profile.web.model.DatasetField;
-import com.data.profile.web.model.Task;
+import com.data.profile.web.model.*;
 import com.data.profile.web.enums.AssetType;
 import com.data.profile.web.vo.DatasetFieldVO;
 import com.data.profile.web.dto.DatasetDTO;
@@ -85,17 +87,24 @@ public class DatasetService {
         List<Dataset> datasets = datasetMapper.selectByParams(dataset);
         List<DatasetDTO> dtos = new ArrayList<>();
         for (Dataset ds : datasets) {
-            DatasetDTO dto = toDTO(ds);
+            DatasetDTO datasetDTO = DatasetConverter.do2dto(dataset);
+            // 填充字段
             List<DatasetField> fields = datasetFieldService.getListByDatasetId(ds.getDatasetId());
-            dto.setFields(toFieldVOList(fields, ds.getEntityField()));
-            dtos.add(dto);
+            List<DatasetFieldDTO> datasetFields = new ArrayList<>();
+            for (DatasetField datasetField : fields) {
+                DatasetFieldDTO dto = DatasetFieldConverter.do2dto(datasetField);
+                dto.setEntityField(dto.getFieldName() != null && dto.getFieldName().equals(datasetDTO.getEntityField()));
+                datasetFields.add(dto);
+            }
+            datasetDTO.setFields(datasetFields);
+            dtos.add(datasetDTO);
         }
         log.info("根据查询条件获取 {} 个数据集（含字段）", datasets.size());
         return dtos;
     }
 
     /**
-     * 根据数据集ID获取数据集 Model（单表查询）
+     * 根据数据集ID获取数据集
      */
     public DatasetDTO getDetail(String datasetId) {
         Dataset dataset = datasetMapper.selectByDatasetId(datasetId);
@@ -103,20 +112,34 @@ public class DatasetService {
             throw new RuntimeException("数据集不存在");
         }
         DatasetDTO datasetDTO = DatasetConverter.do2dto(dataset);
+        // 填充用户名称
         Map<String, String> userMap = userService.getUserNameMap();
         datasetDTO.setCreatorName(userMap.get(dataset.getCreator()));
         datasetDTO.setModifierName(userMap.get(dataset.getModifier()));
-        return datasetDTO;
-    }
 
-    /**
-     * 将 Dataset Model 转换为 DatasetDTO
-     */
-    private DatasetDTO toDTO(Dataset dataset) {
-        DatasetDTO dto = new DatasetDTO();
-        BeanUtils.copyProperties(dataset, dto);
-        dto.setEngineTableName(ENGINE_DATASET_TABLE_PREFIX + dataset.getDatasetId());
-        return dto;
+        // 数据源名称
+        DataSourceDTO dataSource = dataSourceService.getDetail(dataset.getDatasourceId());
+        datasetDTO.setDatasourceName(dataSource.getDatasourceName());
+
+        // 计算引擎表名
+        datasetDTO.setEngineTableName(ENGINE_DATASET_TABLE_PREFIX + datasetId);
+
+        // 字段列表
+        List<DatasetField> fields = datasetFieldService.getListByDatasetId(datasetId);
+        List<DatasetFieldDTO> datasetFieldDTOS = new ArrayList<>();
+        for (DatasetField datasetField : fields) {
+            DatasetFieldDTO dto = DatasetFieldConverter.do2dto(datasetField);
+            dto.setEntityField(dto.getFieldName() != null && dto.getFieldName().equals(datasetDTO.getEntityField()));
+            datasetFieldDTOS.add(dto);
+        }
+        datasetDTO.setFields(datasetFieldDTOS);
+
+        // 填充最新任务实例
+        TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(datasetId);
+        datasetDTO.setLatestInstance(TaskInstanceConverter.do2dto(latestInstance));
+
+        log.info("根据数据集ID {} 获取", JSONUtils.toJsonString(datasetDTO));
+        return datasetDTO;
     }
 
     /**
@@ -170,6 +193,17 @@ public class DatasetService {
     }
 
     /**
+     * 更新数据集状态（启用/停用）
+     */
+    public int updateStatus(String datasetId, Integer status) {
+        Dataset dataset = new Dataset();
+        dataset.setDatasetId(datasetId);
+        dataset.setStatus(status);
+        dataset.setModifier(UserContextHolder.currentUserId());
+        return datasetMapper.updateByDatasetIdSelective(dataset);
+    }
+
+    /**
      * 删除数据集
      */
     @Transactional
@@ -184,6 +218,7 @@ public class DatasetService {
             throw new RuntimeException("内置数据集不允许删除");
         }
 
+        // TODO 确认逻辑是否正确
         // 删除前：收集关联标签ID（用于刷新血缘）
         Set<String> labelIds = new HashSet<>();
         List<DatasetField> fields = datasetFieldService.getListByDatasetId(datasetId);
@@ -211,6 +246,7 @@ public class DatasetService {
         // 5. 删除数据集
         int result = datasetMapper.deleteByDatasetId(datasetId);
 
+        // TODO 确认逻辑是否正确
         // 6. 刷新受影响标签的血缘（上游 dataset 已删除，label→dataset 边被清除）
         for (String labelId : labelIds) {
             lineageService.refreshLineage(AssetType.LABEL.getCode(), labelId);
@@ -220,35 +256,33 @@ public class DatasetService {
     }
 
     /**
-     * 手动立即执行数据集同步
-     * @param datasetId 数据集ID
-     * @return 同步任务执行实例
-     */
-    /*public TaskInstance execute(String datasetId) {
-        // TODO 需要根据数据集ID和任务类型获取
-        Task task = taskService.getDetailByRelatedId(datasetId);
-        if (task == null) {
-            log.error("数据集 [{}] 没有关联任务无法执行同步", datasetId);
-            throw new RuntimeException("数据集没有关联任务无法执行");
-        }
-        return taskExecutionService.executeTask(task, TriggerMode.MANUAL);
-    }*/
-
-    /**
      * 配置数据集调度
      */
     public void schedule(String datasetId, ScheduleConfigRequest config) {
         Task task = taskService.getDetailByRelatedId(datasetId);
         if (task == null) {
             log.error("数据集 [{}] 没有关联的同步任务，无法配置调度", datasetId);
-            throw new RuntimeException("数据集没有关联的同步任务，请先创建数据集");
+            throw new RuntimeException("数据集没有关联的同步任务，请重新创建数据集");
         }
-        scheduleEngineService.configureSchedule(
-                task.getTaskId(),
-                config.getTriggerType(),
-                config.getTriggerCron(),
-                config.getTriggerStartTime(),
-                config.getTriggerEndTime());
+
+        // TODO 优化
+        Integer triggerType = config.getTriggerType();
+        String triggerTypeStr = "manual";
+        if (triggerType == TriggerType.DAY_REPEAT.getCode()) {
+            triggerTypeStr = "day_repeat";
+        } else if (triggerType == TriggerType.HOUR_REPEAT.getCode()) {
+            triggerTypeStr = "hour_repeat";
+        }
+
+        ScheduleContext scheduleContext = ScheduleContext.builder()
+                .taskId(task.getTaskId())
+                .taskName(task.getTaskName())
+                .triggerType(triggerTypeStr)
+                .cronExpression(config.getTriggerCron())
+                .startTime(config.getTriggerStartTime())
+                .endTime(config.getTriggerEndTime())
+                .build();
+        scheduleEngineService.configureSchedule(task.getTaskId(), scheduleContext);
     }
 
     /**
@@ -390,21 +424,5 @@ public class DatasetService {
         task.setTriggerType(TriggerType.MANUAL.getCode()); // 默认无调度
         taskService.create(task);
         log.info("为数据集 [{}] 创建同步任务", datasetId);
-    }
-
-    /**
-     * 将 DatasetField 列表转换为 DatasetFieldVO 列表，并标记 isEntityField
-     */
-    // TODO 数据集字段服务处理
-    private List<DatasetFieldVO> toFieldVOList(List<DatasetField> fields, String entityField) {
-        List<DatasetFieldVO> vos = new ArrayList<>();
-        for (DatasetField f : fields) {
-            DatasetFieldVO vo = new DatasetFieldVO();
-            BeanUtils.copyProperties(f, vo);
-            // 是否是实体ID对应字段
-            vo.setEntityField(f.getFieldName() != null && f.getFieldName().equals(entityField));
-            vos.add(vo);
-        }
-        return vos;
     }
 }

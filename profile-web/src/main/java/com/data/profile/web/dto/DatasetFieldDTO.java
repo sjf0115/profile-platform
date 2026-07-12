@@ -1,4 +1,4 @@
-package com.data.profile.web.vo;
+package com.data.profile.web.dto;
 
 import lombok.Data;
 
@@ -6,8 +6,7 @@ import java.util.Date;
 
 // 数据集字段
 @Data
-public class DatasetFieldVO {
-    private Long id;
+public class DatasetFieldDTO {
     // 数据集ID
     private String datasetId;
     // 废弃：字段状态:1-新增字段,2-修改字段,3-删除字段

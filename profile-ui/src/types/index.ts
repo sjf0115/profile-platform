@@ -159,6 +159,7 @@ export interface Dataset {
   entity_id?: string
   entity_field?: string
   fields?: DatasetField[]
+  latest_instance?: TaskInstance
   instance_id?: string
   instance_status?: number
   instance_start_time?: string
@@ -391,6 +392,7 @@ export interface TaskInstance {
 export interface TaskInstanceQueryParams extends PageParams {
   task_id?: string
   instance_name?: string
+  instance_related_id?: string
   status?: number
 }
 

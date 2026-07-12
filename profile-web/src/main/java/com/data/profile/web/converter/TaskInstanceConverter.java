@@ -40,6 +40,38 @@ public class TaskInstanceConverter {
         return DO2VoConverterMapper.INSTANCE.convertList(taskInstances);
     }
 
+    // DO -> DTO
+    public static TaskInstanceDTO do2dto(TaskInstance taskInstance) {
+        if (taskInstance == null) {
+            return null;
+        }
+        return DO2DTOMapper.INSTANCE.convert(taskInstance);
+    }
+
+    // List<DO> -> List<DTO>
+    public static List<TaskInstanceDTO> do2dtoList(List<TaskInstance> taskInstances) {
+        if (taskInstances == null || taskInstances.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return DO2DTOMapper.INSTANCE.convertList(taskInstances);
+    }
+
+    // DTO -> VO
+    public static TaskInstanceVO dto2vo(TaskInstanceDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        return DTO2VoConverterMapper.INSTANCE.convert(dto);
+    }
+
+    // List<DTO> -> List<VO>
+    public static List<TaskInstanceVO> dto2voList(List<TaskInstanceDTO> dtos) {
+        if (dtos == null || dtos.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return DTO2VoConverterMapper.INSTANCE.convertList(dtos);
+    }
+
     // DTO -> DO
     public static TaskInstance dto2do(TaskInstanceDTO taskInstanceDTO) {
         TaskInstance taskInstance = new TaskInstance();
@@ -81,5 +113,21 @@ public class TaskInstanceConverter {
         Param2DOMapper INSTANCE = Mappers.getMapper(Param2DOMapper.class);
         @Override
         TaskInstance convert(TaskInstanceParam param);
+    }
+
+    // DO -> DTO
+    @Mapper
+    public interface DO2DTOMapper extends BaseConverter<TaskInstance, TaskInstanceDTO> {
+        DO2DTOMapper INSTANCE = Mappers.getMapper(DO2DTOMapper.class);
+        @Override
+        TaskInstanceDTO convert(TaskInstance taskInstance);
+    }
+
+    // DTO -> VO
+    @Mapper
+    public interface DTO2VoConverterMapper extends BaseConverter<TaskInstanceDTO, TaskInstanceVO> {
+        DTO2VoConverterMapper INSTANCE = Mappers.getMapper(DTO2VoConverterMapper.class);
+        @Override
+        TaskInstanceVO convert(TaskInstanceDTO dto);
     }
 }

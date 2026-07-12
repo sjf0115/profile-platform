@@ -21,6 +21,8 @@ public class DatasetVO {
     private Integer sourceType;
     // 数据源ID
     private String datasourceId;
+    // 数据源名称
+    private String datasourceName;
     // 表名
     private String tableName;
     // 分区字段

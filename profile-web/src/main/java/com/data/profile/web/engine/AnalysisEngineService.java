@@ -29,6 +29,8 @@ import java.sql.Statement;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.data.profile.common.domain.Constant.ENGINE_DATASET_TABLE_PREFIX;
+
 /**
  * 功能：分析引擎服务
  * <p>负责：Schema 推断、自动建表、Schema 演进。</p>
@@ -142,7 +144,7 @@ public class AnalysisEngineService {
         // 获取执行引擎
         Engine analysisEngine = getDefaultAnalysisEngine();
         // 获取需要删除的数据库和数据表
-        String tableName = "profile_dataset_" + datasetId;
+        String tableName = ENGINE_DATASET_TABLE_PREFIX + datasetId;
         String database = getString(parseConfig(analysisEngine.getConfig()), "database");
         //
         String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(analysisEngine.getEngineType()));

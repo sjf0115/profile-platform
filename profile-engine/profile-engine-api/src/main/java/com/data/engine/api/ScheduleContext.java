@@ -25,6 +25,8 @@ public class ScheduleContext {
 
     /** 调度类型: manual / day_repeat / hour_repeat */
     private String triggerType;
+    // 临时过渡
+    private Integer triggerTypeCode;
 
     /** Cron 表达式（周期调度时必填） */
     private String cronExpression;

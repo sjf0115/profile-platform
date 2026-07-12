@@ -109,29 +109,28 @@ VALUES (1, '0500000000000001', 'bi-reports', 'MySQL数据平台报表数据库',
 
 -- 6. 数据集
 DROP Table `profile_meta_dataset`;
-CREATE TABLE IF NOT EXISTS `profile_meta_dataset`(
-    `id` BIGINT UNSIGNED AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
-    `dataset_id` VARCHAR(40) NOT NULL COMMENT '数据集ID',
-    `dataset_name` VARCHAR(100) NOT NULL COMMENT '数据集名称',
-    `dataset_type` INT NOT NULL DEFAULT 1 COMMENT '数据集类型: 1-标签数据集,2-行为数据集,3-统计数据集',
-    `dataset_desc` VARCHAR(200) COMMENT '数据集描述',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
-    `datasource_id` VARCHAR(50) NOT NULL COMMENT '同步的数据源ID',
-    `table_name` VARCHAR(50) NOT NULL COMMENT '原始数据表名',
-    `partition_field` VARCHAR(50) COMMENT '同步的数据表的时间分区字段',
-    `partition_format` VARCHAR(50) COMMENT '同步的数据表分区值格式',
-    `entity_id` VARCHAR(50) NOT NULL COMMENT '主体(实体)ID',
-    `entity_field` VARCHAR(100) NOT NULL COMMENT '主体(实体)标识字段',
-    `fields` TEXT NOT NULL COMMENT '数据集字段',
-    `owner` VARCHAR(100) NOT NULL COMMENT '负责人',
-    `creator` VARCHAR(100) NOT NULL COMMENT '创建者',
-    `modifier` VARCHAR(100) NOT NULL COMMENT '修改者',
-    `gmt_create` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `gmt_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+CREATE TABLE `profile_meta_dataset` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+    `status` int NOT NULL DEFAULT '1' COMMENT '状态:1-启用,2-停用',
+    `dataset_id` varchar(40) NOT NULL COMMENT '数据集ID',
+    `dataset_name` varchar(100) NOT NULL COMMENT '数据集名称',
+    `dataset_type` int NOT NULL DEFAULT '1' COMMENT '数据集类型: 1-标签数据集,2-行为数据集,3-统计数据集',
+    `dataset_desc` varchar(200) DEFAULT NULL COMMENT '数据集描述',
+    `source_type` int NOT NULL DEFAULT '1' COMMENT '创建方式: 1-系统内置,2-自定义',
+    `datasource_id` varchar(50) NOT NULL COMMENT '同步的数据源ID',
+    `table_name` varchar(50) NOT NULL COMMENT '原始数据表名',
+    `partition_field` varchar(50) DEFAULT NULL COMMENT '同步的数据表的时间分区字段',
+    `partition_format` varchar(50) DEFAULT NULL COMMENT '同步的数据表分区值格式',
+    `entity_id` varchar(50) NOT NULL COMMENT '主体(实体)ID',
+    `entity_field` varchar(100) NOT NULL COMMENT '主体(实体)标识字段',
+    `owner` varchar(100) NOT NULL COMMENT '负责人',
+    `creator` varchar(100) NOT NULL COMMENT '创建者',
+    `modifier` varchar(100) NOT NULL COMMENT '修改者',
+    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     PRIMARY KEY (`id`),
-    UNIQUE(`dataset_id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT '画像-数据集';
+    UNIQUE KEY `dataset_id` (`dataset_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='画像-数据集';
 
 -- 7. 标签类目
 DROP TABLE IF EXISTS `profile_meta_label_category`;

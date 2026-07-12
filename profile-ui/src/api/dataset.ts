@@ -33,6 +33,13 @@ export const datasetApi = {
     })
   },
 
+  // 更新数据集状态（启用/停用）
+  updateStatus: (datasetId: string, status: number) => {
+    return request.put<ApiResponse<number>>(`/dataset/${datasetId}/status`, null, {
+      params: { status }
+    })
+  },
+
   // 立即执行数据同步
   execute: (datasetId: string) => {
     return request.post<ApiResponse<any>>(`/dataset/${datasetId}/execute`)

@@ -38,6 +38,30 @@ public class GroupConverter {
         return DO2VoConverterMapper.INSTANCE.convertList(groups);
     }
 
+    // DO -> DTO
+    public static GroupDTO do2dto(Group group) {
+        if (group == null) {
+            return null;
+        }
+        return DO2DTOConverterMapper.INSTANCE.convert(group);
+    }
+
+    // List<DO> -> List<DTO>
+    public static List<GroupDTO> do2dtoList(List<Group> groups) {
+        if (groups == null || groups.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return DO2DTOConverterMapper.INSTANCE.convertList(groups);
+    }
+
+    // DTO -> DO
+    public static Group dto2do(GroupDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        return DTO2DOConverterMapper.INSTANCE.convert(dto);
+    }
+
     // Param -> DO
     public static Group param2do(GroupParam param) {
         if (param == null) {
@@ -72,6 +96,14 @@ public class GroupConverter {
 
     //------------------------------------------------------------------------------------------------------------------
 
+    // DO -> DTO
+    @Mapper
+    public interface DO2DTOConverterMapper extends BaseConverter<Group, GroupDTO> {
+        DO2DTOConverterMapper INSTANCE = Mappers.getMapper(DO2DTOConverterMapper.class);
+        @Override
+        GroupDTO convert(Group group);
+    }
+
     // DTO -> VO
     @Mapper
     public interface DTO2VoConverterMapper extends BaseConverter<GroupDTO, GroupVO> {
@@ -86,6 +118,14 @@ public class GroupConverter {
         DO2VoConverterMapper INSTANCE = Mappers.getMapper(DO2VoConverterMapper.class);
         @Override
         GroupVO convert(Group group);
+    }
+
+    // DTO -> DO
+    @Mapper
+    public interface DTO2DOConverterMapper extends BaseConverter<GroupDTO, Group> {
+        DTO2DOConverterMapper INSTANCE = Mappers.getMapper(DTO2DOConverterMapper.class);
+        @Override
+        Group convert(GroupDTO dto);
     }
 
     // Param -> DO

@@ -1,5 +1,6 @@
 package com.data.profile.web.dto;
 
+import com.data.profile.web.model.DatasetField;
 import com.data.profile.web.vo.DatasetFieldVO;
 import com.data.profile.web.vo.TaskInstanceVO;
 import lombok.Data;
@@ -27,6 +28,8 @@ public class DatasetDTO {
     private Integer sourceType;
     // 数据源ID
     private String datasourceId;
+    // 数据源名称
+    private String datasourceName;
     // 表名
     private String tableName;
     // 分区字段
@@ -57,8 +60,8 @@ public class DatasetDTO {
     //----------------------------------------------------------
     // 引擎表名（计算字段）
     private String engineTableName;
-    // 数据集字段列表（跨表聚合）
-    private List<DatasetFieldVO> fields;
-    // 最新任务实例（跨表聚合）
-    private TaskInstanceVO latestInstance;
+    // 数据集字段列表
+    private List<DatasetFieldDTO> fields;
+    // 最新任务实例
+    private TaskInstanceDTO latestInstance;
 }
