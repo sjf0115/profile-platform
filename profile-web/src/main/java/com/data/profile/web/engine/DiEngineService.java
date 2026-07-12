@@ -10,7 +10,9 @@ import com.data.profile.common.domain.engine.ProcessResult;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.config.ProfileEngineConfig;
 import com.data.profile.web.converter.DataSourceConverter;
+import com.data.profile.web.converter.DatasetConverter;
 import com.data.profile.web.dto.DataSourceDTO;
+import com.data.profile.web.dto.DatasetDTO;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;
@@ -29,6 +31,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import static com.data.profile.common.domain.Constant.ENGINE_DATASET_TABLE_PREFIX;
 
 /**
  * 功能：同步引擎服务
@@ -92,23 +96,20 @@ public class DiEngineService {
      * @param datasetId 数据集ID
      */
     public void executeDatasetSync(String datasetId) throws Exception {
-        Optional<Dataset> opt = datasetService.getDetail(datasetId);
-        if (!opt.isPresent()) {
-            throw new IllegalStateException("数据集不存在: " + datasetId);
-        }
-        Dataset dataset = opt.get();
-
-        DataSourceDTO dataSourceDTO = dataSourceService.getDetail(dataset.getDatasourceId());
+        DatasetDTO datasetDTO = datasetService.getDetail(datasetId);
+        DataSourceDTO dataSourceDTO = dataSourceService.getDetail(datasetDTO.getDatasourceId());
         DataSource dataSource = DataSourceConverter.dto2do(dataSourceDTO);
         if (dataSource == null) {
-            throw new IllegalStateException("数据源不存在: " + dataset.getDatasourceId());
+            throw new IllegalStateException("数据源不存在: " + datasetDTO.getDatasourceId());
         }
 
         // 1. 查询数据集字段
         List<DatasetField> fields = datasetFieldService.getListByDatasetId(datasetId);
 
         // 2. 构建目标 Schema + 建表/演进
-        String tableName = "profile_dataset_" + datasetId;
+        String tableName = ENGINE_DATASET_TABLE_PREFIX + datasetId;
+        // TODO
+        Dataset dataset = DatasetConverter.dto2do(datasetDTO);
         TableSchema tableSchema = analysisEngineService.buildAndUpsertTable(dataset, dataSource, tableName, fields);
 
         // 3. 同步数据

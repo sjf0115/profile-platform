@@ -22,6 +22,14 @@ public class DatasetConverter {
         // 静态工具类
     }
 
+    // DO -> DTO
+    public static DatasetDTO do2dto(Dataset dataset) {
+        if (dataset == null) {
+            return null;
+        }
+        return DO2DTOConverterMapper.INSTANCE.convert(dataset);
+    }
+
     // DTO -> VO
     public static DatasetVO dto2vo(DatasetDTO dto) {
         if (dto == null) {
@@ -54,6 +62,14 @@ public class DatasetConverter {
         return DO2VoConverterMapper.INSTANCE.convertList(datasets);
     }
 
+    // DTO -> DO
+    public static Dataset dto2do(DatasetDTO datasetDTO) {
+        if (datasetDTO == null) {
+            return null;
+        }
+        return DTO2DOMapper.INSTANCE.convert(datasetDTO);
+    }
+
     // Param -> DO
     public static Dataset param2do(DatasetParam param) {
         if (param == null) {
@@ -72,6 +88,14 @@ public class DatasetConverter {
 
     //------------------------------------------------------------------------------------------------------------------
 
+    // DO -> DTO
+    @Mapper
+    public interface DO2DTOConverterMapper extends BaseConverter<Dataset, DatasetDTO> {
+        DO2DTOConverterMapper INSTANCE = Mappers.getMapper(DO2DTOConverterMapper.class);
+        @Override
+        DatasetDTO convert(Dataset dataset);
+    }
+
     // DTO -> VO
     @Mapper
     public interface DTO2VoConverterMapper extends BaseConverter<DatasetDTO, DatasetVO> {
@@ -86,6 +110,15 @@ public class DatasetConverter {
         DO2VoConverterMapper INSTANCE = Mappers.getMapper(DO2VoConverterMapper.class);
         @Override
         DatasetVO convert(Dataset dataset);
+    }
+
+    // DTO -> DO
+    @Mapper
+    public interface DTO2DOMapper extends BaseConverter<DatasetDTO, Dataset> {
+        DTO2DOMapper INSTANCE = Mappers.getMapper(DTO2DOMapper.class);
+
+        @Override
+        Dataset convert(DatasetDTO datasetDTO);
     }
 
     // Param -> DO

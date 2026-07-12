@@ -535,12 +535,8 @@ public class GroupService {
 
         // 数据集信息
         String datasetId = field.getDatasetId();
-        Optional<Dataset> datasetOpt = datasetService.getDetail(datasetId);
-        if (!datasetOpt.isPresent()) {
-            throw new IllegalStateException("数据集不存在: " + datasetId);
-        }
-        Dataset dataset = datasetOpt.get();
-        String entityField = dataset.getEntityField();
+        DatasetDTO datasetDTO = datasetService.getDetail(datasetId);
+        String entityField = datasetDTO.getEntityField();
         if (entityField == null || entityField.isEmpty()) {
             throw new IllegalStateException("数据集 " + datasetId + " 未配置实体字段(entityField)");
         }

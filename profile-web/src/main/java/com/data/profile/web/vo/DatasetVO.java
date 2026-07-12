@@ -33,10 +33,16 @@ public class DatasetVO {
     private String entityField;
     // 负责人
     private String owner;
+    // 负责人名称
+    private String ownerName;
     // 创建人
     private String creator;
+    // 创建人名称
+    private String creatorName;
     // 修改人
     private String modifier;
+    // 修改人名称
+    private String modifierName;
     // 创建时间
     private Date gmtCreate;
     // 修改时间

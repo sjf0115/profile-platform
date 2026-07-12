@@ -60,7 +60,7 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="owner" label="负责人" width="120" />
+        <el-table-column prop="owner_name" label="负责人" width="120" />
         <el-table-column label="数据更新时间" width="160">
           <template #default="{ row }">
             {{ formatDateTime(row.gmt_modified) }}

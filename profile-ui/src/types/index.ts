@@ -165,8 +165,11 @@ export interface Dataset {
   instance_end_time?: string
   instance_msg?: number
   owner?: string
+  owner_name?: string
   creator?: string
+  creator_name?: string
   modifier?: string
+  modifier_name?: string
   gmt_create?: string
   gmt_modified?: string
 }

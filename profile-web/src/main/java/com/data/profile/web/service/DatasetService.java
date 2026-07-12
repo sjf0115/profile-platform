@@ -1,6 +1,7 @@
 package com.data.profile.web.service;
 
 import com.data.profile.web.converter.DataSourceConverter;
+import com.data.profile.web.converter.DatasetConverter;
 import com.data.profile.web.dao.DatasetMapper;
 import com.data.profile.web.dto.DataSourceDTO;
 import com.data.profile.web.dto.ScheduleConfigRequest;
@@ -62,6 +63,8 @@ public class DatasetService {
     private ResourceGrantService resourceGrantService;
     @Autowired
     private LineageService lineageService;
+    @Autowired
+    private UserService userService;
 
     /**
      * 根据查询条件获取数据集列表（仅元数据，不含字段）
@@ -94,12 +97,16 @@ public class DatasetService {
     /**
      * 根据数据集ID获取数据集 Model（单表查询）
      */
-    public Optional<Dataset> getDetail(String datasetId) {
+    public DatasetDTO getDetail(String datasetId) {
         Dataset dataset = datasetMapper.selectByDatasetId(datasetId);
         if (dataset == null) {
-            return Optional.empty();
+            throw new RuntimeException("数据集不存在");
         }
-        return Optional.of(dataset);
+        DatasetDTO datasetDTO = DatasetConverter.do2dto(dataset);
+        Map<String, String> userMap = userService.getUserNameMap();
+        datasetDTO.setCreatorName(userMap.get(dataset.getCreator()));
+        datasetDTO.setModifierName(userMap.get(dataset.getModifier()));
+        return datasetDTO;
     }
 
     /**

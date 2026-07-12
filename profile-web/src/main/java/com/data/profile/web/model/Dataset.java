@@ -33,6 +33,8 @@ public class Dataset {
     private String entityField;
     // 负责人
     private String owner;
+    // 负责人名称
+    private String ownerName;
     // 创建人
     private String creator;
     // 修改人

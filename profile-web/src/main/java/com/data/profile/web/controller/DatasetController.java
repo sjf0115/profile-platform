@@ -1,6 +1,7 @@
 package com.data.profile.web.controller;
 
 import com.data.profile.common.enums.TriggerMode;
+import com.data.profile.web.dto.DatasetDTO;
 import com.data.profile.web.service.TaskExecutionService;
 import com.data.profile.web.service.TaskInstanceService;
 import com.data.profile.web.service.DatasetFieldService;
@@ -62,12 +63,8 @@ public class DatasetController {
     @GetMapping(value = "/detail")
     public Response<DatasetVO> getDetail(@RequestParam(name = "dataset_id") String datasetId) {
         log.info("根据数据集ID请求查看数据集信息: {}", datasetId);
-        Optional<Dataset> optional = datasetService.getDetail(datasetId);
-        if (!optional.isPresent()) {
-            return Response.error("请求的数据集不存在", ResponseCode.ERROR);
-        }
-        Dataset dataset = optional.get();
-        DatasetVO vo = DatasetConverter.do2vo(dataset);
+        DatasetDTO datasetDTO = datasetService.getDetail(datasetId);
+        DatasetVO vo = DatasetConverter.dto2vo(datasetDTO);
         // 计算引擎表名
         vo.setEngineTableName(ENGINE_DATASET_TABLE_PREFIX + datasetId);
         // 填充字段列表
@@ -76,7 +73,7 @@ public class DatasetController {
         for (DatasetField f : fields) {
             DatasetFieldVO fvo = new DatasetFieldVO();
             org.springframework.beans.BeanUtils.copyProperties(f, fvo);
-            fvo.setEntityField(f.getFieldName() != null && f.getFieldName().equals(dataset.getEntityField()));
+            fvo.setEntityField(f.getFieldName() != null && f.getFieldName().equals(datasetDTO.getEntityField()));
             fieldVOs.add(fvo);
         }
         vo.setFields(fieldVOs);

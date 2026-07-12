@@ -16,6 +16,7 @@
     <result column="entity_id" jdbcType="VARCHAR" property="entityId" />
     <result column="entity_field" jdbcType="VARCHAR" property="entityField" />
     <result column="owner" jdbcType="VARCHAR" property="owner" />
+    <result column="owner_name" jdbcType="VARCHAR" property="ownerName" />
     <result column="creator" jdbcType="VARCHAR" property="creator" />
     <result column="modifier" jdbcType="VARCHAR" property="modifier" />
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
@@ -30,11 +31,21 @@
     owner, creator, modifier, gmt_create, gmt_modified
   </sql>
 
+  <!-- 带负责人名称的查询列（需配合 LEFT JOIN profile_meta_user 使用） -->
+  <sql id="Join_Column_List">
+    d.id, d.status, d.dataset_id, d.dataset_name, d.dataset_type, d.dataset_desc, d.source_type, d.datasource_id,
+    d.table_name, d.partition_field, d.partition_format,
+    d.entity_id, d.entity_field,
+    d.owner, d.creator, d.modifier, d.gmt_create, d.gmt_modified,
+    u.user_name as owner_name
+  </sql>
+
   <select id="selectByDatasetId" parameterType="java.lang.String" resultMap="BaseResultMap">
-    select 
-    <include refid="Base_Column_List" />
-    from profile_meta_dataset
-    where dataset_id = #{datasetId,jdbcType=VARCHAR}
+    select
+    <include refid="Join_Column_List" />
+    from profile_meta_dataset d
+    left join profile_meta_user u on d.owner = u.user_id
+    where d.dataset_id = #{datasetId,jdbcType=VARCHAR}
   </select>
 
   <select id="selectByDatasetName" parameterType="java.lang.String" resultMap="BaseResultMap">
@@ -46,67 +57,69 @@
 
   <select id="selectByParams" parameterType="com.data.profile.web.model.Dataset" resultMap="BaseResultMap">
     select
-        <include refid="Base_Column_List" />
-    from profile_meta_dataset
+        <include refid="Join_Column_List" />
+    from profile_meta_dataset d
+    left join profile_meta_user u on d.owner = u.user_id
     where 1 = 1
     <if test="status != null">
-      and status = #{status,jdbcType=INTEGER}
+      and d.status = #{status,jdbcType=INTEGER}
     </if>
     <if test="datasetId != null">
-      and dataset_id = #{datasetId,jdbcType=VARCHAR}
+      and d.dataset_id = #{datasetId,jdbcType=VARCHAR}
     </if>
     <if test="datasetName != null">
-      and dataset_name = #{datasetName,jdbcType=VARCHAR}
+      and d.dataset_name = #{datasetName,jdbcType=VARCHAR}
     </if>
     <if test="datasetType != null">
-      and dataset_type = #{datasetType,jdbcType=INTEGER}
+      and d.dataset_type = #{datasetType,jdbcType=INTEGER}
     </if>
     <if test="datasetDesc != null">
-      and dataset_desc = #{datasetDesc,jdbcType=VARCHAR}
+      and d.dataset_desc = #{datasetDesc,jdbcType=VARCHAR}
     </if>
     <if test="sourceType != null">
-      and source_type = #{sourceType,jdbcType=INTEGER}
+      and d.source_type = #{sourceType,jdbcType=INTEGER}
     </if>
     <if test="datasourceId != null">
-      and datasource_id = #{datasourceId,jdbcType=VARCHAR}
+      and d.datasource_id = #{datasourceId,jdbcType=VARCHAR}
     </if>
     <if test="tableName != null">
-      and table_name = #{tableName,jdbcType=VARCHAR}
+      and d.table_name = #{tableName,jdbcType=VARCHAR}
     </if>
     <if test="partitionField != null">
-      and partition_field = #{partitionField,jdbcType=VARCHAR}
+      and d.partition_field = #{partitionField,jdbcType=VARCHAR}
     </if>
     <if test="partitionFormat != null">
-      and partition_format = #{partitionFormat,jdbcType=VARCHAR}
+      and d.partition_format = #{partitionFormat,jdbcType=VARCHAR}
     </if>
     <if test="entityId != null">
-      and entity_id = #{entityId,jdbcType=VARCHAR}
+      and d.entity_id = #{entityId,jdbcType=VARCHAR}
     </if>
     <if test="entityField != null">
-      and entity_field = #{entityField,jdbcType=VARCHAR}
+      and d.entity_field = #{entityField,jdbcType=VARCHAR}
     </if>
     <if test="owner != null">
-      and owner = #{owner,jdbcType=VARCHAR}
+      and d.owner = #{owner,jdbcType=VARCHAR}
     </if>
     <if test="creator != null">
-      and creator = #{creator,jdbcType=VARCHAR}
+      and d.creator = #{creator,jdbcType=VARCHAR}
     </if>
     <if test="modifier != null">
-      and modifier = #{modifier,jdbcType=VARCHAR}
+      and d.modifier = #{modifier,jdbcType=VARCHAR}
     </if>
     <if test="gmtCreate != null">
-      and gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}
+      and d.gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}
     </if>
     <if test="gmtModified != null">
-      and gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
+      and d.gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
     </if>
   </select>
 
   <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
     select
-    <include refid="Base_Column_List" />
-    from profile_meta_dataset
-    where dataset_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
+    <include refid="Join_Column_List" />
+    from profile_meta_dataset d
+    left join profile_meta_user u on d.owner = u.user_id
+    where d.dataset_name LIKE CONCAT('%', #{keyword,jdbcType=VARCHAR}, '%')
   </select>
 
   <insert id="insert" parameterType="com.data.profile.web.model.Dataset">

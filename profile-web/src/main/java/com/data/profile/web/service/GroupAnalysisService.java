@@ -1,15 +1,11 @@
 package com.data.profile.web.service;
 
+import com.data.profile.web.dto.*;
 import com.data.profile.web.enums.AssetType;
 import com.data.profile.common.enums.*;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.web.dao.GroupAnalysisMapper;
 import com.data.profile.web.dao.LabelMapper;
-import com.data.profile.web.dto.AnalysisLabelDTO;
-import com.data.profile.web.dto.DistributionItemDTO;
-import com.data.profile.web.dto.GroupAnalysisRequest;
-import com.data.profile.web.dto.GroupDTO;
-import com.data.profile.web.dto.LabelDistributionDTO;
 import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.engine.SqlTemplateEngine;
 import com.data.profile.web.model.*;
@@ -177,7 +173,7 @@ public class GroupAnalysisService {
         }
 
         // 4. 构建数据集缓存
-        Map<String, Dataset> datasetCache = new HashMap<>();
+        Map<String, DatasetDTO> datasetCache = new HashMap<>();
 
         // 5. 对每个标签查找 datasetField -> dataset
         // TODO 绑定标签需要更新状态
@@ -185,17 +181,14 @@ public class GroupAnalysisService {
         for (Label label : labels) {
             DatasetField field = datasetFieldService.getDetailByRelatedId(label.getLabelId());
             if (field == null) {
-                log.debug("标签 {} 未关联数据集字段，跳过", label.getLabelId());
+                log.error("标签 {} 未关联数据集字段，跳过", label.getLabelId());
                 continue;
             }
 
             String datasetId = field.getDatasetId();
-            Dataset dataset = datasetCache.computeIfAbsent(datasetId, id -> {
-                Optional<Dataset> opt = datasetService.getDetail(id);
-                return opt.orElse(null);
-            });
-            if (dataset == null) {
-                log.debug("标签 {} 关联的数据集 {} 不存在，跳过", label.getLabelId(), datasetId);
+            DatasetDTO datasetDTO = datasetCache.computeIfAbsent(datasetId, id -> datasetService.getDetail(id));
+            if (datasetDTO == null) {
+                log.error("标签 {} 关联的数据集 {} 不存在，跳过", label.getLabelId(), datasetId);
                 continue;
             }
 
@@ -206,7 +199,7 @@ public class GroupAnalysisService {
             dto.setLabelCategoryId(label.getLabelCategoryId());
             dto.setLabelDataType(label.getLabelDataType());
             dto.setDatasetId(datasetId);
-            dto.setDatasetName(dataset.getDatasetName());
+            dto.setDatasetName(datasetDTO.getDatasetName());
             dto.setFieldName(field.getFieldName());
             dto.setLabelCategoryName(categoryNameMap.getOrDefault(label.getLabelCategoryId(), "未分类"));
 
@@ -323,20 +316,19 @@ public class GroupAnalysisService {
             return null;
         }
 
-        Optional<Dataset> datasetOpt = datasetService.getDetail(field.getDatasetId());
-        if (!datasetOpt.isPresent()) {
+        DatasetDTO datasetDTO = datasetService.getDetail(field.getDatasetId());
+        if (datasetDTO == null) {
             log.warn("标签 {} 关联的数据集不存在", labelId);
             return null;
         }
-        Dataset dataset = datasetOpt.get();
 
         LabelMeta meta = new LabelMeta();
         meta.labelId = labelId;
         meta.labelName = label.getLabelName();
-        meta.datasetId = dataset.getDatasetId();
-        meta.datasetName = dataset.getDatasetName();
+        meta.datasetId = datasetDTO.getDatasetId();
+        meta.datasetName = datasetDTO.getDatasetName();
         meta.fieldName = field.getFieldName();
-        meta.entityField = dataset.getEntityField();
+        meta.entityField = datasetDTO.getEntityField();
         meta.updateType = label.getSourceType() != null && label.getSourceType() == 2 ? 2 : 1;
         return meta;
     }

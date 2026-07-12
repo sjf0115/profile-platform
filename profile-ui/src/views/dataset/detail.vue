@@ -40,7 +40,7 @@
             <span v-else-if="datasetInfo.source_type === 2">自定义</span>
             <span v-else>-</span>
           </el-descriptions-item>
-          <el-descriptions-item label="负责人">{{ datasetInfo.owner || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="负责人">{{ datasetInfo.owner_name || datasetInfo.owner || '-' }}</el-descriptions-item>
           <el-descriptions-item label="数据源" :span="1">{{ datasetInfo.datasource_name || '-' }}</el-descriptions-item>
           <el-descriptions-item label="数据表" :span="2">{{ datasetInfo.table_name || '-' }}</el-descriptions-item>
           <el-descriptions-item label="数据集描述" :span="3">{{ datasetInfo.dataset_desc || '-' }}</el-descriptions-item>
@@ -138,9 +138,9 @@
           </div>
         </template>
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="创建人">{{ datasetInfo.creator || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="创建人">{{ datasetInfo.creator_name || datasetInfo.creator || '-' }}</el-descriptions-item>
           <el-descriptions-item label="创建时间">{{ formatDateTime(datasetInfo.gmt_create) }}</el-descriptions-item>
-          <el-descriptions-item label="修改人">{{ datasetInfo.modifier || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="修改人">{{ datasetInfo.modifier_name || datasetInfo.modifier || '-' }}</el-descriptions-item>
           <el-descriptions-item label="修改时间">{{ formatDateTime(datasetInfo.gmt_modified) }}</el-descriptions-item>
         </el-descriptions>
       </el-card>
