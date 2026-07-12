@@ -21,8 +21,11 @@ export interface DataSource {
   datasource_type?: string  // 数据源类型（如：mysql, clickhouse）
   source_type?: number
   owner?: string
+  owner_name?: string
   creator?: string
+  creator_name?: string
   modifier?: string
+  modifier_name?: string
   gmt_create?: string
   gmt_modified?: string
   config?: string  // 配置信息，后端存储为 JSON 字符串

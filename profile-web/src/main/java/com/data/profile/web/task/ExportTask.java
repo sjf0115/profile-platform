@@ -1,6 +1,7 @@
 package com.data.profile.web.task;
 
 import com.data.profile.web.dao.ExportMapper;
+import com.data.profile.web.dto.DataSourceDTO;
 import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.model.Application;
 import com.data.profile.web.model.DataSource;
@@ -87,7 +88,7 @@ public class ExportTask {
                 throw new RuntimeException("投递配置解析失败: " + exportId);
             }
             // 从数据源获取类型
-            DataSource ds = dataSourceService.getDetail(targetConfig.getDatasourceId());
+            DataSourceDTO ds = dataSourceService.getDetail(targetConfig.getDatasourceId());
             datasourceType = ds.getDatasourceType();
         }
 
@@ -128,7 +129,7 @@ public class ExportTask {
     private void executeTableExport(String exportId, String groupId, String sourceTable,
                                     ExportConfig config, String datasourceType) throws Exception {
         // 从数据源 config 提取 database
-        DataSource ds = dataSourceService.getDetail(config.getDatasourceId());
+        DataSourceDTO ds = dataSourceService.getDetail(config.getDatasourceId());
         String database = extractFieldFromConfig(ds.getConfig(), "database");
         String targetTable = database + "." + config.getTableName();
         String writeMode = config.getWriteMode();
@@ -161,7 +162,7 @@ public class ExportTask {
     private void executeFileExport(String exportId, String groupId, String sourceTable,
                                    ExportConfig config, String datasourceType) {
         // 从数据源 config 提取 bucket
-        DataSource ds = dataSourceService.getDetail(config.getDatasourceId());
+        DataSourceDTO ds = dataSourceService.getDetail(config.getDatasourceId());
         String bucket = extractFieldFromConfig(ds.getConfig(), "bucket");
 
         // 替换模板变量
@@ -179,7 +180,7 @@ public class ExportTask {
     private void executeTopicExport(String exportId, String groupId, String sourceTable,
                                     ExportConfig config, String datasourceType) {
         // 从数据源 config 提取 topic
-        DataSource ds = dataSourceService.getDetail(config.getDatasourceId());
+        DataSourceDTO ds = dataSourceService.getDetail(config.getDatasourceId());
         String topic = extractFieldFromConfig(ds.getConfig(), "topic");
 
         log.info("开始执行消息队列投递: exportId={}, topic={}, messageKey={}", exportId, topic, exportId);

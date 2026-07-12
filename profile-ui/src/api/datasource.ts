@@ -9,51 +9,37 @@ import type {
   TableInfo,
   TableColumnInfo
 } from '@/types'
-import { mockDataSources, mockResponse } from './mock'
-
-// 是否使用 Mock 数据
-const USE_MOCK = false
 
 // 数据源相关接口
 export const dataSourceApi = {
   // 获取数据源列表
   getList: (params?: DataSourceQueryParams) => {
-    // 过滤掉空值，只传递有值的参数
-    const filteredParams: any = {}
-    if (params) {
-      if (params.datasource_type) {
-        filteredParams.datasource_type = params.datasource_type
-      }
-      if (params.datasource_name) {
-        filteredParams.datasource_name = params.datasource_name
-      }
-      if (params.page_num !== undefined && params.page_num !== null) {
-        filteredParams.page_num = params.page_num
-      }
-      if (params.page_size !== undefined && params.page_size !== null) {
-        filteredParams.page_size = params.page_size
-      }
-    }
-    return request.post<ApiResponse<DataSource[]>>('/datasource/list', filteredParams)
+    return request.post<ApiResponse<DataSource[]>>('/datasource/list', params || {})
   },
 
   // 获取数据源详情
-  getDetail: (datasource_id: string) => {
-    return request.get<ApiResponse<DataSource>>('/datasource/detail', {
-      params: { datasource_id }
-    })
+  getDetail: (datasourceId: string) => {
+    return request.get<ApiResponse<DataSource>>(`/datasource/${datasourceId}/detail`)
   },
 
-  // 保存数据源（新增/修改）
-  save: (data: DataSource) => {
-    return request.post<ApiResponse<number>>('/datasource/save', data)
+  // 创建数据源
+  create: (data: DataSource) => {
+    return request.post<ApiResponse<DataSource>>('/datasource', data)
+  },
+
+  // 更新数据源
+  update: (datasourceId: string, data: DataSource) => {
+    return request.put<ApiResponse<number>>(`/datasource/${datasourceId}`, data)
+  },
+
+  // 更新数据源状态（启用/停用）
+  updateStatus: (datasourceId: string, status: number) => {
+    return request.put<ApiResponse<number>>(`/datasource/${datasourceId}/status?status=${status}`)
   },
 
   // 删除数据源
-  delete: (datasource_id: string) => {
-    return request.delete<ApiResponse<number>>('/datasource/delete', {
-      params: { datasource_id }
-    })
+  delete: (datasourceId: string) => {
+    return request.delete<ApiResponse<number>>(`/datasource/${datasourceId}`)
   },
 
   // 测试连接

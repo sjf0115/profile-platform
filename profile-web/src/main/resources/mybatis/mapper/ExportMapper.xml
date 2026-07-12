@@ -17,6 +17,7 @@
         <result column="scheduler_end_time" jdbcType="BIGINT" property="schedulerEndTime" />
         <result column="source_type" jdbcType="INTEGER" property="sourceType" />
         <result column="owner" jdbcType="VARCHAR" property="owner" />
+        <result column="owner_name" jdbcType="VARCHAR" property="ownerName" />
         <result column="creator" jdbcType="VARCHAR" property="creator" />
         <result column="modifier" jdbcType="VARCHAR" property="modifier" />
         <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
@@ -26,7 +27,8 @@
     <sql id="Base_Column_List">
         t1.id, t1.status, t1.export_id, t1.export_type, t1.export_name, t1.export_desc, t1.export_mode, t1.export_config,
         t1.scheduler_type, t1.scheduler_cron, t1.scheduler_url, t1.scheduler_start_time, t1.scheduler_end_time,
-        t1.source_type, t1.owner, t1.creator, t1.modifier, t1.gmt_create, t1.gmt_modified
+        t1.source_type, t1.owner, t1.creator, t1.modifier, t1.gmt_create, t1.gmt_modified,
+        u.user_name as owner_name
     </sql>
 
     <!-- 根据ID查询 -->
@@ -34,14 +36,16 @@
         select
         <include refid="Base_Column_List" />
         from profile_meta_export as t1
-        where export_id = #{exportId,jdbcType=VARCHAR}
+        left join profile_meta_user u on t1.owner = u.user_id
+        where t1.export_id = #{exportId,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByExportId" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List" />
         from profile_meta_export as t1
-        where export_id = #{exportId,jdbcType=VARCHAR}
+        left join profile_meta_user u on t1.owner = u.user_id
+        where t1.export_id = #{exportId,jdbcType=VARCHAR}
     </select>
 
     <!-- 根据名字查询 -->
@@ -49,14 +53,16 @@
         select
         <include refid="Base_Column_List" />
         from profile_meta_export as t1
-        where export_name = #{exportName,jdbcType=VARCHAR}
+        left join profile_meta_user u on t1.owner = u.user_id
+        where t1.export_name = #{exportName,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByExportName" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List" />
         from profile_meta_export as t1
-        where export_name = #{exportName,jdbcType=VARCHAR}
+        left join profile_meta_user u on t1.owner = u.user_id
+        where t1.export_name = #{exportName,jdbcType=VARCHAR}
     </select>
 
     <!-- 模糊查询 -->
@@ -64,14 +70,16 @@
         select
         <include refid="Base_Column_List" />
         from profile_meta_export as t1
-        where export_name LIKE CONCAT('%', #{exportName,jdbcType=VARCHAR}, '%')
+        left join profile_meta_user u on t1.owner = u.user_id
+        where t1.export_name LIKE CONCAT('%', #{exportName,jdbcType=VARCHAR}, '%')
     </select>
 
     <select id="selectByKeyword" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List" />
         from profile_meta_export as t1
-        where export_name LIKE CONCAT('%', #{exportName,jdbcType=VARCHAR}, '%')
+        left join profile_meta_user u on t1.owner = u.user_id
+        where t1.export_name LIKE CONCAT('%', #{exportName,jdbcType=VARCHAR}, '%')
     </select>
 
     <!-- 根据参数查询 -->
@@ -79,6 +87,7 @@
         select
         <include refid="Base_Column_List" />
         from profile_meta_export as t1
+        left join profile_meta_user u on t1.owner = u.user_id
         where 1 = 1
         <if test="status != null">
             and status = #{status,jdbcType=INTEGER}
@@ -131,6 +140,7 @@
         select
         <include refid="Base_Column_List" />
         from profile_meta_export as t1
+        left join profile_meta_user u on t1.owner = u.user_id
         where 1 = 1
         <if test="status != null">
             status,

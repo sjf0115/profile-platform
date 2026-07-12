@@ -285,7 +285,7 @@ public class LineageService {
             if (assetType == null) return result;
             switch (assetType) {
                 case DATASOURCE:
-                    for (DataSource ds : dataSourceService.getList(new DataSource()))
+                    for (DataSource ds : dataSourceService.getListDO(new DataSource()))
                         result.add(new NodeRef(nodeType, ds.getDatasourceId(), ds.getDatasourceName()));
                     break;
                 case DATASET:

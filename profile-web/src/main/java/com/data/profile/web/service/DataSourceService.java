@@ -2,8 +2,14 @@ package com.data.profile.web.service;
 
 import com.data.connector.api.ConnectorFactory;
 import com.data.connector.api.ExportConfigBuilder;
+import com.data.profile.common.utils.JSONUtils;
+import com.data.profile.web.converter.DataSourceConverter;
 import com.data.profile.web.dao.DataSourceMapper;
+import com.data.profile.web.dto.DataSourceDTO;
+import com.data.profile.web.dto.DataSourceRequest;
+import com.data.profile.web.dto.UserDTO;
 import com.data.profile.web.model.DataSource;
+import com.data.profile.web.model.User;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.domain.connector.jdbc.DatabaseInfo;
 import com.data.profile.common.domain.connector.jdbc.TableColumnInfo;
@@ -26,6 +32,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.Optional;
 
 /**
  * 功能：数据源服务
@@ -41,9 +48,10 @@ public class DataSourceService {
     private static Gson gson = new GsonBuilder().create();
     @Autowired
     private ResourceGrantService resourceGrantService;
-
-    @Resource
+    @Autowired
     private DataSourceMapper dataSourceMapper;
+    @Autowired
+    private UserService userService;
 
     /**
      * 测试连通性
@@ -56,74 +64,114 @@ public class DataSourceService {
 
     /**
      * 根据查询条件获取数据源列表
-     * @param dataSource 查询条件
      */
-    public List<DataSource> getList(DataSource dataSource) {
-        List<DataSource> dataSources = dataSourceMapper.selectByParams(dataSource);
-        log.info("根据查询条件获取 {} 个数据源: {}", dataSources.size(), gson.toJson(dataSources));
-        return dataSources;
+    // TODO 优化
+    public List<DataSource> getListDO(DataSource dataSource) {
+        return dataSourceMapper.selectSimpleByParams(dataSource);
+    }
+
+    /**
+     * 根据查询条件获取数据源列表
+     */
+    public List<DataSourceDTO> getList(DataSource dataSource) {
+        List<DataSource> dataSources = dataSourceMapper.selectSimpleByParams(dataSource);
+        log.info("根据查询条件获取 {} 个数据源", dataSources.size());
+        List<DataSourceDTO> dtos = DataSourceConverter.do2dtoList(dataSources);
+        return dtos;
     }
 
     /**
      * 根据数据源ID获取数据源详细信息
-     * @param dataSourceId 数据源ID
      */
-    public DataSource getDetail(String dataSourceId) {
+    public DataSourceDTO getDetail(String dataSourceId) {
         DataSource dataSource = dataSourceMapper.selectByDatasourceId(dataSourceId);
-        log.info("根据数据源ID {} 获取数据源详细信息: {}", dataSourceId, gson.toJson(dataSource));
-        return dataSource;
+        if (dataSource == null) {
+            throw new RuntimeException("数据源不存在");
+        }
+        Map<String, String> userMap = userService.getUserNameMap();
+        DataSourceDTO dto = DataSourceConverter.do2dto(dataSource);
+        dto.setCreatorName(userMap.get(dto.getCreator()));
+        dto.setModifierName(userMap.get(dto.getModifier()));
+        log.info("根据数据源ID {} 获取数据源详细信息：{}", dataSourceId, JSONUtils.toJsonString(dto));
+        return dto;
     }
 
     /**
-     * 保存数据源 新增/修改
-     * @param datasource
-     * @return
-     * @throws RuntimeException
+     * 创建数据源
      */
-    public int save(DataSource datasource) throws RuntimeException {
-        if (StringUtils.isBlank(datasource.getDatasourceId())) {
-            // 新增
-            List<DataSource> dataSources = dataSourceMapper.selectSimpleByDatasourceName(datasource.getDatasourceName());
-            if (!dataSources.isEmpty()) {
-                throw new RuntimeException("数据源已经存在，不允许重复添加");
-            }
-            String datasourceId = IDGenerator.getInstance().generate(ModelType.DATASOURCE);
-            DataSource source = dataSourceMapper.selectSimpleByDatasourceId(datasourceId);
-            if (!Objects.equals(source, null)) {
-                throw new RuntimeException("数据源ID已经存在，不允许重复添加");
-            }
-            // 检查数据源类型
-            String datasourceType = datasource.getDatasourceType();
-            if (StringUtils.isBlank(datasourceType)) {
-                throw new RuntimeException("数据源类型不能为空");
-            }
-            datasource.setStatus(Status.ENABLE.getCode());
-            datasource.setDatasourceId(datasourceId);
-            datasource.setSourceType(SourceType.CUSTOM.getCode());
-            datasource.setOwner(UserContextHolder.currentUserId());
-            datasource.setCreator(UserContextHolder.currentUserId());
-            datasource.setModifier(UserContextHolder.currentUserId());
-            int result = dataSourceMapper.insertSelective(datasource);
-            // 自动授权 MANAGE 给创建者
-            resourceGrantService.grantOwner("05", datasourceId, UserContextHolder.currentUserId());
-            return result;
-        } else {
-            // 修改
-            datasource.setModifier(UserContextHolder.currentUserId());
-            return dataSourceMapper.updateByDataSourceIdSelective(datasource);
+    public DataSourceDTO create(DataSourceRequest request) throws RuntimeException {
+        String userId = UserContextHolder.currentUserId();
+
+        // 检查名称重复
+        List<DataSource> existing = dataSourceMapper.selectSimpleByDatasourceName(request.getDatasourceName());
+        if (!existing.isEmpty()) {
+            throw new RuntimeException("数据源已经存在，不允许重复添加");
         }
+        // 检查类型
+        if (StringUtils.isBlank(request.getDatasourceType())) {
+            throw new RuntimeException("数据源类型不能为空");
+        }
+
+        String datasourceId = IDGenerator.getInstance().generate(ModelType.DATASOURCE);
+        DataSource dataSource = DataSourceConverter.request2do(request);
+        dataSource.setDatasourceId(datasourceId);
+        dataSource.setStatus(Status.ENABLE.getCode());
+        dataSource.setSourceType(SourceType.CUSTOM.getCode());
+        dataSource.setOwner(StringUtils.isNotBlank(request.getOwner()) ? request.getOwner() : userId);
+        dataSource.setCreator(userId);
+        dataSource.setModifier(userId);
+
+        dataSourceMapper.insertSelective(dataSource);
+        resourceGrantService.grantOwner("05", datasourceId, userId);
+
+        DataSourceDTO dto = DataSourceConverter.do2dto(dataSource);
+        return dto;
+    }
+
+    /**
+     * 更新数据源
+     */
+    public int update(String datasourceId, DataSourceRequest request) {
+        DataSource existing = dataSourceMapper.selectSimpleByDatasourceId(datasourceId);
+        if (existing == null) {
+            throw new RuntimeException("数据源不存在");
+        }
+        // 检查名称重复（排除自身）
+        if (request.getDatasourceName() != null && !request.getDatasourceName().equals(existing.getDatasourceName())) {
+            List<DataSource> dup = dataSourceMapper.selectSimpleByDatasourceName(request.getDatasourceName());
+            if (!dup.isEmpty()) {
+                throw new RuntimeException("数据源名称已存在");
+            }
+        }
+
+        DataSource dataSource = DataSourceConverter.request2do(request);
+        dataSource.setDatasourceId(datasourceId);
+        dataSource.setModifier(UserContextHolder.currentUserId());
+        return dataSourceMapper.updateByDataSourceIdSelective(dataSource);
+    }
+
+    /**
+     * 更新数据源状态（启用/停用）
+     */
+    public int updateStatus(String datasourceId, Integer status) {
+        DataSource dataSource = new DataSource();
+        dataSource.setDatasourceId(datasourceId);
+        dataSource.setStatus(status);
+        dataSource.setModifier(UserContextHolder.currentUserId());
+        return dataSourceMapper.updateByDataSourceIdSelective(dataSource);
     }
 
     /**
      * 删除数据源
-     * @param dataSourceId 数据源ID
      */
     public int delete(String dataSourceId) {
         DataSource dataSource = dataSourceMapper.selectByDatasourceId(dataSourceId);
+        if (dataSource == null) {
+            throw new RuntimeException("数据源不存在");
+        }
         if (Objects.equals(dataSource.getSourceType(), SourceType.BUILT_IN.getCode())) {
             throw new RuntimeException("内置数据源不允许删除");
         }
-        // TODO: 逻辑删除
         return dataSourceMapper.deleteByDatasourceId(dataSourceId);
     }
 
@@ -162,7 +210,7 @@ public class DataSourceService {
      */
     public List<DatabaseInfo> getDatabaseList(String dataSourceId) {
         // 获取数据源信息
-        DataSource dataSource = getDetail(dataSourceId);
+        DataSourceDTO dataSource = getDetail(dataSourceId);
         String datasourceType = dataSource.getDatasourceType();
         String config = dataSource.getConfig();
 
@@ -174,11 +222,11 @@ public class DataSourceService {
             ConnectorFactory connectorFactory = PluginLoader.getPluginLoader(ConnectorFactory.class).getOrCreatePlugin(param.getType());
             ConnectorResponse response = connectorFactory.getConnector().getDatabases(param);
             List<DatabaseInfo> databases = (List<DatabaseInfo>)response.getResult();
-            log.info("获取数据库列表成功: {}", gson.toJson(databases));
+            log.info("通过数据源 {} 获取数据库: {}", dataSourceId, JSONUtils.toJsonString(databases));
             return databases;
         } catch (SQLException e) {
-            log.error("获取数据库列表失败: {}", dataSource.getDatasourceName(), e);
-            throw new ProfileException("获取数据库列表失败: " + e.getMessage());
+            log.error("获取数据库失败: {}", dataSource.getDatasourceName(), e);
+            throw new ProfileException("获取数据库失败: " + e.getMessage());
         }
     }
 
@@ -189,7 +237,7 @@ public class DataSourceService {
      */
     public List<TableInfo> getTableList(String dataSourceId, String database) {
         // 获取数据源信息
-        DataSource dataSource = getDetail(dataSourceId);
+        DataSourceDTO dataSource = getDetail(dataSourceId);
         String dataSourceType = dataSource.getDatasourceType();
         String config = dataSource.getConfig();
 
@@ -219,7 +267,7 @@ public class DataSourceService {
      */
     public TableColumnInfo getColumnList(String dataSourceId, String database, String table) {
         // 获取数据源信息
-        DataSource dataSource = getDetail(dataSourceId);
+        DataSourceDTO dataSource = getDetail(dataSourceId);
         String dataSourceType = dataSource.getDatasourceType();
         String config = dataSource.getConfig();
 
@@ -242,9 +290,6 @@ public class DataSourceService {
         }
     }
 
-
-
-
     /**
      * 根据数据源ID获取投递配置表单定义
      * @param datasourceId 数据源ID
@@ -265,8 +310,9 @@ public class DataSourceService {
      * 简化版：根据数据源ID获取数据表列表（后端自动从 config 中提取 database）
      * @param datasourceId 数据源ID
      */
+    // TODO
     public List<TableInfo> getTableListByDatasource(String datasourceId) {
-        DataSource ds = getDetail(datasourceId);
+        DataSourceDTO ds = getDetail(datasourceId);
         String database = extractDatabaseFromConfig(ds.getConfig());
         return getTableList(datasourceId, database);
     }
@@ -276,11 +322,14 @@ public class DataSourceService {
      * @param datasourceId 数据源ID
      * @param table 数据表名
      */
+    // TODO
     public TableColumnInfo getColumnListByDatasource(String datasourceId, String table) {
-        DataSource ds = getDetail(datasourceId);
+        DataSourceDTO ds = getDetail(datasourceId);
         String database = extractDatabaseFromConfig(ds.getConfig());
         return getColumnList(datasourceId, database, table);
     }
+
+    //------------------------------------------------------------------------------------------------------------------
 
     /**
      * 从数据源 config JSON 中提取 database 字段
@@ -300,45 +349,4 @@ public class DataSourceService {
             throw new ProfileException("解析数据源配置失败: " + e.getMessage());
         }
     }
-
-
-
-
-    /**
-     * 根据数据源ID获取数据表
-     * @param datasourceId 数据源ID
-     */
-    /*public List<Table> getTables(String datasourceId) {
-        List<Table> tables = Lists.newArrayList();
-        if (StringUtils.isBlank(datasourceId)) {
-            return tables;
-        }
-
-        try {
-            *//* ConnectionParam connectionParam = getConnectionParam(datasourceId);
-            tables = metaService.getTables(connectionParam);*//*
-            List<Column> columns = Lists.newArrayList(
-                    Column.builder().columnName("dt").columnComment("日期").columnType("string").build(),
-                    Column.builder().columnName("uid").columnComment("用户ID").columnType("string").build(),
-                    Column.builder().columnName("age").columnComment("年龄").columnType("int").build(),
-                    Column.builder().columnName("sex").columnComment("性别").columnType("string").build()
-            );
-
-            List<Column> columns2 = Lists.newArrayList(
-                    Column.builder().columnName("dt").columnComment("日期").columnType("string").build(),
-                    Column.builder().columnName("item_id").columnComment("内容ID").columnType("string").build(),
-                    Column.builder().columnName("item_type").columnComment("内容类型").columnType("string").build(),
-                    Column.builder().columnName("show_source").columnComment("展示来源").columnType("string").build()
-            );
-
-            tables = Lists.newArrayList(
-                    Table.builder().tableName("dws_app_user_base_1d").tableComment("用户基础表").isPartitionTable(true).columns(columns).build(),
-                    Table.builder().tableName("dws_app_item_base_1d").tableComment("内容基础表").isPartitionTable(true).columns(columns2).build()
-            );
-
-        } catch (Exception e) {
-            throw new RuntimeException("获取数据表失败: [" + e.getMessage() + "]");
-        }
-        return tables;
-    }*/
 }

@@ -33,11 +33,14 @@
             <el-descriptions-item label="修改时间">
               {{ formatDateTime(dataSource.gmt_modified) }}
             </el-descriptions-item>
+            <el-descriptions-item label="负责人">
+              {{ dataSource.owner_name || dataSource.owner || '-' }}
+            </el-descriptions-item>
             <el-descriptions-item label="创建人">
-              {{ dataSource.creator || '-' }}
+              {{ dataSource.creator_name || dataSource.creator || '-' }}
             </el-descriptions-item>
             <el-descriptions-item label="修改人">
-              {{ dataSource.modifier || '-' }}
+              {{ dataSource.modifier_name || dataSource.modifier || '-' }}
             </el-descriptions-item>
           </el-descriptions>
         </div>

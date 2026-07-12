@@ -9,6 +9,8 @@ import com.data.engine.common.ExecutorRequest;
 import com.data.profile.common.domain.engine.ProcessResult;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.config.ProfileEngineConfig;
+import com.data.profile.web.converter.DataSourceConverter;
+import com.data.profile.web.dto.DataSourceDTO;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;
@@ -96,7 +98,8 @@ public class DiEngineService {
         }
         Dataset dataset = opt.get();
 
-        DataSource dataSource = dataSourceService.getDetail(dataset.getDatasourceId());
+        DataSourceDTO dataSourceDTO = dataSourceService.getDetail(dataset.getDatasourceId());
+        DataSource dataSource = DataSourceConverter.dto2do(dataSourceDTO);
         if (dataSource == null) {
             throw new IllegalStateException("数据源不存在: " + dataset.getDatasourceId());
         }

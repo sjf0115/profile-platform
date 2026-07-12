@@ -11,6 +11,7 @@
         <result column="config" jdbcType="VARCHAR" property="config" />
         <result column="source_type" jdbcType="INTEGER" property="sourceType" />
         <result column="owner" jdbcType="VARCHAR" property="owner" />
+        <result column="owner_name" jdbcType="VARCHAR" property="ownerName" />
         <result column="creator" jdbcType="VARCHAR" property="creator" />
         <result column="modifier" jdbcType="VARCHAR" property="modifier" />
         <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
@@ -22,18 +23,27 @@
         source_type, owner, creator, modifier, gmt_create, gmt_modified, config
     </sql>
 
+    <!-- 带负责人名称的查询列（需配合 LEFT JOIN profile_meta_user 使用） -->
+    <sql id="Join_Column_List">
+        d.id, d.status, d.datasource_id, d.datasource_name, d.datasource_desc, d.datasource_type,
+        d.source_type, d.owner, d.creator, d.modifier, d.gmt_create, d.gmt_modified, d.config,
+        u.user_name as owner_name
+    </sql>
+
     <select id="selectSimpleByDatasourceId" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List" />
-        from profile_meta_datasource
-        where datasource_id = #{datasourceId,jdbcType=VARCHAR}
+        <include refid="Join_Column_List" />
+        from profile_meta_datasource d
+        left join profile_meta_user u on d.owner = u.user_id
+        where d.datasource_id = #{datasourceId,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByDatasourceId" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List" />
-        from profile_meta_datasource
-        where datasource_id = #{datasourceId,jdbcType=VARCHAR}
+        <include refid="Join_Column_List" />
+        from profile_meta_datasource d
+        left join profile_meta_user u on d.owner = u.user_id
+        where d.datasource_id = #{datasourceId,jdbcType=VARCHAR}
     </select>
 
     <select id="selectSimpleByDatasourceName" parameterType="java.lang.String" resultMap="BaseResultMap">
@@ -52,63 +62,59 @@
 
     <select id="selectSimpleByParams" parameterType="com.data.profile.web.model.DataSource" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List" />
-        from profile_meta_datasource
+        <include refid="Join_Column_List" />
+        from profile_meta_datasource d
+        left join profile_meta_user u on d.owner = u.user_id
         where 1 = 1
         <if test="status != null">
-            and status = #{status,jdbcType=INTEGER}
+            and d.status = #{status,jdbcType=INTEGER}
         </if>
-        <if test="datasourceName != null">
-            and datasource_name = #{datasourceName,jdbcType=VARCHAR}
+        <if test="datasourceName != null and datasourceName != ''">
+            and d.datasource_name = #{datasourceName,jdbcType=VARCHAR}
         </if>
-        <if test="datasourceDesc != null">
-            and datasource_desc = #{datasourceDesc,jdbcType=VARCHAR}
-        </if>
-        <if test="datasourceType != null">
-            and datasource_type = #{datasourceType,jdbcType=VARCHAR}
+        <if test="datasourceType != null and datasourceType != ''">
+            and d.datasource_type = #{datasourceType,jdbcType=VARCHAR}
         </if>
         <if test="sourceType != null">
-            and source_type = #{sourceType,jdbcType=INTEGER}
+            and d.source_type = #{sourceType,jdbcType=INTEGER}
         </if>
-        <if test="owner != null">
-            and owner = #{owner,jdbcType=VARCHAR}
+        <if test="owner != null and owner != ''">
+            and d.owner = #{owner,jdbcType=VARCHAR}
         </if>
-        <if test="creator != null">
-            and creator = #{creator,jdbcType=VARCHAR}
+        <if test="creator != null and creator != ''">
+            and d.creator = #{creator,jdbcType=VARCHAR}
         </if>
-        <if test="modifier != null">
-            and modifier = #{modifier,jdbcType=VARCHAR}
+        <if test="modifier != null and modifier != ''">
+            and d.modifier = #{modifier,jdbcType=VARCHAR}
         </if>
     </select>
 
     <select id="selectByParams" parameterType="com.data.profile.web.model.DataSource" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List" />
-        from profile_meta_datasource
+        <include refid="Join_Column_List" />
+        from profile_meta_datasource d
+        left join profile_meta_user u on d.owner = u.user_id
         where 1 = 1
         <if test="status != null">
-            and status = #{status,jdbcType=INTEGER}
+            and d.status = #{status,jdbcType=INTEGER}
         </if>
-        <if test="datasourceName != null">
-            and datasource_name = #{datasourceName,jdbcType=VARCHAR}
+        <if test="datasourceName != null and datasourceName != ''">
+            and d.datasource_name = #{datasourceName,jdbcType=VARCHAR}
         </if>
-        <if test="datasourceDesc != null">
-            and datasource_desc = #{datasourceDesc,jdbcType=VARCHAR}
-        </if>
-        <if test="datasourceType != null">
-            and datasource_type = #{datasourceType,jdbcType=VARCHAR}
+        <if test="datasourceType != null and datasourceType != ''">
+            and d.datasource_type = #{datasourceType,jdbcType=VARCHAR}
         </if>
         <if test="sourceType != null">
-            and source_type = #{sourceType,jdbcType=INTEGER}
+            and d.source_type = #{sourceType,jdbcType=INTEGER}
         </if>
-        <if test="owner != null">
-            and owner = #{owner,jdbcType=VARCHAR}
+        <if test="owner != null and owner != ''">
+            and d.owner = #{owner,jdbcType=VARCHAR}
         </if>
-        <if test="creator != null">
-            and creator = #{creator,jdbcType=VARCHAR}
+        <if test="creator != null and creator != ''">
+            and d.creator = #{creator,jdbcType=VARCHAR}
         </if>
-        <if test="modifier != null">
-            and modifier = #{modifier,jdbcType=VARCHAR}
+        <if test="modifier != null and modifier != ''">
+            and d.modifier = #{modifier,jdbcType=VARCHAR}
         </if>
     </select>
 
@@ -144,31 +150,31 @@
             <if test="status != null">
                 status,
             </if>
-            <if test="datasourceId != null">
+            <if test="datasourceId != null and datasourceId != ''">
                 datasource_id,
             </if>
-            <if test="datasourceName != null">
+            <if test="datasourceName != null and datasourceName != ''">
                 datasource_name,
             </if>
-            <if test="datasourceDesc != null">
+            <if test="datasourceDesc != null and datasourceDesc != ''">
                 datasource_desc,
             </if>
-            <if test="datasourceType != null">
+            <if test="datasourceType != null and datasourceType != ''">
                 datasource_type,
             </if>
             <if test="sourceType != null">
                 source_type,
             </if>
-            <if test="owner != null">
+            <if test="owner != null and owner != ''">
                 `owner`,
             </if>
-            <if test="creator != null">
+            <if test="creator != null and creator != ''">
                 creator,
             </if>
-            <if test="modifier != null">
+            <if test="modifier != null and modifier != ''">
                 modifier,
             </if>
-            <if test="config != null">
+            <if test="config != null and config != ''">
                 config,
             </if>
         </trim>
@@ -176,31 +182,31 @@
             <if test="status != null">
                 #{status,jdbcType=INTEGER},
             </if>
-            <if test="datasourceId != null">
+            <if test="datasourceId != null and datasourceId != ''">
                 #{datasourceId,jdbcType=VARCHAR},
             </if>
-            <if test="datasourceName != null">
+            <if test="datasourceName != null and datasourceName != ''">
                 #{datasourceName,jdbcType=VARCHAR},
             </if>
-            <if test="datasourceDesc != null">
+            <if test="datasourceDesc != null and datasourceDesc != ''">
                 #{datasourceDesc,jdbcType=VARCHAR},
             </if>
-            <if test="datasourceType != null">
+            <if test="datasourceType != null and datasourceType != ''">
                 #{datasourceType,jdbcType=VARCHAR},
             </if>
             <if test="sourceType != null">
                 #{sourceType,jdbcType=INTEGER},
             </if>
-            <if test="owner != null">
+            <if test="owner != null and owner != ''">
                 #{owner,jdbcType=VARCHAR},
             </if>
-            <if test="creator != null">
+            <if test="creator != null and creator != ''">
                 #{creator,jdbcType=VARCHAR},
             </if>
-            <if test="modifier != null">
+            <if test="modifier != null and modifier != ''">
                 #{modifier,jdbcType=VARCHAR},
             </if>
-            <if test="config != null">
+            <if test="config != null and config != ''">
                 #{config,jdbcType=LONGVARCHAR},
             </if>
         </trim>
@@ -212,28 +218,28 @@
             <if test="status != null">
                 status = #{status,jdbcType=INTEGER},
             </if>
-            <if test="datasourceName != null">
+            <if test="datasourceName != null and datasourceName != ''">
                 datasource_name = #{datasourceName,jdbcType=VARCHAR},
             </if>
-            <if test="datasourceDesc != null">
+            <if test="datasourceDesc != null and datasourceDesc != ''">
                 datasource_desc = #{datasourceDesc,jdbcType=VARCHAR},
             </if>
-            <if test="datasourceType != null">
+            <if test="datasourceType != null and datasourceType != ''">
                 datasource_type = #{datasourceType,jdbcType=VARCHAR},
             </if>
             <if test="sourceType != null">
                 source_type = #{sourceType,jdbcType=INTEGER},
             </if>
-            <if test="owner != null">
+            <if test="owner != null and owner != ''">
                 owner = #{owner,jdbcType=VARCHAR},
             </if>
-            <if test="creator != null">
+            <if test="creator != null and creator != ''">
                 creator = #{creator,jdbcType=VARCHAR},
             </if>
-            <if test="modifier != null">
+            <if test="modifier != null and modifier != ''">
                 modifier = #{modifier,jdbcType=VARCHAR},
             </if>
-            <if test="config != null">
+            <if test="config != null and config != ''">
                 config = #{config,jdbcType=LONGVARCHAR},
             </if>
         </set>

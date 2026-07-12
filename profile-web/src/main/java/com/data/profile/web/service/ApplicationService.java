@@ -7,12 +7,10 @@ import com.data.profile.common.exception.ProfileException;
 import com.data.profile.common.utils.IDGenerator;
 import com.data.profile.web.converter.ApplicationConverter;
 import com.data.profile.web.dao.ApplicationMapper;
-import com.data.profile.web.dao.UserMapper;
 import com.data.profile.web.dto.ApplicationDTO;
 import com.data.profile.web.dto.ApplicationRequest;
 import com.data.profile.web.enums.AssetType;
 import com.data.profile.web.model.Application;
-import com.data.profile.web.model.User;
 import com.data.profile.web.security.UserContextHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -38,8 +36,6 @@ public class ApplicationService {
     private ResourceGrantService resourceGrantService;
     @Autowired
     private LineageService lineageService;
-    @Resource
-    private UserMapper userMapper;
 
     /**
      * 根据查询条件获取应用列表
@@ -47,7 +43,6 @@ public class ApplicationService {
     public List<ApplicationDTO> getList(Application application) {
         List<Application> applications = applicationMapper.selectByParams(application);
         List<ApplicationDTO> dtos = ApplicationConverter.do2dtoList(applications);
-        fillOwnerName(dtos);
         return dtos;
     }
 
@@ -68,7 +63,6 @@ public class ApplicationService {
             return Optional.empty();
         }
         ApplicationDTO dto = ApplicationConverter.do2dto(application);
-        fillOwnerName(dto);
         return Optional.of(dto);
     }
 
@@ -116,8 +110,6 @@ public class ApplicationService {
 
         // 返回包含 appKey 和 appSecret 的完整对象（仅创建时返回 secret）
         ApplicationDTO dto = ApplicationConverter.do2dto(application);
-        // TODO
-        fillOwnerName(dto);
         return dto;
     }
 
@@ -198,24 +190,5 @@ public class ApplicationService {
      */
     private String generateAppSecret() {
         return RandomStringUtils.random(32, true, true);
-    }
-
-    /**
-     * 填充负责人名称（单个）
-     */
-    private void fillOwnerName(ApplicationDTO dto) {
-        if (dto == null || StringUtils.isBlank(dto.getOwner())) return;
-        User user = userMapper.selectByUserId(dto.getOwner());
-        if (user != null) {
-            dto.setOwnerName(user.getUserName());
-        }
-    }
-
-    /**
-     * 填充负责人名称（批量）
-     */
-    private void fillOwnerName(List<ApplicationDTO> dtos) {
-        if (dtos == null) return;
-        dtos.forEach(this::fillOwnerName);
     }
 }

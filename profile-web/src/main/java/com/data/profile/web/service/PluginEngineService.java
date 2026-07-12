@@ -9,6 +9,7 @@ import com.data.engine.plugin.utils.SeaTunnelConfigUtil;
 import com.data.profile.common.domain.Constant;
 import com.data.profile.common.domain.connector.request.TestConnectionRequestParam;
 import com.data.profile.common.utils.FileUtil;
+import com.data.profile.web.dto.DataSourceDTO;
 import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.engine.DiEngineService;
 import com.data.profile.web.model.DataSource;
@@ -136,7 +137,7 @@ public class PluginEngineService {
                 .dataSourceId(11212L)
                 .build();
 
-        DataSource dataSource = dataSourceService.getDetail("");
+        DataSourceDTO dataSource = dataSourceService.getDetail("");
         String config = dataSource.getConfig();
 
 

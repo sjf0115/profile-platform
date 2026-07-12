@@ -65,23 +65,23 @@ INSERT INTO `profile_meta_entity_type` (`status`, `entity_type_id`, `entity_type
 VALUES (1, '0319740109099392', '用户', 1, '100000', '100000')
 ;
 
--- 4. 数据源Schema
-CREATE TABLE `profile_meta_datasource_schema` (
-    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
-    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
-    `schema_id` varchar(40) NOT NULL COMMENT '数据源 Schema ID',
-    `schema_name` varchar(100) NOT NULL COMMENT '数据源 Schema 名称',
-    `schema_type` varchar(100) NOT NULL COMMENT '数据源 Schema 类型:1-source,2-sink,3-source/sink',
-    `jdbc_protocol` varchar(50) NOT NULL COMMENT '数据源 Schema JDBC 协议 例如 jdbc://mysql',
-    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
-    `config_template` text NOT NULL COMMENT '配置模板',
-    `creator` varchar(100) NOT NULL COMMENT '创建者',
-    `modifier` varchar(100) NOT NULL COMMENT '修改者',
-    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-    PRIMARY KEY (`id`),
-    UNIQUE(`schema_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='画像-数据源Schema';
+-- 4. 数据源Schema 废弃
+--CREATE TABLE `profile_meta_datasource_schema` (
+--    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+--    `status` INT NOT NULL DEFAULT 1 COMMENT '状态:1-启用,2-停用',
+--    `schema_id` varchar(40) NOT NULL COMMENT '数据源 Schema ID',
+--    `schema_name` varchar(100) NOT NULL COMMENT '数据源 Schema 名称',
+--    `schema_type` varchar(100) NOT NULL COMMENT '数据源 Schema 类型:1-source,2-sink,3-source/sink',
+--    `jdbc_protocol` varchar(50) NOT NULL COMMENT '数据源 Schema JDBC 协议 例如 jdbc://mysql',
+--    `source_type` INT NOT NULL DEFAULT 1 COMMENT '创建方式: 1-系统内置,2-自定义',
+--    `config_template` text NOT NULL COMMENT '配置模板',
+--    `creator` varchar(100) NOT NULL COMMENT '创建者',
+--    `modifier` varchar(100) NOT NULL COMMENT '修改者',
+--    `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+--    `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+--    PRIMARY KEY (`id`),
+--    UNIQUE(`schema_id`)
+--) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='画像-数据源Schema';
 
 -- 5. 数据源
 DROP Table `profile_meta_datasource`;

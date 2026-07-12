@@ -29,6 +29,10 @@ public class Export {
 
     private Integer sourceType;
     private String owner;
+    /**
+     * 负责人名称（SQL JOIN 查询映射，非数据库列）
+     */
+    private String ownerName;
     private String creator;
     private String modifier;
     private Date gmtCreate;

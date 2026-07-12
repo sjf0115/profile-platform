@@ -99,6 +99,22 @@ public class UserService {
     }
 
     /**
+     * 用户ID与名称映射
+     */
+    public Map<String, String> getUserNameMap() {
+        Map<String, String> map = Maps.newHashMap();
+        List<UserDTO> users = getList(new User());
+        if (users == null || users.isEmpty()) {
+            return map;
+        }
+        for (UserDTO user : users) {
+            map.put(user.getUserId(), user.getUserName());
+        }
+        return map;
+    }
+
+
+    /**
      * 根据用户ID获取用户详细信息（含角色）
      * @param userId 用户ID
      * @return 用户 DTO

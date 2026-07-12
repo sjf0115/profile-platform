@@ -68,24 +68,17 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="连接信息" min-width="280">
+        <el-table-column prop="datasource_desc" label="描述" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
-            <div class="connection-info" v-if="row.config">
-              <div
-                v-for="(item, index) in getConnectionInfo(row.config)"
-                :key="index"
-                class="info-item"
-              >
-                <span class="info-label">{{ item.label }}：</span>
-                <span class="info-value">{{ item.value }}</span>
-              </div>
-            </div>
-            <span v-else class="empty-text">-</span>
+            <el-tag v-if="row.status === 1" type="success" size="small">启用</el-tag>
+            <el-tag v-else type="danger" size="small">停用</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="datasource_desc" label="描述" min-width="150">
+        <el-table-column prop="owner_name" label="负责人" width="120" />
+        <el-table-column label="修改时间" width="160">
           <template #default="{ row }">
-            <span class="desc-text">{{ row.datasource_desc || '-' }}</span>
+            {{ formatDateTime(row.gmt_modified) }}
           </template>
         </el-table-column>
         <el-table-column label="创建时间" width="160">
@@ -93,23 +86,23 @@
             {{ formatDateTime(row.gmt_create) }}
           </template>
         </el-table-column>
-        <el-table-column label="修改时间" width="160">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            {{ formatDateTime(row.gmt_modified) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="modifier" label="修改人" width="100" />
-        <el-table-column label="操作" width="180" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="handleView(row)">
-              查看
+            <el-button link type="primary" @click="handleView(row)">查看</el-button>
+            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button link type="primary" @click="handleToggleStatus(row)">
+              {{ row.status === 1 ? '禁用' : '启用' }}
             </el-button>
-            <el-button link type="primary" @click="handleEdit(row)">
-              编辑
-            </el-button>
-            <el-button link type="danger" @click="handleDelete(row)">
-              删除
-            </el-button>
+            <el-dropdown trigger="click">
+              <el-button link type="primary">
+                <el-icon><More /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </template>
         </el-table-column>
       </el-table>
@@ -135,7 +128,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Upload, Search, Refresh } from '@element-plus/icons-vue'
+import { Plus, Upload, Search, Refresh, More } from '@element-plus/icons-vue'
 import type { DataSource, DataSourceQueryParams } from '@/types'
 import { dataSourceApi, dataSourceTypeApi } from '@/api/datasource'
 
@@ -203,28 +196,6 @@ const fetchDataSourceTypeList = async () => {
   }
 }
 
-// 获取连接信息展示（从 config JSON 字符串中解析）
-const getConnectionInfo = (config: string) => {
-  const keyMap: Record<string, string> = {
-    host: '主机地址',
-    port: '端口',
-    database: '数据库名',
-    username: '用户名',
-    instance: '实例名',
-  }
-  try {
-    const configObj = JSON.parse(config)
-    return Object.entries(configObj)
-      .filter(([key]) => ['host', 'port', 'database', 'user_name', 'instance'].includes(key))
-      .slice(0, 4)
-      .map(([key, value]) => ({
-        label: keyMap[key] || key,
-        value: String(value),
-      }))
-  } catch (e) {
-    return []
-  }
-}
 
 // 搜索
 const handleSearch = () => {
@@ -259,6 +230,19 @@ const handleEdit = (row: DataSource) => {
   })
 }
 
+// 切换启用/禁用状态
+const handleToggleStatus = async (row: DataSource) => {
+  const newStatus = row.status === 1 ? 2 : 1
+  const actionText = newStatus === 1 ? '启用' : '禁用'
+  try {
+    await dataSourceApi.updateStatus(row.datasource_id!, newStatus)
+    ElMessage.success(`${actionText}成功`)
+    fetchData()
+  } catch (error) {
+    console.error(`${actionText}失败:`, error)
+  }
+}
+
 // 删除
 const handleDelete = (row: DataSource) => {
   ElMessageBox.confirm(
@@ -272,7 +256,7 @@ const handleDelete = (row: DataSource) => {
   )
     .then(async () => {
       try {
-        await dataSourceApi.delete(row.datasource_id)
+        await dataSourceApi.delete(row.datasource_id!)
         ElMessage.success('删除成功')
         fetchData()
       } catch (error) {
@@ -351,24 +335,6 @@ onMounted(() => {
       display: flex;
       align-items: center;
       gap: 8px;
-    }
-  }
-
-  .connection-info {
-    .info-item {
-      display: flex;
-      margin-bottom: 4px;
-      font-size: 13px;
-
-      .info-label {
-        color: #909399;
-        min-width: 70px;
-      }
-
-      .info-value {
-        color: #606266;
-        flex: 1;
-      }
     }
   }
 

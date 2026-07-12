@@ -2,13 +2,11 @@ package com.data.profile.web.service;
 
 import com.data.profile.web.converter.ExportConverter;
 import com.data.profile.web.dao.ExportMapper;
-import com.data.profile.web.dao.UserMapper;
 import com.data.profile.web.dto.ExportDTO;
 import com.data.profile.web.dto.ExportRequest;
 import com.data.profile.web.enums.AssetType;
 import com.data.profile.web.model.Export;
 import com.data.profile.web.model.TaskInstance;
-import com.data.profile.web.model.User;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
@@ -39,8 +37,6 @@ public class ExportService {
     private TaskInstanceService taskInstanceService;
     @Autowired
     private LineageService lineageService;
-    @Resource
-    private UserMapper userMapper;
 
     /**
      * 根据查询条件获取投递列表
@@ -53,7 +49,6 @@ public class ExportService {
             TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(exports.get(i).getExportId());
             dtos.get(i).setLatestInstance(latestInstance);
         }
-        fillOwnerName(dtos);
         return dtos;
     }
 
@@ -68,7 +63,6 @@ public class ExportService {
         ExportDTO dto = ExportConverter.do2dto(export);
         TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(exportId);
         dto.setLatestInstance(latestInstance);
-        fillOwnerName(dto);
         return Optional.of(dto);
     }
 
@@ -104,7 +98,6 @@ public class ExportService {
         lineageService.refreshLineage(AssetType.EXPORT.getCode(), exportId);
 
         ExportDTO dto = ExportConverter.do2dto(export);
-        fillOwnerName(dto);
         return dto;
     }
 
@@ -161,24 +154,5 @@ public class ExportService {
         lineageService.checkDeletable(AssetType.EXPORT.getCode(), exportId);
         lineageService.removeLineage(AssetType.EXPORT.getCode(), exportId);
         return exportMapper.deleteByExportId(exportId);
-    }
-
-    /**
-     * 填充负责人名称（单个）
-     */
-    private void fillOwnerName(ExportDTO dto) {
-        if (dto == null || StringUtils.isBlank(dto.getOwner())) return;
-        User user = userMapper.selectByUserId(dto.getOwner());
-        if (user != null) {
-            dto.setOwnerName(user.getUserName());
-        }
-    }
-
-    /**
-     * 填充负责人名称（批量）
-     */
-    private void fillOwnerName(List<ExportDTO> dtos) {
-        if (dtos == null) return;
-        dtos.forEach(this::fillOwnerName);
     }
 }

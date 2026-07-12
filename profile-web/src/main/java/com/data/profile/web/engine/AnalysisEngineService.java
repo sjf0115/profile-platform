@@ -9,6 +9,7 @@ import com.data.engine.api.schema.TableManager;
 import com.data.engine.api.schema.TableSchema;
 import com.data.profile.common.enums.DataType;
 import com.data.profile.common.utils.JSONUtils;
+import com.data.profile.web.dto.DatasetDTO;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;

@@ -14,6 +14,7 @@
         <result column="ip_whitelist" jdbcType="LONGVARCHAR" property="ipWhitelist" />
         <result column="source_type" jdbcType="INTEGER" property="sourceType" />
         <result column="owner" jdbcType="VARCHAR" property="owner" />
+        <result column="owner_name" jdbcType="VARCHAR" property="ownerName" />
         <result column="creator" jdbcType="VARCHAR" property="creator" />
         <result column="modifier" jdbcType="VARCHAR" property="modifier" />
         <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
@@ -23,7 +24,8 @@
     <sql id="Base_Column_List">
         t1.id, t1.status, t1.app_name, t1.app_desc, t1.app_key, t1.app_secret,
         t1.target_config, t1.webhook_url, t1.rate_limit, t1.ip_whitelist,
-        t1.source_type, t1.owner, t1.creator, t1.modifier, t1.gmt_create, t1.gmt_modified
+        t1.source_type, t1.owner, t1.creator, t1.modifier, t1.gmt_create, t1.gmt_modified,
+        u.user_name as owner_name
     </sql>
 
     <!-- 根据 appKey 查询 -->
@@ -31,7 +33,8 @@
         select
         <include refid="Base_Column_List" />
         from profile_meta_application as t1
-        where app_key = #{appKey,jdbcType=VARCHAR}
+        left join profile_meta_user u on t1.owner = u.user_id
+        where t1.app_key = #{appKey,jdbcType=VARCHAR}
     </select>
 
     <!-- 根据参数查询 -->
@@ -39,6 +42,7 @@
         select
         <include refid="Base_Column_List" />
         from profile_meta_application as t1
+        left join profile_meta_user u on t1.owner = u.user_id
         <where>
             <if test="status != null">
                 and t1.status = #{status,jdbcType=INTEGER}
@@ -58,6 +62,7 @@
         select
         <include refid="Base_Column_List" />
         from profile_meta_application as t1
+        left join profile_meta_user u on t1.owner = u.user_id
         where t1.app_name like concat('%', #{keyword,jdbcType=VARCHAR}, '%')
         order by t1.gmt_create desc
     </select>

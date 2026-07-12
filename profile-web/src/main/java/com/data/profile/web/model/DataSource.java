@@ -13,7 +13,7 @@ import java.util.Date;
 @AllArgsConstructor
 public class DataSource {
     private Long id;
-    // 数据源状态
+    // 数据源状态 1-启用,2-停用
     private Integer status;
     // 数据源ID
     private String datasourceId;
@@ -25,10 +25,11 @@ public class DataSource {
     private String datasourceType;
     // 数据源配置信息
     private String config;
-    // 数据源创建方式：内置/自定义
+    // 数据源创建方式：1-系统内置,2-自定义
     private Integer sourceType;
     // 数据源负责人
     private String owner;
+    private String ownerName;
     // 数据源创建人
     private String creator;
     // 数据源修改者

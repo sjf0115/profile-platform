@@ -42,6 +42,23 @@
               show-word-limit
             />
           </el-form-item>
+
+          <el-form-item label="负责人">
+            <el-select
+              v-model="formData.owner"
+              filterable
+              clearable
+              placeholder="请选择负责人（默认为当前用户）"
+              style="width: 400px"
+            >
+              <el-option
+                v-for="u in userOptions"
+                :key="u.user_id"
+                :label="u.user_name"
+                :value="u.user_id"
+              />
+            </el-select>
+          </el-form-item>
         </div>
 
         <!-- 连接信息 - 动态渲染 -->
@@ -195,6 +212,9 @@ import { ArrowLeft } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { DataSource, PluginParam } from '@/types'
 import { dataSourceApi, dataSourceTypeApi } from '@/api/datasource'
+import { userApi } from '@/api/user'
+import type { User } from '@/api/user'
+import { getLoginUser } from '@/utils/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -226,14 +246,19 @@ const loadingConfig = ref(false)
 // 插件参数列表（动态表单配置）
 const pluginParams = ref<PluginParam[]>([])
 
+// 用户列表（负责人选择）
+const userOptions = ref<User[]>([])
+
 // 表单数据
 const formData = reactive<{
   datasourceName: string
   datasourceDesc: string
+  owner: string
   config: Record<string, any>
 }>({
   datasourceName: '',
   datasourceDesc: '',
+  owner: '',
   config: {},
 })
 
@@ -330,6 +355,7 @@ const fetchDataSourceDetail = async () => {
     // 回填表单数据
     formData.datasourceName = data.datasource_name
     formData.datasourceDesc = data.datasource_desc || ''
+    formData.owner = data.owner || ''
         
     // 解析 config 并回填
     const configObj = configUtils.parse(data.config)
@@ -410,15 +436,17 @@ const handleSubmit = async () => {
         datasource_name: formData.datasourceName,
         datasource_desc: formData.datasourceDesc,
         datasource_type: dataSourceType.value,
+        owner: formData.owner || undefined,
         config: configUtils.stringify(formData.config),
       }
       
-      // 编辑时传入数据源ID
       if (isEdit.value) {
-        params.datasource_id = datasourceId.value
+        // 编辑模式
+        await dataSourceApi.update(datasourceId.value, params)
+      } else {
+        // 创建模式
+        await dataSourceApi.create(params)
       }
-      
-      await dataSourceApi.save(params)
       ElMessage.success(isEdit.value ? '保存成功' : '创建成功')
       router.push('/datasource')
     } catch (error) {
@@ -459,12 +487,28 @@ const handleTestConnection = async () => {
   }
 }
 
+// 获取用户列表（负责人选择）
+const fetchUserOptions = async () => {
+  try {
+    const res = await userApi.getList()
+    userOptions.value = res.data.data || []
+  } catch {
+    userOptions.value = []
+  }
+}
+
 onMounted(() => {
+  fetchUserOptions()
   if (isEdit.value) {
     // 编辑模式：先获取详情，详情中会加载配置
     fetchDataSourceDetail()
   } else {
-    // 创建模式：从 URL 获取类型并加载配置
+    // 创建模式：默认填充当前登录用户为负责人
+    const currentUser = getLoginUser()
+    if (currentUser?.user_id) {
+      formData.owner = currentUser.user_id
+    }
+    // 从 URL 获取类型并加载配置
     const typeFromQuery = route.query.type as string
     if (typeFromQuery) {
       dataSourceType.value = typeFromQuery

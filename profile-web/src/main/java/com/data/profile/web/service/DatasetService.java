@@ -1,6 +1,8 @@
 package com.data.profile.web.service;
 
+import com.data.profile.web.converter.DataSourceConverter;
 import com.data.profile.web.dao.DatasetMapper;
+import com.data.profile.web.dto.DataSourceDTO;
 import com.data.profile.web.dto.ScheduleConfigRequest;
 import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.engine.ScheduleEngineService;
@@ -253,7 +255,7 @@ public class DatasetService {
      * 获取支持的数据源
      */
     public List<DataSource> getDataSources(String datasetType) {
-        List<DataSource> dataSources = dataSourceService.getList(null);
+        List<DataSource> dataSources = dataSourceService.getListDO(null);
         log.info("获取数据集类型 {} 支持的数据源: {} 个", datasetType, dataSources.size());
         return dataSources;
     }
@@ -339,7 +341,8 @@ public class DatasetService {
      */
     private void createEngineTable(Dataset dataset, List<DatasetField> fields) {
         try {
-            DataSource dataSource = dataSourceService.getDetail(dataset.getDatasourceId());
+            DataSourceDTO dataSourceDTO = dataSourceService.getDetail(dataset.getDatasourceId());
+            DataSource dataSource = DataSourceConverter.dto2do(dataSourceDTO);
             if (dataSource != null) {
                 String tableName = ENGINE_DATASET_TABLE_PREFIX + dataset.getDatasetId();
                 analysisEngineService.buildAndUpsertTable(dataset, dataSource, tableName, fields);
@@ -356,7 +359,8 @@ public class DatasetService {
      */
     private void updateEngineTable(Dataset dataset, List<DatasetField> fields) {
         try {
-            DataSource dataSource = dataSourceService.getDetail(dataset.getDatasourceId());
+            DataSourceDTO dataSourceDTO = dataSourceService.getDetail(dataset.getDatasourceId());
+            DataSource dataSource = DataSourceConverter.dto2do(dataSourceDTO);
             if (dataSource != null) {
                 String tableName = "profile_dataset_" + dataset.getDatasetId();
                 analysisEngineService.buildAndUpsertTable(dataset, dataSource, tableName, fields);
