@@ -73,88 +73,10 @@
 
           <!-- 数据源投递 -->
           <template v-if="formData.export_mode === 1">
-            <el-form-item label="数据源" prop="datasource_id">
-              <el-select
-                v-model="formData.datasource_id"
-                placeholder="请选择数据源"
-                clearable
-                style="width: 300px"
-                @change="handleDatasourceChange"
-              >
-                <el-option
-                  v-for="ds in datasourceList"
-                  :key="ds.datasource_id"
-                  :label="ds.datasource_name"
-                  :value="ds.datasource_id"
-                />
-              </el-select>
-            </el-form-item>
-
-            <!-- 动态表单区域 -->
-            <template v-if="exportPluginParams.length > 0">
-              <template v-for="param in exportPluginParams" :key="param.field">
-                <!-- select 类型 -->
-                <el-form-item
-                  v-if="param.type === 'select'"
-                  :label="param.title"
-                  :prop="param.field"
-                >
-                  <el-select
-                    v-model="exportFormData[param.field]"
-                    :placeholder="getPlaceholder(param)"
-                    clearable
-                    filterable
-                    :loading="loadingFields[param.field]"
-                    style="width: 300px"
-                    @change="handleExportFieldChange(param.field)"
-                  >
-                    <el-option
-                      v-for="opt in fieldOptions[param.field]"
-                      :key="opt.value"
-                      :label="opt.label"
-                      :value="opt.value"
-                    />
-                  </el-select>
-                </el-form-item>
-
-                <!-- radio 类型 -->
-                <el-form-item
-                  v-else-if="param.type === 'radio'"
-                  :label="param.title"
-                >
-                  <el-radio-group v-model="exportFormData[param.field]">
-                    <el-radio
-                      v-for="opt in param.options"
-                      :key="opt.value"
-                      :label="opt.value"
-                    >{{ opt.label }}</el-radio>
-                  </el-radio-group>
-                </el-form-item>
-
-                <!-- input 类型 -->
-                <el-form-item
-                  v-else-if="param.type === 'input'"
-                  :label="param.title"
-                  :prop="param.field"
-                >
-                  <el-input
-                    v-model="exportFormData[param.field]"
-                    :placeholder="getPlaceholder(param)"
-                    style="width: 400px"
-                  />
-                </el-form-item>
-              </template>
-            </template>
-
-            <!-- 无需配置提示 -->
-            <template v-else-if="datasourceSelected && exportPluginParamsLoaded">
-              <el-alert
-                title="该数据源类型无需额外配置"
-                type="info"
-                :closable="false"
-                style="margin-left: 120px; max-width: 400px"
-              />
-            </template>
+            <TargetConfigForm
+              v-model="exportTargetConfig"
+              ref="exportTargetConfigRef"
+            />
           </template>
 
           <!-- 应用投递 -->
@@ -237,11 +159,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import type { Export, DataSource, Group, Application, PluginParam, TableInfo, TableColumnInfo } from '@/types'
+import type { Export, Group, Application } from '@/types'
 import { exportApi } from '@/api/export'
-import { dataSourceApi } from '@/api/datasource'
 import { groupApi } from '@/api/group'
 import { applicationApi } from '@/api/application'
+import TargetConfigForm from '@/components/TargetConfigForm.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -256,16 +178,12 @@ const formRef = ref<FormInstance>()
 const submitting = ref(false)
 
 // 列表数据
-const datasourceList = ref<DataSource[]>([])
 const groupList = ref<Group[]>([])
 const applicationList = ref<Application[]>([])
 
-// 动态表单状态
-const exportPluginParams = ref<PluginParam[]>([])
-const exportFormData = reactive<Record<string, any>>({})
-const fieldOptions = reactive<Record<string, Array<{ label: string; value: any }>>>({})
-const loadingFields = reactive<Record<string, boolean>>({})
-const exportPluginParamsLoaded = ref(false)
+// 数据源投递配置（共享组件）
+const exportTargetConfigRef = ref<InstanceType<typeof TargetConfigForm>>()
+const exportTargetConfig = ref<Record<string, any>>({})
 
 // 表单数据
 const formData = reactive<{
@@ -273,7 +191,6 @@ const formData = reactive<{
   export_desc: string
   group_id: string
   export_mode: number
-  datasource_id: string
   application_id: string
   scheduler_type: number
   scheduler_cron: string
@@ -283,27 +200,18 @@ const formData = reactive<{
   export_desc: '',
   group_id: '',
   export_mode: 1,
-  datasource_id: '',
   application_id: '',
   scheduler_type: 1,
   scheduler_cron: '',
   scheduler_url: '',
 })
 
-const datasourceSelected = computed(() => !!formData.datasource_id)
-
-// 监听投递方式切换，清空另一模式的字段
+// 监听投递方式切换
 watch(() => formData.export_mode, (newMode) => {
   if (newMode === 1) {
-    // 切换到数据源投递，清空应用投递字段
     formData.application_id = ''
   } else if (newMode === 2) {
-    // 切换到应用投递，清空数据源投递字段
-    formData.datasource_id = ''
-    exportPluginParams.value = []
-    Object.keys(exportFormData).forEach(key => delete exportFormData[key])
-    Object.keys(fieldOptions).forEach(key => delete fieldOptions[key])
-    exportPluginParamsLoaded.value = true
+    exportTargetConfig.value = {}
   }
 })
 
@@ -316,36 +224,10 @@ const formRules = reactive<FormRules>({
   group_id: [
     { required: true, message: '请选择群组', trigger: 'change' },
   ],
-  datasource_id: [
-    { required: true, message: '请选择数据源', trigger: 'change' },
-  ],
   application_id: [
     { required: true, message: '请选择应用', trigger: 'change' },
   ],
 })
-
-// 字段名约定加载器
-const fieldLoaders: Record<string, (dsId: string, form: Record<string, any>) => Promise<Array<{ label: string; value: any }>>> = {
-  'table_name': async (dsId) => {
-    const res = await dataSourceApi.getTablesByDatasource(dsId)
-    const tables = res.data.data || []
-    return tables.map((tb: TableInfo) => ({
-      label: tb.name + (tb.comment ? ` (${tb.comment})` : ''),
-      value: tb.name,
-    }))
-  },
-  'target_column': async (dsId, form) => {
-    const tableName = form['table_name']
-    if (!tableName) return []
-    const res = await dataSourceApi.getColumnsByDatasource(dsId, tableName)
-    const colInfo = res.data.data as TableColumnInfo
-    if (!colInfo || !colInfo.columns) return []
-    return colInfo.columns.map((col: any) => ({
-      label: col.name + (col.comment ? ` (${col.comment})` : ''),
-      value: col.name,
-    }))
-  },
-}
 
 // 选中的应用
 const selectedApplication = computed(() => {
@@ -358,34 +240,12 @@ const getApplicationTargetInfo = (app: Application): string => {
   if (!app.target_config) return '未配置'
   try {
     const config = JSON.parse(app.target_config)
-    if (config.tableName) {
-      return `${config.database}.${config.tableName}`
-    }
-    if (config.bucket) {
-      return `${config.bucket}/${config.objectPath || ''}`
-    }
-    if (config.topic) {
-      return `Topic: ${config.topic}`
-    }
+    if (config.table_name) return config.table_name
+    if (config.object_path) return config.object_path
+    if (config.topic) return `Topic: ${config.topic}`
     return '未配置'
   } catch {
     return '未配置'
-  }
-}
-
-// 获取 placeholder
-const getPlaceholder = (param: PluginParam): string => {
-  const props = param.props as any
-  return props?.placeholder || `请选择${param.title}`
-}
-
-// 获取数据源列表
-const fetchDatasourceList = async () => {
-  try {
-    const res = await dataSourceApi.getList()
-    datasourceList.value = res.data.data || []
-  } catch (error) {
-    console.error('获取数据源列表失败:', error)
   }
 }
 
@@ -407,86 +267,6 @@ const fetchApplicationList = async () => {
   } catch (error) {
     console.error('获取应用列表失败:', error)
   }
-}
-
-// 加载动态表单配置
-const loadExportPluginParams = async (datasourceId: string) => {
-  exportPluginParams.value = []
-  exportPluginParamsLoaded.value = false
-  Object.keys(exportFormData).forEach(key => delete exportFormData[key])
-  Object.keys(fieldOptions).forEach(key => delete fieldOptions[key])
-
-  if (!datasourceId) {
-    exportPluginParamsLoaded.value = true
-    return
-  }
-
-  try {
-    const res = await dataSourceApi.getExportConfig(datasourceId)
-    const jsonStr = res.data.data
-    if (!jsonStr || jsonStr === '[]') {
-      exportPluginParams.value = []
-      exportPluginParamsLoaded.value = true
-      return
-    }
-    const params: PluginParam[] = JSON.parse(jsonStr)
-    exportPluginParams.value = params
-
-    // 初始化表单数据和默认值
-    params.forEach(param => {
-      if (param.value !== undefined && param.value !== null) {
-        exportFormData[param.field] = param.value
-      } else {
-        exportFormData[param.field] = ''
-      }
-    })
-
-    // 自动加载有 loader 的字段选项
-    for (const param of params) {
-      if (fieldLoaders[param.field]) {
-        await loadFieldOptions(param.field)
-      }
-    }
-
-    exportPluginParamsLoaded.value = true
-  } catch (error) {
-    console.error('获取投递配置表单失败:', error)
-    exportPluginParamsLoaded.value = true
-  }
-}
-
-// 加载字段选项
-const loadFieldOptions = async (fieldName: string) => {
-  const loader = fieldLoaders[fieldName]
-  if (!loader || !formData.datasource_id) return
-
-  loadingFields[fieldName] = true
-  try {
-    const options = await loader(formData.datasource_id, exportFormData)
-    fieldOptions[fieldName] = options
-  } catch (error) {
-    console.error(`加载字段 ${fieldName} 选项失败:`, error)
-    fieldOptions[fieldName] = []
-  } finally {
-    loadingFields[fieldName] = false
-  }
-}
-
-// 数据源变更
-const handleDatasourceChange = (datasourceId: string) => {
-  loadExportPluginParams(datasourceId)
-}
-
-// 动态表单字段变更
-const handleExportFieldChange = (fieldName: string) => {
-  // 检查是否有其他字段依赖当前字段
-  exportPluginParams.value.forEach((param: PluginParam) => {
-    // 简单约定：target_column 依赖 table_name
-    if (param.field === 'target_column' && fieldName === 'table_name') {
-      exportFormData['target_column'] = ''
-      loadFieldOptions('target_column')
-    }
-  })
 }
 
 // 获取投递详情（编辑模式）
@@ -516,24 +296,13 @@ const fetchDetail = async () => {
         const config = JSON.parse(data.export_config)
         formData.export_mode = data.export_mode || 1
         formData.group_id = config.group_id || ''
-        formData.datasource_id = config.datasource_id || ''
         formData.application_id = config.application_id || ''
 
-        // 加载动态表单配置
-        if (formData.datasource_id && formData.export_mode === 1) {
-          await loadExportPluginParams(formData.datasource_id)
-
-          // 回填动态表单数据
-          Object.keys(config).forEach(key => {
-            if (key !== 'datasource_id' && key in exportFormData) {
-              exportFormData[key] = config[key]
-            }
-          })
-
-          // 级联加载选项
-          if (exportFormData['table_name']) {
-            await loadFieldOptions('target_column')
-          }
+        // 数据源投递模式：回填到共享组件
+        if (formData.export_mode === 1) {
+          const { group_id, ...targetConfig } = config
+          exportTargetConfig.value = targetConfig
+          await exportTargetConfigRef.value?.loadConfig(targetConfig)
         }
       } catch (e) {
         console.error('解析 export_config 失败:', e)
@@ -555,8 +324,7 @@ const buildExportConfig = (): string => {
   if (formData.export_mode === 1) {
     return JSON.stringify({
       group_id: formData.group_id,
-      datasource_id: formData.datasource_id,
-      ...exportFormData,
+      ...exportTargetConfig.value,
     })
   } else {
     return JSON.stringify({
@@ -609,7 +377,6 @@ const handleSubmit = async () => {
 }
 
 onMounted(() => {
-  fetchDatasourceList()
   fetchGroupList()
   fetchApplicationList()
   if (isEdit.value) {
