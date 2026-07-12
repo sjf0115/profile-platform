@@ -8,43 +8,35 @@ export const exportApi = {
     return request.post<ApiResponse<Export[]>>('/export/list', params || {})
   },
 
-  // 根据名称查询
-  getByName: (exportName: string) => {
-    return request.get<ApiResponse<Export[]>>('/export/name', {
-      params: { exportName }
-    })
-  },
-
-  // 模糊查询
-  getByKeyword: (keyword: string) => {
-    return request.get<ApiResponse<Export[]>>('/export/keyword', {
-      params: { keyword }
-    })
-  },
-
   // 获取投递详情
   getDetail: (exportId: string) => {
-    return request.get<ApiResponse<Export>>('/export/detail', {
-      params: { exportId }
-    })
+    return request.get<ApiResponse<Export>>(`/export/${exportId}/detail`)
   },
 
-  // 保存投递（新增/修改）
-  save: (data: Partial<Export>) => {
-    return request.post<ApiResponse<number>>('/export/save', data)
+  // 创建投递
+  create: (data: Partial<Export>) => {
+    return request.post<ApiResponse<Export>>('/export', data)
+  },
+
+  // 更新投递
+  update: (exportId: string, data: Partial<Export>) => {
+    return request.put<ApiResponse<number>>(`/export/${exportId}`, data)
+  },
+
+  // 更新投递状态
+  updateStatus: (exportId: string, status: number) => {
+    return request.put<ApiResponse<number>>(`/export/${exportId}/status`, null, {
+      params: { status }
+    })
   },
 
   // 删除投递
   delete: (exportId: string) => {
-    return request.delete<ApiResponse<number>>('/export/delete', {
-      params: { exportId }
-    })
+    return request.delete<ApiResponse<number>>(`/export/${exportId}`)
   },
 
   // 立即执行投递
   execute: (exportId: string) => {
-    return request.post<ApiResponse<string>>('/export/execute', null, {
-      params: { exportId }
-    })
+    return request.post<ApiResponse<string>>(`/export/${exportId}/execute`)
   },
 }

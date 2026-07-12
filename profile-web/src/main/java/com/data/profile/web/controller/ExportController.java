@@ -1,11 +1,17 @@
 package com.data.profile.web.controller;
 
 import com.data.profile.web.annotation.RequiresPermission;
-import com.data.profile.web.vo.Response;
-import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.web.converter.ExportConverter;
+import com.data.profile.web.dto.ExportDTO;
+import com.data.profile.web.dto.ExportParam;
+import com.data.profile.web.dto.ExportRequest;
 import com.data.profile.web.model.Export;
 import com.data.profile.web.task.ExportTask;
 import com.data.profile.web.service.ExportService;
+import com.data.profile.web.vo.ExportVO;
+import com.data.profile.web.vo.Response;
+import com.data.profile.common.enums.ResponseCode;
+import com.data.profile.common.utils.JSONUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -31,53 +37,97 @@ public class ExportController {
     @Autowired
     private ExportTask exportTask;
 
+    /**
+     * 投递列表
+     */
     @PostMapping(value = "/list")
-    public Response<List<Export>> getList(@RequestBody Export export) {
-        List<Export> exports = exportService.getList(export);
-        return Response.success(exports);
+    public Response<List<ExportVO>> getList(@RequestBody ExportParam param) {
+        log.info("请求查询投递列表：{}", JSONUtils.toJsonString(param));
+        Export export = ExportConverter.param2do(param);
+        List<ExportDTO> dtos = exportService.getList(export);
+        return Response.success(ExportConverter.dto2voList(dtos));
     }
 
-    @GetMapping(value = "/name")
-    public Response<List<Export>> getByName(@RequestParam String exportName) {
-        List<Export> exports = exportService.getByName(exportName);
-        return Response.success(exports);
+    /**
+     * 投递详情
+     */
+    @GetMapping(value = "/{exportId}/detail")
+    public Response<ExportVO> getDetail(@PathVariable(value = "exportId") String exportId) {
+        log.info("请求查询投递 {} 详细信息", exportId);
+        Optional<ExportDTO> opt = exportService.getDetail(exportId);
+        if (!opt.isPresent()) {
+            return Response.error("投递不存在", ResponseCode.ERROR);
+        }
+        return Response.success(ExportConverter.dto2vo(opt.get()));
     }
 
-    @GetMapping(value = "/keyword")
-    public Response<List<Export>> getByKeyword(@RequestParam String keyword) {
-        List<Export> exports = exportService.getByKeyword(keyword);
-        return Response.success(exports);
-    }
-
-    @GetMapping(value = "/detail")
-    public Response<Export> getDetail(@RequestParam String exportId) {
-        Optional<Export> optional = exportService.getDetail(exportId);
-        if (optional.isPresent()) {
-            return Response.success(optional.get());
-        } else {
-            return Response.error("请求的投递不存在", ResponseCode.ERROR);
+    /**
+     * 创建投递
+     */
+    @RequiresPermission(code = "export:create", name = "投递-创建")
+    @PostMapping
+    public Response<ExportVO> create(@RequestBody ExportRequest request) {
+        log.info("请求创建投递：{}", JSONUtils.toJsonString(request));
+        try {
+            ExportDTO dto = exportService.create(request);
+            return Response.success(ExportConverter.dto2vo(dto));
+        } catch (RuntimeException e) {
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
         }
     }
 
+    /**
+     * 更新投递
+     */
     @RequiresPermission(code = "export:edit", name = "投递-编辑")
-    @PostMapping(value = "/save")
-    public Response<Integer> save(@RequestBody Export export) {
-        int result = exportService.save(export);
-        if (result > 0) {
-            return Response.success(result);
-        } else {
-            return Response.error("创建投递任务失败", ResponseCode.ERROR);
+    @PutMapping("/{exportId}")
+    public Response<Integer> update(@PathVariable(value = "exportId") String exportId,
+                                    @RequestBody ExportRequest request) {
+        log.info("请求更新投递 {}：{}", exportId, JSONUtils.toJsonString(request));
+        try {
+            int result = exportService.update(exportId, request);
+            if (result > 0) {
+                return Response.success(result);
+            } else {
+                return Response.error("修改投递失败", ResponseCode.ERROR);
+            }
+        } catch (RuntimeException e) {
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
         }
     }
 
+    /**
+     * 删除投递
+     */
     @RequiresPermission(code = "export:delete", name = "投递-删除")
-    @DeleteMapping(value = "/delete")
-    public Response<Integer> delete(@RequestParam String exportId) {
-        int result = exportService.delete(exportId);
-        if (result > 0) {
+    @DeleteMapping("/{exportId}")
+    public Response<Integer> delete(@PathVariable(value = "exportId") String exportId) {
+        log.info("请求删除投递：{}", exportId);
+        try {
+            int result = exportService.delete(exportId);
+            if (result > 0) {
+                return Response.success(result);
+            } else {
+                return Response.error("删除投递失败", ResponseCode.ERROR);
+            }
+        } catch (RuntimeException e) {
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
+        }
+    }
+
+    /**
+     * 更新投递状态（启用/停用）
+     */
+    @RequiresPermission(code = "export:edit", name = "投递-编辑")
+    @PutMapping("/{exportId}/status")
+    public Response<Integer> updateStatus(@PathVariable(value = "exportId") String exportId,
+                                          @RequestParam Integer status) {
+        log.info("请求更新投递 {} 状态为：{}", exportId, status);
+        try {
+            int result = exportService.updateStatus(exportId, status);
             return Response.success(result);
-        } else {
-            return Response.error("删除投递任务失败", ResponseCode.ERROR);
+        } catch (RuntimeException e) {
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
         }
     }
 
@@ -85,8 +135,9 @@ public class ExportController {
      * 立即执行投递
      */
     @RequiresPermission(code = "export:execute", name = "投递-执行")
-    @PostMapping(value = "/execute")
-    public Response<String> execute(@RequestParam String exportId) {
+    @PostMapping("/{exportId}/execute")
+    public Response<String> execute(@PathVariable(value = "exportId") String exportId) {
+        log.info("请求立即执行投递：{}", exportId);
         try {
             exportTask.executeExport(exportId);
             return Response.success("投递执行成功");

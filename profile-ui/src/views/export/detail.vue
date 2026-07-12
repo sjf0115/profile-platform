@@ -338,10 +338,7 @@ const handleToggleStatus = async () => {
     await ElMessageBox.confirm(`确认${action}投递？`, '提示', {
       type: 'warning'
     })
-    const res = await exportApi.save({
-      export_id: exportId.value,
-      status: newStatus
-    })
+    const res = await exportApi.updateStatus(exportId.value, newStatus)
     if (res.data.code === 0) {
       ElMessage.success(`${action}成功`)
       fetchDetail()

@@ -3,6 +3,7 @@ package com.data.profile.web.service;
 import com.data.profile.common.exception.ProfileException;
 import com.data.profile.web.dao.*;
 import com.data.profile.web.dto.ApplicationDTO;
+import com.data.profile.web.dto.ExportDTO;
 import com.data.profile.web.dto.GroupDTO;
 import com.data.profile.web.enums.AssetType;
 import com.data.profile.web.enums.RelationType;
@@ -308,7 +309,7 @@ public class LineageService {
                         result.add(new NodeRef(nodeType, a.getAnalysisId(), a.getAnalysisName()));
                     break;
                 case EXPORT:
-                    for (Export ex : exportService.getList(new Export()))
+                    for (ExportDTO ex : exportService.getList(new Export()))
                         result.add(new NodeRef(nodeType, ex.getExportId(), ex.getExportName()));
                     break;
                 case APPLICATION:

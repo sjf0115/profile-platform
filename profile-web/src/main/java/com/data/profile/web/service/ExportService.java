@@ -1,9 +1,14 @@
 package com.data.profile.web.service;
 
+import com.data.profile.web.converter.ExportConverter;
 import com.data.profile.web.dao.ExportMapper;
+import com.data.profile.web.dao.UserMapper;
+import com.data.profile.web.dto.ExportDTO;
+import com.data.profile.web.dto.ExportRequest;
 import com.data.profile.web.enums.AssetType;
 import com.data.profile.web.model.Export;
 import com.data.profile.web.model.TaskInstance;
+import com.data.profile.web.model.User;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
@@ -21,131 +26,159 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * 功能：投递服务
- * 作者：@SmartSi
- * 博客：https://smartsi.blog.csdn.net/
- * 公众号：大数据生态
- * 日期：2025/12/29 11:47
+ * 投递服务
  */
 @Slf4j
 @Service
 public class ExportService {
-    @Autowired
-    private ResourceGrantService resourceGrantService;
     @Resource
     private ExportMapper exportMapper;
+    @Autowired
+    private ResourceGrantService resourceGrantService;
     @Resource
     private TaskInstanceService taskInstanceService;
     @Autowired
     private LineageService lineageService;
+    @Resource
+    private UserMapper userMapper;
 
     /**
      * 根据查询条件获取投递列表
      */
-    public List<Export> getList(Export export) {
-        List<Export> exports = exportMapper.selectByParams(export);
-        // 查询最新任务实例（关联查询）
-        for (Export e : exports) {
-            TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(e.getExportId());
-            e.setLatestInstance(latestInstance);
+    public List<ExportDTO> getList(Export export) {
+        List<Export> exports = exportMapper.selectSimpleByParams(export);
+        List<ExportDTO> dtos = ExportConverter.do2dtoList(exports);
+        // 填充最新任务实例
+        for (int i = 0; i < exports.size(); i++) {
+            TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(exports.get(i).getExportId());
+            dtos.get(i).setLatestInstance(latestInstance);
         }
-        return exports;
-    }
-
-    /**
-     * 根据名字查询
-     * @param exportName
-     * @return
-     */
-    public List<Export> getByName(String exportName) {
-        return exportMapper.selectByExportName(exportName);
-    }
-
-    /**
-     * 模糊查询
-     * @param keyword
-     * @return
-     */
-    public List<Export> getByKeyword(String keyword) {
-        return exportMapper.selectByKeyword(keyword);
+        fillOwnerName(dtos);
+        return dtos;
     }
 
     /**
      * 根据投递ID获取投递详细信息
      */
-    public Optional<Export> getDetail(String exportId) {
+    public Optional<ExportDTO> getDetail(String exportId) {
         Export export = exportMapper.selectByExportId(exportId);
         if (export == null) {
             return Optional.empty();
         }
-        // 查询最新任务实例（关联查询）
+        ExportDTO dto = ExportConverter.do2dto(export);
         TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(exportId);
-        export.setLatestInstance(latestInstance);
-        return Optional.of(export);
+        dto.setLatestInstance(latestInstance);
+        fillOwnerName(dto);
+        return Optional.of(dto);
     }
 
     /**
-     * 保存投递 新增/修改
-     * @param export
-     * @return
-     * @throws RuntimeException
+     * 创建投递
      */
     @Transactional
-    public int save(Export export) throws RuntimeException {
-        if (StringUtils.isBlank(export.getExportId())) {
-            // 新增
-            List<Export> exports = exportMapper.selectSimpleByExportName(export.getExportName());
-            if (!exports.isEmpty()) {
-                throw new RuntimeException("投递任务已经存在，不允许重复投递");
-            }
-            String exportId = IDGenerator.getInstance().generate(ModelType.EXPORT);
-            Export target = exportMapper.selectSimpleByExportId(exportId);
-            if (!Objects.equals(target, null)) {
-                throw new RuntimeException("投递ID已经存在，不允许重复添加");
-            }
-            export.setExportId(exportId);
-            export.setStatus(Status.ENABLE.getCode());
-            export.setSourceType(SourceType.CUSTOM.getCode());
-            String userId = UserContextHolder.currentUserId();
-            export.setOwner(userId); // 创建者即为负责人
-            export.setCreator(userId);
-            export.setModifier(userId);
+    public ExportDTO create(ExportRequest request) throws RuntimeException {
+        String userId = UserContextHolder.currentUserId();
 
-            /*try {
-                // 创建调度任务
-                schedulerService.createJob(SchedulerJobType.EXPORT, export.getExportId(), export.getSchedulerCron());
-            } catch (SchedulerException e) {
-                throw new RuntimeException("创建投递调度任务失败", e.getCause());
-            }*/
-            int result = exportMapper.insertSelective(export);
-            // 自动授权 MANAGE 给创建者
-            resourceGrantService.grantOwner("10", exportId, userId);
-            lineageService.refreshLineage(AssetType.EXPORT.getCode(), exportId);
-            return result;
-        } else {
-            // 修改
-            export.setModifier(UserContextHolder.currentUserId());
-            int result = exportMapper.updateByExportIdSelective(export);
-            lineageService.refreshLineage(AssetType.EXPORT.getCode(), export.getExportId());
-            return result;
+        // 检查投递名称是否重复
+        List<Export> existing = exportMapper.selectSimpleByExportName(request.getExportName());
+        if (!existing.isEmpty()) {
+            throw new RuntimeException("投递任务已经存在，不允许重复投递");
         }
+
+        String exportId = IDGenerator.getInstance().generate(ModelType.EXPORT);
+        Export export = ExportConverter.request2do(request);
+        export.setExportId(exportId);
+        export.setStatus(Status.ENABLE.getCode());
+        export.setSourceType(SourceType.CUSTOM.getCode());
+        // 负责人：前端传入或默认当前用户
+        if (StringUtils.isBlank(export.getOwner())) {
+            export.setOwner(userId);
+        }
+        export.setCreator(userId);
+        export.setModifier(userId);
+
+        exportMapper.insertSelective(export);
+
+        // 自动授权 MANAGE 给创建者
+        resourceGrantService.grantOwner("10", exportId, userId);
+        lineageService.refreshLineage(AssetType.EXPORT.getCode(), exportId);
+
+        ExportDTO dto = ExportConverter.do2dto(export);
+        fillOwnerName(dto);
+        return dto;
+    }
+
+    /**
+     * 更新投递
+     */
+    @Transactional
+    public int update(String exportId, ExportRequest request) {
+        Export existing = exportMapper.selectSimpleByExportId(exportId);
+        if (existing == null) {
+            throw new RuntimeException("投递不存在");
+        }
+
+        // 检查名称重复（排除自身）
+        if (request.getExportName() != null && !request.getExportName().equals(existing.getExportName())) {
+            List<Export> dup = exportMapper.selectSimpleByExportName(request.getExportName());
+            if (!dup.isEmpty()) {
+                throw new RuntimeException("投递名称已存在");
+            }
+        }
+
+        Export export = ExportConverter.request2do(request);
+        export.setExportId(exportId);
+        export.setModifier(UserContextHolder.currentUserId());
+
+        int result = exportMapper.updateByExportIdSelective(export);
+        lineageService.refreshLineage(AssetType.EXPORT.getCode(), exportId);
+        return result;
+    }
+
+    /**
+     * 更新投递状态（启用/停用）
+     */
+    public int updateStatus(String exportId, Integer status) {
+        Export export = new Export();
+        export.setExportId(exportId);
+        export.setStatus(status);
+        export.setModifier(UserContextHolder.currentUserId());
+        return exportMapper.updateByExportIdSelective(export);
     }
 
     /**
      * 删除投递
-     * @param exportId
-     * @return
      */
     @Transactional
     public int delete(String exportId) {
         Export export = exportMapper.selectSimpleByExportId(exportId);
+        if (export == null) {
+            throw new RuntimeException("投递不存在");
+        }
         if (Objects.equals(export.getSourceType(), SourceType.BUILT_IN.getCode())) {
             throw new RuntimeException("内置投递不允许删除");
         }
-        // 删除保护：检查下游依赖
         lineageService.checkDeletable(AssetType.EXPORT.getCode(), exportId);
-        // TODO 检查依赖确保无下游使用
         lineageService.removeLineage(AssetType.EXPORT.getCode(), exportId);
         return exportMapper.deleteByExportId(exportId);
+    }
+
+    /**
+     * 填充负责人名称（单个）
+     */
+    private void fillOwnerName(ExportDTO dto) {
+        if (dto == null || StringUtils.isBlank(dto.getOwner())) return;
+        User user = userMapper.selectByUserId(dto.getOwner());
+        if (user != null) {
+            dto.setOwnerName(user.getUserName());
+        }
+    }
+
+    /**
+     * 填充负责人名称（批量）
+     */
+    private void fillOwnerName(List<ExportDTO> dtos) {
+        if (dtos == null) return;
+        dtos.forEach(this::fillOwnerName);
     }
 }

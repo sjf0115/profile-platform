@@ -514,6 +514,7 @@ export interface Export {
   scheduler_end_time?: number
   source_type?: number
   owner?: string
+  owner_name?: string
   creator?: string
   modifier?: string
   gmt_create?: string

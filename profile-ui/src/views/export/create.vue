@@ -43,6 +43,23 @@
             />
           </el-form-item>
 
+          <el-form-item label="负责人">
+            <el-select
+              v-model="formData.owner"
+              filterable
+              clearable
+              placeholder="请选择负责人（默认为当前用户）"
+              style="width: 400px"
+            >
+              <el-option
+                v-for="u in userOptions"
+                :key="u.user_id"
+                :label="u.user_name"
+                :value="u.user_id"
+              />
+            </el-select>
+          </el-form-item>
+
           <el-form-item label="关联群组" prop="group_id">
             <el-select
               v-model="formData.group_id"
@@ -163,6 +180,9 @@ import type { Export, Group, Application } from '@/types'
 import { exportApi } from '@/api/export'
 import { groupApi } from '@/api/group'
 import { applicationApi } from '@/api/application'
+import { userApi } from '@/api/user'
+import type { User } from '@/api/user'
+import { getLoginUser } from '@/utils/auth'
 import TargetConfigForm from '@/components/TargetConfigForm.vue'
 
 const route = useRoute()
@@ -180,6 +200,7 @@ const submitting = ref(false)
 // 列表数据
 const groupList = ref<Group[]>([])
 const applicationList = ref<Application[]>([])
+const userOptions = ref<User[]>([])
 
 // 数据源投递配置（共享组件）
 const exportTargetConfigRef = ref<InstanceType<typeof TargetConfigForm>>()
@@ -195,6 +216,7 @@ const formData = reactive<{
   scheduler_type: number
   scheduler_cron: string
   scheduler_url: string
+  owner: string
 }>({
   export_name: '',
   export_desc: '',
@@ -204,6 +226,7 @@ const formData = reactive<{
   scheduler_type: 1,
   scheduler_cron: '',
   scheduler_url: '',
+  owner: '',
 })
 
 // 监听投递方式切换
@@ -286,6 +309,7 @@ const fetchDetail = async () => {
     // 回填基础信息
     formData.export_name = data.export_name
     formData.export_desc = data.export_desc || ''
+    formData.owner = data.owner || ''
     formData.scheduler_type = data.scheduler_type || 1
     formData.scheduler_cron = data.scheduler_cron || ''
     formData.scheduler_url = data.scheduler_url || ''
@@ -352,14 +376,18 @@ const handleSubmit = async () => {
         scheduler_type: formData.scheduler_type,
         scheduler_cron: formData.scheduler_cron || undefined,
         scheduler_url: formData.scheduler_url || undefined,
+        owner: formData.owner || undefined,
       }
 
-      // 编辑模式
+      let res
       if (isEdit.value) {
-        params.export_id = route.params.id as string
+        // 编辑模式
+        const exportId = route.params.id as string
+        res = await exportApi.update(exportId, params)
+      } else {
+        // 创建模式
+        res = await exportApi.create(params)
       }
-
-      const res = await exportApi.save(params)
 
       if (res.data.code === 0) {
         ElMessage.success(isEdit.value ? '保存成功' : '创建成功')
@@ -376,11 +404,28 @@ const handleSubmit = async () => {
   })
 }
 
+// 获取用户列表
+const fetchUserOptions = async () => {
+  try {
+    const res = await userApi.getList()
+    userOptions.value = res.data.data || []
+  } catch {
+    userOptions.value = []
+  }
+}
+
 onMounted(() => {
   fetchGroupList()
   fetchApplicationList()
+  fetchUserOptions()
   if (isEdit.value) {
     fetchDetail()
+  } else {
+    // 创建模式：默认填充当前登录用户为负责人
+    const currentUser = getLoginUser()
+    if (currentUser?.user_id) {
+      formData.owner = currentUser.user_id
+    }
   }
 })
 </script>
