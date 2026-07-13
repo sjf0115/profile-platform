@@ -5,6 +5,7 @@ import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.*;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.converter.LabelConverter;
+import com.data.profile.web.dto.EntityIdentifierDTO;
 import com.data.profile.web.dto.LabelParam;
 import com.data.profile.web.dto.LabelRequest;
 import com.data.profile.web.model.DatasetField;
@@ -171,12 +172,11 @@ public class LabelController {
         if (vo.getEntityIdentifierId() == null) {
             return;
         }
-        Optional<EntityIdentifier> eiOp = entityIdentifierService.getDetail(vo.getEntityIdentifierId());
-        if (eiOp.isPresent()) {
-            EntityIdentifier identifier = eiOp.get();
-            vo.setEntityIdentifierName(identifier.getEntityIdentifierName());
-            vo.setEntityId(identifier.getEntityId());
-            vo.setEntityName(identifier.getEntityName());
+        EntityIdentifierDTO identifierDTO = entityIdentifierService.getDetail(vo.getEntityIdentifierId());
+        if (identifierDTO != null) {
+            vo.setEntityIdentifierName(identifierDTO.getEntityIdentifierName());
+            vo.setEntityId(identifierDTO.getEntityId());
+            vo.setEntityName(identifierDTO.getEntityName());
         }
     }
 

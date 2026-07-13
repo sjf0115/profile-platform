@@ -11,6 +11,7 @@ import com.data.profile.web.model.*;
 import com.data.profile.web.utils.RuleToSqlTranslator;
 import com.data.profile.web.dto.GroupDTO;
 import com.data.profile.web.dto.DatasetDTO;
+import com.data.profile.web.dto.EntityIdentifierDTO;
 import org.apache.commons.lang3.StringUtils;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.utils.IDGenerator;
@@ -135,12 +136,11 @@ public class GroupService {
         BeanUtils.copyProperties(group, dto);
         // 获取群组实体信息
         String entityIdentifierId = group.getEntityIdentifierId();
-        Optional<EntityIdentifier> entityIdentifierOp = entityIdentifierService.getDetail(entityIdentifierId);
-        if (entityIdentifierOp.isPresent()) {
-            EntityIdentifier entityIdentifier = entityIdentifierOp.get();
-            dto.setEntityId(entityIdentifier.getEntityId());
-            dto.setEntityName(entityIdentifier.getEntityName());
-            dto.setEntityIdentifierName(entityIdentifier.getEntityIdentifierName());
+        EntityIdentifierDTO identifierDTO = entityIdentifierService.getDetail(entityIdentifierId);
+        if (identifierDTO != null) {
+            dto.setEntityId(identifierDTO.getEntityId());
+            dto.setEntityName(identifierDTO.getEntityName());
+            dto.setEntityIdentifierName(identifierDTO.getEntityIdentifierName());
         }
         return dto;
     }

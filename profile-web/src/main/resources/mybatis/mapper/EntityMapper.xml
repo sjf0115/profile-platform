@@ -61,7 +61,7 @@
   </select>
 
   <insert id="insert" parameterType="com.data.profile.web.model.Entity">
-    insert into profile_meta_entity_type (id, status, entity_id,
+    insert into profile_meta_entity (id, status, entity_id,
         entity_name, source_type, creator, modifier, gmt_create, gmt_modified
     )
     values (#{id,jdbcType=BIGINT}, #{status,jdbcType=INTEGER}, #{entityId,jdbcType=VARCHAR},

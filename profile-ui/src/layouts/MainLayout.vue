@@ -383,7 +383,12 @@ import { usePermissionStore } from '@/stores/permission'
 
 const route = useRoute()
 const router = useRouter()
-const activeMenu = computed(() => route.path)
+const activeMenu = computed(() => {
+  const path = route.path
+  // 详情页映射到对应的列表页菜单项
+  if (path.startsWith('/entity/detail/') || path.startsWith('/entity/identifier-detail/')) return '/project/entity'
+  return path
+})
 
 // 显示用户名
 const displayName = computed(() => {
@@ -406,6 +411,7 @@ const activeTopNav = computed(() => {
   if (path.startsWith('/datasource')) return '/project'
   if (path.startsWith('/application')) return '/project'
   if (path.startsWith('/lineage')) return '/project'
+  if (path.startsWith('/entity')) return '/project'
   if (path.startsWith('/settings')) return '/settings'
   return '/home'
 })

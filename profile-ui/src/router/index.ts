@@ -144,6 +144,18 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/entity/index.vue'),
         meta: { title: '实体管理' },
       },
+      {
+        path: 'entity/detail/:id',
+        name: 'EntityDetail',
+        component: () => import('@/views/entity/detail.vue'),
+        meta: { title: '实体详情' },
+      },
+      {
+        path: 'entity/identifier-detail/:id',
+        name: 'EntityIdentifierDetail',
+        component: () => import('@/views/entity/identifier-detail.vue'),
+        meta: { title: '实体标识详情' },
+      },
       // 数据血缘
       {
         path: 'lineage',

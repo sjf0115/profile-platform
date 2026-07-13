@@ -44,39 +44,50 @@
           <el-tag v-else type="success" size="small">自定义</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="creator" label="创建人" min-width="100" align="center" />
-      <el-table-column label="操作" min-width="180" align="center" fixed="right">
+      <el-table-column prop="creator_name" label="创建人" min-width="100" align="center">
         <template #default="{ row }">
-          <div class="operation-btns">
-            <el-button link type="primary" size="small" @click="handleDetail(row)">详情</el-button>
-            <el-button 
-              v-if="row.source_type !== 1" 
-              link 
-              type="primary" 
-              size="small"
-              @click="handleEdit(row)"
-            >
-              编辑
+          {{ row.creator_name || row.creator || '-' }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="gmt_create" label="创建时间" min-width="160" align="center">
+        <template #default="{ row }">
+          {{ formatDateTime(row.gmt_create) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="gmt_modified" label="修改时间" min-width="160" align="center">
+        <template #default="{ row }">
+          {{ formatDateTime(row.gmt_modified) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="220" align="center" fixed="right">
+        <template #default="{ row }">
+          <el-button link type="primary" @click="handleView(row)">查看</el-button>
+          <el-button 
+            v-if="row.source_type !== 1" 
+            link 
+            type="primary" 
+            @click="handleEdit(row)"
+          >
+            编辑
+          </el-button>
+          <el-button 
+            v-if="row.source_type !== 1" 
+            link 
+            type="primary" 
+            @click="handleToggleStatus(row)"
+          >
+            {{ row.status === 1 ? '禁用' : '启用' }}
+          </el-button>
+          <el-dropdown v-if="row.source_type !== 1" trigger="click">
+            <el-button link type="primary">
+              <el-icon><More /></el-icon>
             </el-button>
-            <el-button 
-              v-if="row.source_type !== 1" 
-              link 
-              :type="row.status === 1 ? 'warning' : 'success'" 
-              size="small"
-              @click="handleToggleStatus(row)"
-            >
-              {{ row.status === 1 ? '禁用' : '启用' }}
-            </el-button>
-            <el-button 
-              v-if="row.source_type !== 1" 
-              link 
-              type="danger" 
-              size="small"
-              @click="handleDelete(row)"
-            >
-              删除
-            </el-button>
-          </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </template>
       </el-table-column>
     </el-table>
@@ -116,38 +127,18 @@
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
-
-    <!-- 详情弹窗 -->
-    <el-dialog
-      v-model="detailVisible"
-      title="实体详情"
-      width="600px"
-    >
-      <el-descriptions :column="1" border>
-        <el-descriptions-item label="实体ID">{{ detailData.entity_id }}</el-descriptions-item>
-        <el-descriptions-item label="实体名称">{{ detailData.entity_name }}</el-descriptions-item>
-        <el-descriptions-item label="状态">
-          <el-tag v-if="detailData.status === 1" type="success">启用</el-tag>
-          <el-tag v-else type="danger">禁用</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="创建方式">
-          <el-tag v-if="detailData.source_type === 1" type="info">系统预置</el-tag>
-          <el-tag v-else type="success">自定义</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="创建人">{{ detailData.creator || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ formatDateTime(detailData.gmt_create) }}</el-descriptions-item>
-        <el-descriptions-item label="修改时间">{{ formatDateTime(detailData.gmt_modified) }}</el-descriptions-item>
-      </el-descriptions>
-    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus } from '@element-plus/icons-vue'
+import { Search, Plus, More } from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
 import { entityApi, type Entity } from '@/api/entity'
+
+const router = useRouter()
 
 // 搜索表单
 const searchForm = reactive({
@@ -170,20 +161,15 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('新增实体')
 const formRef = ref<FormInstance>()
 const isEdit = ref(false)
+const editingEntityId = ref('')
 
 const formData = reactive({
-  entity_id: '',
-  entity_name: '',
-  entity_desc: ''
+  entity_name: ''
 })
 
 const formRules = {
   entity_name: [{ required: true, message: '请输入实体名称', trigger: 'blur' }]
 }
-
-// 详情弹窗
-const detailVisible = ref(false)
-const detailData = ref<Partial<Entity>>({})
 
 // 获取实体列表
 const fetchList = async () => {
@@ -217,9 +203,7 @@ const handleReset = () => {
 const handleAdd = () => {
   isEdit.value = false
   dialogTitle.value = '新增实体'
-  formData.entity_id = ''
   formData.entity_name = ''
-  formData.entity_desc = ''
   dialogVisible.value = true
 }
 
@@ -227,32 +211,27 @@ const handleAdd = () => {
 const handleEdit = (row: Entity) => {
   isEdit.value = true
   dialogTitle.value = '编辑实体'
-  formData.entity_id = row.entity_id
+  editingEntityId.value = row.entity_id
   formData.entity_name = row.entity_name
-  formData.entity_desc = row.entity_desc || ''
   dialogVisible.value = true
 }
 
-// 详情
-const handleDetail = (row: Entity) => {
-  detailData.value = row
-  detailVisible.value = true
+// 查看（跳转详情页）
+const handleView = (row: Entity) => {
+  router.push(`/entity/detail/${row.entity_id}`)
 }
 
 // 启用/禁用
 const handleToggleStatus = (row: Entity) => {
   const action = row.status === 1 ? '禁用' : '启用'
-  const newStatus = row.status === 1 ? 0 : 1
+  const newStatus = row.status === 1 ? 2 : 1
   ElMessageBox.confirm(`确认${action}该实体吗？`, '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(async () => {
     try {
-      await entityApi.save({
-        entity_id: row.entity_id,
-        status: newStatus
-      })
+      await entityApi.updateStatus(row.entity_id, newStatus)
       ElMessage.success(`${action}成功`)
       fetchList()
     } catch (error) {
@@ -284,13 +263,17 @@ const handleSubmit = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        const submitData = {
-          entity_id: formData.entity_id || undefined,
-          entity_name: formData.entity_name,
-          entity_desc: formData.entity_desc
+        if (isEdit.value) {
+          await entityApi.update(editingEntityId.value, {
+            entity_name: formData.entity_name
+          })
+          ElMessage.success('编辑成功')
+        } else {
+          await entityApi.create({
+            entity_name: formData.entity_name
+          })
+          ElMessage.success('新增成功')
         }
-        await entityApi.save(submitData)
-        ElMessage.success(isEdit.value ? '编辑成功' : '新增成功')
         dialogVisible.value = false
         fetchList()
       } catch (error) {
@@ -315,7 +298,14 @@ const handlePageChange = (val: number) => {
 const formatDateTime = (dateStr?: string) => {
   if (!dateStr) return '-'
   const date = new Date(dateStr)
-  return date.toLocaleString('zh-CN')
+  if (isNaN(date.getTime())) return dateStr
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
 onMounted(() => {
@@ -336,12 +326,6 @@ onMounted(() => {
       gap: 12px;
       align-items: center;
     }
-  }
-
-  .operation-btns {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
   }
 
   .pagination {
