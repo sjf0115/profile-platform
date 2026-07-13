@@ -1,25 +1,31 @@
 import request from '@/utils/request'
-import type { Task, TaskQueryParams, ApiResponse } from '@/types'
+import type { Task, TaskQueryParams, TaskRequest, ApiResponse } from '@/types'
 
+// 任务相关接口
 export const taskApi = {
   // 获取任务列表
-  getList: (params: TaskQueryParams) => {
-    return request.post<ApiResponse<Task[]>>('/task/list', params)
+  getList: (params?: TaskQueryParams) => {
+    return request.post<ApiResponse<Task[]>>('/task/list', params || {})
   },
 
   // 获取任务详情
-  detail: (taskId: string) => {
+  getDetail: (taskId: string) => {
     return request.get<ApiResponse<Task>>(`/task/${taskId}/detail`)
   },
 
   // 创建任务
-  create: (data: Task) => {
-    return request.post<ApiResponse<number>>('/task', data)
+  create: (data: TaskRequest) => {
+    return request.post<ApiResponse<Task>>('/task', data)
   },
 
-  // 修改任务
-  update: (taskId: string, data: Task) => {
+  // 更新任务
+  update: (taskId: string, data: TaskRequest) => {
     return request.put<ApiResponse<number>>(`/task/${taskId}`, data)
+  },
+
+  // 更新任务状态（启用/停用）
+  updateStatus: (taskId: string, status: number) => {
+    return request.put<ApiResponse<number>>(`/task/${taskId}/status?status=${status}`)
   },
 
   // 删除任务
@@ -30,13 +36,6 @@ export const taskApi = {
   // 执行任务
   execute: (taskId: string) => {
     return request.post<ApiResponse<any>>(`/task/${taskId}/execute`)
-  },
-
-  // 通过关联ID执行任务
-  executeByRelatedId: (relatedId: string) => {
-    return request.post<ApiResponse<any>>('/task/executeByRelatedId', null, {
-      params: { related_id: relatedId }
-    })
   },
 
   // 配置任务上游依赖

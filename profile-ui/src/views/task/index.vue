@@ -25,30 +25,39 @@
             v-model="queryParams.task_type"
             placeholder="任务类型"
             clearable
-            style="width: 160px"
+            style="width: 140px"
             @change="handleSearch"
           >
             <el-option label="数据集同步" :value="3" />
             <el-option label="群组计算" :value="1" />
             <el-option label="群组投递" :value="2" />
           </el-select>
+          <el-select
+            v-model="queryParams.trigger_type"
+            placeholder="调度类型"
+            clearable
+            style="width: 140px"
+            @change="handleSearch"
+          >
+            <el-option label="手动触发" :value="1" />
+            <el-option label="每日重复" :value="2" />
+            <el-option label="小时重复" :value="3" />
+          </el-select>
+          <el-select
+            v-model="queryParams.status"
+            placeholder="状态"
+            clearable
+            style="width: 120px"
+            @change="handleSearch"
+          >
+            <el-option label="启用" :value="1" />
+            <el-option label="禁用" :value="2" />
+          </el-select>
           <el-button :icon="Refresh" @click="handleReset">重置</el-button>
           <el-button type="primary" :icon="Search" @click="handleSearch">
             查询
           </el-button>
         </div>
-      </div>
-
-      <!-- 筛选标签 -->
-      <div class="filter-tags">
-        <el-check-tag
-          v-for="tag in filterTags"
-          :key="tag.value"
-          :checked="activeFilterTag === tag.value"
-          @change="handleFilterTagChange(tag.value)"
-        >
-          {{ tag.label }}
-        </el-check-tag>
       </div>
 
       <!-- 数据表格 -->
@@ -71,7 +80,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="任务类型" width="120">
+        <el-table-column label="任务类型" width="120" align="center">
           <template #default="{ row }">
             <el-tag size="small" :type="getTaskTypeType(row.task_type)">
               {{ getTaskTypeLabel(row.task_type) }}
@@ -92,6 +101,11 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="创建人" width="100" align="center">
+          <template #default="{ row }">
+            {{ row.creator_name || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column label="创建时间" width="170">
           <template #default="{ row }">
             {{ formatDateTime(row.gmt_create) }}
@@ -103,8 +117,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="owner" label="责任人" width="100" />
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right" align="center">
           <template #default="{ row }">
             <el-button link type="primary" @click="handleViewDetail(row)">
               查看
@@ -115,13 +128,21 @@
             <el-button link type="primary" @click="handleViewInstance(row)">
               执行记录
             </el-button>
-            <el-dropdown trigger="click" @command="(cmd: string) => handleMoreCommand(cmd, row)">
+            <el-button 
+              v-if="row.source_type !== 1" 
+              link 
+              type="primary" 
+              @click="handleToggleStatus(row)"
+            >
+              {{ row.status === 1 ? '禁用' : '启用' }}
+            </el-button>
+            <el-dropdown v-if="row.source_type !== 1" trigger="click">
               <el-button link type="primary">
                 <el-icon><More /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="delete">删除</el-dropdown-item>
+                  <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -142,8 +163,6 @@
         />
       </div>
     </el-card>
-
-
   </div>
 </template>
 
@@ -184,31 +203,20 @@ const queryParams = reactive<TaskQueryParams>({
   page_size: 10,
   task_name: '',
   task_type: undefined,
+  trigger_type: undefined,
+  status: undefined,
 })
-
-// 筛选标签
-const filterTags = [
-  { label: '全部', value: 'all' },
-  { label: '我的', value: 'mine' },
-  { label: '今日修改', value: 'today' },
-  { label: '正常调度', value: 'normal' },
-]
-const activeFilterTag = ref('all')
 
 // 选中的数据
 const selectedRows = ref<Task[]>([])
-
-
 
 // 获取任务列表
 const fetchData = async () => {
   loading.value = true
   try {
-    // 将空字符串转为 undefined，避免后端查询条件匹配问题
     const params: TaskQueryParams = {
       ...queryParams,
       task_name: queryParams.task_name || undefined,
-      task_type: queryParams.task_type ?? undefined,
     }
     const res = await taskApi.getList(params)
     tableData.value = res.data.data || []
@@ -242,8 +250,6 @@ const getTriggerTypeType = (type?: number) => {
   return map[type || 0] || 'info'
 }
 
-
-
 // 搜索
 const handleSearch = () => {
   queryParams.page_num = 1
@@ -254,16 +260,10 @@ const handleSearch = () => {
 const handleReset = () => {
   queryParams.task_name = undefined
   queryParams.task_type = undefined
+  queryParams.trigger_type = undefined
+  queryParams.status = undefined
   queryParams.page_num = 1
-  activeFilterTag.value = 'all'
   fetchData()
-}
-
-// 筛选标签切换
-const handleFilterTagChange = (value: string) => {
-  activeFilterTag.value = value
-  // 根据标签筛选（简化实现，实际应根据后端筛选条件）
-  handleSearch()
 }
 
 // 查看任务详情
@@ -297,10 +297,23 @@ const handleViewInstance = (row: Task) => {
   })
 }
 
-// 更多操作
-const handleMoreCommand = (command: string, row: Task) => {
-  if (command === 'delete') {
-    handleDelete(row)
+// 启用/禁用
+const handleToggleStatus = async (row: Task) => {
+  const newStatus = row.status === 1 ? 2 : 1
+  const action = newStatus === 1 ? '启用' : '禁用'
+  try {
+    await ElMessageBox.confirm(
+      `确定要${action}任务 "${row.task_name}" 吗？`,
+      '提示',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+    )
+    await taskApi.updateStatus(row.task_id, newStatus)
+    ElMessage.success(`${action}成功`)
+    fetchData()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error(`${action}失败:`, error)
+    }
   }
 }
 
@@ -364,23 +377,11 @@ onMounted(() => {
     flex-wrap: wrap;
     gap: 12px;
 
-    .left-actions {
-      display: flex;
-      gap: 10px;
-    }
-
     .right-filters {
       display: flex;
       gap: 10px;
       align-items: center;
     }
-  }
-
-  .filter-tags {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
   }
 
   .task-name {

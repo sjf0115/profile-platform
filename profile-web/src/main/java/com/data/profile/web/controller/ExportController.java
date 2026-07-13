@@ -81,8 +81,7 @@ public class ExportController {
      */
     @RequiresPermission(code = "export:edit", name = "投递-编辑")
     @PutMapping("/{exportId}")
-    public Response<Integer> update(@PathVariable(value = "exportId") String exportId,
-                                    @RequestBody ExportRequest request) {
+    public Response<Integer> update(@PathVariable(value = "exportId") String exportId, @RequestBody ExportRequest request) {
         log.info("请求更新投递 {}：{}", exportId, JSONUtils.toJsonString(request));
         try {
             int result = exportService.update(exportId, request);
@@ -120,8 +119,7 @@ public class ExportController {
      */
     @RequiresPermission(code = "export:edit", name = "投递-编辑")
     @PutMapping("/{exportId}/status")
-    public Response<Integer> updateStatus(@PathVariable(value = "exportId") String exportId,
-                                          @RequestParam Integer status) {
+    public Response<Integer> updateStatus(@PathVariable(value = "exportId") String exportId, @RequestParam Integer status) {
         log.info("请求更新投递 {} 状态为：{}", exportId, status);
         try {
             int result = exportService.updateStatus(exportId, status);

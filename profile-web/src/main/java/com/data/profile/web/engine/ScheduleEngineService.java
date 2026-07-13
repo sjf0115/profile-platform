@@ -52,8 +52,7 @@ public class ScheduleEngineService {
         String endTime = context.getEndTime();
         String cronExpression = context.getCronExpression();
 
-        Task task = taskService.getDetail(taskId)
-                .orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
+        Task task = taskService.getTaskOrThrow(taskId);
 
         // 1. 获取默认调度引擎
         Engine scheduleEngine = getDefaultScheduleEngine();
@@ -106,8 +105,7 @@ public class ScheduleEngineService {
 
     // 临时过渡
     public void configureSchedule(String taskId, int triggerType, String cron, String startTime, String endTime) {
-        Task task = taskService.getDetail(taskId)
-                .orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
+        Task task = taskService.getTaskOrThrow(taskId);
 
         String triggerTypeStr = "manual";
         if (triggerType == TriggerType.DAY_REPEAT.getCode()) {
@@ -135,8 +133,7 @@ public class ScheduleEngineService {
      * @param taskId 任务ID
      */
     public void triggerSchedule(String taskId) {
-        Task task = taskService.getDetail(taskId)
-                .orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
+        Task task = taskService.getTaskOrThrow(taskId);
         if (StringUtils.isBlank(task.getScheduleId())) {
             throw new RuntimeException("任务未注册到调度引擎: " + taskId);
         }
@@ -159,8 +156,7 @@ public class ScheduleEngineService {
      * @param taskId 任务ID
      */
     public void deleteSchedule(String taskId) {
-        Task task = taskService.getDetail(taskId)
-                .orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
+        Task task = taskService.getTaskOrThrow(taskId);
         if (StringUtils.isBlank(task.getScheduleId())) {
             return;
         }

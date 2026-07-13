@@ -422,7 +422,7 @@ public class DatasetService {
         task.setTaskType(TaskType.IMPORT.getCode());
         task.setTaskRelatedId(datasetId);
         task.setTriggerType(TriggerType.MANUAL.getCode()); // 默认无调度
-        taskService.create(task);
+        taskService.createTask(task);
         log.info("为数据集 [{}] 创建同步任务", datasetId);
     }
 }

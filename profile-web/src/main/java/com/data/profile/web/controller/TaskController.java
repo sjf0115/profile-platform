@@ -1,9 +1,14 @@
 package com.data.profile.web.controller;
 
+import com.data.profile.web.converter.TaskConverter;
+import com.data.profile.web.dto.TaskDTO;
+import com.data.profile.web.dto.TaskParam;
+import com.data.profile.web.dto.TaskRequest;
+import com.data.profile.web.model.Task;
 import com.data.profile.web.vo.Response;
+import com.data.profile.web.vo.TaskVO;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.common.enums.TriggerMode;
-import com.data.profile.web.model.Task;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.service.TaskExecutionService;
 import com.data.profile.web.engine.ScheduleEngineService;
@@ -15,7 +20,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * 功能：调度任务
@@ -35,67 +39,98 @@ public class TaskController {
     @Autowired
     private ScheduleEngineService scheduleEngineService;
 
-    // 任务列表
+    /**
+     * 任务列表
+     */
     @PostMapping(value = "/list")
-    public Response<List<Task>> getList(@RequestBody Task task) {
-        log.info("根据任务参数请求查询任务: {}", JSONUtils.toJsonString(task));
-        List<Task> tasks = taskService.getList(task);
-        return Response.success(tasks);
+    public Response<List<TaskVO>> getList(@RequestBody TaskParam param) {
+        log.info("根据任务参数请求查询任务: {}", JSONUtils.toJsonString(param));
+        Task task = TaskConverter.param2do(param);
+        List<TaskDTO> dtos = taskService.getList(task);
+        return Response.success(TaskConverter.dto2voList(dtos));
     }
 
-    // 任务详情
+    /**
+     * 任务详情
+     */
     @GetMapping(value = "/{taskId}/detail")
-    public Response<Task> getDetail(@PathVariable(value = "taskId") String taskId) {
-        log.info("根据任务ID请求查询群组信息: {}", taskId);
-        Optional<Task> optional = taskService.getDetail(taskId);
-        if (optional.isPresent()) {
-            return Response.success(optional.get());
-        } else {
+    public Response<TaskVO> getDetail(@PathVariable(value = "taskId") String taskId) {
+        log.info("根据任务ID请求查询任务信息: {}", taskId);
+        TaskDTO dto = taskService.getDetail(taskId);
+        if (dto == null) {
             return Response.error("请求的任务不存在", ResponseCode.ERROR);
         }
+        return Response.success(TaskConverter.dto2vo(dto));
     }
 
-    // 创建调度任务
+    /**
+     * 创建调度任务
+     */
     @PostMapping
-    public Response<Integer> create(@RequestBody Task task) {
-        log.info("请求创建任务: {}", JSONUtils.toJsonString(task));
-        int result = taskService.create(task);
-        if (result > 0) {
-            return Response.success(result);
-        } else {
-            return Response.error("创建调度任务失败", ResponseCode.ERROR);
+    public Response<TaskVO> create(@RequestBody TaskRequest request) {
+        log.info("请求创建任务: {}", JSONUtils.toJsonString(request));
+        try {
+            TaskDTO dto = taskService.create(request);
+            return Response.success(TaskConverter.dto2vo(dto));
+        } catch (RuntimeException e) {
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
         }
     }
 
-    // 修改调度任务
+    /**
+     * 修改调度任务
+     */
     @PutMapping("/{taskId}")
-    public Response<Integer> update(@PathVariable(value = "taskId") String taskId, @RequestBody Task task) {
-        task.setTaskId(taskId);
-        log.info("请求修改任务: {}", JSONUtils.toJsonString(task));
-        int result = taskService.update(task);
-        if (result > 0) {
-            return Response.success(result);
-        } else {
-            return Response.error("修改调度任务失败", ResponseCode.ERROR);
+    public Response<Integer> update(@PathVariable(value = "taskId") String taskId,
+                                    @RequestBody TaskRequest request) {
+        log.info("请求修改任务 {}: {}", taskId, JSONUtils.toJsonString(request));
+        try {
+            int result = taskService.update(taskId, request);
+            if (result > 0) {
+                return Response.success(result);
+            } else {
+                return Response.error("修改调度任务失败", ResponseCode.ERROR);
+            }
+        } catch (RuntimeException e) {
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
         }
     }
 
-    // 删除调度任务
+    /**
+     * 更新任务状态（启用/停用）
+     */
+    @PutMapping("/{taskId}/status")
+    public Response<Integer> updateStatus(@PathVariable(value = "taskId") String taskId,
+                                          @RequestParam Integer status) {
+        log.info("请求更新任务 {} 状态为: {}", taskId, status);
+        try {
+            int result = taskService.updateStatus(taskId, status);
+            return Response.success(result);
+        } catch (RuntimeException e) {
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
+        }
+    }
+
+    /**
+     * 删除调度任务
+     */
     @DeleteMapping(value = "/{taskId}")
     public Response<Integer> delete(@PathVariable(value = "taskId") String taskId) {
         log.info("根据任务ID {} 请求删除任务", taskId);
-        int result = taskService.delete(taskId);
-        if (result > 0) {
-            return Response.success(result);
-        } else {
-            return Response.error("删除调度任务失败", ResponseCode.ERROR);
+        try {
+            int result = taskService.delete(taskId);
+            if (result > 0) {
+                return Response.success(result);
+            } else {
+                return Response.error("删除调度任务失败", ResponseCode.ERROR);
+            }
+        } catch (RuntimeException e) {
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
         }
     }
 
     /**
      * 手动触发任务执行
-     *
-     * @param taskId 任务ID
      */
     @PostMapping(value = "/{taskId}/execute")
     public Response<TaskInstance> execute(@PathVariable(value = "taskId") String taskId) {
@@ -113,9 +148,7 @@ public class TaskController {
     }
 
     /**
-     * 调度引擎回调接口（由调度引擎定时触发）
-     *
-     * @param taskId 任务ID
+     * 调度引擎回调任务执行（由调度引擎定时触发）
      */
     @PostMapping(value = "/{taskId}/callback")
     public Response<TaskInstance> scheduledCallback(@PathVariable(value = "taskId") String taskId) {
@@ -155,12 +188,12 @@ public class TaskController {
      * 配置任务上游依赖
      */
     @PutMapping(value = "/{taskId}/upstream")
-    public Response<String> configureUpstream(@PathVariable(value = "taskId") String taskId, @RequestBody Task taskUpdate) {
-        log.info("配置任务上游依赖: taskId={}, upstreamTaskIds={}", taskId, taskUpdate.getUpstreamTaskIds());
+    public Response<String> configureUpstream(@PathVariable(value = "taskId") String taskId,
+                                              @RequestBody TaskRequest request) {
+        log.info("配置任务上游依赖: taskId={}, upstreamTaskIds={}", taskId, request.getUpstreamTaskIds());
         try {
-            Task task = taskService.getDetail(taskId)
-                    .orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
-            task.setUpstreamTaskIds(taskUpdate.getUpstreamTaskIds());
+            Task task = taskService.getTaskOrThrow(taskId);
+            task.setUpstreamTaskIds(request.getUpstreamTaskIds());
             taskService.update(task);
             return Response.success("配置成功");
         } catch (Exception e) {

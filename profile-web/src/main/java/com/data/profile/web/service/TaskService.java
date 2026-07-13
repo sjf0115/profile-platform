@@ -4,7 +4,11 @@ import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
+import com.data.profile.common.utils.JSONUtils;
+import com.data.profile.web.converter.TaskConverter;
 import com.data.profile.web.dao.TaskMapper;
+import com.data.profile.web.dto.TaskDTO;
+import com.data.profile.web.dto.TaskRequest;
 import com.data.profile.web.model.Task;
 import com.data.profile.web.security.UserContextHolder;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -26,25 +31,56 @@ import java.util.Optional;
 public class TaskService {
     @Resource
     private TaskMapper taskMapper;
+    @Resource
+    private UserService userService;
 
     /**
      * 根据调度任务查询条件获取调度任务列表
      */
-    public List<Task> getList(Task task) {
+    public List<TaskDTO> getList(Task task) {
         List<Task> tasks = taskMapper.selectByParams(task);
         log.info("根据查询条件获取 {} 个调度任务", tasks.size());
-        return tasks;
+        List<TaskDTO> dtos = TaskConverter.do2dtoList(tasks);
+        // 填充人员名称
+        Map<String, String> userMap = userService.getUserNameMap();
+        for (TaskDTO dto : dtos) {
+            dto.setCreatorName(userMap.get(dto.getCreator()));
+            dto.setModifierName(userMap.get(dto.getModifier()));
+        }
+        return dtos;
     }
 
     /**
-     * 根据调度任务ID获取任务详细信息
+     * 根据调度任务ID获取任务详细信息（返回 DTO，供 Controller 使用）
      */
-    public Optional<Task> getDetail(String taskId) {
+    public TaskDTO getDetail(String taskId) {
         Task task = taskMapper.selectByTaskId(taskId);
         if (task == null) {
-            return Optional.empty();
+            return null;
         }
-        return Optional.of(task);
+        TaskDTO dto = TaskConverter.do2dto(task);
+        Map<String, String> userMap = userService.getUserNameMap();
+        dto.setCreatorName(userMap.get(dto.getCreator()));
+        dto.setModifierName(userMap.get(dto.getModifier()));
+        return dto;
+    }
+
+    /**
+     * 根据调度任务ID获取任务 DO（供内部服务使用）
+     */
+    public Task getTask(String taskId) {
+        return taskMapper.selectByTaskId(taskId);
+    }
+
+    /**
+     * 根据调度任务ID获取任务 DO，不存在则抛异常（供内部服务使用）
+     */
+    public Task getTaskOrThrow(String taskId) {
+        Task task = taskMapper.selectByTaskId(taskId);
+        if (task == null) {
+            throw new RuntimeException("任务不存在: " + taskId);
+        }
+        return task;
     }
 
     /**
@@ -57,13 +93,14 @@ public class TaskService {
     /**
      * 创建调度任务
      */
-    public int create(Task task) {
+    public TaskDTO create(TaskRequest request) {
         String taskId = IDGenerator.getInstance().generate(ModelType.TASK);
-        Task target = taskMapper.selectByTaskId(taskId);
-        if (!Objects.equals(target, null)) {
+        Task existing = taskMapper.selectByTaskId(taskId);
+        if (!Objects.equals(existing, null)) {
             log.error("调度任务ID {} 已经存在", taskId);
             throw new RuntimeException("调度任务ID已经存在");
         }
+        Task task = TaskConverter.request2do(request);
         task.setTaskId(taskId);
         task.setSourceType(SourceType.CUSTOM.getCode());
         task.setStatus(Status.ENABLE.getCode());
@@ -71,11 +108,50 @@ public class TaskService {
         task.setCreator(UserContextHolder.currentUserId());
         task.setModifier(UserContextHolder.currentUserId());
         log.info("创建调度任务: {}", task.getTaskName());
-        return taskMapper.insertSelective(task);
+        taskMapper.insertSelective(task);
+        return TaskConverter.do2dto(task);
     }
 
     /**
      * 修改调度任务
+     */
+    public int update(String taskId, TaskRequest request) {
+        Task task = TaskConverter.request2do(request);
+        task.setTaskId(taskId);
+        task.setModifier(UserContextHolder.currentUserId());
+        log.info("修改调度任务: {}", taskId);
+        return taskMapper.updateByTaskIdSelective(task);
+    }
+
+    /**
+     * 更新任务状态（启用/停用）
+     */
+    public int updateStatus(String taskId, Integer status) {
+        Task task = new Task();
+        task.setTaskId(taskId);
+        task.setStatus(status);
+        task.setModifier(UserContextHolder.currentUserId());
+        log.info("更新调度任务状态: taskId={}, status={}", taskId, status);
+        return taskMapper.updateByTaskIdSelective(task);
+    }
+
+    /**
+     * 创建调度任务（内部使用，接受 Task DO）
+     */
+    public Task createTask(Task task) {
+        String taskId = IDGenerator.getInstance().generate(ModelType.TASK);
+        task.setTaskId(taskId);
+        task.setSourceType(SourceType.CUSTOM.getCode());
+        task.setStatus(Status.ENABLE.getCode());
+        task.setCreator(UserContextHolder.currentUserId());
+        task.setModifier(UserContextHolder.currentUserId());
+        log.info("创建调度任务: {}", task.getTaskName());
+        taskMapper.insertSelective(task);
+        return task;
+    }
+
+    /**
+     * 修改调度任务（内部使用，接受 Task DO）
      */
     public int update(Task task) {
         task.setModifier(UserContextHolder.currentUserId());
@@ -110,12 +186,6 @@ public class TaskService {
             return;
         }
         delete(task.getTaskId());
-        /*if (Objects.equals(task.getSourceType(), SourceType.BUILT_IN.getCode())) {
-            log.error("内置调度任务 {} 不允许删除", task.getTaskId());
-            throw new RuntimeException("内置调度任务不允许删除");
-        }
-        log.info("根据关联ID删除调度任务: relatedId={}", relatedId);
-        taskMapper.deleteByRelatedId(relatedId);*/
     }
 
     /**

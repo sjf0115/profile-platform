@@ -555,7 +555,7 @@ public class GroupService {
                 .taskDesc(group.getGroupName() + "群组圈选任务")
                 .taskRelatedId(groupId)
                 .build();
-        taskService.create(task);
+        taskService.createTask(task);
         log.info("为群组 [{}] 创建圈选任务", groupId);
     }
 

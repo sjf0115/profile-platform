@@ -34,7 +34,7 @@
               {{ taskInfo.status === 1 ? '启用' : '禁用' }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="责任人">{{ taskInfo.owner || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="创建人">{{ taskInfo.creator_name || '-' }}</el-descriptions-item>
           <el-descriptions-item label="创建方式">
             <span v-if="taskInfo.source_type === 1">系统内置</span>
             <span v-else-if="taskInfo.source_type === 2">自定义</span>
@@ -119,9 +119,9 @@
           </div>
         </template>
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="创建人">{{ taskInfo.creator || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="创建人">{{ taskInfo.creator_name || '-' }}</el-descriptions-item>
           <el-descriptions-item label="创建时间">{{ formatDateTime(taskInfo.gmt_create) }}</el-descriptions-item>
-          <el-descriptions-item label="修改人">{{ taskInfo.modifier || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="修改人">{{ taskInfo.modifier_name || '-' }}</el-descriptions-item>
           <el-descriptions-item label="修改时间">{{ formatDateTime(taskInfo.gmt_modified) }}</el-descriptions-item>
         </el-descriptions>
       </el-card>
@@ -259,7 +259,7 @@ const fetchTaskDetail = async () => {
   }
   loading.value = true
   try {
-    const res = await taskApi.detail(taskId.value)
+    const res = await taskApi.getDetail(taskId.value)
     taskInfo.value = res.data.data || {}
   } catch (error) {
     console.error('获取任务详情失败:', error)

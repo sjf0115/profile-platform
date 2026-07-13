@@ -357,7 +357,9 @@ export interface Task {
   source_type?: number
   owner?: string
   creator?: string
+  creator_name?: string
   modifier?: string
+  modifier_name?: string
   gmt_create?: string
   gmt_modified?: string
 }
@@ -366,7 +368,23 @@ export interface Task {
 export interface TaskQueryParams extends PageParams {
   task_name?: string
   task_type?: number
-  owner?: string
+  trigger_type?: number
+  status?: number
+}
+
+// 调度任务请求参数
+export interface TaskRequest {
+  task_name?: string
+  task_desc?: string
+  task_type?: number
+  task_related_id?: string
+  trigger_target_id?: string
+  trigger_type?: number
+  trigger_cron?: string
+  trigger_url?: string
+  trigger_start_time?: string
+  trigger_end_time?: string
+  upstream_task_ids?: string
 }
 
 // 任务实例

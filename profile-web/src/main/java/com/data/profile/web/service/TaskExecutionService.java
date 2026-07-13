@@ -93,7 +93,7 @@ public class TaskExecutionService {
      * 通过任务ID异步执行任务
      */
     public TaskInstance executeTask(String taskId, TriggerMode triggerMode) {
-        Task task = taskService.getDetail(taskId).orElseThrow(() -> new RuntimeException("任务不存在: " + taskId));
+        Task task = taskService.getTaskOrThrow(taskId);
         return executeTask(task, triggerMode);
     }
 

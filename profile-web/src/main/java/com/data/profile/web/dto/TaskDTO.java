@@ -1,14 +1,14 @@
-package com.data.profile.web.vo;
+package com.data.profile.web.dto;
 
 import lombok.Data;
 
 import java.util.Date;
 
 /**
- * 任务视图对象
+ * 任务数据传输对象
  */
 @Data
-public class TaskVO {
+public class TaskDTO {
     private Long id;
     private Integer status;
     private String taskId;
