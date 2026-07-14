@@ -35,4 +35,10 @@ public class TaskInstance {
     private Date gmtCreate;
     // 实例修改时间
     private Date gmtModified;
+
+    // --- 以下为查询辅助字段（不映射到数据库列） ---
+    // 执行时间范围-开始
+    private Long startTimeBegin;
+    // 执行时间范围-结束
+    private Long startTimeEnd;
 }

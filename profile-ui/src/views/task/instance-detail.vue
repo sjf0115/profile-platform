@@ -14,17 +14,16 @@
     </div>
 
     <div class="page-content" v-loading="loading">
-      <!-- 基本信息 -->
+      <!-- 实例信息 -->
       <el-card class="detail-card">
         <template #header>
           <div class="card-header">
-            <span>基本信息</span>
+            <span>实例信息</span>
           </div>
         </template>
         <el-descriptions :column="3" border>
           <el-descriptions-item label="实例ID">{{ instanceInfo.instance_id }}</el-descriptions-item>
-          <el-descriptions-item label="实例名称">{{ instanceInfo.instance_name }}</el-descriptions-item>
-          <el-descriptions-item label="任务ID">{{ instanceInfo.task_id }}</el-descriptions-item>
+          <el-descriptions-item label="实例名称">{{ instanceInfo.instance_name || '-' }}</el-descriptions-item>
           <el-descriptions-item label="实例状态">
             <el-tag size="small" :type="getStatusType(instanceInfo.status)">
               {{ getStatusLabel(instanceInfo.status) }}
@@ -35,24 +34,28 @@
               {{ getTriggerModeLabel(instanceInfo.trigger_mode) }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="责任人">{{ instanceInfo.creator || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="关联对象ID">{{ instanceInfo.instance_related_id || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="开始时间">{{ formatTime(instanceInfo.start_time) }}</el-descriptions-item>
+          <el-descriptions-item label="结束时间">{{ formatTime(instanceInfo.end_time) }}</el-descriptions-item>
+          <el-descriptions-item label="执行时长">{{ formatDuration(instanceInfo.duration) }}</el-descriptions-item>
+          <el-descriptions-item label="创建人">{{ instanceInfo.creator_name || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="创建时间">{{ formatDateTime(instanceInfo.gmt_create) }}</el-descriptions-item>
         </el-descriptions>
       </el-card>
 
-      <!-- 执行信息 -->
-      <el-card class="detail-card">
+      <!-- 任务信息 -->
+      <el-card class="detail-card" v-if="instanceInfo.task">
         <template #header>
           <div class="card-header">
-            <span>执行信息</span>
+            <span>任务信息</span>
           </div>
         </template>
-        <el-descriptions :column="3" border>
-          <el-descriptions-item label="开始时间">{{ formatTime(instanceInfo.start_time) }}</el-descriptions-item>
-          <el-descriptions-item label="结束时间">{{ formatTime(instanceInfo.end_time) }}</el-descriptions-item>
-          <el-descriptions-item label="执行时长">
-            {{ instanceInfo.duration ? `${instanceInfo.duration}ms` : '-' }}
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="任务ID">{{ instanceInfo.task.task_id }}</el-descriptions-item>
+          <el-descriptions-item label="任务名称">{{ instanceInfo.task.task_name || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="任务类型">
+            <el-tag size="small" type="info">{{ getTaskTypeLabel(instanceInfo.task.task_type) }}</el-tag>
           </el-descriptions-item>
+          <el-descriptions-item label="任务描述">{{ instanceInfo.task.task_desc || '-' }}</el-descriptions-item>
         </el-descriptions>
       </el-card>
 
@@ -66,21 +69,6 @@
         <div class="log-content">
           <pre>{{ instanceInfo.message }}</pre>
         </div>
-      </el-card>
-
-      <!-- 元数据信息 -->
-      <el-card class="detail-card">
-        <template #header>
-          <div class="card-header">
-            <span>元数据信息</span>
-          </div>
-        </template>
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="创建人">{{ instanceInfo.creator || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="创建时间">{{ formatDateTime(instanceInfo.gmt_create) }}</el-descriptions-item>
-          <el-descriptions-item label="修改人">{{ instanceInfo.modifier || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="修改时间">{{ formatDateTime(instanceInfo.gmt_modified) }}</el-descriptions-item>
-        </el-descriptions>
       </el-card>
     </div>
 
@@ -166,6 +154,19 @@ const getTriggerModeType = (mode?: number) => {
   return map[mode || 0] || 'info'
 }
 
+// 获取任务类型
+const getTaskTypeLabel = (taskType?: number) => {
+  const map: Record<number, string> = { 1: '群组圈选', 2: '群组投递', 3: '数据集同步' }
+  return map[taskType || 0] || '未知'
+}
+
+// 格式化耗时（毫秒 → 秒）
+const formatDuration = (ms?: number) => {
+  if (!ms || ms <= 0) return '-'
+  const seconds = (ms / 1000).toFixed(1)
+  return `${seconds}s`
+}
+
 // 获取实例详情
 const fetchInstanceDetail = async () => {
   if (!instanceId.value) {
@@ -174,7 +175,7 @@ const fetchInstanceDetail = async () => {
   }
   loading.value = true
   try {
-    const res = await taskInstanceApi.detail(instanceId.value)
+    const res = await taskInstanceApi.getDetail(instanceId.value)
     instanceInfo.value = res.data.data || {}
   } catch (error) {
     console.error('获取实例详情失败:', error)

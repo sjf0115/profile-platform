@@ -32,6 +32,16 @@
           </el-input>
         </div>
         <div class="right-filters">
+          <el-date-picker
+            v-model="dateRange"
+            type="datetimerange"
+            range-separator="至"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+            value-format="x"
+            style="width: 360px"
+            @change="handleSearch"
+          />
           <el-select
             v-model="queryParams.status"
             placeholder="实例状态"
@@ -49,18 +59,6 @@
             查询
           </el-button>
         </div>
-      </div>
-
-      <!-- 筛选标签 -->
-      <div class="filter-tags">
-        <el-check-tag
-          v-for="tag in filterTags"
-          :key="tag.value"
-          :checked="activeFilterTag === tag.value"
-          @change="handleFilterTagChange(tag.value)"
-        >
-          {{ tag.label }}
-        </el-check-tag>
       </div>
 
       <!-- 数据表格 -->
@@ -83,10 +81,6 @@
                 <span class="name-text">{{ row.instance_name }}</span>
               </div>
               <div class="instance-meta">实例ID: {{ row.instance_id }}</div>
-              <div class="instance-time" v-if="row.start_time && row.end_time">
-                {{ formatTime(row.start_time) }} ~ {{ formatTime(row.end_time) }}
-                <span v-if="row.duration" class="duration">(dur {{ row.duration }}ms)</span>
-              </div>
             </div>
           </template>
         </el-table-column>
@@ -101,13 +95,6 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="实例类型" width="120">
-          <template #default="{ row }">
-            <el-tag size="small" type="info">
-              {{ getTaskTypeLabel(row.instance_related_id) }}
-            </el-tag>
-          </template>
-        </el-table-column>
         <el-table-column label="触发模式" width="110" align="center">
           <template #default="{ row }">
             <el-tag size="small" :type="getTriggerModeType(row.trigger_mode)">
@@ -115,13 +102,28 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="creator" label="责任人" width="100" />
+        <el-table-column label="开始时间" width="170">
+          <template #default="{ row }">
+            {{ formatTime(row.start_time) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="结束时间" width="170">
+          <template #default="{ row }">
+            {{ formatTime(row.end_time) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="执行时长" width="100" align="center">
+          <template #default="{ row }">
+            {{ formatDuration(row.duration) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="creator_name" label="创建人" width="100" />
         <el-table-column label="创建时间" width="170">
           <template #default="{ row }">
             {{ formatDateTime(row.gmt_create) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="260" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="handleViewDetail(row)">
               查看
@@ -129,14 +131,16 @@
             <el-button link type="primary" @click="handleViewLog(row)">
               日志
             </el-button>
+            <el-button link type="primary" @click="handleRerun(row)">
+              重跑
+            </el-button>
             <el-dropdown trigger="click" @command="(cmd: string) => handleMoreCommand(cmd, row)">
               <el-button link type="primary">
                 <el-icon><More /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="rerun">重跑</el-dropdown-item>
-                  <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                  <el-dropdown-item command="delete">删除</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -232,14 +236,8 @@ const queryParams = reactive<TaskInstanceQueryParams>({
   instance_related_id: currentDatasetId.value,
 })
 
-// 筛选标签
-const filterTags = [
-  { label: '全部', value: 'all' },
-  { label: '我的', value: 'mine' },
-  { label: '运行失败', value: 'failed' },
-  { label: '运行成功', value: 'success' },
-]
-const activeFilterTag = ref('all')
+// 日期范围（时间戳毫秒）
+const dateRange = ref<[number, number] | null>(null)
 
 // 日志弹窗
 const logDialogVisible = ref(false)
@@ -267,9 +265,11 @@ const getTriggerModeType = (mode?: number) => {
   return map[mode || 0] || 'info'
 }
 
-// 获取任务类型（简化：从 related_id 推断，实际应查 task 表）
-const getTaskTypeLabel = (relatedId?: string) => {
-  return relatedId ? '数据集同步' : '未知'
+// 格式化耗时（毫秒 → 秒）
+const formatDuration = (ms?: number) => {
+  if (!ms || ms <= 0) return '-'
+  const seconds = (ms / 1000).toFixed(1)
+  return `${seconds}s`
 }
 
 // 获取实例列表
@@ -283,6 +283,8 @@ const fetchData = async () => {
       status: queryParams.status ?? undefined,
       task_id: currentTaskId.value || undefined,
       instance_related_id: currentDatasetId.value || undefined,
+      start_time_begin: dateRange.value?.[0] ?? undefined,
+      start_time_end: dateRange.value?.[1] ?? undefined,
     }
     const res = await taskInstanceApi.getList(params)
     tableData.value = res.data.data || []
@@ -304,22 +306,9 @@ const handleSearch = () => {
 const handleReset = () => {
   queryParams.instance_name = undefined
   queryParams.status = undefined
+  dateRange.value = null
   queryParams.page_num = 1
-  activeFilterTag.value = 'all'
   fetchData()
-}
-
-// 筛选标签切换
-const handleFilterTagChange = (value: string) => {
-  activeFilterTag.value = value
-  if (value === 'failed') {
-    queryParams.status = 3
-  } else if (value === 'success') {
-    queryParams.status = 4
-  } else {
-    queryParams.status = undefined
-  }
-  handleSearch()
 }
 
 // 返回
@@ -364,19 +353,22 @@ const handleDelete = (row: TaskInstance) => {
     '提示',
     { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
   )
-    .then(() => {
-      // TODO: 调用删除接口
-      ElMessage.success('删除成功')
-      fetchData()
+    .then(async () => {
+      try {
+        await taskInstanceApi.delete(row.instance_id)
+        ElMessage.success('删除成功')
+        fetchData()
+      } catch (error) {
+        console.error('删除失败:', error)
+        ElMessage.error('删除失败')
+      }
     })
     .catch(() => {})
 }
 
 // 更多操作
 const handleMoreCommand = (command: string, row: TaskInstance) => {
-  if (command === 'rerun') {
-    handleRerun(row)
-  } else if (command === 'delete') {
+  if (command === 'delete') {
     handleDelete(row)
   }
 }
@@ -441,13 +433,6 @@ onMounted(() => {
       gap: 10px;
       align-items: center;
     }
-  }
-
-  .filter-tags {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
   }
 
   .instance-info {

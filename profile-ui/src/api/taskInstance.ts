@@ -8,12 +8,17 @@ export const taskInstanceApi = {
   },
 
   // 获取实例详情
-  detail: (instanceId: string) => {
+  getDetail: (instanceId: string) => {
     return request.get<ApiResponse<TaskInstance>>(`/instance/${instanceId}/detail`)
   },
 
   // 根据任务ID查询实例列表
   listByTaskId: (taskId: string) => {
     return request.get<ApiResponse<TaskInstance[]>>(`/instance/${taskId}/list`)
+  },
+
+  // 删除实例
+  delete: (instanceId: string) => {
+    return request.delete<ApiResponse<void>>(`/instance/${instanceId}`)
   }
 }

@@ -50,7 +50,7 @@
       and instance_id = #{instanceId,jdbcType=VARCHAR}
     </if>
     <if test="instanceName != null">
-      and instance_name = #{instanceName,jdbcType=VARCHAR}
+      and instance_name LIKE CONCAT('%', #{instanceName,jdbcType=VARCHAR}, '%')
     </if>
     <if test="taskId != null">
       and task_id = #{taskId,jdbcType=VARCHAR}
@@ -60,6 +60,12 @@
     </if>
     <if test="startTime != null">
       and start_time = #{startTime,jdbcType=BIGINT}
+    </if>
+    <if test="startTimeBegin != null">
+      and start_time &gt;= #{startTimeBegin,jdbcType=BIGINT}
+    </if>
+    <if test="startTimeEnd != null">
+      and start_time &lt;= #{startTimeEnd,jdbcType=BIGINT}
     </if>
     <if test="endTime != null">
       and end_time = #{endTime,jdbcType=BIGINT}

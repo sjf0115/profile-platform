@@ -1,16 +1,11 @@
 package com.data.profile.web.vo;
 
-import com.data.profile.web.model.Task;
 import lombok.Data;
 
 import java.util.Date;
 
 /**
- * 功能：任务执行实例
- * 作者：@SmartSi
- * 博客：https://smartsi.blog.csdn.net/
- * 公众号：大数据生态
- * 日期：2026/6/28 22:26
+ * 任务实例视图对象
  */
 @Data
 public class TaskInstanceVO {
@@ -35,14 +30,18 @@ public class TaskInstanceVO {
     private Long duration;
     // 实例执行信息
     private String message;
-    // 实例创建者
+    // 关联任务（嵌套对象）
+    private TaskVO task;
+    // 创建者
     private String creator;
-    // 实例修改者
+    // 创建者名称
+    private String creatorName;
+    // 修改者
     private String modifier;
-    // 实例创建时间
+    // 修改者名称
+    private String modifierName;
+    // 创建时间
     private Date gmtCreate;
-    // 实例修改时间
+    // 修改时间
     private Date gmtModified;
-    // 任务详情
-    private Task task;
 }

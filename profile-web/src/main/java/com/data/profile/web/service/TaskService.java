@@ -66,13 +66,6 @@ public class TaskService {
     }
 
     /**
-     * 根据调度任务ID获取任务 DO（供内部服务使用）
-     */
-    public Task getTask(String taskId) {
-        return taskMapper.selectByTaskId(taskId);
-    }
-
-    /**
      * 根据调度任务ID获取任务 DO，不存在则抛异常（供内部服务使用）
      */
     public Task getTaskOrThrow(String taskId) {

@@ -396,12 +396,15 @@ export interface TaskInstance {
   task_id: string
   instance_related_id?: string
   trigger_mode?: number
+  task?: Task
   start_time?: number
   end_time?: number
   duration?: number
   message?: string
   creator?: string
+  creator_name?: string
   modifier?: string
+  modifier_name?: string
   gmt_create?: string
   gmt_modified?: string
 }
@@ -412,6 +415,8 @@ export interface TaskInstanceQueryParams extends PageParams {
   instance_name?: string
   instance_related_id?: string
   status?: number
+  start_time_begin?: number
+  start_time_end?: number
 }
 
 // ==================== 用户细查相关类型 ====================

@@ -4,6 +4,7 @@ import com.data.profile.web.vo.Response;
 import com.data.profile.web.vo.TaskInstanceVO;
 import com.data.profile.common.enums.ResponseCode;
 import com.data.profile.web.converter.TaskInstanceConverter;
+import com.data.profile.web.dto.TaskInstanceDTO;
 import com.data.profile.web.dto.TaskInstanceParam;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.service.TaskInstanceService;
@@ -14,7 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * 功能：任务实例
@@ -35,19 +35,18 @@ public class TaskInstanceController {
     public Response<List<TaskInstanceVO>> getList(@RequestBody TaskInstanceParam param) {
         log.info("根据任务执行实例信息查询任务执行实例: {}", JSONUtils.toJsonString(param));
         TaskInstance instance = TaskInstanceConverter.param2do(param);
-        List<TaskInstance> instances = instanceService.getList(instance);
-        return Response.success(TaskInstanceConverter.do2voList(instances));
+        List<TaskInstanceDTO> dtos = instanceService.getList(instance);
+        return Response.success(TaskInstanceConverter.dto2voList(dtos));
     }
 
     // 实例详情
     @GetMapping(value = "/{instanceId}/detail")
     public Response<TaskInstanceVO> getDetail(@PathVariable(value = "instanceId") String instanceId) {
-        Optional<TaskInstance> optional = instanceService.getDetail(instanceId);
-        if (optional.isPresent()) {
-            return Response.success(TaskInstanceConverter.do2vo(optional.get()));
-        } else {
+        TaskInstanceDTO dto = instanceService.getDetail(instanceId);
+        if (dto == null) {
             return Response.error("请求的任务实例不存在", ResponseCode.ERROR);
         }
+        return Response.success(TaskInstanceConverter.dto2vo(dto));
     }
 
     // 根据任务ID查询实例列表
@@ -55,7 +54,15 @@ public class TaskInstanceController {
     public Response<List<TaskInstanceVO>> listByTaskId(@PathVariable(name = "taskId") String taskId) {
         TaskInstance query = new TaskInstance();
         query.setTaskId(taskId);
-        List<TaskInstance> instances = instanceService.getList(query);
-        return Response.success(TaskInstanceConverter.do2voList(instances));
+        List<TaskInstanceDTO> dtos = instanceService.getList(query);
+        return Response.success(TaskInstanceConverter.dto2voList(dtos));
+    }
+
+    // 删除实例
+    @DeleteMapping(value = "/{instanceId}")
+    public Response<Void> delete(@PathVariable(value = "instanceId") String instanceId) {
+        log.info("删除任务实例: {}", instanceId);
+        instanceService.delete(instanceId);
+        return Response.success(null);
     }
 }

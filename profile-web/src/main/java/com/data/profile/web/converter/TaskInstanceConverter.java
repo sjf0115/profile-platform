@@ -1,11 +1,14 @@
 package com.data.profile.web.converter;
 
+import com.data.profile.web.dto.TaskDTO;
 import com.data.profile.web.dto.TaskInstanceDTO;
 import com.data.profile.web.dto.TaskInstanceParam;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.web.vo.TaskInstanceVO;
+import com.data.profile.web.vo.TaskVO;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
 import java.util.Collections;
@@ -120,6 +123,7 @@ public class TaskInstanceConverter {
     public interface DO2DTOMapper extends BaseConverter<TaskInstance, TaskInstanceDTO> {
         DO2DTOMapper INSTANCE = Mappers.getMapper(DO2DTOMapper.class);
         @Override
+        @Mapping(target = "task", ignore = true)
         TaskInstanceDTO convert(TaskInstance taskInstance);
     }
 
@@ -129,5 +133,10 @@ public class TaskInstanceConverter {
         DTO2VoConverterMapper INSTANCE = Mappers.getMapper(DTO2VoConverterMapper.class);
         @Override
         TaskInstanceVO convert(TaskInstanceDTO dto);
+
+        // TaskDTO -> TaskVO 转换（委托给 TaskConverter）
+        default TaskVO taskDto2vo(TaskDTO dto) {
+            return TaskConverter.dto2vo(dto);
+        }
     }
 }

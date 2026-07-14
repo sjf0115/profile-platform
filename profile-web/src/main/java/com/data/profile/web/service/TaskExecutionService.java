@@ -4,6 +4,7 @@ import com.data.profile.common.enums.InstanceStatus;
 import com.data.profile.common.enums.TaskType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.enums.TriggerMode;
+import com.data.profile.web.dto.TaskInstanceDTO;
 import com.data.profile.web.model.Task;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.task.ExecutionContext;
@@ -118,9 +119,8 @@ public class TaskExecutionService {
     private void checkRunningInstance(String taskId) {
         TaskInstance query = new TaskInstance();
         query.setTaskId(taskId);
-        List<TaskInstance> instances = taskInstanceService.getList(query);
-
-        for (TaskInstance inst : instances) {
+        List<TaskInstanceDTO> instances = taskInstanceService.getList(query);
+        for (TaskInstanceDTO inst : instances) {
             int status = inst.getStatus();
             if (status == InstanceStatus.PENDING.getCode() || status == InstanceStatus.RUNNING.getCode()) {
                 throw new RuntimeException(

@@ -4,15 +4,21 @@ import com.data.profile.common.enums.InstanceStatus;
 import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.TriggerMode;
 import com.data.profile.common.utils.IDGenerator;
+import com.data.profile.web.converter.TaskConverter;
+import com.data.profile.web.converter.TaskInstanceConverter;
 import com.data.profile.web.dao.TaskInstanceMapper;
+import com.data.profile.web.dao.TaskMapper;
+import com.data.profile.web.dto.TaskDTO;
+import com.data.profile.web.dto.TaskInstanceDTO;
+import com.data.profile.web.model.Task;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.security.UserContextHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 功能：任务实例服务
@@ -25,25 +31,45 @@ import java.util.Optional;
 public class TaskInstanceService {
     @Resource
     private TaskInstanceMapper instanceMapper;
+    @Resource
+    private TaskService taskService;
+    @Resource
+    private UserService userService;
 
     /**
-     * 根据查询条件获取任务实例列表
+     * 根据查询条件获取任务实例列表（返回 DTO，供 Controller 使用）
      */
-    public List<TaskInstance> getList(TaskInstance instance) {
+    public List<TaskInstanceDTO> getList(TaskInstance instance) {
+        log.info("查询任务实例参数: status={}, taskId={}, startTimeBegin={}, startTimeEnd={}",
+                instance.getStatus(), instance.getTaskId(), instance.getStartTimeBegin(), instance.getStartTimeEnd());
         List<TaskInstance> taskInstances = instanceMapper.selectByParams(instance);
         log.info("根据查询条件获取到 {} 个任务执行实例", taskInstances.size());
-        return taskInstances;
+        List<TaskInstanceDTO> dtos = TaskInstanceConverter.do2dtoList(taskInstances);
+        Map<String, String> userMap = userService.getUserNameMap();
+        for (TaskInstanceDTO dto : dtos) {
+            dto.setCreatorName(userMap.get(dto.getCreator()));
+            dto.setModifierName(userMap.get(dto.getModifier()));
+        }
+        return dtos;
     }
 
     /**
      * 根据任务实例ID获取任务实例详细信息
      */
-    public Optional<TaskInstance> getDetail(String instanceId) {
+    public TaskInstanceDTO getDetail(String instanceId) {
         TaskInstance instance = instanceMapper.selectByInstanceId(instanceId);
         if (instance == null) {
-            return Optional.empty();
+            return null;
         }
-        return Optional.of(instance);
+        TaskInstanceDTO dto = TaskInstanceConverter.do2dto(instance);
+        // 填充用户名称
+        Map<String, String> userMap = userService.getUserNameMap();
+        dto.setCreatorName(userMap.get(dto.getCreator()));
+        dto.setModifierName(userMap.get(dto.getModifier()));
+        // 填充关联任务
+        TaskDTO taskDTO = taskService.getDetail(instance.getTaskId());
+        dto.setTask(taskDTO);
+        return dto;
     }
 
     /**
@@ -104,7 +130,7 @@ public class TaskInstanceService {
         }
         instance.setStatus(InstanceStatus.RUNNING.getCode());
         instanceMapper.updateByInstanceIdSelective(instance);
-        log.info("任务实例运行中: instanceId={}", instanceId);
+        log.info("任务实例运行中: {}", instanceId);
     }
 
     /**
@@ -120,9 +146,8 @@ public class TaskInstanceService {
         instance.setEndTime(endTime);
         instance.setDuration(endTime - instance.getStartTime());
         instance.setMessage(message != null ? message : "");
-        // instance.setModifier(UserContextHolder.currentUserId());
         instanceMapper.updateByInstanceIdSelective(instance);
-        log.info("任务实例成功: instanceId={}, duration={}ms", instanceId, instance.getDuration());
+        log.info("任务实例 [{}] 运行成功，耗时 {} ms", instanceId, instance.getDuration());
     }
 
     /**
@@ -138,13 +163,21 @@ public class TaskInstanceService {
         instance.setEndTime(endTime);
         instance.setDuration(endTime - instance.getStartTime());
         instance.setMessage(errorMsg != null ? errorMsg : "");
-        // instance.setModifier(UserContextHolder.currentUserId());
         instanceMapper.updateByInstanceIdSelective(instance);
-        log.info("任务实例失败: instanceId={}, duration={}ms, error={}", instanceId, instance.getDuration(), errorMsg);
+        log.info("任务实例 [{}] 运行失败，耗时 {} ms, 失败原因为 {}", instanceId, instance.getDuration(), errorMsg);
     }
 
     /**
-     * 根据任务ID删除所有实例。
+     * 根据实例ID删除单个实例
+     */
+    public int delete(String instanceId) {
+        int count = instanceMapper.deleteByInstanceId(instanceId);
+        log.info("删除任务实例: instanceId={}, count={}", instanceId, count);
+        return count;
+    }
+
+    /**
+     * 根据任务ID删除所有实例
      */
     public int deleteByTaskId(String taskId) {
         TaskInstance query = new TaskInstance();
