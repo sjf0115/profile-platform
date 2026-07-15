@@ -7,13 +7,13 @@ import java.util.Date;
 @Data
 public class Label {
     private Long id;
-    // 是否有效
+    // 是否有效: 1-有效,0-无效
     private Integer isValid;
     // 标签ID
     private String labelId;
     // 标签名称
     private String labelName;
-    // 标签状态
+    // 状态:0-未绑定,1-启用,2-禁用
     private Integer labelStatus;
     // 标签类型: 1-属性标签,2-行为标签
     private String labelType;
@@ -31,7 +31,7 @@ public class Label {
     private Integer labelProduceType;
     // 标签时效性类型: 0-未知,1-离线标签,2-实时标签
     private Integer labelTimeType;
-    // 创建方式: 1-系统内置,2-数据源导入,3-文件上传,4-四则运算,5-SQL计算,6-自定义规则,7-API导入,8-数据表导入
+    // 创建方式: 1-系统内置,2-数据集导入,3-文件上传,4-四则运算,5-SQL计算,6-自定义规则,7-API导入,8-数据表导入
     private Integer sourceType;
     // 标签计算规则,不同创建方式不同规则
     private LabelConfig config;

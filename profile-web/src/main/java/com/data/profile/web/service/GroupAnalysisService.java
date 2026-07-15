@@ -159,7 +159,7 @@ public class GroupAnalysisService {
         query.setEntityIdentifierId(entityIdentifierId);
         query.setLabelDistType(LabelDistType.ENUM.getCode());
         // TODO 只要绑定标签
-        query.setLabelStatus(LabelStatus.CREATED.getCode());
+        query.setLabelStatus(LabelStatus.ENABLED.getCode());
 
         List<Label> labels = labelMapper.selectByParams(query);
         log.info("实体 [{}] 下共 {} 个标签", entityIdentifierId, labels.size());
@@ -304,7 +304,7 @@ public class GroupAnalysisService {
      * 解析标签元数据: labelId -> DatasetField -> Dataset
      */
     private LabelMeta resolveLabelMeta(String labelId) {
-        Label label = labelService.getDetailInternal(labelId);
+        Label label = labelService.getDetailDO(labelId);
         if (label == null) {
             log.warn("标签 {} 不存在", labelId);
             return null;

@@ -46,10 +46,13 @@ public class LabelVO {
     private Integer isOffice;
     // 标签负责人
     private String owner;
+    private String ownerName;
     // 标签创建者
     private String creator;
+    private String creatorName;
     // 标签最后修改者
     private String modifier;
+    private String modifierName;
     // 标签创建时间
     private Date gmtCreate;
     // 标签最后修改时间

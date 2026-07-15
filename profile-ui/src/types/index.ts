@@ -103,8 +103,11 @@ export interface Label {
   config?: string
   is_office?: number
   owner?: string
+  owner_name?: string
   creator?: string
+  creator_name?: string
   modifier?: string
+  modifier_name?: string
   gmt_create?: string
   gmt_modified?: string
   // 数据源导入相关字段
@@ -128,6 +131,7 @@ export interface LabelQueryParams extends PageParams {
   label_category_id?: string
   label_status?: number
   label_type?: string
+  owner?: string
 }
 
 // 数据集字段

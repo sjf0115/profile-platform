@@ -262,7 +262,8 @@ const config = reactive<LabelConfigResponse>({
   dist_type: [],
   organize_type: [],
   produce_type: [],
-  time_type: []
+  time_type: [],
+  source_type: []
 })
 
 // 层级类目选择
@@ -391,6 +392,7 @@ const fetchConfig = async () => {
       config.organize_type = data.organize_type || []
       config.produce_type = data.produce_type || []
       config.time_type = data.time_type || []
+      config.source_type = data.source_type || []
     }
   } catch (error) {
     console.error('获取标签配置失败:', error)
@@ -468,17 +470,14 @@ const handleSubmit = async () => {
       label_organize_type: formData.organize_type,
       label_produce_type: formData.produce_type,
       label_time_type: formData.time_type,
-      label_status: skipSource.value ? 0 : 1,  // 跳过则待上架(0)，否则在线(1)
       source_type: 2,  // 数据源导入方式
       entity_identifier_id: formData.entity_identifier_id  // 实体标识始终提交
     }
 
-    // 编辑模式添加 label_id 和其他字段
+    // 编辑模式添加额外字段
     if (isEditMode.value) {
-      submitData.label_id = labelId.value
       submitData.is_office = formData.is_office
       submitData.owner = formData.owner
-      submitData.creator = formData.creator
     }
 
     console.log('提交数据:', submitData, 'isEditMode:', isEditMode.value, 'labelId:', labelId.value)
@@ -495,7 +494,11 @@ const handleSubmit = async () => {
 
     submitData.config = {}
 
-    await labelApi.save(submitData)
+    if (isEditMode.value) {
+      await labelApi.update(labelId.value, submitData)
+    } else {
+      await labelApi.create(submitData)
+    }
     ElMessage.success(isEditMode.value ? '编辑成功' : '创建成功')
     router.push('/label-market')
   } catch (error) {

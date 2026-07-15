@@ -1,15 +1,14 @@
 package com.data.profile.web.service;
 
+import com.data.profile.common.enums.*;
+import com.data.profile.web.converter.LabelConverter;
 import com.data.profile.web.dao.LabelMapper;
+import com.data.profile.web.dto.LabelDTO;
 import com.data.profile.web.model.DatasetField;
 import com.data.profile.web.model.FileImportLabelConfig;
 import com.data.profile.web.model.Label;
 import com.data.profile.web.enums.AssetType;
 import com.data.profile.web.security.UserContextHolder;
-import com.data.profile.common.enums.LabelStatus;
-import com.data.profile.common.enums.ModelType;
-import com.data.profile.common.enums.SourceType;
-import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -37,17 +36,17 @@ public class LabelService {
     private static final Gson gson = new GsonBuilder().create();
     @Autowired
     private ResourceGrantService resourceGrantService;
-    @Resource
+    @Autowired
     private LabelMapper labelMapper;
-    @Resource
+    @Autowired
     private DatasetFieldService datasetFieldService;
     @Autowired
     private LineageService lineageService;
+    @Autowired
+    private UserService userService;
 
     /**
-     * 根据查询条件获取标签列表
-     * @param label 标签查询条件
-     * @return 标签 Model 列表
+     * 根据查询条件获取标签列表（返回 DO，供内部 Service 使用）
      */
     public List<Label> getList(Label label) {
         List<Label> labels = labelMapper.selectByParams(label);
@@ -56,61 +55,89 @@ public class LabelService {
     }
 
     /**
-     * 根据标签ID获取标签详细信息
-     * @param labelId 标签ID
-     * @return 标签 Model
+     * 根据查询条件获取标签列表（返回 DTO，供 Controller 使用）
      */
-    public Optional<Label> getDetail(String labelId) {
-        Label label = getDetailInternal(labelId);
-        if (label == null) {
-            return Optional.empty();
+    public List<LabelDTO> getListDTO(Label label) {
+        List<Label> labels = labelMapper.selectByParams(label);
+        log.info("根据查询条件获取 {} 个标签", labels.size());
+        List<LabelDTO> dtos = LabelConverter.do2dtoList(labels);
+        Map<String, String> userMap = userService.getUserNameMap();
+        for (LabelDTO dto : dtos) {
+            dto.setOwnerName(userMap.get(dto.getOwner()));
+            dto.setCreatorName(userMap.get(dto.getCreator()));
+            dto.setModifierName(userMap.get(dto.getModifier()));
         }
-        log.info("根据标签ID {} 获取标签详细信息", labelId);
-        return Optional.of(label);
+        return dtos;
     }
 
     /**
-     * 返回标签信息
-     * @param labelId 标签ID
+     * 根据标签ID获取标签详细信息（返回 DTO，供 Controller 使用）
      */
-    public Label getDetailInternal(String labelId) {
+    public LabelDTO getDetail(String labelId) {
+        Label label = labelMapper.selectByLabelId(labelId);
+        if (label == null) {
+            return null;
+        }
+        LabelDTO dto = LabelConverter.do2dto(label);
+        // 填充用户名
+        Map<String, String> userMap = userService.getUserNameMap();
+        dto.setOwnerName(userMap.get(dto.getOwner()));
+        dto.setCreatorName(userMap.get(dto.getCreator()));
+        dto.setModifierName(userMap.get(dto.getModifier()));
+        // entity info 已由 MyBatis JOIN 查出，无需二次查询
+        // 填充数据集&字段
+        DatasetField datasetField = datasetFieldService.getDetailByRelatedId(labelId);
+        if (datasetField != null) {
+            dto.setDatasetId(datasetField.getDatasetId());
+            dto.setDatasetFieldName(datasetField.getFieldName());
+        }
+        return dto;
+    }
+
+    /**
+     * 返回标签 DO（供内部 Service 使用）
+     */
+    public Label getDetailDO(String labelId) {
         return labelMapper.selectByLabelId(labelId);
     }
 
     /**
-     * 保存标签 新增/修改
+     * 创建标签
      * @param label 标签信息
      * @param datasetId 绑定的数据集ID（可为 null）
      * @param datasetFieldName 绑定的数据集字段名称（可为 null）
      */
     @Transactional
-    public int save(Label label, String datasetId, String datasetFieldName) throws RuntimeException {
-        // isValid 废弃
-        label.setIsValid(1);
-        // 保存/修改标签
-        if (StringUtils.isBlank(label.getLabelId())) {
-            // 新增
-            List<Label> labels = labelMapper.selectByLabelName(label.getLabelName());
-            if (!labels.isEmpty()) {
-                log.error("标签名称已经存在，不允许重复添加: {}", label.getLabelName());
-                throw new RuntimeException("标签名称已经存在，不允许重复添加");
-            }
-            String labelId = IDGenerator.getInstance().generate(ModelType.LABEL);
-            Label target = labelMapper.selectByLabelId(labelId);
-            if (!Objects.equals(target, null)) {
-                log.error("标签ID已经存在，不允许重复添加: {}", labelId);
-                throw new RuntimeException("标签ID已经存在，不允许重复添加");
-            }
-            label.setLabelId(labelId);
-            label.setIsValid(Status.ENABLE.getCode());
-            label.setLabelStatus(LabelStatus.CREATED.getCode());
-            label.setOwner(UserContextHolder.currentUserId());
-            label.setCreator(UserContextHolder.currentUserId());
-            label.setModifier(UserContextHolder.currentUserId());
-            log.info("新增标签: {}", gson.toJson(label));
+    public int create(Label label, String datasetId, String datasetFieldName) throws RuntimeException {
+        // 新增
+        List<Label> labels = labelMapper.selectByLabelName(label.getLabelName());
+        if (!labels.isEmpty()) {
+            log.error("标签名称已经存在，不允许重复添加: {}", label.getLabelName());
+            throw new RuntimeException("标签名称已经存在，不允许重复添加");
+        }
+        String labelId = IDGenerator.getInstance().generate(ModelType.LABEL);
+        Label target = labelMapper.selectByLabelId(labelId);
+        if (!Objects.equals(target, null)) {
+            log.error("标签ID已经存在，不允许重复添加: {}", labelId);
+            throw new RuntimeException("标签ID已经存在，不允许重复添加");
+        }
 
+        label.setLabelId(labelId);
+        label.setIsValid(Status.ENABLE.getCode());
+        label.setLabelStatus(LabelStatus.ENABLED.getCode()); // 默认启用状态
+        label.setOwner(UserContextHolder.currentUserId());
+        label.setCreator(UserContextHolder.currentUserId());
+        label.setModifier(UserContextHolder.currentUserId());
+
+        // 数据集导入方式
+        if (Objects.equals(label.getSourceType(), LabelSourceType.DATASET.getCode())) {
             // 是否跳过数据集配置
-            if (StringUtils.isNotEmpty(datasetFieldName) && Objects.equals(label.getSourceType(), 2)) {
+            if (StringUtils.isEmpty(datasetFieldName)) {
+                // 跳过数据集配置
+                label.setLabelStatus(LabelStatus.UNBOUND.getCode());
+            } else {
+                // 数据集配置
+                label.setLabelStatus(LabelStatus.ENABLED.getCode());
                 // 只能选择已经创建好的数据集
                 DatasetField field = datasetFieldService.getListByDatasetIdAndFieldName(datasetId, datasetFieldName);
                 field.setRelatedId(labelId);
@@ -118,29 +145,55 @@ public class LabelService {
                 field.setModifier(UserContextHolder.currentUserId());
                 datasetFieldService.save(field);
             }
-            int result = labelMapper.insertSelective(label);
-            // 自动授权 MANAGE 给创建者
-            resourceGrantService.grantOwner("08", labelId, UserContextHolder.currentUserId());
-            lineageService.refreshLineage(AssetType.LABEL.getCode(), labelId);
-            return result;
-        } else {
-            // 是否跳过数据集配置
-            if (StringUtils.isNotEmpty(datasetFieldName) && Objects.equals(label.getSourceType(), 2)) {
-                String labelId = label.getLabelId();
+        }
+        int result = labelMapper.insertSelective(label);
+        // 自动授权 MANAGE 给创建者
+        resourceGrantService.grantOwner("08", labelId, UserContextHolder.currentUserId());
+        // 更新血缘
+        lineageService.refreshLineage(AssetType.LABEL.getCode(), labelId);
+        log.info("新增标签成功: {}", gson.toJson(label));
+        return result;
+    }
+
+    /**
+     * 更新标签
+     * @param labelId 标签ID（从路径参数获取）
+     * @param label 标签信息
+     * @param datasetId 绑定的数据集ID（可为 null）
+     * @param datasetFieldName 绑定的数据集字段名称（可为 null）
+     */
+    @Transactional
+    public int update(String labelId, Label label, String datasetId, String datasetFieldName) throws RuntimeException {
+        label.setLabelId(labelId);
+        // 校验标签是否存在
+        Label existingLabel = labelMapper.selectByLabelId(labelId);
+        if (existingLabel == null) {
+            log.error("标签 {} 不存在，无法更新", labelId);
+            throw new RuntimeException("标签不存在，无法更新");
+        }
+
+        // 数据集绑定/解绑场景：仅当请求携带 datasetId 时才触发状态自动管理
+        if (StringUtils.isNotEmpty(datasetId)) {
+            if (StringUtils.isNotEmpty(datasetFieldName)) {
+                // 绑定数据集字段 → 已启用
+                label.setLabelStatus(LabelStatus.ENABLED.getCode());
                 DatasetField field = datasetFieldService.getListByDatasetIdAndFieldName(datasetId, datasetFieldName);
                 field.setRelatedId(labelId);
                 field.setGmtModified(new Date());
                 field.setModifier(UserContextHolder.currentUserId());
                 datasetFieldService.save(field);
+            } else {
+                // 跳过数据集配置 → 未绑定（解绑回退）
+                label.setLabelStatus(LabelStatus.UNBOUND.getCode());
             }
-
-            // 修改
-            label.setModifier(UserContextHolder.currentUserId());
-            log.info("修改标签: {}", gson.toJson(label));
-            int result = labelMapper.updateByLabelId(label);
-            lineageService.refreshLineage(AssetType.LABEL.getCode(), label.getLabelId());
-            return result;
         }
+
+        label.setModifier(UserContextHolder.currentUserId());
+        int result = labelMapper.updateByLabelIdSelective(label);
+        // 更新血缘
+        lineageService.refreshLineage(AssetType.LABEL.getCode(), labelId);
+        log.info("修改标签成功: {}", gson.toJson(label));
+        return result;
     }
 
     /**
@@ -155,7 +208,7 @@ public class LabelService {
             log.error("标签 {} 不存在，无法删除", labelId);
             throw new RuntimeException("标签不存在，无法删除");
         }
-        if (Objects.equals(label.getSourceType(), SourceType.BUILT_IN.getCode())) {
+        if (Objects.equals(label.getSourceType(), LabelSourceType.BUILT_IN.getCode())) {
             log.error("内置标签不允许删除: {}", label.getLabelName());
             throw new RuntimeException("内置标签不允许删除");
         }
@@ -163,9 +216,9 @@ public class LabelService {
         // 删除保护：检查下游依赖
         lineageService.checkDeletable(AssetType.LABEL.getCode(), labelId);
 
-        // 通过数据集绑定字段方式：标签解除绑定数据集
+        // 数据集导入方式：标签解除绑定数据集
         DatasetField boundField = datasetFieldService.getDetailByRelatedId(labelId);
-        if (boundField != null && Objects.equals(label.getSourceType(), 2)) {
+        if (boundField != null && Objects.equals(label.getSourceType(), LabelSourceType.DATASET.getCode())) {
             datasetFieldService.deleteByDatasetIdAndFieldName(boundField.getDatasetId(), boundField.getFieldName());
         }
 

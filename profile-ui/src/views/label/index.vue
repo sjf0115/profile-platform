@@ -58,6 +58,32 @@
           </div>
           
           <div class="filter-right">
+            <el-select
+              v-model="filterLabelStatus"
+              placeholder="标签状态"
+              clearable
+              style="width: 130px"
+              @change="handleSearch"
+            >
+              <el-option label="未绑定" :value="0" />
+              <el-option label="已启用" :value="1" />
+              <el-option label="已停用" :value="2" />
+            </el-select>
+            <el-select
+              v-model="filterOwner"
+              placeholder="负责人"
+              clearable
+              filterable
+              style="width: 130px"
+              @change="handleSearch"
+            >
+              <el-option
+                v-for="user in userList"
+                :key="user.user_id"
+                :label="user.user_name"
+                :value="user.user_id"
+              />
+            </el-select>
             <el-select v-model="heatPeriod" placeholder="热度统计周期" style="width: 140px">
               <el-option label="最近 7 天" value="7d" />
               <el-option label="最近 30 天" value="30d" />
@@ -126,8 +152,9 @@
           <el-table-column prop="label_desc" label="标签描述" min-width="180" show-overflow-tooltip />
           <el-table-column prop="label_status" label="标签状态" width="100">
             <template #default="{ row }">
-              <el-tag v-if="row.label_status === 1" type="success" size="small">启用</el-tag>
-              <el-tag v-else type="danger" size="small">禁用</el-tag>
+              <el-tag v-if="row.label_status === 0" type="info" size="small">未绑定</el-tag>
+              <el-tag v-else-if="row.label_status === 1" type="success" size="small">已启用</el-tag>
+              <el-tag v-else type="danger" size="small">已停用</el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="label_type" label="标签类型" width="120">
@@ -140,14 +167,12 @@
               {{ row.entity_name && row.entity_identifier_name ? `${row.entity_name}>${row.entity_identifier_name}` : '-' }}
             </template>
           </el-table-column>
-          <el-table-column prop="label_produce_type" label="创建方式" width="100">
+          <el-table-column prop="source_type" label="创建方式" width="120">
             <template #default="{ row }">
-              <span v-if="row.label_produce_type === 1">系统生成</span>
-              <span v-else-if="row.label_produce_type === 2">自定义</span>
-              <span v-else>-</span>
+              {{ getSourceTypeName(row.source_type) }}
             </template>
           </el-table-column>
-          <el-table-column prop="owner" label="标签负责人" width="120" />
+          <el-table-column prop="owner_name" label="标签负责人" width="120" />
           <el-table-column label="数据更新时间" width="160">
             <template #default="{ row }">
               {{ formatDateTime(row.gmt_modified) }}
@@ -171,8 +196,8 @@
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item @click="handleToggleStatus(row)">
-                      {{ row.label_status === 1 ? '禁用' : '启用' }}
+                    <el-dropdown-item v-if="row.label_status >= 1" @click="handleToggleStatus(row)">
+                      {{ row.label_status === 1 ? '停用' : '启用' }}
                     </el-dropdown-item>
                     <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
                   </el-dropdown-menu>
@@ -256,6 +281,7 @@ import {
 import { labelApi, type LabelConfigResponse } from '@/api/label'
 import { checkLineageDeletable } from '@/api/lineage'
 import { labelCategoryApi } from '@/api/labelCategory'
+import { userApi, type User } from '@/api/user'
 import type { Label, LabelCategory } from '@/types'
 
 // 标签查询参数
@@ -265,6 +291,8 @@ interface LabelQueryParams {
   keyword?: string
   category_id?: string
   label_name?: string
+  label_status?: number
+  owner?: string
 }
 
 const router = useRouter()
@@ -287,6 +315,15 @@ const categorySearch = ref('')
 // 仅看有权限标签
 const onlyAuthorized = ref(false)
 
+// 筛选：标签状态
+const filterLabelStatus = ref<number | undefined>(undefined)
+
+// 筛选：负责人
+const filterOwner = ref('')
+
+// 用户列表（用于负责人下拉）
+const userList = ref<User[]>([])
+
 // 选中的类目
 const selectedCategory = ref('')
 
@@ -303,8 +340,19 @@ const labelConfig = reactive<LabelConfigResponse>({
   dist_type: [],
   organize_type: [],
   produce_type: [],
-  time_type: []
+  time_type: [],
+  source_type: []
 })
+
+// 获取用户列表（负责人下拉）
+const fetchUserList = async () => {
+  try {
+    const res = await userApi.getList()
+    userList.value = res.data.data || []
+  } catch (error) {
+    console.error('获取用户列表失败:', error)
+  }
+}
 
 // 获取标签配置
 const fetchLabelConfig = async () => {
@@ -318,6 +366,7 @@ const fetchLabelConfig = async () => {
       labelConfig.organize_type = data.organize_type || []
       labelConfig.produce_type = data.produce_type || []
       labelConfig.time_type = data.time_type || []
+      labelConfig.source_type = data.source_type || []
     }
   } catch (error) {
     console.error('获取标签配置失败:', error)
@@ -345,6 +394,13 @@ const getDistTypeName = (type?: number) => {
   return item?.name || '-'
 }
 
+// 获取创建方式名称
+const getSourceTypeName = (type?: number) => {
+  if (!type) return '-'
+  const item = labelConfig.source_type.find(t => t.id === type)
+  return item?.name || '-'
+}
+
 // 总条数
 const total = ref(0)
 
@@ -367,9 +423,8 @@ const allColumns = [
   { prop: 'label_value', label: '标签值' },
   { prop: 'gmt_modified', label: '更新时间' },
   { prop: 'exec_status', label: '执行状态' },
-  { prop: 'creator', label: '创建人' },
-  { prop: 'label_type', label: '创建方式' },
-  { prop: 'source_type', label: '标签来源' },
+  { prop: 'creator_name', label: '创建人' },
+  { prop: 'source_type', label: '创建方式' },
   { prop: 'gmt_create', label: '创建时间' },
   { prop: 'label_desc', label: '标签说明' },
   { prop: 'heat_score', label: '总使用热度' },
@@ -383,8 +438,7 @@ const visibleColumns = ref([
   'label_value',
   'gmt_modified',
   'exec_status',
-  'creator',
-  'label_type',
+  'creator_name',
   'source_type',
   'gmt_create',
   'label_desc',
@@ -473,6 +527,13 @@ const fetchLabelList = async () => {
   try {
     const params: LabelQueryParams = {
       ...queryParams,
+    }
+    // 应用筛选条件
+    if (filterLabelStatus.value !== undefined) {
+      params.label_status = filterLabelStatus.value
+    }
+    if (filterOwner.value) {
+      params.owner = filterOwner.value
     }
     // 只有当搜索关键词不为空时才传递
     if (searchKeyword.value && searchKeyword.value.trim()) {
@@ -642,15 +703,17 @@ const handleConfig = (row: Label) => {
   // TODO: 打开配置弹窗
 }
 
-// 启用/禁用标签
+// 启用/停用标签
 const handleToggleStatus = async (row: Label) => {
-  const newStatus = row.label_status === 1 ? 0 : 1
-  const actionText = newStatus === 1 ? "启用" : "禁用"
+  const newStatus = row.label_status === 1 ? 2 : 1
+  const actionText = newStatus === 1 ? "启用" : "停用"
   
   try {
-    await labelApi.update({
-      ...row,
-      label_status: newStatus
+    await labelApi.update(row.label_id, {
+      label_name: row.label_name,
+      label_status: newStatus,
+      source_type: row.source_type,
+      owner: row.owner,
     })
     ElMessage.success(`${actionText}成功`)
     fetchLabelList()
@@ -680,6 +743,7 @@ onMounted(() => {
   fetchCategoryList()
   fetchLabelList()
   fetchLabelConfig()
+  fetchUserList()
 })
 </script>
 

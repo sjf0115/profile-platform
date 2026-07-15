@@ -163,7 +163,7 @@ CREATE TABLE IF NOT EXISTS `profile_meta_label`(
     `is_valid` INT NOT NULL DEFAULT 1 COMMENT '是否有效: 1-有效,0-无效',
     `label_id` VARCHAR(40) NOT NULL COMMENT '标签ID',
     `label_name` VARCHAR(150) NOT NULL COMMENT '标签名称',
-    `label_status` INT NOT NULL DEFAULT 1 COMMENT '状态:0-待上架,1-在线,2-已下线,3-已暂停',
+    `label_status` INT NOT NULL DEFAULT 1 COMMENT '状态:0-未绑定,1-启用,2-禁用',
     `label_type` VARCHAR(100) NOT NULL COMMENT '标签类型: 1-属性标签,2-行为标签',
     `label_desc` VARCHAR(500) COMMENT '标签描述',
     `label_category_id` VARCHAR(100) NOT NULL COMMENT '标签类目ID',

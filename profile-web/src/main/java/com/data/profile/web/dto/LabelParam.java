@@ -22,4 +22,6 @@ public class LabelParam {
     private Integer isValid;
     // 创建方式
     private Integer sourceType;
+    // 负责人
+    private String owner;
 }

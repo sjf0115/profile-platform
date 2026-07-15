@@ -49,11 +49,14 @@
         where label_id = #{labelId,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByLabelId" parameterType="java.lang.String" resultMap="BaseResultMap">
+    <select id="selectByLabelId" parameterType="java.lang.String" resultMap="ResultMapWithEntity">
         select
-            <include refid="Base_Column_List" />
+            <include refid="Base_Column_List" />,
+            <include refid="Entity_Column_List" />
         from profile_meta_label as t1
-        where label_id = #{labelId,jdbcType=VARCHAR}
+        LEFT JOIN profile_meta_entity_identifier as t2 ON t1.entity_identifier_id = t2.entity_identifier_id
+        LEFT JOIN profile_meta_entity as t3 ON t2.entity_id = t3.entity_id
+        where t1.label_id = #{labelId,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByLabelName" parameterType="java.lang.String" resultMap="BaseResultMap">
@@ -63,10 +66,13 @@
         where label_name = #{labelName,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByParams" parameterType="com.data.profile.web.model.Label" resultMap="BaseResultMap">
+    <select id="selectByParams" parameterType="com.data.profile.web.model.Label" resultMap="ResultMapWithEntity">
         select
-            <include refid="Base_Column_List" />
+            <include refid="Base_Column_List" />,
+            <include refid="Entity_Column_List" />
         from profile_meta_label as t1
+        LEFT JOIN profile_meta_entity_identifier as t2 ON t1.entity_identifier_id = t2.entity_identifier_id
+        LEFT JOIN profile_meta_entity as t3 ON t2.entity_id = t3.entity_id
         where 1 = 1
         <if test="isValid != null">
           AND t1.is_valid = #{isValid,jdbcType=INTEGER}

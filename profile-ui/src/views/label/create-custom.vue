@@ -402,20 +402,21 @@ const handleSubmit = async () => {
           update_type: formData.update_type,
           config: expression,  // 自定义标签直接传递表达式字符串
           label_type: 2,  // 自定义标签
-          label_status: 1,  // 在线
           source_type: 6  // 自定义规则
         }
         
-        // 编辑模式添加 label_id 和其他字段
+        // 编辑模式添加额外字段
         if (isEditMode.value) {
-          submitData.label_id = labelId.value
           submitData.is_office = formData.is_office
           submitData.owner = formData.owner
-          submitData.creator = formData.creator
         }
         
         console.log('提交数据:', submitData)
-        await labelApi.save(submitData)
+        if (isEditMode.value) {
+          await labelApi.update(labelId.value, submitData)
+        } else {
+          await labelApi.create(submitData)
+        }
         ElMessage.success(isEditMode.value ? '编辑成功' : '创建成功')
         router.push('/label-market')
       } catch (error) {

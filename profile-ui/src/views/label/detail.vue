@@ -15,7 +15,7 @@
             <div class="meta-info">
               <span class="meta-item">
                 <span class="meta-label">负责人：</span>
-                <span class="meta-value">{{ labelData.owner || labelData.creator || '-' }}</span>
+                <span class="meta-value">{{ labelData.owner_name || labelData.creator_name || '-' }}</span>
               </span>
               <span class="meta-item">
                 <span class="meta-label">标签ID：</span>
@@ -94,7 +94,7 @@
               </div>
               <div class="info-item">
                 <span class="info-label">标签归属</span>
-                <span class="info-value">{{ labelData.creator || '-' }}</span>
+                <span class="info-value">{{ labelData.owner_name || '-' }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label">主键ID</span>
@@ -127,8 +127,8 @@
                 <span class="info-value">{{ getLabelTypeName(labelData.label_type) }}</span>
               </div>
               <div class="info-item">
-                <span class="info-label">来源类型</span>
-                <span class="info-value">{{ labelData.source_type === 1 ? '系统内置' : '自定义' }}</span>
+                <span class="info-label">创建方式</span>
+                <span class="info-value">{{ getSourceTypeName(labelData.source_type) }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label">接入来源</span>
@@ -164,11 +164,11 @@
               </div>
               <div class="info-item">
                 <span class="info-label">创建人</span>
-                <span class="info-value">{{ labelData.creator || '-' }}</span>
+                <span class="info-value">{{ labelData.creator_name || '-' }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label">修改人</span>
-                <span class="info-value">{{ labelData.modifier || '-' }}</span>
+                <span class="info-value">{{ labelData.modifier_name || '-' }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label">创建时间</span>
@@ -254,7 +254,8 @@ const labelConfig = reactive<LabelConfigResponse>({
   dist_type: [],
   organize_type: [],
   produce_type: [],
-  time_type: []
+  time_type: [],
+  source_type: []
 })
 
 // 分布数据（模拟数据）
@@ -304,6 +305,7 @@ const fetchLabelConfig = async () => {
       labelConfig.organize_type = data.organize_type || []
       labelConfig.produce_type = data.produce_type || []
       labelConfig.time_type = data.time_type || []
+      labelConfig.source_type = data.source_type || []
     }
   } catch (error) {
     console.error('获取标签配置失败:', error)
@@ -342,6 +344,13 @@ const getOrganizeTypeName = (type?: number) => {
 const getProduceTypeName = (type?: number) => {
   if (!type) return '-'
   const item = labelConfig.produce_type.find(t => t.id === type)
+  return item?.name || '-'
+}
+
+// 获取创建方式名称
+const getSourceTypeName = (type?: number) => {
+  if (!type) return '-'
+  const item = labelConfig.source_type.find(t => t.id === type)
   return item?.name || '-'
 }
 
