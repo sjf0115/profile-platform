@@ -11,6 +11,8 @@ import lombok.Data;
 public class LabelRequest {
     // 标签名称
     private String labelName;
+    // 标签描述
+    private String labelDesc;
     // 标签类型: 1-属性标签,2-行为标签
     private String labelType;
     // 标签类目ID
@@ -29,6 +31,8 @@ public class LabelRequest {
     private String entityIdentifierId;
     // 创建方式: 1-系统内置,2-数据集导入,3-文件上传,4-四则运算,5-SQL计算,6-自定义规则,7-API导入,8-数据表导入
     private Integer sourceType;
+    // 标签计算规则（文件上传场景携带 physical_path/origin_path）
+    private LabelConfig config;
     // 是否官方认证:0-否,1-是
     private Integer isOffice;
     // 标签负责人

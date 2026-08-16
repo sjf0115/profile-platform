@@ -8,6 +8,7 @@ import com.data.profile.web.converter.LabelConverter;
 import com.data.profile.web.dto.LabelDTO;
 import com.data.profile.web.dto.LabelParam;
 import com.data.profile.web.dto.LabelRequest;
+import com.data.profile.web.model.FileImportLabelConfig;
 import com.data.profile.web.model.Label;
 import com.data.profile.web.vo.LabelVO;
 import com.data.profile.web.service.LabelService;
@@ -16,7 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,6 +144,49 @@ public class LabelController {
                 .map(e -> ImmutableMap.of("id", e.getCode(), "name", e.getMessage()))
                 .collect(Collectors.toList()));
         return Response.success(config);
+    }
+
+    // 上传 CSV 文件到 MinIO
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Response<FileImportLabelConfig> upload(@RequestPart("file") MultipartFile file) {
+        log.info("上传标签文件: {}", file.getOriginalFilename());
+        FileImportLabelConfig config = labelService.upload(file);
+        if (config != null) {
+            return Response.success(config);
+        } else {
+            return Response.error("上传 CSV 文件到 MinIO 失败", ResponseCode.ERROR);
+        }
+    }
+
+    // 取消上传（删除 MinIO 文件）
+    @DeleteMapping(value = "/cancel-upload")
+    public Response<Void> cancelUploaded(@RequestParam(name = "file_key") String fileKey) {
+        log.info("取消标签文件上传: {}", fileKey);
+        labelService.cancelUpload(fileKey);
+        return Response.success(null);
+    }
+
+    // 下载上传模板
+    @GetMapping(value = "/template/download")
+    public void downloadTemplate(HttpServletResponse response) throws IOException {
+        response.setContentType("text/csv;charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=label_upload_template.csv");
+        response.setCharacterEncoding("UTF-8");
+        PrintWriter writer = response.getWriter();
+        writer.println("entity_id,label_value");
+        writer.println("10001,\u666e\u901a\u7528\u6237");
+        writer.println("10002,VIP\u7528\u6237");
+        writer.println("10003,\u666e\u901a\u7528\u6237");
+        writer.flush();
+    }
+
+    // 刷新文件上传标签（重新解析 CSV 并重建引擎表）
+    @RequiresPermission(code = "label:edit", name = "标签-编辑")
+    @PostMapping(value = "/{labelId}/refresh")
+    public Response<Void> refreshFileUpload(@PathVariable("labelId") String labelId) {
+        log.info("刷新文件上传标签: labelId={}", labelId);
+        labelService.refreshFileUpload(labelId);
+        return Response.success(null);
     }
 
 }

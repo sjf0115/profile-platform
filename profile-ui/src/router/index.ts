@@ -103,6 +103,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '编辑标签 - 自定义标签' },
       },
       {
+        path: 'label/create/upload',
+        name: 'CreateLabelUpload',
+        component: () => import('@/views/label/create-upload.vue'),
+        meta: { title: '创建标签 - 文件上传' },
+      },
+      {
+        path: 'label/edit/upload/:id',
+        name: 'EditLabelUpload',
+        component: () => import('@/views/label/create-upload.vue'),
+        meta: { title: '编辑标签 - 文件上传' },
+      },
+      {
         path: 'label/detail/:id',
         name: 'LabelDetail',
         component: () => import('@/views/label/detail.vue'),

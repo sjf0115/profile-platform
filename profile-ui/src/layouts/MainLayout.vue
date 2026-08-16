@@ -418,8 +418,8 @@ const activeTopNav = computed(() => {
 
 // 是否显示侧边栏
 const showSidebar = computed(() => {
-  // 首页和标签市场不显示侧边栏，其他页面显示
-  return !route.path.startsWith('/home') && !route.path.startsWith('/label-market')
+  // 首页和标签管理不显示侧边栏，其他页面显示
+  return !route.path.startsWith('/home') && !route.path.startsWith('/label')
 })
 
 // 当前是否是设置页面

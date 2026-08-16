@@ -22,6 +22,7 @@ public class Constant {
     // 引擎相关常量
     public static final String ENGINE_DATASET_TABLE_PREFIX = "profile_dataset_";
     public static final String ENGINE_GROUP_TABLE_PREFIX = "profile_group_";
+    public static final String ENGINE_LABEL_TABLE_PREFIX = "profile_label_";
 
     // 默认角色ID
     public static final String DEFAULT_ADMIN_ROLE_ID = "1800000000000000";

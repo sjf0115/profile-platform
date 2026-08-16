@@ -97,8 +97,9 @@ public class ClickHouseTableManager implements TableManager {
 
     @Override
     public void createTable(TableSchema target) throws Exception {
+        // TODO 转换 Freemarker 模板
         String ddl = buildCreateDdl(target);
-        log.info("[ClickHouse] createTable DDL: {}", ddl);
+        log.info("createTable DDL: {}", ddl);
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute(ddl);

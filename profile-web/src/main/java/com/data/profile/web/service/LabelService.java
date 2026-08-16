@@ -1,12 +1,15 @@
 package com.data.profile.web.service;
 
+import com.data.engine.api.schema.Column;
 import com.data.profile.common.enums.*;
 import com.data.profile.web.converter.LabelConverter;
 import com.data.profile.web.dao.LabelMapper;
 import com.data.profile.web.dto.LabelDTO;
+import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.model.DatasetField;
 import com.data.profile.web.model.FileImportLabelConfig;
 import com.data.profile.web.model.Label;
+import com.data.profile.web.model.LabelConfig;
 import com.data.profile.web.enums.AssetType;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.utils.IDGenerator;
@@ -18,9 +21,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import javax.annotation.Resource;
+import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.data.profile.common.domain.Constant.ENGINE_LABEL_TABLE_PREFIX;
 
 /**
  * 功能：标签服务
@@ -44,6 +52,10 @@ public class LabelService {
     private LineageService lineageService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private MinioService minioService;
+    @Autowired
+    private AnalysisEngineService analysisEngineService;
 
     /**
      * 根据查询条件获取标签列表（返回 DO，供内部 Service 使用）
@@ -146,7 +158,35 @@ public class LabelService {
                 datasetFieldService.save(field);
             }
         }
-        int result = labelMapper.insertSelective(label);
+        // 文件上传方式：调用引擎服务解析 CSV 并写入引擎表
+        else if (Objects.equals(label.getSourceType(), LabelSourceType.FILE.getCode())) {
+            LabelConfig labelConfig = label.getConfig();
+            if (labelConfig == null || StringUtils.isEmpty(labelConfig.getPhysicalPath())) {
+                throw new RuntimeException("文件上传标签配置解析失败，请联系管理员");
+            }
+            String tableName = ENGINE_LABEL_TABLE_PREFIX + labelId;
+
+            List<Column> columns = Arrays.asList(
+                    Column.builder().name("entity_id").dataType(DataType.STRING_TYPE).comment("实体ID").build(),
+                    Column.builder().name("label_value").dataType(DataType.STRING_TYPE).comment("标签值").build()
+            );
+            try (InputStream is = minioService.getFileAsStream(labelConfig.getPhysicalPath())) {
+                analysisEngineService.importCsvToTable(tableName, is, columns, Collections.singletonList("entity_id"));
+            } catch (Exception e) {
+                throw new RuntimeException("文件上传标签处理失败: " + e.getMessage(), e);
+            }
+            label.setLabelStatus(LabelStatus.ENABLED.getCode());
+        }
+
+        int result;
+        try {
+            result = labelMapper.insertSelective(label);
+        } catch (Exception e) {
+            if (Objects.equals(label.getSourceType(), LabelSourceType.FILE.getCode())) {
+                analysisEngineService.dropTable(ENGINE_LABEL_TABLE_PREFIX + labelId);
+            }
+            throw e;
+        }
         // 自动授权 MANAGE 给创建者
         resourceGrantService.grantOwner("08", labelId, UserContextHolder.currentUserId());
         // 更新血缘
@@ -222,7 +262,11 @@ public class LabelService {
             datasetFieldService.deleteByDatasetIdAndFieldName(boundField.getDatasetId(), boundField.getFieldName());
         }
 
-        // TODO 检查依赖确保无下游使用
+        // 文件上传方式：清理引擎表
+        if (Objects.equals(label.getSourceType(), LabelSourceType.FILE.getCode())) {
+            analysisEngineService.dropTable(ENGINE_LABEL_TABLE_PREFIX + labelId);
+        }
+
         log.info("删除标签：{}({})", label.getLabelName(), labelId);
         lineageService.removeLineage(AssetType.LABEL.getCode(), labelId);
         return labelMapper.deleteByLabelId(labelId);
@@ -316,16 +360,76 @@ public class LabelService {
     }
 
     /**
-     * 文件上传创建标签
+     * 上传文件到 MinIO
+     * @param file 文件
+     * @return 文件上传配置
      */
-    @Deprecated
-    private void fileUpload(String labelId, String config) {
-        FileImportLabelConfig labelConfig = gson.fromJson(config, FileImportLabelConfig.class);
-        String filePath = labelConfig.getFilePath();
-        String fileName = labelConfig.getFileName();
-        if (StringUtils.isBlank(filePath) || StringUtils.isBlank(fileName)) {
-            throw new RuntimeException("上传文件路径不能为空");
+    public FileImportLabelConfig upload(MultipartFile file) {
+        log.info("请求上传标签文件: {}", file.getOriginalFilename());
+        // 1. 验证文件
+        if (file.isEmpty()) {
+            throw new RuntimeException("上传文件不能为空");
         }
+        String filename = file.getOriginalFilename();
+        if (filename == null || !filename.toLowerCase().endsWith(".csv")) {
+            throw new RuntimeException("仅支持 CSV 格式的文件");
+        }
+        if (file.getSize() > 200 * 1024 * 1024L) {
+            throw new RuntimeException("文件大小不能超过 200M");
+        }
+        // 2. 上传到 MinIO
+        String objectName = minioService.uploadFile(file, "upload_label");
+        // 3. 构建返回结果
+        FileImportLabelConfig config = new FileImportLabelConfig();
+        config.setUuidFileKey(objectName);
+        config.setFileName(filename);
+        log.info("标签文件上传成功: {}", objectName);
+        return config;
+    }
 
+    /**
+     * 取消上传（删除 MinIO 文件）
+     */
+    public void cancelUpload(String fileKey) {
+        try {
+            minioService.deleteFile(fileKey);
+        } catch (Exception e) {
+            log.error("取消上传删除文件失败: {}", e.getMessage());
+            throw new RuntimeException("取消上传删除文件失败");
+        }
+    }
+
+    /**
+     * 刷新文件上传标签：重新解析 CSV 并重建引擎表
+     * @param labelId 标签ID
+     */
+    public void refreshFileUpload(String labelId) {
+        Label label = labelMapper.selectByLabelId(labelId);
+        if (label == null) {
+            throw new RuntimeException("标签不存在");
+        }
+        if (!Objects.equals(label.getSourceType(), LabelSourceType.FILE.getCode())) {
+            throw new RuntimeException("仅文件上传类型标签支持刷新操作");
+        }
+        LabelConfig labelConfig = label.getConfig();
+        if (labelConfig == null || StringUtils.isEmpty(labelConfig.getPhysicalPath())) {
+            throw new RuntimeException("标签文件配置无效，无法刷新");
+        }
+        // 删除旧引擎表 → 重新导入 CSV
+        String tableName = ENGINE_LABEL_TABLE_PREFIX + labelId;
+        analysisEngineService.dropTable(tableName);
+        List<Column> columns = Arrays.asList(
+                Column.builder().name("entity_id").dataType(DataType.STRING_TYPE).comment("实体ID").build(),
+                Column.builder().name("label_value").dataType(DataType.STRING_TYPE).comment("标签值").build()
+        );
+        try (InputStream is = minioService.getFileAsStream(labelConfig.getPhysicalPath())) {
+            analysisEngineService.importCsvToTable(tableName, is, columns,
+                    Collections.singletonList("entity_id"));
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("文件上传标签刷新失败: " + e.getMessage(), e);
+        }
+        log.info("文件上传标签刷新成功: labelId={}", labelId);
     }
 }

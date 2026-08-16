@@ -618,8 +618,7 @@ const handleCreateByMethod = (method: string) => {
       // router.push('/label/create/sql')
       break
     case 'upload':
-      ElMessage.info('上传文件创建标签功能开发中')
-      // router.push('/label/create/upload')
+      router.push('/label/create/upload')
       break
     default:
       break

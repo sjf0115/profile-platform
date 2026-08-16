@@ -60,5 +60,18 @@ export const labelApi = {
   // 获取标签配置
   getConfig: () => {
     return request.get<ApiResponse<LabelConfigResponse>>('/label/config')
+  },
+
+  // 上传 CSV 文件到 MinIO（el-upload action 直接用）
+  uploadUrl: '/api/label/upload',
+
+  // 取消上传（删除 MinIO 文件）
+  cancelUpload: (fileKey: string) => {
+    return request.delete<ApiResponse<void>>('/label/cancel-upload', { params: { file_key: fileKey } })
+  },
+
+  // 下载上传模板
+  downloadTemplate: () => {
+    return request.get('/label/template/download', { responseType: 'blob' })
   }
 }

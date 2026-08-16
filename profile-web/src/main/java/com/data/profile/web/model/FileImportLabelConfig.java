@@ -11,8 +11,10 @@ import lombok.Data;
  */
 @Data
 public class FileImportLabelConfig {
-    // 上传文件路径
+    // MinIO 文件 key
+    private String uuidFileKey;
+    // 原始文件路径
     private String filePath;
-    // 上传文件名称
+    // 原始文件名称
     private String fileName;
 }

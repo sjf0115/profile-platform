@@ -564,6 +564,7 @@ public class GroupService {
      * <p>在分析引擎中创建群组结果表，用于存储圈选结果。</p>
      * <p>建表失败不阻塞群组创建流程。</p>
      */
+    // TOTO 有问题 不同引擎实现方式不同 需要沉淀到引擎层
     private void createGroupEngineTable(Group group) {
         String tableName = ENGINE_GROUP_TABLE_PREFIX + group.getGroupId();
         String createSql = String.format(

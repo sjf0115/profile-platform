@@ -3,10 +3,12 @@ package com.data.profile.web.engine;
 import com.data.connector.api.ConnectorFactory;
 import com.data.connector.api.TypeConverter;
 import com.data.engine.api.AnalysisEngineFactory;
+import com.data.engine.api.catalog.EngineCatalog;
 import com.data.engine.api.schema.Column;
 import com.data.engine.api.schema.SchemaDiff;
 import com.data.engine.api.schema.TableManager;
 import com.data.engine.api.schema.TableSchema;
+import com.data.engine.api.sink.EngineSink;
 import com.data.profile.common.enums.DataType;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.dto.DatasetDTO;
@@ -22,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -164,6 +167,142 @@ public class AnalysisEngineService {
             log.error("删除引擎表 [{}.{}] 失败：{}", database, tableName, e.getMessage());
             throw new RuntimeException("删除引擎表失败");
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // 引擎表管理能力（DDL 走 EngineCatalog，DML 走 EngineSink）
+    // -------------------------------------------------------------------------
+
+    /**
+     * 创建引擎表
+     * @param tableName 表名
+     * @param comment   表注释（可空）
+     * @param columns   列定义
+     * @param orderBy   排序键列名
+     */
+    public void createTable(String tableName, String comment, List<Column> columns, List<String> orderBy) {
+        TableSchema schema = TableSchema.builder()
+                .database(getDatabase())
+                .tableName(tableName)
+                .comment(comment)
+                .columns(columns)
+                .orderBy(orderBy)
+                .build();
+        try {
+            EngineCatalog engineCatalog = getEngineCatalog();
+            engineCatalog.createTable(schema);
+            log.info("引擎表 {} 创建成功", tableName);
+        } catch (Exception e) {
+            log.error("引擎表 {} 创建失败", tableName, e);
+            throw new RuntimeException("引擎表创建失败: " + tableName, e);
+        }
+    }
+
+    /**
+     * 引擎表是否存在（通过 EngineCatalog 元数据反查）。
+     */
+    public boolean tableExists(String tableName) {
+        try {
+            return getEngineCatalog().tableExists(getDatabase(), tableName);
+        } catch (Exception e) {
+            log.error("引擎表存在性检查失败: table={}", tableName, e);
+            throw new RuntimeException("引擎表存在性检查失败: " + tableName, e);
+        }
+    }
+
+    /**
+     * 删除指定引擎表（通过 EngineCatalog，非阻塞）。
+     *
+     * @param tableName 引擎表名
+     */
+    public void dropTable(String tableName) {
+        try {
+            getEngineCatalog().dropTable(getDatabase(), tableName);
+            log.info("引擎表删除成功: {}", tableName);
+        } catch (Exception e) {
+            log.error("引擎表删除失败: table={}", tableName, e);
+        }
+    }
+
+    /**
+     * 将 CSV 输入流导入到指定引擎表：EngineCatalog 建表 + EngineSink 写数据。
+     * <p>CSV 第一行为表头（跳过），后续行为数据。写入失败时清理已创建的表。</p>
+     *
+     * @param tableName 引擎表名（如 profile_label_xxx）
+     * @param csvStream CSV 输入流
+     * @param columns   列定义（按 CSV 列顺序）
+     * @param orderBy   排序键列名
+     * @return 写入的记录数
+     */
+    public int importCsvToTable(String tableName, InputStream csvStream, List<Column> columns, List<String> orderBy) {
+        try {
+            // 1. 建表（DDL）
+            createTable(tableName, null, columns, orderBy);
+            // 2. 写数据（DML）
+            EngineSink engineSink = getEngineSink();
+            int count = engineSink.importFromStream(tableName, csvStream, columns);
+            log.info("CSV 导入引擎表完成: table={}, count={}", tableName, count);
+            return count;
+        } catch (Exception e) {
+            log.error("CSV 导入引擎表 {} 失败", tableName, e);
+            dropTable(tableName);
+            throw new RuntimeException("CSV 导入引擎表失败: " + e.getMessage(), e);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 引擎插件产物获取（新体系）
+    // -------------------------------------------------------------------------
+
+    /**
+     * 获取引擎 Catalog（DDL / 元数据），含 init 与 null 校验。
+     */
+    private EngineCatalog getEngineCatalog() {
+        Engine analysisEngine = getDefaultAnalysisEngine();
+        String engineType = analysisEngine.getEngineType();
+        String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(engineType));
+        AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class).getOrCreatePlugin(pluginName);
+        EngineCatalog catalog = factory.getEngineCatalog();
+        if (catalog == null) {
+            log.error("分析引擎 [{}] 未实现 EngineCatalog", engineType);
+            throw new RuntimeException("分析引擎 [" + engineType + "] 未实现 EngineCatalog，请联系管理员");
+        }
+        try {
+            catalog.init(parseConfig(analysisEngine.getConfig()));
+        } catch (Exception e) {
+            log.error("分析引擎 [{}] 初始化 EngineCatalog 失败: {}", engineType, e.getMessage());
+            throw new RuntimeException("分析引擎 [" + engineType + "] 初始化 EngineCatalog 失败，请联系管理员");
+        }
+        return catalog;
+    }
+
+    /**
+     * 获取引擎 Sink（DML 数据写入），含 init 与 null 校验。
+     */
+    private EngineSink getEngineSink() {
+        Engine analysisEngine = getDefaultAnalysisEngine();
+        String engineType = analysisEngine.getEngineType();
+        String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(engineType));
+        AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class).getOrCreatePlugin(pluginName);
+        EngineSink sink = factory.getEngineSink();
+        if (sink == null) {
+            log.error("分析引擎 [{}] 未实现 EngineSink", engineType);
+            throw new RuntimeException("分析引擎 [" + engineType + "] 未实现 EngineSink，请联系管理员");
+        }
+        try {
+            sink.init(parseConfig(analysisEngine.getConfig()));
+        } catch (Exception e) {
+            log.error("分析引擎 [{}] 初始化 EngineSink 失败: {}", engineType, e.getMessage());
+            throw new RuntimeException("分析引擎 [" + engineType + "] 初始化 EngineSink 失败，请联系管理员");
+        }
+        return sink;
+    }
+
+    /**
+     * 获取默认分析引擎的数据库名。
+     */
+    private String getDatabase() {
+        return getString(parseConfig(getDefaultAnalysisEngine().getConfig()), "database");
     }
 
     /**
@@ -326,4 +465,5 @@ public class AnalysisEngineService {
         Object v = map.get(key);
         return v == null ? null : String.valueOf(v);
     }
+
 }
