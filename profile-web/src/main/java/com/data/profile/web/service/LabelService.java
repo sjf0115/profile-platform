@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
 import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -339,30 +338,17 @@ public class LabelService {
     }
 
     /**
-     * 获取实体标识下已绑定数据集的线上可用标签
+     * 查询实体标识下已启用的标签
      * @param entityIdentifierId 实体标识ID
-     * @return 线上可用标签 Model 列表
+     * @return 已启用标签
      */
-    public List<Label> getOnlineList(String entityIdentifierId) {
-        // 1. 查询实体标识下的标签
+    public List<Label> getOnlineLabels(String entityIdentifierId) {
         Label query = new Label();
         query.setEntityIdentifierId(entityIdentifierId);
-        List<Label> allLabels = labelMapper.selectByParams(query);
-
-        // 2. 批量查询已绑定数据集的标签ID集合（避免 N+1）
-        List<DatasetField> datasetFields = datasetFieldService.getList(new DatasetField());
-        Set<String> boundLabelIds = datasetFields.stream()
-                .filter(f -> f.getRelatedId() != null && !f.getRelatedId().isEmpty())
-                .map(DatasetField::getRelatedId)
-                .collect(Collectors.toSet());
-
-        // 3. 过滤出已绑定数据集的标签
-        List<Label> onlineLabels = allLabels.stream()
-                .filter(label -> boundLabelIds.contains(label.getLabelId()))
-                .collect(Collectors.toList());
-
-        log.info("获取实体 [{}] 下已绑定数据集的线上可用标签：{} 个", entityIdentifierId, onlineLabels.size());
-        return onlineLabels;
+        query.setLabelStatus(LabelStatus.ENABLED.getCode());
+        List<Label> labels = labelMapper.selectByParams(query);
+        log.info("获取实体 [{}] 下已启用标签：{} 个", entityIdentifierId, labels.size());
+        return labels;
     }
 
     /**

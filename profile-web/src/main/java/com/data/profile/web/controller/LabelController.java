@@ -113,8 +113,8 @@ public class LabelController {
     // 线上可用标签（群组规则/分析场景）
     @GetMapping(value = "/online")
     public Response<List<LabelVO>> getOnlineLabels(@RequestParam(name = "entity_identifier_id") String entityIdentifierId) {
-        log.info("获取线上标签: entityIdentifierId={}", entityIdentifierId);
-        List<Label> labels = labelService.getOnlineList(entityIdentifierId);
+        log.info("获取实体 {} 所有在线标签", entityIdentifierId);
+        List<Label> labels = labelService.getOnlineLabels(entityIdentifierId);
         return Response.success(LabelConverter.do2voList(labels));
     }
 
