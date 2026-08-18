@@ -214,7 +214,7 @@
       <div class="page-actions">
         <el-button @click="goBack">取消</el-button>
         <el-button type="primary" @click="handleSave" :loading="saving" :disabled="!uploaded">
-          保存标签
+          {{ isEdit ? '保存修改' : '保存标签' }}
         </el-button>
       </div>
     </div>
@@ -251,6 +251,8 @@ const uploading = ref(false)
 const uploaded = ref(false)
 const uploadedFileKey = ref('')
 const selectedFileName = ref('')
+// 编辑模式下回显的存量文件 Key，用于区分"本次新上传"与"存量文件"，防止误删 MinIO 文件
+const originalFileKey = ref('')
 const uploadUrl = labelApi.uploadUrl
 // el-upload 使用原生 XHR，不经过 axios 拦截器，需手动注入认证 Token
 const uploadHeaders = computed(() => ({
@@ -428,7 +430,9 @@ const handleUploadError = () => {
 
 // 删除已上传文件
 const handleRemove = async () => {
-  if (uploadedFileKey.value) {
+  // 仅当删除的是本次会话新上传的文件时才清理 MinIO；
+  // 编辑模式下回显的存量文件只清本地状态，保存时由后端统一处理
+  if (uploadedFileKey.value && uploadedFileKey.value !== originalFileKey.value) {
     try {
       await labelApi.cancelUpload(uploadedFileKey.value)
     } catch (e) {
@@ -508,7 +512,8 @@ const handleSave = async () => {
 
 // 返回
 const goBack = async () => {
-  if (uploaded.value && uploadedFileKey.value) {
+  // 仅清理本次会话新上传的文件，避免编辑模式下误删存量文件
+  if (uploaded.value && uploadedFileKey.value && uploadedFileKey.value !== originalFileKey.value) {
     try {
       await labelApi.cancelUpload(uploadedFileKey.value)
     } catch (error) {
@@ -547,6 +552,7 @@ const fetchLabelDetail = async () => {
         const parsedConfig = typeof label.config === 'string' ? JSON.parse(label.config) : label.config
         if (parsedConfig?.physical_path) {
           uploadedFileKey.value = parsedConfig.physical_path
+          originalFileKey.value = parsedConfig.physical_path
           selectedFileName.value = parsedConfig.origin_path || ''
           uploaded.value = true
         }

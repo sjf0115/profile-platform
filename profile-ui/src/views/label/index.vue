@@ -645,7 +645,7 @@ const handleEdit = (row: Label) => {
       ElMessage.info('SQL计算标签编辑功能开发中')
       break
     case 3:  // 文件上传
-      ElMessage.info('文件上传标签编辑功能开发中')
+      router.push(`/label/edit/upload/${row.label_id}`)
       break
     default:
       ElMessage.warning('未知标签类型，无法编辑')

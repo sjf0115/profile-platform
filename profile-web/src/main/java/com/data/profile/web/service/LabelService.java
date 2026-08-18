@@ -158,23 +158,13 @@ public class LabelService {
                 datasetFieldService.save(field);
             }
         }
-        // 文件上传方式：调用引擎服务解析 CSV 并写入引擎表
+        // 文件上传方式：解析 CSV 并写入引擎表
         else if (Objects.equals(label.getSourceType(), LabelSourceType.FILE.getCode())) {
             LabelConfig labelConfig = label.getConfig();
             if (labelConfig == null || StringUtils.isEmpty(labelConfig.getPhysicalPath())) {
                 throw new RuntimeException("文件上传标签配置解析失败，请联系管理员");
             }
-            String tableName = ENGINE_LABEL_TABLE_PREFIX + labelId;
-
-            List<Column> columns = Arrays.asList(
-                    Column.builder().name("entity_id").dataType(DataType.STRING_TYPE).comment("实体ID").build(),
-                    Column.builder().name("label_value").dataType(DataType.STRING_TYPE).comment("标签值").build()
-            );
-            try (InputStream is = minioService.getFileAsStream(labelConfig.getPhysicalPath())) {
-                analysisEngineService.importCsvToTable(tableName, is, columns, Collections.singletonList("entity_id"));
-            } catch (Exception e) {
-                throw new RuntimeException("文件上传标签处理失败: " + e.getMessage(), e);
-            }
+            reimportFileTable(labelId, labelConfig.getPhysicalPath());
             label.setLabelStatus(LabelStatus.ENABLED.getCode());
         }
 
@@ -197,6 +187,7 @@ public class LabelService {
 
     /**
      * 更新标签
+     * 结构：预处理（按创建方式分支） → DB 更新（含补偿） → 后处理
      * @param labelId 标签ID（从路径参数获取）
      * @param label 标签信息
      * @param datasetId 绑定的数据集ID（可为 null）
@@ -211,10 +202,14 @@ public class LabelService {
             log.error("标签 {} 不存在，无法更新", labelId);
             throw new RuntimeException("标签不存在，无法更新");
         }
+        label.setModifier(UserContextHolder.currentUserId());
 
-        // 数据集绑定/解绑场景：仅当请求携带 datasetId 时才触发状态自动管理
-        if (StringUtils.isNotEmpty(datasetId)) {
-            if (StringUtils.isNotEmpty(datasetFieldName)) {
+        // ------------------------------------------------------------------
+        // 预处理：按存量标签的创建方式分支（创建方式不可变更）
+        // ------------------------------------------------------------------
+        // 数据集导入方式：绑定/解绑时管理标签状态
+        if (Objects.equals(existingLabel.getSourceType(), LabelSourceType.DATASET.getCode())) {
+            if (StringUtils.isNotEmpty(datasetId) && StringUtils.isNotEmpty(datasetFieldName)) {
                 // 绑定数据集字段 → 已启用
                 label.setLabelStatus(LabelStatus.ENABLED.getCode());
                 DatasetField field = datasetFieldService.getListByDatasetIdAndFieldName(datasetId, datasetFieldName);
@@ -222,15 +217,52 @@ public class LabelService {
                 field.setGmtModified(new Date());
                 field.setModifier(UserContextHolder.currentUserId());
                 datasetFieldService.save(field);
-            } else {
+            } else if (StringUtils.isNotEmpty(datasetId)) {
                 // 跳过数据集配置 → 未绑定（解绑回退）
                 label.setLabelStatus(LabelStatus.UNBOUND.getCode());
             }
         }
+        // 文件上传方式：若替换了文件，先用新文件重建引擎表（失败直接抛异常，事务回滚）
+        LabelConfig oldConfig = existingLabel.getConfig();
+        String oldPhysicalPath = (oldConfig != null) ? oldConfig.getPhysicalPath() : null;
+        boolean fileReplaced = false;
+        if (Objects.equals(existingLabel.getSourceType(), LabelSourceType.FILE.getCode())) {
+            LabelConfig newConfig = label.getConfig();
+            String newPhysicalPath = (newConfig != null) ? newConfig.getPhysicalPath() : null;
+            fileReplaced = StringUtils.isNotEmpty(newPhysicalPath) && !Objects.equals(newPhysicalPath, oldPhysicalPath);
+            if (fileReplaced) {
+                reimportFileTable(labelId, newPhysicalPath);
+            }
+        }
 
-        label.setModifier(UserContextHolder.currentUserId());
-        int result = labelMapper.updateByLabelIdSelective(label);
-        // 更新血缘
+        // ------------------------------------------------------------------
+        // DB 更新（失败补偿：若已重建引擎表，用旧文件恢复）
+        // ------------------------------------------------------------------
+        int result;
+        try {
+            result = labelMapper.updateByLabelIdSelective(label);
+        } catch (Exception e) {
+            if (fileReplaced && StringUtils.isNotEmpty(oldPhysicalPath)) {
+                log.error("标签更新失败，补偿重建旧文件引擎表: labelId={}", labelId, e);
+                try {
+                    reimportFileTable(labelId, oldPhysicalPath);
+                } catch (Exception ex) {
+                    log.error("补偿重建引擎表失败，引擎表可能处于不一致状态: labelId={}", labelId, ex);
+                }
+            }
+            throw e;
+        }
+
+        // ------------------------------------------------------------------
+        // 后处理：清理旧文件、更新血缘
+        // ------------------------------------------------------------------
+        if (fileReplaced && StringUtils.isNotEmpty(oldPhysicalPath)) {
+            try {
+                minioService.deleteFile(oldPhysicalPath);
+            } catch (Exception e) {
+                log.warn("标签编辑删除旧 MinIO 文件失败: path={}, {}", oldPhysicalPath, e.getMessage());
+            }
+        }
         lineageService.refreshLineage(AssetType.LABEL.getCode(), labelId);
         log.info("修改标签成功: {}", gson.toJson(label));
         return result;
@@ -415,21 +447,30 @@ public class LabelService {
         if (labelConfig == null || StringUtils.isEmpty(labelConfig.getPhysicalPath())) {
             throw new RuntimeException("标签文件配置无效，无法刷新");
         }
-        // 删除旧引擎表 → 重新导入 CSV
+        reimportFileTable(labelId, labelConfig.getPhysicalPath());
+        log.info("文件上传标签刷新成功: labelId={}", labelId);
+    }
+
+    /**
+     * 重建文件上传标签的引擎表：删除旧表 → 解析指定 CSV 文件重新导入
+     * 供创建、编辑（换文件）、刷新三个场景复用
+     * @param labelId      标签ID
+     * @param physicalPath MinIO 中的 CSV 文件路径
+     */
+    private void reimportFileTable(String labelId, String physicalPath) {
         String tableName = ENGINE_LABEL_TABLE_PREFIX + labelId;
         analysisEngineService.dropTable(tableName);
         List<Column> columns = Arrays.asList(
                 Column.builder().name("entity_id").dataType(DataType.STRING_TYPE).comment("实体ID").build(),
                 Column.builder().name("label_value").dataType(DataType.STRING_TYPE).comment("标签值").build()
         );
-        try (InputStream is = minioService.getFileAsStream(labelConfig.getPhysicalPath())) {
+        try (InputStream is = minioService.getFileAsStream(physicalPath)) {
             analysisEngineService.importCsvToTable(tableName, is, columns,
                     Collections.singletonList("entity_id"));
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("文件上传标签刷新失败: " + e.getMessage(), e);
+            throw new RuntimeException("文件上传标签引擎表重建失败: " + e.getMessage(), e);
         }
-        log.info("文件上传标签刷新成功: labelId={}", labelId);
     }
 }
