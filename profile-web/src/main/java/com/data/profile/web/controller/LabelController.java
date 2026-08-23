@@ -101,12 +101,12 @@ public class LabelController {
         }
     }
 
-    // 未绑定数据集的标签（数据集创建/编辑场景）
+    // 获取可绑定到数据集的标签（数据集创建/编辑场景）
     @GetMapping(value = "/unbound")
     public Response<List<LabelVO>> getUnboundLabels(@RequestParam(name = "entity_identifier_id") String entityIdentifierId,
             @RequestParam(name = "dataset_id", required = false) String datasetId) {
-        log.info("获取未绑定标签: entityIdentifierId={}, datasetId={}", entityIdentifierId, datasetId);
-        List<Label> labels = labelService.getAvailableList(entityIdentifierId, datasetId);
+        log.info("请求获取数据集 [{}] 可以绑定的标签", datasetId);
+        List<Label> labels = labelService.getUnboundLabels(entityIdentifierId, datasetId);
         return Response.success(LabelConverter.do2voList(labels));
     }
 

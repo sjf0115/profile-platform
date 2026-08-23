@@ -226,6 +226,7 @@ public class LabelService {
         String oldPhysicalPath = (oldConfig != null) ? oldConfig.getPhysicalPath() : null;
         boolean fileReplaced = false;
         if (Objects.equals(existingLabel.getSourceType(), LabelSourceType.FILE.getCode())) {
+            label.setLabelStatus(LabelStatus.ENABLED.getCode());
             LabelConfig newConfig = label.getConfig();
             String newPhysicalPath = (newConfig != null) ? newConfig.getPhysicalPath() : null;
             fileReplaced = StringUtils.isNotEmpty(newPhysicalPath) && !Objects.equals(newPhysicalPath, oldPhysicalPath);
@@ -304,37 +305,46 @@ public class LabelService {
     }
 
     /**
-     * 获取未被其他数据集绑定的标签
+     * 获取可绑定到数据集的标签（数据集创建/编辑场景）
+     * <ul>
+     *   <li>仅数据集导入(2)类型标签参与绑定：文件上传(3)等其他创建方式自带数据来源，不可绑定</li>
+     *   <li>以 label_status 判定绑定状态（UNBOUND=未绑定），不再全表扫描 dataset_field</li>
+     *   <li>datasetId 非空表示编辑数据集：被本数据集绑定的标签照常返回，仅排除被其他数据集绑定的</li>
+     * </ul>
      * @param entityIdentifierId 实体标识ID
      * @param datasetId 数据集ID（编辑数据集必填，创建数据集为 null）
-     * @return 可用标签 Model 列表
+     * @return 可绑定标签 Model 列表
      */
-    public List<Label> getAvailableList(String entityIdentifierId, String datasetId) {
-        // 如果有 datasetId 表示是编辑数据集获取可用标签，则获取未被其他数据集绑定的标签，本数据集绑定的标签可以返回
-        // 如果没有 datasetId 表示创建数据集获取可用标签，则获取所有未被绑定的标签
-
-        // 1. 查询该实体标识下的所有标签
+    public List<Label> getUnboundLabels(String entityIdentifierId, String datasetId) {
+        // 1. 查询该实体标识下的全部数据集导入标签
         Label query = new Label();
         query.setEntityIdentifierId(entityIdentifierId);
-        List<Label> allLabels = labelMapper.selectByParams(query);
+        query.setSourceType(LabelSourceType.DATASET.getCode());
+        List<Label> labels = labelMapper.selectByParams(query);
 
-        // 2. 查询所有已绑定标签的数据集字段
-        List<DatasetField> datasetFields = datasetFieldService.getList(new DatasetField());
+        if (StringUtils.isEmpty(datasetId)) {
+            // 2. 创建数据集场景：未绑定即可用，直接按状态过滤
+            List<Label> availableLabels = labels.stream()
+                    .filter(label -> Objects.equals(label.getLabelStatus(), LabelStatus.UNBOUND.getCode()))
+                    .collect(Collectors.toList());
+            log.info("获取实体 [{}] 下未绑定标签：{} 个", entityIdentifierId, availableLabels.size());
+            return availableLabels;
+        } else {
+            // 3. 编辑数据集场景：仅查询本数据集的字段（而非全表），得到本数据集已绑定的标签ID集合
+            Set<String> selfBoundLabelIds = datasetFieldService.getListByDatasetId(datasetId).stream()
+                    .filter(f -> f.getRelatedId() != null && !f.getRelatedId().isEmpty())
+                    .map(DatasetField::getRelatedId)
+                    .collect(Collectors.toSet());
 
-        // 3. 被其他数据集绑定的标签ID集合
-        Set<String> relatedLabelIds = datasetFields.stream()
-                .filter(f -> f.getRelatedId() != null && !f.getRelatedId().isEmpty())
-                .filter(f -> datasetId == null || !datasetId.equals(f.getDatasetId()))
-                .map(DatasetField::getRelatedId)
-                .collect(Collectors.toSet());
+            // 4. 未绑定 ∪ 被本数据集绑定（即排除被其他数据集绑定的）
+            List<Label> availableLabels = labels.stream()
+                    .filter(label -> Objects.equals(label.getLabelStatus(), LabelStatus.UNBOUND.getCode())
+                            || selfBoundLabelIds.contains(label.getLabelId()))
+                    .collect(Collectors.toList());
 
-        // 4. 过滤掉被其他数据集绑定的标签
-        List<Label> availableLabels = allLabels.stream()
-                .filter(label -> !relatedLabelIds.contains(label.getLabelId()))
-                .collect(Collectors.toList());
-
-        log.info("获取实体 [{}] 下未被 [{}] 之外数据集绑定的可用标签：{} 个", entityIdentifierId, datasetId, availableLabels.size());
-        return availableLabels;
+            log.info("获取实体 [{}] 下可绑定标签（数据集={}）：{} 个", entityIdentifierId, datasetId, availableLabels.size());
+            return availableLabels;
+        }
     }
 
     /**
@@ -348,32 +358,6 @@ public class LabelService {
         query.setLabelStatus(LabelStatus.ENABLED.getCode());
         List<Label> labels = labelMapper.selectByParams(query);
         log.info("获取实体 [{}] 下已启用标签：{} 个", entityIdentifierId, labels.size());
-        return labels;
-    }
-
-    /**
-     * 获取实体标识下全部已绑定数据集的标签（内部 Service 调用，返回 Model）
-     * @param entityIdentifierId 实体标识ID
-     */
-    public List<Label> getBoundedLabels(String entityIdentifierId) {
-        // 1. 查询实体标识下的标签
-        Label query = new Label();
-        query.setEntityIdentifierId(entityIdentifierId);
-        List<Label> allLabels = labelMapper.selectByParams(query);
-
-        // 2. 批量查询已绑定数据集的标签ID集合（避免 N+1）
-        List<DatasetField> datasetFields = datasetFieldService.getList(new DatasetField());
-        Set<String> boundLabelIds = datasetFields.stream()
-                .filter(f -> f.getRelatedId() != null && !f.getRelatedId().isEmpty())
-                .map(DatasetField::getRelatedId)
-                .collect(Collectors.toSet());
-
-        // 3. 过滤出已绑定数据集的标签
-        List<Label> labels = allLabels.stream()
-                .filter(label -> boundLabelIds.contains(label.getLabelId()))
-                .collect(Collectors.toList());
-
-        log.info("获取实体 [{}] 下已绑定数据集的有效标签：{} 个", entityIdentifierId, labels.size());
         return labels;
     }
 
