@@ -1,11 +1,13 @@
 package com.data.profile.web.service;
 
+import com.data.profile.common.enums.TaskType;
 import com.data.profile.web.converter.ExportConverter;
 import com.data.profile.web.dao.ExportMapper;
 import com.data.profile.web.dto.ExportDTO;
 import com.data.profile.web.dto.ExportRequest;
 import com.data.profile.web.enums.AssetType;
 import com.data.profile.web.model.Export;
+import com.data.profile.web.model.Task;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.ModelType;
@@ -37,6 +39,8 @@ public class ExportService {
     private TaskInstanceService taskInstanceService;
     @Autowired
     private LineageService lineageService;
+    @Autowired
+    private TaskService taskService;
 
     /**
      * 根据查询条件获取投递列表
@@ -96,6 +100,16 @@ public class ExportService {
         // 自动授权 MANAGE 给创建者
         resourceGrantService.grantOwner("10", exportId, userId);
         lineageService.refreshLineage(AssetType.EXPORT.getCode(), exportId);
+
+        // 创建投递任务
+        Task task = Task.builder()
+                .taskName(export.getExportName())
+                .taskType(TaskType.EXPORT.getCode())
+                .taskDesc(export.getExportName() + "投递任务")
+                .taskRelatedId(exportId)
+                .build();
+        taskService.createTask(task);
+        log.info("为投递 [{}] 创建投递任务", exportId);
 
         ExportDTO dto = ExportConverter.do2dto(export);
         return dto;

@@ -104,6 +104,7 @@ public class TaskExecutionService {
     public TaskInstance executeByRelatedId(String relatedId, TriggerMode triggerMode) {
         Task task = taskService.getDetailByRelatedId(relatedId);
         if (task == null) {
+            log.error("关联ID [{}] 没有找到对应的异步执行任务", relatedId);
             throw new RuntimeException("关联ID " + relatedId + " 对应的任务不存在");
         }
         return executeTask(task, triggerMode);
@@ -144,6 +145,7 @@ public class TaskExecutionService {
             TaskType taskType = TaskType.of(task.getTaskType());
             TaskExecutor executor = executorMap.get(taskType);
             if (executor == null) {
+                log.error("未找到任务类型 [{}] 对应的执行器", taskType);
                 throw new IllegalStateException("未找到任务类型对应的执行器: " + taskType);
             }
 

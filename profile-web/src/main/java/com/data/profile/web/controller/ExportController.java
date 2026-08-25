@@ -1,12 +1,14 @@
 package com.data.profile.web.controller;
 
+import com.data.profile.common.enums.TriggerMode;
 import com.data.profile.web.annotation.RequiresPermission;
 import com.data.profile.web.converter.ExportConverter;
 import com.data.profile.web.dto.ExportDTO;
 import com.data.profile.web.dto.ExportParam;
 import com.data.profile.web.dto.ExportRequest;
 import com.data.profile.web.model.Export;
-import com.data.profile.web.task.ExportTask;
+import com.data.profile.web.model.TaskInstance;
+import com.data.profile.web.service.TaskExecutionService;
 import com.data.profile.web.service.ExportService;
 import com.data.profile.web.vo.ExportVO;
 import com.data.profile.web.vo.Response;
@@ -33,9 +35,8 @@ import java.util.Optional;
 public class ExportController {
     @Autowired
     private ExportService exportService;
-
     @Autowired
-    private ExportTask exportTask;
+    private TaskExecutionService taskExecutionService;
 
     /**
      * 投递列表
@@ -135,12 +136,12 @@ public class ExportController {
     @RequiresPermission(code = "export:execute", name = "投递-执行")
     @PostMapping("/{exportId}/execute")
     public Response<String> execute(@PathVariable(value = "exportId") String exportId) {
-        log.info("请求立即执行投递：{}", exportId);
+        log.info("请求手动立即执行投递：{}", exportId);
         try {
-            exportTask.executeExport(exportId);
-            return Response.success("投递执行成功");
+            TaskInstance instance = taskExecutionService.executeByRelatedId(exportId, TriggerMode.MANUAL);
+            return Response.success(instance.getInstanceId());
         } catch (Exception e) {
-            log.error("投递执行失败: exportId={}, error={}", exportId, e.getMessage(), e);
+            log.error("手动立即执行投递 [{}] 圈选失败", exportId, e);
             return Response.error("投递执行失败: " + e.getMessage(), ResponseCode.ERROR);
         }
     }

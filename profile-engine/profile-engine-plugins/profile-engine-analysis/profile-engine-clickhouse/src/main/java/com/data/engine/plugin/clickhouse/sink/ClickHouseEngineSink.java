@@ -138,6 +138,40 @@ public class ClickHouseEngineSink implements EngineSink {
         return rows.size();
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // 服务端写入 / 删除（同实例投递场景）
+    // ---------------------------------------------------------------------------------------------
+
+    @Override
+    public long writeFromQuery(String database, String targetTable, String sourceTable) throws Exception {
+        // 源表可能带库名前缀（db.table），不加反引号；目标表限定目标库
+        String sql = "INSERT INTO " + qualified(resolveDatabase(database), targetTable)
+                + " SELECT * FROM " + sourceTable;
+        log.info("[ClickHouse] writeFromQuery: {}", sql);
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+            long updateCount = stmt.getLargeUpdateCount();
+            log.info("[ClickHouse] writeFromQuery 完成: target={}, rows={}", targetTable, updateCount);
+            return updateCount;
+        }
+    }
+
+    @Override
+    public long deleteFromSource(String database, String tableName, String column, String sourceTable) throws Exception {
+        // ClickHouse 轻量级删除（23.3+ 同步生效；低版本需 mutations_sync 配置保障可见性）
+        String sql = "DELETE FROM " + qualified(resolveDatabase(database), tableName)
+                + " WHERE `" + column + "` IN (SELECT `" + column + "` FROM " + sourceTable + ")";
+        log.info("[ClickHouse] deleteFromSource: {}", sql);
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+            long updateCount = stmt.getLargeUpdateCount();
+            log.info("[ClickHouse] deleteFromSource 完成: table={}, rows={}", tableName, updateCount);
+            return updateCount;
+        }
+    }
+
     @Override
     public long count(String database, String tableName) throws Exception {
         String sql = "SELECT COUNT(*) FROM " + qualified(resolveDatabase(database), tableName);

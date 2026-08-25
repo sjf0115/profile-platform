@@ -50,6 +50,29 @@ public interface EngineSink {
                     List<Map<String, Object>> rows) throws Exception;
 
     /**
+     * 服务端写入：INSERT INTO 目标表 SELECT * FROM 源表（同实例，零数据搬运）。
+     *
+     * <p>目标表必须已存在（DDL 归 EngineCatalog），且与源表列结构兼容。</p>
+     *
+     * @param database    目标库名（可空，由实现决定默认值）
+     * @param targetTable 目标表名
+     * @param sourceTable 源表名（同实例，可带库名前缀）
+     * @return 写入行数（引擎无法提供时返回 -1）
+     */
+    long writeFromQuery(String database, String targetTable, String sourceTable) throws Exception;
+
+    /**
+     * 服务端删除：删除目标表中 column 值存在于源表同名列的记录（同实例），upsert 前置操作。
+     *
+     * @param database    目标库名（可空，由实现决定默认值）
+     * @param tableName   目标表名
+     * @param column      匹配列名（目标表与源表均存在该列）
+     * @param sourceTable 源表名（同实例，可带库名前缀）
+     * @return 删除行数（引擎无法提供时返回 -1）
+     */
+    long deleteFromSource(String database, String tableName, String column, String sourceTable) throws Exception;
+
+    /**
      * 统计表中记录数。
      */
     long count(String database, String tableName) throws Exception;

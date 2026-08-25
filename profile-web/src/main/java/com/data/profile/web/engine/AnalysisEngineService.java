@@ -11,6 +11,7 @@ import com.data.engine.api.schema.TableSchema;
 import com.data.engine.api.sink.EngineSink;
 import com.data.profile.common.enums.DataType;
 import com.data.profile.common.utils.JSONUtils;
+import com.data.profile.web.dto.DataSourceDTO;
 import com.data.profile.web.dto.DatasetDTO;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
@@ -250,6 +251,47 @@ public class AnalysisEngineService {
         }
     }
 
+    /**
+     * 判定目标数据源是否即分析引擎本身（host/port 一致，同实例投递可用服务端写入）。
+     */
+    public boolean isSameAsAnalysisEngine(DataSourceDTO dataSource) {
+        if (dataSource == null || StringUtils.isBlank(dataSource.getConfig())) {
+            return false;
+        }
+        Map<String, Object> targetConfig = parseConfig(dataSource.getConfig());
+        Map<String, Object> engineConfig = parseConfig(getDefaultAnalysisEngine().getConfig());
+        boolean sameHost = Objects.equals(getString(targetConfig, "host"), getString(engineConfig, "host"));
+        boolean samePort = Objects.equals(asString(targetConfig.get("port")), asString(engineConfig.get("port")));
+        return sameHost && samePort;
+    }
+
+    /**
+     * 同实例表投递：EngineSink 服务端写入（零数据搬运）。
+     * <p>writeMode=upsert 且 targetColumn 非空时，先删除目标表中与源表重复的记录再写入。</p>
+     *
+     * @param targetDatabase 目标库名
+     * @param targetTable    目标表名（必须已存在）
+     * @param sourceTable    源引擎表名（可带库名前缀）
+     * @param writeMode      写入模式：append 追加 / upsert 覆盖
+     * @param targetColumn   upsert 匹配列
+     */
+    public void transferToEngineTable(String targetDatabase, String targetTable, String sourceTable,
+                                      String writeMode, String targetColumn) {
+        try {
+            EngineSink engineSink = getEngineSink();
+            // upsert：先删除目标表中已存在的记录，再追加写入
+            if ("upsert".equalsIgnoreCase(writeMode) && StringUtils.isNotBlank(targetColumn)) {
+                long deleted = engineSink.deleteFromSource(targetDatabase, targetTable, targetColumn, sourceTable);
+                log.info("同实例投递 upsert 前置删除完成: target={}, rows={}", targetTable, deleted);
+            }
+            long inserted = engineSink.writeFromQuery(targetDatabase, targetTable, sourceTable);
+            log.info("同实例表投递完成: target={}, rows={}", targetTable, inserted);
+        } catch (Exception e) {
+            log.error("同实例表投递失败: target={}", targetTable, e);
+            throw new RuntimeException("同实例表投递失败: " + e.getMessage(), e);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // 引擎插件产物获取（新体系）
     // -------------------------------------------------------------------------
@@ -464,6 +506,13 @@ public class AnalysisEngineService {
     private String getString(Map<String, Object> map, String key) {
         Object v = map.get(key);
         return v == null ? null : String.valueOf(v);
+    }
+
+    /**
+     * 配置值转字符串（null 保持 null），用于 host/port 等字段跨类型比较。
+     */
+    private String asString(Object value) {
+        return value == null ? null : String.valueOf(value);
     }
 
 }

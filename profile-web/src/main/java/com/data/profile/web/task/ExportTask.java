@@ -65,7 +65,7 @@ public class ExportTask {
      * @param exportId 投递ID
      */
     public void executeExport(String exportId) throws Exception {
-        log.info("开始执行投递: exportId={}", exportId);
+        log.info("开始执行投递: {}", exportId);
 
         // 1. 加载投递配置
         Export export = exportMapper.selectByExportId(exportId);
@@ -124,35 +124,30 @@ public class ExportTask {
 
     /**
      * 数据表投递：支持 MySQL/ClickHouse/Hive/Doris 等
-     * <p>从数据源 config 获取 database，从 export_config 获取 tableName/writeMode/targetColumn。</p>
+     * <p>目标是分析引擎同实例：走 EngineSink 服务端写入（零数据搬运）；
+     * 其他数据源：待数据管道模式支持（EngineSource 流式读 → connector 写入）。</p>
      */
     private void executeTableExport(String exportId, String groupId, String sourceTable,
                                     ExportConfig config, String datasourceType) throws Exception {
         // 从数据源 config 提取 database
         DataSourceDTO ds = dataSourceService.getDetail(config.getDatasourceId());
         String database = extractFieldFromConfig(ds.getConfig(), "database");
-        String targetTable = database + "." + config.getTableName();
+        String targetTable = config.getTableName();
         String writeMode = config.getWriteMode();
         String targetColumn = config.getTargetColumn();
 
-        log.info("开始执行数据表投递: exportId={}, targetTable={}, writeMode={}, targetColumn={}",
-                exportId, targetTable, writeMode, targetColumn);
+        log.info("开始执行数据表投递: exportId={}, target={}.{}, writeMode={}, targetColumn={}",
+                exportId, database, targetTable, writeMode, targetColumn);
 
-        if ("upsert".equalsIgnoreCase(writeMode) && StringUtils.isNotBlank(targetColumn)) {
-            // 覆盖模式：先删除已存在数据，再插入
-            String deleteSql = String.format(
-                    "ALTER TABLE %s DELETE WHERE %s IN (SELECT %s FROM %s)",
-                    targetTable, targetColumn, targetColumn, sourceTable);
-            log.info("覆盖模式 - 删除已存在数据: {}", deleteSql);
-            analysisEngineService.executeStatement(deleteSql);
+        if (analysisEngineService.isSameAsAnalysisEngine(ds)) {
+            // 同实例投递：EngineSink 服务端写入（upsert 前置删除由门面内部处理）
+            analysisEngineService.transferToEngineTable(database, targetTable, sourceTable, writeMode, targetColumn);
+        } else {
+            // 跨数据源投递待数据管道模式支持：EngineSource 流式读 → connector 批量写
+            throw new RuntimeException("暂不支持投递到分析引擎之外的数据源（" + datasourceType + "），数据管道模式建设中");
         }
 
-        // 追加插入
-        String insertSql = String.format("INSERT INTO %s SELECT * FROM %s", targetTable, sourceTable);
-        log.info("执行投递 SQL: {}", insertSql);
-        analysisEngineService.executeStatement(insertSql);
-
-        log.info("数据表投递完成: exportId={}, targetTable={}", exportId, targetTable);
+        log.info("数据表投递完成: exportId={}, target={}.{}", exportId, database, targetTable);
     }
 
     /**
