@@ -6,7 +6,7 @@ import com.data.engine.api.AnalysisEngineFactory;
 import com.data.engine.api.catalog.EngineCatalog;
 import com.data.engine.api.schema.Column;
 import com.data.engine.api.schema.SchemaDiff;
-import com.data.engine.api.schema.TableManager;
+import com.data.engine.api.schema.EngineTableManager;
 import com.data.engine.api.schema.TableSchema;
 import com.data.engine.api.sink.EngineSink;
 import com.data.engine.api.source.EngineSource;
@@ -14,7 +14,6 @@ import com.data.engine.api.source.RowConsumer;
 import com.data.profile.common.enums.DataType;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.dto.DataSourceDTO;
-import com.data.profile.web.dto.DatasetDTO;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;
@@ -155,7 +154,7 @@ public class AnalysisEngineService {
         //
         String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(analysisEngine.getEngineType()));
         AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class).getOrCreatePlugin(pluginName);
-        TableManager tm = factory.getTableManager();
+        EngineTableManager tm = factory.getTableManager();
         if (tm == null) {
             log.error("分析引擎 [{}] 未实现 TableManager，跳过删除引擎表", analysisEngine.getEngineType());
             return;
@@ -449,7 +448,7 @@ public class AnalysisEngineService {
     public void upsertAnalysisEngineTable(Engine analysisEngine, TableSchema target) throws Exception {
         String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(analysisEngine.getEngineType()));
         AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class).getOrCreatePlugin(pluginName);
-        TableManager tm = factory.getTableManager();
+        EngineTableManager tm = factory.getTableManager();
         if (tm == null) {
             throw new IllegalStateException("分析引擎 [" + analysisEngine.getEngineType()
                     + "] 未实现 TableManager，无法自动建表 / Schema 演进");

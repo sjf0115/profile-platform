@@ -68,7 +68,7 @@ public class PluginEngineService {
 
         String filePath = "/opt/workspace/apache-seatunnel-web-1.0.2-bin/profile/21343715957248.conf";
 
-        // 3. 提交集群执行
+        // 3. 提交集群执行（提交网关模型：submit + 轮询至终态）
         DiEngineFactory diEngineFactory = PluginLoader.getPluginLoader(DiEngineFactory.class).getOrCreatePlugin(Constant.ENGINE_SEATUNNEL);
         try {
             DiEngineExecutor executor = diEngineFactory.getExecutor();
@@ -76,9 +76,12 @@ public class PluginEngineService {
                     .configPath(filePath)
                     .jobId("1222")
                     .build();
-            executor.init(request, log, null);
-            // 执行任务
-            executor.execute();
+            executor.init(request, null);
+            // 提交作业并轮询至终态
+            executor.submit();
+            while (!executor.getStatus().getState().isTerminal()) {
+                Thread.sleep(2000L);
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -106,13 +109,16 @@ public class PluginEngineService {
                     .configPath(filePath)
                     .jobId(jobId)
                     .build();
-            executor.init(request, log, null);
+            executor.init(request, null);
 
-            // 异步执行任务
+            // 提交作业（不阻塞），异步轮询终态并记录结果
+            executor.submit();
             new Thread(() -> {
                 try {
-                    executor.execute();
-                    log.info("Job executed successfully: {}", jobId);
+                    while (!executor.getStatus().getState().isTerminal()) {
+                        Thread.sleep(2000L);
+                    }
+                    log.info("Job executed successfully: {}, state={}", jobId, executor.getStatus().getState());
                 } catch (Exception e) {
                     log.error("Job execution failed: {}", jobId, e);
                 }

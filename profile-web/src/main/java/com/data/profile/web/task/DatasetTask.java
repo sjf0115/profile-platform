@@ -1,14 +1,36 @@
 package com.data.profile.web.task;
 
+import com.data.engine.api.DiContext;
+import com.data.engine.api.schema.TableSchema;
+import com.data.profile.common.domain.engine.ProcessResult;
+import com.data.profile.web.converter.DataSourceConverter;
+import com.data.profile.web.converter.DatasetConverter;
+import com.data.profile.web.dto.DataSourceDTO;
+import com.data.profile.web.dto.DatasetDTO;
+import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.engine.DiEngineService;
+import com.data.profile.web.engine.SyncEndpointResolver;
+import com.data.profile.web.model.DataSource;
+import com.data.profile.web.model.Dataset;
+import com.data.profile.web.model.DatasetField;
+import com.data.profile.web.service.DataSourceService;
+import com.data.profile.web.service.DatasetFieldService;
+import com.data.profile.web.service.DatasetService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.List;
+
+import static com.data.profile.common.domain.Constant.ENGINE_DATASET_TABLE_PREFIX;
 
 /**
- * 功能：数据集定时调度任务
- * <p>负责数据集独立的执行逻辑：数据同步</p>
+ * 功能：数据集同步任务
+ *
+ * <p>职责：数据集同步的完整业务编排——查实体 → 建表/演进 → 同步数据。
+ * 引擎提交能力由 {@link DiEngineService}（引擎门面）提供，
+ * 建表/演进由 {@link AnalysisEngineService} 提供，本层不感知引擎细节。</p>
+ *
  * 作者：SmartSi
  * CSDN博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
@@ -18,13 +40,53 @@ import javax.annotation.Resource;
 public class DatasetTask {
     @Resource
     private DiEngineService diEngineService;
+    @Resource
+    private AnalysisEngineService analysisEngineService;
+    @Resource
+    private SyncEndpointResolver syncEndpointResolver;
+    @Resource
+    private DatasetService datasetService;
+    @Resource
+    private DataSourceService dataSourceService;
+    @Resource
+    private DatasetFieldService datasetFieldService;
 
     /**
-     * 执行数据集同步
+     * 执行数据集同步（完整流程）。
+     * <p>包含：查数据集 → 查数据源 → 建表/演进 → 同步数据。</p>
+     *
      * @param datasetId 数据集ID
      */
-    public void executeSync(String datasetId) throws Exception {
+    public void execute(String datasetId) throws Exception {
         log.info("开始执行数据集 [{}] 同步", datasetId);
-        diEngineService.executeDatasetSync(datasetId);
+
+        DatasetDTO datasetDTO = datasetService.getDetail(datasetId);
+        DataSourceDTO dataSourceDTO = dataSourceService.getDetail(datasetDTO.getDatasourceId());
+        DataSource dataSource = DataSourceConverter.dto2do(dataSourceDTO);
+        if (dataSource == null) {
+            throw new IllegalStateException("数据源不存在: " + datasetDTO.getDatasourceId());
+        }
+
+        // 1. 查询数据集字段
+        List<DatasetField> fields = datasetFieldService.getListByDatasetId(datasetId);
+
+        // 2. 构建目标 Schema(分析引擎) 用于创建目标表
+        String tableName = ENGINE_DATASET_TABLE_PREFIX + datasetId;
+        Dataset dataset = DatasetConverter.dto2do(datasetDTO);
+        TableSchema tableSchema = analysisEngineService.buildAndUpsertTable(dataset, dataSource, tableName, fields);
+
+        // 3. 组装同步上下文，交由同步引擎同步数据(同步引擎)
+        List<String> columns = tableSchema.columnNames();
+        if (columns.isEmpty()) {
+            throw new IllegalStateException("数据集无可同步字段: " + datasetId);
+        }
+        DiContext context = DiContext.builder()
+                .jobId("di_" + datasetId + "_" + System.currentTimeMillis())
+                .source(syncEndpointResolver.resolveSource(dataSource, dataset.getTableName(), columns))
+                .target(diEngineService.resolveAnalysisTarget(tableSchema.getTableName(), columns))
+                .build();
+        ProcessResult result = diEngineService.sync(context);
+
+        log.info("数据集同步完成: datasetId={}, recordCount={}, duration={}ms", datasetId, result.getRecordCount(), result.getDuration());
     }
 }

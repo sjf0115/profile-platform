@@ -16,7 +16,7 @@ import java.util.Map;
  *
  * <p>实现类内部完成"中性 DataType → 引擎私有类型"映射，业务层零感知。</p>
  */
-public interface TableManager {
+public interface EngineTableManager {
 
     /**
      * 初始化连接配置（与 AnalysisEngineExecutor 同源 config Map，含 host/port/database/...）。

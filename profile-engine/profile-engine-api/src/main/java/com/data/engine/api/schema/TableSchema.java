@@ -13,7 +13,7 @@ import java.util.List;
  * 中性表结构定义。
  *
  * <p>由业务层（DatasetSyncService）从"数据源元数据 + 数据集字段定义 + 标签语义"组装，
- * 交给 {@link TableManager} 完成"建表 / Schema 演进"。</p>
+ * 交给 {@link EngineTableManager} 完成"建表 / Schema 演进"。</p>
  *
  * <p>引擎插件不应当感知该结构以外的业务概念（如 Dataset/Engine/Label）。</p>
  */

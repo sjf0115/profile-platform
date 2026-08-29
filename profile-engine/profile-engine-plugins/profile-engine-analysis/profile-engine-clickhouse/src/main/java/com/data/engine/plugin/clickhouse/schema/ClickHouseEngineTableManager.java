@@ -2,7 +2,7 @@ package com.data.engine.plugin.clickhouse.schema;
 
 import com.data.engine.api.schema.Column;
 import com.data.engine.api.schema.SchemaDiff;
-import com.data.engine.api.schema.TableManager;
+import com.data.engine.api.schema.EngineTableManager;
 import com.data.engine.api.schema.TableSchema;
 import com.data.profile.common.enums.DataType;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * ClickHouse {@link TableManager} 实现。
+ * ClickHouse {@link EngineTableManager} 实现。
  *
  * <p>P1 阶段聚焦：</p>
  * <ul>
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * </ul>
  */
 @Slf4j
-public class ClickHouseTableManager implements TableManager {
+public class ClickHouseEngineTableManager implements EngineTableManager {
 
     /** 同步时间系统列 */
     public static final String SYS_SYNC_TIME = "_sync_time";

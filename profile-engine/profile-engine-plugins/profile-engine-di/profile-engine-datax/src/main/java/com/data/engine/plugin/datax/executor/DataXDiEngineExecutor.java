@@ -1,6 +1,8 @@
 package com.data.engine.plugin.datax.executor;
 
 import com.data.engine.api.DiEngineExecutor;
+import com.data.engine.api.EngineJobState;
+import com.data.engine.api.EngineJobStatus;
 import com.data.engine.common.ExecutorRequest;
 import com.data.engine.plugin.datax.core.DataXEngineProxy;
 
@@ -11,35 +13,36 @@ import com.data.profile.common.domain.engine.ProcessResult;
 import com.data.profile.common.enums.engine.ExecutionStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
 
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * DataX DI 引擎 Executor。
+ * DataX DI 引擎 Executor
  *
  * <p>生命周期：</p>
  * <ol>
  *   <li>{@link #init} 解析 {@link ExecutorRequest#getConfig()} 为 {@link DataXJobBuildRequest}，
  *       通过 {@link DataXJsonHelper} 构建 DataX JSON</li>
- *   <li>{@link #execute} 提交到 {@link DataXEngineProxy} 异步执行并阻塞等待结果</li>
- *   <li>{@link #pause()}/{@link #restore()} 不支持，DataX 内核无 checkpoint 机制，抛 {@link UnsupportedOperationException}</li>
+ *   <li>{@link #submit} 提交到 {@link DataXEngineProxy} 异步执行，立即返回作业ID</li>
+ *   <li>{@link #getStatus} 轮询 Future 完成度：未完成 → RUNNING；完成 → SUCCESS/FAILED/CANCELLED</li>
  *   <li>{@link #cancel()} 调用 {@link DataXEngineProxy#cancel(String)} 发送 destroyForcibly，实现 OS 级真取消</li>
  * </ol>
+ * <p>pause/restore 不支持：DataX 内核无 checkpoint 机制（接口 default 实现抛 UnsupportedOperationException）。</p>
  */
 @Slf4j
 public class DataXDiEngineExecutor implements DiEngineExecutor {
-
-    private ExecutorRequest taskRequest;
+    private ExecutorRequest executorRequest;
     private String jobJson;
-    private ProcessResult processResult;
-    private final AtomicBoolean cancelFlag = new AtomicBoolean(false);
+    /** 异步执行句柄：submit 后非空，不阻塞等待 */
+    private CompletableFuture<ProcessResult> future;
+    private final AtomicBoolean isCancel = new AtomicBoolean(false);
 
     @Override
-    public void init(ExecutorRequest executorRequest, Logger logger, Configurations configurations) throws Exception {
-        this.taskRequest = executorRequest;
+    public void init(ExecutorRequest executorRequest, Configurations configurations) throws Exception {
+        this.executorRequest = executorRequest;
         if (executorRequest == null) {
             throw new IllegalArgumentException("ExecutorRequest == null");
         }
@@ -50,69 +53,58 @@ public class DataXDiEngineExecutor implements DiEngineExecutor {
         if (config == null || config.isEmpty()) {
             throw new IllegalArgumentException("ExecutorRequest.config is empty for DataX engine");
         }
-        DataXJobBuildRequest buildReq = DataXJsonHelper.sharedMapper()
-                .convertValue(config, DataXJobBuildRequest.class);
-        this.jobJson = DataXJsonHelper.buildJobJson(buildReq);
+        DataXJobBuildRequest request = DataXJsonHelper.sharedMapper().convertValue(config, DataXJobBuildRequest.class);
+        this.jobJson = DataXJsonHelper.buildJobJson(request);
         log.info("[DataX] init done, jobId={}", executorRequest.getJobId());
     }
 
     @Override
-    public void execute() throws Exception {
-        if (taskRequest == null || jobJson == null) {
-            throw new IllegalStateException("DataXDiEngineExecutor not initialized, call init() first");
+    public String submit() throws Exception {
+        if (jobJson == null) {
+            throw new IllegalStateException("请先初始化 DataXDiEngineExecutor");
         }
-        log.info("[DataX] 引擎执行中, jobId={}", taskRequest.getJobId());
-        CompletableFuture<ProcessResult> future =
-                DataXEngineProxy.getInstance().submit(taskRequest.getJobId(), jobJson);
+        String jobId = executorRequest.getJobId();
+        log.info("异步提交 DataX 作业：{}", jobId);
+        // 异步提交，不阻塞调用线程；结果通过 getStatus() 轮询
+        this.future = DataXEngineProxy.getInstance().submit(jobId, jobJson);
+        return jobId;
+    }
+
+    @Override
+    public EngineJobStatus getStatus() throws Exception {
+        if (future == null) {
+            throw new IllegalStateException("请先提交 DataXDiEngineExecutor 任务");
+        }
+        String jobId = executorRequest.getJobId();
+        if (!future.isDone()) {
+            // 执行中
+            return EngineJobStatus.running(jobId);
+        }
         try {
-            this.processResult = future.get();
+            // 已完成：get() 不会阻塞；取消场景抛 CancellationException，其余异常归为 FAILED
+            ProcessResult result = future.get();
+            EngineJobState state = (result != null && result.isSuccess())
+                    ? EngineJobState.SUCCESS : EngineJobState.FAILED;
+            return EngineJobStatus.builder().engineJobId(jobId).state(state).result(result).build();
+        } catch (CancellationException e) {
+            ProcessResult cancelled = new ProcessResult(ExecutionStatus.FAILURE.getCode());
+            cancelled.setErrorMsg("作业已取消");
+            return EngineJobStatus.builder().engineJobId(jobId).state(EngineJobState.CANCELLED).result(cancelled).build();
         } catch (Throwable t) {
-            log.error("[DataX] 等待任务结果异常, jobId={}", taskRequest.getJobId(), t);
+            log.error("[DataX] 获取作业结果异常, jobId={}", jobId, t);
             ProcessResult fail = new ProcessResult(ExecutionStatus.FAILURE.getCode());
             fail.setErrorMsg(t.getMessage());
-            this.processResult = fail;
-            throw t instanceof Exception ? (Exception) t : new RuntimeException(t);
+            return EngineJobStatus.builder().engineJobId(jobId).state(EngineJobState.FAILED).result(fail).build();
         }
-    }
-
-    @Override
-    public void pause() throws Exception {
-        throw new UnsupportedOperationException(
-                "DataX 引擎不支持 pause：DataX 内核无 checkpoint 机制，所有运行模式（standalone/local/distribute）均不支持。如需断点续传请改用 SeaTunnel 引擎。");
-    }
-
-    @Override
-    public void restore() throws Exception {
-        throw new UnsupportedOperationException(
-                "DataX 引擎不支持 restore：DataX 内核无 savepoint 机制。如需从上次位置恢复，请业务侧通过 where 条件控制增量区间重跑。");
     }
 
     @Override
     public void cancel() throws Exception {
-        cancelFlag.set(true);
-        if (taskRequest != null) {
+        isCancel.set(true);
+        if (executorRequest != null) {
+            String jobId = executorRequest.getJobId();
             // 进程模式：destroyForcibly 子进程，OS 级真取消
-            DataXEngineProxy.getInstance().cancel(taskRequest.getJobId());
+            DataXEngineProxy.getInstance().cancel(jobId);
         }
-    }
-
-    @Override
-    public void after() throws Exception {
-        // no-op：资源在 DataXEngineProxy 内部 finally 已释放
-    }
-
-    @Override
-    public boolean isCancel() throws Exception {
-        return cancelFlag.get();
-    }
-
-    @Override
-    public ProcessResult getProcessResult() {
-        return processResult;
-    }
-
-    @Override
-    public ExecutorRequest getTaskRequest() {
-        return taskRequest;
     }
 }

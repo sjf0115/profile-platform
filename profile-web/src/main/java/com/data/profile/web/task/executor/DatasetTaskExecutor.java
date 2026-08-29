@@ -20,7 +20,7 @@ import javax.annotation.Resource;
  */
 @Slf4j
 @Component
-public class ImportTaskExecutor implements TaskExecutor {
+public class DatasetTaskExecutor implements TaskExecutor {
     @Resource
     private DatasetTask datasetTask;
 
@@ -31,6 +31,6 @@ public class ImportTaskExecutor implements TaskExecutor {
 
     @Override
     public void execute(ExecutionContext context) throws Exception {
-        datasetTask.executeSync(context.getRelatedId());
+        datasetTask.execute(context.getRelatedId());
     }
 }

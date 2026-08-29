@@ -51,7 +51,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Slf4j
 public class DataXEngineProxy {
-
     private static final String JOB_DIR_NAME = "datax-jobs";
     private static final String DATAX_HOME_ENV = "DATAX_HOME";
     private static final String DATAX_HOME_PROP = "datax.home";

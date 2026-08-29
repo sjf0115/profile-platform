@@ -11,8 +11,8 @@ import java.util.List;
 /**
  * Schema 差异（current vs target）。
  *
- * <p>由 {@link TableManager#diff(TableSchema, TableSchema)} 计算，
- * 由 {@link TableManager#alterTable(TableSchema, SchemaDiff)} 应用。</p>
+ * <p>由 {@link EngineTableManager#diff(TableSchema, TableSchema)} 计算，
+ * 由 {@link EngineTableManager#alterTable(TableSchema, SchemaDiff)} 应用。</p>
  *
  * <p>P1 阶段仅支持 add / drop / modify 三类原子操作；
  * 重命名（rename）需要业务侧明确语义，暂不支持。</p>

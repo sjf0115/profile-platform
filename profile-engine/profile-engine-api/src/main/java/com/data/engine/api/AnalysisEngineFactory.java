@@ -1,7 +1,7 @@
 package com.data.engine.api;
 
 import com.data.engine.api.catalog.EngineCatalog;
-import com.data.engine.api.schema.TableManager;
+import com.data.engine.api.schema.EngineTableManager;
 import com.data.engine.api.sink.EngineSink;
 import com.data.engine.api.source.EngineSource;
 import com.data.profile.common.config.Config;
@@ -41,7 +41,7 @@ public interface AnalysisEngineFactory {
      *
      * <p>默认返回 null 兼容旧实现；新引擎插件应当实现以支持 schema 推断与自动建表。</p>
      */
-    default TableManager getTableManager() {
+    default EngineTableManager getTableManager() {
         return null;
     }
 

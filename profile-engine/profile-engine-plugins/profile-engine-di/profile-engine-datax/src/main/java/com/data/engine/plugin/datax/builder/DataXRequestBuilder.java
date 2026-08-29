@@ -1,7 +1,7 @@
 package com.data.engine.plugin.datax.builder;
 
 import com.data.engine.api.DiRequestBuilder;
-import com.data.engine.api.SyncContext;
+import com.data.engine.api.DiContext;
 import com.data.engine.common.ExecutorRequest;
 import com.data.engine.plugin.datax.datasource.JdbcDataXDataSource;
 import com.data.engine.plugin.datax.helper.DataXJobBuildRequest;
@@ -11,13 +11,12 @@ import com.data.engine.plugin.datax.plugin.bean.WriterContext;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 /**
  * DataX 引擎的 DiRequestBuilder 实现。
  *
- * <p>把中性 {@link SyncContext} 转为 DataX 私有的 {@link DataXJobBuildRequest}，
+ * <p>把中性 {@link DiContext} 转为 DataX 私有的 {@link DataXJobBuildRequest}，
  * 再序列化为 {@link ExecutorRequest#getConfig()} 供 {@code DataXDiEngineExecutor} 消费。</p>
  *
  * <p>引擎模块对 web 层模型（DataSource/Dataset/Engine）零依赖。</p>
@@ -25,12 +24,12 @@ import java.util.Map;
 public class DataXRequestBuilder implements DiRequestBuilder {
 
     @Override
-    public ExecutorRequest buildRequest(SyncContext ctx) {
+    public ExecutorRequest buildRequest(DiContext ctx) {
         if (ctx == null) {
             throw new IllegalArgumentException("SyncContext is null");
         }
-        SyncContext.Endpoint source = ctx.getSource();
-        SyncContext.Endpoint target = ctx.getTarget();
+        DiContext.Endpoint source = ctx.getSource();
+        DiContext.Endpoint target = ctx.getTarget();
         if (source == null) {
             throw new IllegalArgumentException("SyncContext.source is null");
         }
@@ -76,7 +75,7 @@ public class DataXRequestBuilder implements DiRequestBuilder {
     }
 
     /** 把 SyncContext.Endpoint 转为 DataX 的 JdbcDataXDataSource。 */
-    private JdbcDataXDataSource buildJdbcSource(SyncContext.Endpoint ep) {
+    private JdbcDataXDataSource buildJdbcSource(DiContext.Endpoint ep) {
         String category = ep.getCategory();
         if (StringUtils.isBlank(category)) {
             throw new IllegalArgumentException("Endpoint.category is blank");

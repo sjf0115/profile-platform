@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * 同步任务中性上下文。
+ * 同步任务上下文
  *
  * <p>作为业务层（profile-web）与同步引擎插件（DataX/SeaTunnel/...）之间的契约，
  * 不包含任何引擎私有概念，引擎插件通过 {@link DiRequestBuilder} 自行解析转换。</p>
@@ -17,7 +17,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class SyncContext {
+public class DiContext {
 
     /** 业务任务 ID（用于日志、追踪） */
     private String jobId;

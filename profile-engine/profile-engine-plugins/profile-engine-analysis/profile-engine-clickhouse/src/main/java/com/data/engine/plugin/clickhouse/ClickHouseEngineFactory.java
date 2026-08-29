@@ -3,12 +3,12 @@ package com.data.engine.plugin.clickhouse;
 import com.data.engine.api.AnalysisEngineExecutor;
 import com.data.engine.api.AnalysisEngineFactory;
 import com.data.engine.api.catalog.EngineCatalog;
-import com.data.engine.api.schema.TableManager;
+import com.data.engine.api.schema.EngineTableManager;
 import com.data.engine.api.sink.EngineSink;
 import com.data.engine.api.source.EngineSource;
 import com.data.engine.plugin.clickhouse.catalog.ClickHouseEngineCatalog;
 import com.data.engine.plugin.clickhouse.executor.ClickHouseAnalysisEngineExecutor;
-import com.data.engine.plugin.clickhouse.schema.ClickHouseTableManager;
+import com.data.engine.plugin.clickhouse.schema.ClickHouseEngineTableManager;
 import com.data.engine.plugin.clickhouse.sink.ClickHouseEngineSink;
 import com.data.engine.plugin.clickhouse.source.ClickHouseEngineSource;
 import com.data.profile.common.config.Config;
@@ -43,8 +43,8 @@ public class ClickHouseEngineFactory implements AnalysisEngineFactory {
     }
 
     @Override
-    public TableManager getTableManager() {
-        return new ClickHouseTableManager();
+    public EngineTableManager getTableManager() {
+        return new ClickHouseEngineTableManager();
     }
 
     @Override
