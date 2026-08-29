@@ -49,8 +49,7 @@ public class AlertService {
     private AlertHistoryMapper alertHistoryMapper;
 
     /**
-     * 触发告警（由 TaskExecutionService 调用）
-     * 整体 try/catch，异常仅记录日志，不向上抛
+     * 触发告警
      */
     public void trigger(Task task, TaskInstance instance, InstanceStatus status) {
         try {

@@ -70,6 +70,37 @@ public class MinioService {
     }
 
     /**
+     * 以流方式上传文件到 MinIO（投递/数据管道场景，自定义完整路径）。
+     *
+     * @param inputStream 输入流
+     * @param objectName  完整对象路径（由调用方控制，如 export/xxx.csv）
+     * @param contentType MIME 类型
+     * @return 文件在 MinIO 中的完整路径（objectName）
+     */
+    public String uploadStream(InputStream inputStream, String objectName, String contentType) {
+        try {
+            // 确保 bucket 存在
+            ensureBucketExists();
+
+            // 未知长度走分块上传（-1 + 默认 partSize）
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(minioConfig.getBucket())
+                            .object(objectName)
+                            .stream(inputStream, -1, PutObjectArgs.MIN_MULTIPART_SIZE)
+                            .contentType(contentType)
+                            .build()
+            );
+
+            log.info("流式上传成功: bucket={}, objectName={}", minioConfig.getBucket(), objectName);
+            return objectName;
+        } catch (Exception e) {
+            log.error("流式上传失败: {}", e.getMessage(), e);
+            throw new RuntimeException("流式上传失败: " + e.getMessage());
+        }
+    }
+
+    /**
      * 删除 MinIO 中的文件
      *
      * @param objectName 文件路径

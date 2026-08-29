@@ -1,14 +1,20 @@
 package com.data.profile.web.task;
 
+import com.data.connector.api.ConnectorFactory;
+import com.data.connector.api.Executor;
+import com.data.profile.common.domain.connector.request.ConnectorResponse;
+import com.data.profile.common.domain.connector.request.ExecuteRequestParam;
+import com.data.profile.common.enums.ExportMode;
 import com.data.profile.web.dao.ExportMapper;
 import com.data.profile.web.dto.DataSourceDTO;
 import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.model.Application;
-import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Export;
 import com.data.profile.web.model.ExportConfig;
 import com.data.profile.web.service.ApplicationService;
 import com.data.profile.web.service.DataSourceService;
+import com.data.profile.web.service.MinioService;
+import com.data.spi.PluginLoader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
@@ -16,11 +22,19 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.io.BufferedWriter;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 
 import static com.data.profile.common.domain.Constant.ENGINE_GROUP_TABLE_PREFIX;
@@ -42,6 +56,9 @@ public class ExportTask {
     private static final Gson gson = new Gson();
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
+    /** 跨数据源投递批量写入单批行数 */
+    private static final int EXPORT_BATCH_SIZE = 1000;
+
     // 数据源类型 → 目标类型映射
     private static final List<String> TABLE_TYPES = Arrays.asList("mysql", "clickhouse", "postgresql", "oracle", "hive", "doris", "jdbc");
     private static final List<String> FILE_TYPES = Arrays.asList("minio", "hdfs", "oss", "s3");
@@ -57,50 +74,36 @@ public class ExportTask {
     @Resource
     private AnalysisEngineService analysisEngineService;
     @Resource
+    private MinioService minioService;
+    @Resource
     private ObjectMapper objectMapper;
 
     /**
      * 执行投递
-     *
      * @param exportId 投递ID
      */
     public void executeExport(String exportId) throws Exception {
-        log.info("开始执行投递: {}", exportId);
+        log.info("投递任务 [{}] 开始执行投递", exportId);
 
         // 1. 加载投递配置
         Export export = exportMapper.selectByExportId(exportId);
         if (export == null) {
+            log.error("投递任务 [{}] 不存在", exportId);
             throw new RuntimeException("投递不存在: " + exportId);
         }
 
-        // 2. 解析实际目标配置
-        ExportConfig targetConfig;
-        String datasourceType;
-        if (export.getExportMode() == 2) {
-            // 应用投递：从 Application.targetConfig 获取目标配置
-            targetConfig = resolveApplicationTargetConfig(export);
-            // 应用投递的目标类型需要从应用配置推断（暂不支持）
-            datasourceType = null;
-        } else {
-            // 数据源投递：直接使用 export_config
-            targetConfig = parseExportConfig(export.getExportConfig());
-            if (targetConfig == null) {
-                throw new RuntimeException("投递配置解析失败: " + exportId);
-            }
-            // 从数据源获取类型
-            DataSourceDTO ds = dataSourceService.getDetail(targetConfig.getDatasourceId());
-            datasourceType = ds.getDatasourceType();
-        }
+        // 2. 解析投递配置
+        ExportConfig targetConfig = resolveExportConfig(export);
+        String groupId = targetConfig.getGroupId();
 
         // 3. 推断目标类型
+        DataSourceDTO ds = dataSourceService.getDetail(targetConfig.getDatasourceId());
+        String datasourceType = ds.getDatasourceType();
         String targetType = resolveTargetType(datasourceType, targetConfig);
         log.info("投递目标类型: exportId={}, targetType={}", exportId, targetType);
 
-        // 4. 构建源表
-        String groupId = getGroupIdFromConfig(export);
+        // 4. 按目标类型分发执行
         String sourceTable = ENGINE_GROUP_TABLE_PREFIX + groupId;
-
-        // 5. 按目标类型分发执行
         switch (targetType) {
             case "table":
                 executeTableExport(exportId, groupId, sourceTable, targetConfig, datasourceType);
@@ -127,8 +130,7 @@ public class ExportTask {
      * <p>目标是分析引擎同实例：走 EngineSink 服务端写入（零数据搬运）；
      * 其他数据源：待数据管道模式支持（EngineSource 流式读 → connector 写入）。</p>
      */
-    private void executeTableExport(String exportId, String groupId, String sourceTable,
-                                    ExportConfig config, String datasourceType) throws Exception {
+    private void executeTableExport(String exportId, String groupId, String sourceTable, ExportConfig config, String datasourceType) throws Exception {
         // 从数据源 config 提取 database
         DataSourceDTO ds = dataSourceService.getDetail(config.getDatasourceId());
         String database = extractFieldFromConfig(ds.getConfig(), "database");
@@ -140,23 +142,98 @@ public class ExportTask {
                 exportId, database, targetTable, writeMode, targetColumn);
 
         if (analysisEngineService.isSameAsAnalysisEngine(ds)) {
-            // 同实例投递：EngineSink 服务端写入（upsert 前置删除由门面内部处理）
+            // 同实例投递：EngineSink 服务端写入
             analysisEngineService.transferToEngineTable(database, targetTable, sourceTable, writeMode, targetColumn);
         } else {
-            // 跨数据源投递待数据管道模式支持：EngineSource 流式读 → connector 批量写
-            throw new RuntimeException("暂不支持投递到分析引擎之外的数据源（" + datasourceType + "），数据管道模式建设中");
+            // 跨数据源投递：EngineSource 流式读 → connector 批量写
+            executeCrossDatasourceTableExport(exportId, ds, datasourceType, targetTable, sourceTable, writeMode, targetColumn);
         }
-
         log.info("数据表投递完成: exportId={}, target={}.{}", exportId, database, targetTable);
     }
 
     /**
-     * 文件存储投递：MinIO/HDFS/OSS 等
-     * <p>从数据源 config 获取 bucket，从 export_config 获取 objectPath，执行时替换模板变量。</p>
+     * 跨数据源表投递：EngineSource 流式读引擎表 → connector Executor 分批写入目标数据源。
+     * <p>upsert 模式按批先删后写（分批删除的并集等价于全量先删后写）。</p>
      */
-    private void executeFileExport(String exportId, String groupId, String sourceTable,
-                                   ExportConfig config, String datasourceType) {
-        // 从数据源 config 提取 bucket
+    private void executeCrossDatasourceTableExport(String exportId, DataSourceDTO ds, String datasourceType, String targetTable, String sourceTable, String writeMode, String targetColumn) throws Exception {
+        // 1. 解析目标数据源类型的 Executor（写入能力）
+        String dsType = StringUtils.lowerCase(StringUtils.trimToEmpty(datasourceType));
+        ConnectorFactory factory = PluginLoader.getPluginLoader(ConnectorFactory.class).getOrCreatePlugin(dsType);
+        Executor executor = factory.getExecutor();
+        if (executor == null) {
+            throw new RuntimeException("数据源类型 [" + datasourceType + "] 未实现投递写入能力（Executor）");
+        }
+        String dataSourceParam = ds.getConfig();
+
+        // 2. 流式读源引擎表，按批写入目标数据源（避免全表驻留内存）
+        final List<Map<String, Object>> batch = new ArrayList<>();
+        final long[] total = {0};
+        analysisEngineService.streamEngineTable(sourceTable, row -> {
+            batch.add(row);
+            if (batch.size() >= EXPORT_BATCH_SIZE) {
+                flushExportBatch(executor, dataSourceParam, targetTable, batch, writeMode, targetColumn);
+                total[0] += batch.size();
+                batch.clear();
+            }
+        });
+        if (!batch.isEmpty()) {
+            flushExportBatch(executor, dataSourceParam, targetTable, batch, writeMode, targetColumn);
+            total[0] += batch.size();
+        }
+        log.info("跨数据源表投递完成: exportId={}, target={}, rows={}", exportId, targetTable, total[0]);
+    }
+
+    /**
+     * 写入单批数据：upsert 模式先按匹配列删除目标表已存在记录，再批量插入。
+     */
+    private void flushExportBatch(Executor executor, String dataSourceParam, String targetTable, List<Map<String, Object>> batch, String writeMode, String targetColumn) throws Exception {
+        if ("upsert".equalsIgnoreCase(writeMode) && StringUtils.isNotBlank(targetColumn)) {
+            ExecuteRequestParam deleteParam = new ExecuteRequestParam();
+            deleteParam.setDataSourceParam(dataSourceParam);
+            deleteParam.setScript(buildDeleteScript(targetTable, targetColumn, batch));
+            executor.deleteData(deleteParam);
+        }
+        ExecuteRequestParam insertParam = new ExecuteRequestParam();
+        insertParam.setDataSourceParam(dataSourceParam);
+        insertParam.setTableName(targetTable);
+        insertParam.setRows(batch);
+        ConnectorResponse response = executor.insertData(insertParam);
+        if (response != null && ConnectorResponse.Status.ERROR.equals(response.getStatus())) {
+            throw new RuntimeException("跨数据源投递批量写入失败: " + response.getErrorMsg());
+        }
+    }
+
+    /**
+     * 构建 upsert 前置删除 SQL：删除目标表中匹配列值存在于本批数据的记录。
+     */
+    private String buildDeleteScript(String targetTable, String targetColumn, List<Map<String, Object>> batch) {
+        String values = batch.stream()
+                .map(row -> row.get(targetColumn))
+                .filter(Objects::nonNull)
+                .map(String::valueOf)
+                .distinct()
+                .map(value -> "'" + escapeSqlString(value) + "'")
+                .collect(Collectors.joining(", "));
+        if (StringUtils.isBlank(values)) {
+            // 本批匹配列值均为 null，无需删除（恒假条件避免 SQL 语法错误）
+            return "DELETE FROM " + targetTable + " WHERE 1 = 0";
+        }
+        return "DELETE FROM " + targetTable + " WHERE `" + targetColumn + "` IN (" + values + ")";
+    }
+
+    /**
+     * SQL 字符串值转义（单引号与反斜杠）。
+     */
+    private String escapeSqlString(String value) {
+        return value.replace("\\", "\\\\").replace("'", "''");
+    }
+
+    /**
+     * 文件存储投递：MinIO/HDFS/OSS 等（当前落地 MinIO，统一使用平台 MinIO bucket）。
+     * <p>EngineSource 流式读 → CSV 临时文件 → 流式上传；objectPath 支持模板变量。</p>
+     */
+    private void executeFileExport(String exportId, String groupId, String sourceTable, ExportConfig config, String datasourceType) throws Exception {
+        // 从数据源 config 提取 bucket（日志标识）
         DataSourceDTO ds = dataSourceService.getDetail(config.getDatasourceId());
         String bucket = extractFieldFromConfig(ds.getConfig(), "bucket");
 
@@ -164,23 +241,96 @@ public class ExportTask {
         String objectPath = resolveTemplateVariables(config.getObjectPath(), groupId, exportId);
 
         log.info("开始执行文件存储投递: exportId={}, bucket={}, objectPath={}", exportId, bucket, objectPath);
-        // TODO: 实现文件存储投递逻辑
-        log.warn("文件存储投递功能尚未实现，当前为占位实现");
+
+        // 1. 流式读引擎表 → CSV 临时文件（单次遍历，避免全表驻留内存）
+        Path tempFile = Files.createTempFile("export_" + exportId + "_", ".csv");
+        final long[] total = {0};
+        try {
+            try (BufferedWriter writer = Files.newBufferedWriter(tempFile, StandardCharsets.UTF_8)) {
+                analysisEngineService.streamEngineTable(sourceTable, row -> {
+                    if (total[0] == 0) {
+                        // 首行写 header（按首行列顺序）
+                        writer.write(row.keySet().stream()
+                                .map(this::escapeCsvField)
+                                .collect(Collectors.joining(",")));
+                        writer.newLine();
+                    }
+                    writer.write(row.values().stream()
+                            .map(v -> escapeCsvField(v == null ? "" : String.valueOf(v)))
+                            .collect(Collectors.joining(",")));
+                    writer.newLine();
+                    total[0]++;
+                });
+            }
+            // 2. 流式上传到 MinIO（平台统一 bucket）
+            try (InputStream is = Files.newInputStream(tempFile)) {
+                minioService.uploadStream(is, objectPath, "text/csv");
+            }
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
+        log.info("文件存储投递完成: exportId={}, objectPath={}, rows={}", exportId, objectPath, total[0]);
     }
 
     /**
-     * 消息队列投递：Kafka/RabbitMQ/RocketMQ 等
-     * <p>从数据源 config 获取 topic，投递 ID 作为消息 Key（Tag）。</p>
+     * CSV 字段转义：含逗号/双引号/换行时用双引号包裹，内部双引号翻倍。
      */
-    private void executeTopicExport(String exportId, String groupId, String sourceTable,
-                                    ExportConfig config, String datasourceType) {
+    private String escapeCsvField(String value) {
+        if (value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
+    }
+
+    /**
+     * 消息队列投递：Kafka/RabbitMQ/RocketMQ 等（当前落地 Kafka）。
+     * <p>EngineSource 流式读 → 每行转 JSON 消息 → connector Executor 分批发送。</p>
+     */
+    private void executeTopicExport(String exportId, String groupId, String sourceTable, ExportConfig config, String datasourceType) throws Exception {
         // 从数据源 config 提取 topic
         DataSourceDTO ds = dataSourceService.getDetail(config.getDatasourceId());
         String topic = extractFieldFromConfig(ds.getConfig(), "topic");
 
         log.info("开始执行消息队列投递: exportId={}, topic={}, messageKey={}", exportId, topic, exportId);
-        // TODO: 实现消息队列投递逻辑，投递 ID 作为消息 Key
-        log.warn("消息队列投递功能尚未实现，当前为占位实现");
+
+        // 1. 解析目标数据源类型的 Executor（消息发送能力）
+        String dsType = StringUtils.lowerCase(StringUtils.trimToEmpty(datasourceType));
+        ConnectorFactory factory = PluginLoader.getPluginLoader(ConnectorFactory.class).getOrCreatePlugin(dsType);
+        Executor executor = factory.getExecutor();
+        if (executor == null) {
+            throw new RuntimeException("数据源类型 [" + datasourceType + "] 未实现消息发送能力（Executor）");
+        }
+
+        // 2. 流式读源引擎表，按批发送（每行一条 JSON 消息）
+        final List<Map<String, Object>> batch = new ArrayList<>();
+        final long[] total = {0};
+        analysisEngineService.streamEngineTable(sourceTable, row -> {
+            batch.add(row);
+            if (batch.size() >= EXPORT_BATCH_SIZE) {
+                flushTopicBatch(executor, ds.getConfig(), topic, batch);
+                total[0] += batch.size();
+                batch.clear();
+            }
+        });
+        if (!batch.isEmpty()) {
+            flushTopicBatch(executor, ds.getConfig(), topic, batch);
+            total[0] += batch.size();
+        }
+        log.info("消息队列投递完成: exportId={}, topic={}, rows={}", exportId, topic, total[0]);
+    }
+
+    /**
+     * 发送单批消息：tableName 字段在消息队列场景承载 topic。
+     */
+    private void flushTopicBatch(Executor executor, String dataSourceParam, String topic, List<Map<String, Object>> batch) throws Exception {
+        ExecuteRequestParam param = new ExecuteRequestParam();
+        param.setDataSourceParam(dataSourceParam);
+        param.setTableName(topic);
+        param.setRows(batch);
+        ConnectorResponse response = executor.insertData(param);
+        if (response != null && ConnectorResponse.Status.ERROR.equals(response.getStatus())) {
+            throw new RuntimeException("消息队列投递批量发送失败: " + response.getErrorMsg());
+        }
     }
 
     // =================================================================================================================
@@ -188,39 +338,35 @@ public class ExportTask {
     // =================================================================================================================
 
     /**
-     * 解析投递配置 JSON
+     * 获取投递配置
+     * @param export 投递信息
      */
-    private ExportConfig parseExportConfig(String json) {
-        if (StringUtils.isBlank(json)) {
-            return null;
+    private ExportConfig resolveExportConfig(Export export) {
+        ExportConfig exportConfig = gson.fromJson(export.getExportConfig(), ExportConfig.class);
+        if (exportConfig == null) {
+            log.error("获取 [{}] 投递任务投递配置失败", export.getExportId());
+            throw new RuntimeException("投递配置获取失败");
         }
-        try {
-            return objectMapper.readValue(json, ExportConfig.class);
-        } catch (Exception e) {
-            log.error("解析投递配置失败: {}", e.getMessage(), e);
-            return null;
-        }
-    }
 
-    /**
-     * 应用投递：从 Application.targetConfig 解析目标配置
-     */
-    private ExportConfig resolveApplicationTargetConfig(Export export) {
-        ExportConfig config = parseExportConfig(export.getExportConfig());
-        String applicationId = config != null ? config.getApplicationId() : null;
-        if (StringUtils.isBlank(applicationId)) {
-            throw new RuntimeException("应用投递未配置 applicationId: " + export.getExportId());
+        Integer exportMode = export.getExportMode();
+        if (Objects.equals(exportMode, ExportMode.APPLICATION.getCode())) {
+            // 应用投递 从应用配置中获取投递配置
+            String applicationId = exportConfig.getApplicationId();
+            Application app = applicationService.getByAppKey(applicationId);
+            if (app == null) {
+                log.error("应用投递 [{}] 未找到到对应应用", applicationId);
+                throw new RuntimeException("应用不存在");
+            }
+            ExportConfig appConfig = gson.fromJson(app.getTargetConfig(), ExportConfig.class);
+            if (appConfig == null) {
+                log.error("获取 [{}] 应用投递配置失败", applicationId);
+                throw new RuntimeException("投递配置获取失败");
+            }
+            return appConfig;
+        } else {
+            // 数据源投递直接返回
+            return exportConfig;
         }
-        // applicationId 存储的是 appKey
-        Application app = applicationService.getByAppKey(applicationId);
-        if (app == null) {
-            throw new RuntimeException("应用不存在: " + applicationId);
-        }
-        ExportConfig appConfig = parseExportConfig(app.getTargetConfig());
-        if (appConfig == null) {
-            throw new RuntimeException("应用投递目标配置解析失败: " + applicationId);
-        }
-        return appConfig;
     }
 
     /**
@@ -280,33 +426,5 @@ public class ExportTask {
         result = result.replace("{timestamp}", LocalDateTime.now().format(TIMESTAMP_FORMAT));
         result = result.replace("{exportId}", exportId);
         return result;
-    }
-
-    /**
-     * 从 Export 的 export_config 中获取群组ID
-     */
-    private String getGroupIdFromConfig(Export export) {
-        ExportConfig config = parseExportConfig(export.getExportConfig());
-        if (config == null) {
-            throw new RuntimeException("投递配置解析失败: " + export.getExportId());
-        }
-        // 尝试从 ExportConfig 的 groupId 字段获取
-        String groupId = config.getGroupId();
-        if (StringUtils.isBlank(groupId)) {
-            // 兼容旧数据：直接从 JSON 中提取
-            try {
-                Map<String, Object> configMap = gson.fromJson(export.getExportConfig(), Map.class);
-                Object gid = configMap.get("group_id");
-                if (gid != null) {
-                    groupId = gid.toString();
-                }
-            } catch (Exception e) {
-                log.warn("从 export_config 提取 group_id 失败: {}", e.getMessage());
-            }
-        }
-        if (StringUtils.isBlank(groupId)) {
-            throw new RuntimeException("投递配置中未包含 group_id: " + export.getExportId());
-        }
-        return groupId;
     }
 }

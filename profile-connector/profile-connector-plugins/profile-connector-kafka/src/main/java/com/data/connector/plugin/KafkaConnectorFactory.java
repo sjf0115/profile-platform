@@ -31,4 +31,9 @@ public class KafkaConnectorFactory implements ConnectorFactory {
     public ConfigBuilder getConfigBuilder() {
         return new KafkaConfigBuilder();
     }
+
+    @Override
+    public Executor getExecutor() {
+        return new KafkaExecutor();
+    }
 }

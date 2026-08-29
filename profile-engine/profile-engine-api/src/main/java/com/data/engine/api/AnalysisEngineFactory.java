@@ -3,6 +3,7 @@ package com.data.engine.api;
 import com.data.engine.api.catalog.EngineCatalog;
 import com.data.engine.api.schema.TableManager;
 import com.data.engine.api.sink.EngineSink;
+import com.data.engine.api.source.EngineSource;
 import com.data.profile.common.config.Config;
 import com.data.spi.SPI;
 
@@ -19,6 +20,7 @@ import com.data.spi.SPI;
  *   <li>{@link #getTableManager()} 表 schema 管理（建表 / 演进 / 反查）</li>
  *   <li>{@link #getEngineCatalog()} 引擎 Catalog（DDL / 元数据，新体系）</li>
  *   <li>{@link #getEngineSink()} 引擎 Sink（DML 数据写入，新体系）</li>
+ *   <li>{@link #getEngineSource()} 引擎 Source（数据流式读取，新体系）</li>
  * </ul>
  */
 @SPI
@@ -58,6 +60,15 @@ public interface AnalysisEngineFactory {
      * <p>默认返回 null 兼容旧实现。</p>
      */
     default EngineSink getEngineSink() {
+        return null;
+    }
+
+    /**
+     * 引擎 Source 子产物（数据流式读取，新体系）。
+     *
+     * <p>默认返回 null 兼容旧实现。</p>
+     */
+    default EngineSource getEngineSource() {
         return null;
     }
 }

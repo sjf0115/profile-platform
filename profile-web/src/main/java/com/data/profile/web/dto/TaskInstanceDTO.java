@@ -42,6 +42,6 @@ public class TaskInstanceDTO {
     private Date gmtCreate;
     // 修改时间
     private Date gmtModified;
-    // 关联任务（嵌套 DTO，Service 层填充）
+    // 关联任务
     private TaskDTO task;
 }

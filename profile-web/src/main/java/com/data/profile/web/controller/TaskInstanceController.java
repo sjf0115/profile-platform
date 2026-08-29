@@ -33,15 +33,16 @@ public class TaskInstanceController {
     // 实例列表
     @PostMapping(value = "/list")
     public Response<List<TaskInstanceVO>> getList(@RequestBody TaskInstanceParam param) {
-        log.info("根据任务执行实例信息查询任务执行实例: {}", JSONUtils.toJsonString(param));
+        log.info("根据任务执行实例信息请求查询任务执行实例: {}", JSONUtils.toJsonString(param));
         TaskInstance instance = TaskInstanceConverter.param2do(param);
-        List<TaskInstanceDTO> dtos = instanceService.getList(instance);
-        return Response.success(TaskInstanceConverter.dto2voList(dtos));
+        List<TaskInstanceDTO> instances = instanceService.getList(instance);
+        return Response.success(TaskInstanceConverter.dto2voList(instances));
     }
 
     // 实例详情
     @GetMapping(value = "/{instanceId}/detail")
     public Response<TaskInstanceVO> getDetail(@PathVariable(value = "instanceId") String instanceId) {
+        log.info("根据任务执行实例ID [{}] 请求查询任务执行实例信息", instanceId);
         TaskInstanceDTO dto = instanceService.getDetail(instanceId);
         if (dto == null) {
             return Response.error("请求的任务实例不存在", ResponseCode.ERROR);
@@ -52,16 +53,17 @@ public class TaskInstanceController {
     // 根据任务ID查询实例列表
     @GetMapping(value = "/{taskId}/list")
     public Response<List<TaskInstanceVO>> listByTaskId(@PathVariable(name = "taskId") String taskId) {
+        log.info("根据任务ID [{}] 请求查询任务执行实例信息", taskId);
         TaskInstance query = new TaskInstance();
         query.setTaskId(taskId);
-        List<TaskInstanceDTO> dtos = instanceService.getList(query);
-        return Response.success(TaskInstanceConverter.dto2voList(dtos));
+        List<TaskInstanceDTO> instances = instanceService.getList(query);
+        return Response.success(TaskInstanceConverter.dto2voList(instances));
     }
 
     // 删除实例
     @DeleteMapping(value = "/{instanceId}")
     public Response<Void> delete(@PathVariable(value = "instanceId") String instanceId) {
-        log.info("删除任务实例: {}", instanceId);
+        log.info("请求删除任务实例: {}", instanceId);
         instanceService.delete(instanceId);
         return Response.success(null);
     }

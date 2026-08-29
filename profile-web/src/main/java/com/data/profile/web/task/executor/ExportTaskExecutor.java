@@ -13,7 +13,6 @@ import javax.annotation.Resource;
  * 群组投递执行器
  * <p>负责群组投递任务的执行逻辑。</p>
  * <p>实例生命周期由 TaskExecutionService 统一管理。</p>
- *
  * 作者：SmartSi
  * CSDN博客：https://smartsi.blog.csdn.net/
  * 公众号：大数据生态
@@ -31,6 +30,7 @@ public class ExportTaskExecutor implements TaskExecutor {
 
     @Override
     public void execute(ExecutionContext context) throws Exception {
+        // TODO ExecutionContext 只使用到了对象ID 是否优化
         exportTask.executeExport(context.getRelatedId());
     }
 }

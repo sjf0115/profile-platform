@@ -9,6 +9,8 @@ import com.data.engine.api.schema.SchemaDiff;
 import com.data.engine.api.schema.TableManager;
 import com.data.engine.api.schema.TableSchema;
 import com.data.engine.api.sink.EngineSink;
+import com.data.engine.api.source.EngineSource;
+import com.data.engine.api.source.RowConsumer;
 import com.data.profile.common.enums.DataType;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.dto.DataSourceDTO;
@@ -292,6 +294,22 @@ public class AnalysisEngineService {
         }
     }
 
+    /**
+     * 流式读取默认库下的引擎表，逐行回调消费方（跨数据源投递等数据管道场景）。
+     *
+     * @param tableName 引擎表名（如 profile_group_xxx）
+     * @param consumer  行消费回调（按批处理，避免全表驻留内存）
+     */
+    public void streamEngineTable(String tableName, RowConsumer consumer) {
+        try {
+            EngineSource engineSource = getEngineSource();
+            engineSource.streamRows(getDatabase(), tableName, consumer);
+        } catch (Exception e) {
+            log.error("流式读取引擎表 {} 失败", tableName, e);
+            throw new RuntimeException("流式读取引擎表失败: " + e.getMessage(), e);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // 引擎插件产物获取（新体系）
     // -------------------------------------------------------------------------
@@ -338,6 +356,28 @@ public class AnalysisEngineService {
             throw new RuntimeException("分析引擎 [" + engineType + "] 初始化 EngineSink 失败，请联系管理员");
         }
         return sink;
+    }
+
+    /**
+     * 获取引擎 Source（数据流式读取），含 init 与 null 校验。
+     */
+    private EngineSource getEngineSource() {
+        Engine analysisEngine = getDefaultAnalysisEngine();
+        String engineType = analysisEngine.getEngineType();
+        String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(engineType));
+        AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class).getOrCreatePlugin(pluginName);
+        EngineSource source = factory.getEngineSource();
+        if (source == null) {
+            log.error("分析引擎 [{}] 未实现 EngineSource", engineType);
+            throw new RuntimeException("分析引擎 [" + engineType + "] 未实现 EngineSource，请联系管理员");
+        }
+        try {
+            source.init(parseConfig(analysisEngine.getConfig()));
+        } catch (Exception e) {
+            log.error("分析引擎 [{}] 初始化 EngineSource 失败: {}", engineType, e.getMessage());
+            throw new RuntimeException("分析引擎 [" + engineType + "] 初始化 EngineSource 失败，请联系管理员");
+        }
+        return source;
     }
 
     /**

@@ -116,7 +116,7 @@ public class ExportController {
     }
 
     /**
-     * 更新投递状态（启用/停用）
+     * 启用/停用投递
      */
     @RequiresPermission(code = "export:edit", name = "投递-编辑")
     @PutMapping("/{exportId}/status")

@@ -16,51 +16,30 @@ import lombok.Data;
 @Data
 public class ExportConfig {
 
-    // ========== 通用配置 ==========
-
-    /**
-     * 关联群组ID
-     */
+    // 1. 通用配置
+    // 关联群组ID
     @JsonProperty("group_id")
     private String groupId;
 
-    // ========== 数据源投递配置 ==========
-
-    /**
-     * 数据源ID
-     */
+    // 2. 数据源投递配置
+    // 数据源ID
     @JsonProperty("datasource_id")
     private String datasourceId;
-
-    /**
-     * 目标表名（JDBC 投递）
-     */
+    // 目标表名（JDBC 投递）
     @JsonProperty("table_name")
     private String tableName;
-
-    /**
-     * 写入模式：append-追加, upsert-覆盖（JDBC 投递）
-     */
+    // 写入模式：append-追加, upsert-覆盖（JDBC 投递）
     @JsonProperty("write_mode")
     private String writeMode;
-
-    /**
-     * upsert key 列名（JDBC 投递，覆盖模式下使用）
-     */
+    // upsert key 列名（JDBC 投递，覆盖模式下使用）
     @JsonProperty("target_column")
     private String targetColumn;
-
-    /**
-     * 对象路径模板（MinIO 投递），执行时替换 {groupId}/{timestamp} 等变量
-     */
+    // 对象路径模板（MinIO 投递），执行时替换 {groupId}/{timestamp} 等变量
     @JsonProperty("object_path")
     private String objectPath;
 
-    // ========== 应用投递配置 ==========
-
-    /**
-     * 应用ID（应用投递时使用，export_mode=2 时有效）
-     */
+    // 3. 应用投递配置
+    // 应用ID
     @JsonProperty("application_id")
     private String applicationId;
 }

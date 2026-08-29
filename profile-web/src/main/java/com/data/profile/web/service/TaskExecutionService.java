@@ -17,7 +17,6 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -64,42 +63,20 @@ public class TaskExecutionService {
     }
 
     /**
-     * 异步执行任务：创建实例并异步执行，立即返回实例信息。
-     * <p>包含并发控制：同一任务只允许一个运行中的实例。</p>
-     * @param task 任务
-     * @param triggerMode 触发模式
-     * @return 创建的任务实例
-     */
-    public TaskInstance executeTask(Task task, TriggerMode triggerMode) {
-        String taskId = task.getTaskId();
-        if (!Objects.equals(task.getStatus(), Status.ENABLE.getCode())) {
-            throw new RuntimeException("任务已停用，无法执行: " + taskId);
-        }
-
-        // 并发控制：检查是否有运行中的实例
-        checkRunningInstance(taskId);
-
-        // 创建实例（PENDING 状态，记录触发模式）
-        String instanceName = task.getTaskName() + "-" + System.currentTimeMillis();
-        TaskInstance instance = taskInstanceService.createInstance(
-                taskId, instanceName, task.getTaskRelatedId(), InstanceStatus.PENDING, triggerMode);
-
-        // 异步执行
-        CompletableFuture.runAsync(() -> executeAsync(task, instance), taskExecutorPool);
-
-        return instance;
-    }
-
-    /**
      * 通过任务ID异步执行任务
+     * @param taskId 任务ID
+     * @param triggerMode 触发模式
      */
     public TaskInstance executeTask(String taskId, TriggerMode triggerMode) {
+        // TODO
         Task task = taskService.getTaskOrThrow(taskId);
         return executeTask(task, triggerMode);
     }
 
     /**
-     * 通过关联ID异步执行任务。
+     * 通过对象ID异步执行任务
+     * @param relatedId 对象ID
+     * @param triggerMode 触发模式
      */
     public TaskInstance executeByRelatedId(String relatedId, TriggerMode triggerMode) {
         Task task = taskService.getDetailByRelatedId(relatedId);
@@ -110,90 +87,100 @@ public class TaskExecutionService {
         return executeTask(task, triggerMode);
     }
 
+    /**
+     * 通过任务异步执行任务
+     * @param task 任务
+     * @param triggerMode 触发模式
+     */
+    public TaskInstance executeTask(Task task, TriggerMode triggerMode) {
+        String taskId = task.getTaskId();
+        if (!Objects.equals(task.getStatus(), Status.ENABLE.getCode())) {
+            log.error("任务 [{}] 已停用，无法执行", taskId);
+            throw new RuntimeException("任务已停用，无法执行");
+        }
+
+        // 并发控制：检查是否有运行中的实例
+        // TODO 是否需要抛出异常来提示
+        checkRunningInstance(taskId);
+
+        // 创建实例
+        String instanceName = task.getTaskId() + "-" + System.currentTimeMillis();
+        TaskInstance instance = new TaskInstance();
+        instance.setInstanceName(instanceName);
+        instance.setTaskId(taskId);
+        instance.setInstanceRelatedId(task.getTaskRelatedId());
+        instance.setStatus(InstanceStatus.PENDING.getCode());
+        instance.setTriggerMode(triggerMode.getCode());
+        TaskInstance taskInstance = taskInstanceService.createInstance(instance);
+
+        // 异步执行实例
+        CompletableFuture.runAsync(() -> executeAsync(task, taskInstance), taskExecutorPool);
+
+        return instance;
+    }
+
+
+
     // -------------------------------------------------------------------------
     // 私有方法
     // -------------------------------------------------------------------------
 
     /**
-     * 检查任务是否有运行中的实例（并发控制）
+     * 检查任务是否有运行中的实例
+     * @param taskId 任务ID
      */
     private void checkRunningInstance(String taskId) {
         TaskInstance query = new TaskInstance();
         query.setTaskId(taskId);
         List<TaskInstanceDTO> instances = taskInstanceService.getList(query);
-        for (TaskInstanceDTO inst : instances) {
-            int status = inst.getStatus();
+        for (TaskInstanceDTO instance : instances) {
+            int status = instance.getStatus();
             if (status == InstanceStatus.PENDING.getCode() || status == InstanceStatus.RUNNING.getCode()) {
-                throw new RuntimeException(
-                        "任务正在执行中，请稍后再试: instanceId=" + inst.getInstanceId() + ", status=" + inst.getStatus());
+                log.error("任务 [{}] 正在执行中，请稍后再试", taskId);
+                throw new RuntimeException("任务正在执行中，请稍后再试");
             }
         }
     }
 
     /**
      * 异步执行任务逻辑
+     * @param task 任务
+     * @param instance 任务实例
      */
+    // TODO TaskInstance -> TaskInstanceDTO
     private void executeAsync(Task task, TaskInstance instance) {
-        String taskId = task.getTaskId();
         String instanceId = instance.getInstanceId();
 
+        // 1. 获取执行器
+        TaskType taskType = TaskType.of(task.getTaskType());
+        TaskExecutor executor = executorMap.get(taskType);
+        if (executor == null) {
+            log.error("未找到 [{}] 任务类型对应的执行器", taskType);
+            throw new IllegalStateException("未找到任务对应的执行器，请联系管理员");
+        }
+        // 2. 构建执行上下文
+        ExecutionContext context = ExecutionContext.builder()
+                .task(task)
+                .instance(instance)
+                .relatedId(task.getTaskRelatedId())
+                .build();
+
+        // 3. 执行任务实例
         try {
-            // 更新状态为 RUNNING
             taskInstanceService.markRunning(instanceId);
-
-            // 获取执行器
-            TaskType taskType = TaskType.of(task.getTaskType());
-            TaskExecutor executor = executorMap.get(taskType);
-            if (executor == null) {
-                log.error("未找到任务类型 [{}] 对应的执行器", taskType);
-                throw new IllegalStateException("未找到任务类型对应的执行器: " + taskType);
-            }
-
-            // 构建执行上下文
-            ExecutionContext context = ExecutionContext.builder()
-                    .task(task)
-                    .instance(instance)
-                    .relatedId(task.getTaskRelatedId())
-                    .build();
-
-            // 执行
             executor.execute(context);
             taskInstanceService.markSuccess(instanceId, "执行成功");
             executor.onSuccess(context);
 
-            // 触发告警（成功）
-            try {
-                alertService.trigger(task, instance, InstanceStatus.SUCCESS);
-            } catch (Exception alertEx) {
-                log.warn("告警触发异常(不影响主流程): instanceId={}", instanceId, alertEx);
-            }
-
+            // 触发通知
+            alertService.trigger(task, instance, InstanceStatus.SUCCESS);
         } catch (Exception e) {
-            log.error("任务执行失败: taskId={}, instanceId={}", taskId, instanceId, e);
+            log.error("任务实例 [{}] 执行失败", instanceId, e);
             taskInstanceService.markFailed(instanceId, e.getMessage());
-
-            // 触发告警（失败）
-            try {
-                alertService.trigger(task, instance, InstanceStatus.FAILED);
-            } catch (Exception alertEx) {
-                log.warn("告警触发异常(不影响主流程): instanceId={}", instanceId, alertEx);
-            }
-
-            // 尝试回调 onFailure（如果执行器存在）
-            try {
-                TaskType taskType = TaskType.of(task.getTaskType());
-                TaskExecutor executor = executorMap.get(taskType);
-                if (executor != null) {
-                    ExecutionContext context = ExecutionContext.builder()
-                            .task(task)
-                            .instance(instance)
-                            .relatedId(task.getTaskRelatedId())
-                            .build();
-                    executor.onFailure(context, e);
-                }
-            } catch (Exception callbackEx) {
-                log.warn("执行器 onFailure 回调失败: instanceId={}", instanceId, callbackEx);
-            }
+            // 触发通知
+            alertService.trigger(task, instance, InstanceStatus.FAILED);
+            // 回调 onFailure
+            executor.onFailure(context, e);
         }
     }
 }

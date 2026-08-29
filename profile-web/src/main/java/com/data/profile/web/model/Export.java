@@ -10,14 +10,19 @@ import java.util.Date;
 @Data
 public class Export {
     private Long id;
-
-    // 投递信息
+    // 投递状态
     private Integer status;
+    // 投递ID
     private String exportId;
+    // 投递类型
     private Integer exportType;
+    // 投递名称
     private String exportName;
+    // 投递描述
     private String exportDesc;
-    private Integer exportMode; // 投递方式：1-数据源, 2-应用
+    // 投递方式：1-数据源, 2-应用
+    private Integer exportMode;
+    // 投递配置
     private String exportConfig;
 
     // 调度信息

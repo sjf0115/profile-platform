@@ -2,15 +2,12 @@ package com.data.profile.web.service;
 
 import com.data.profile.common.enums.InstanceStatus;
 import com.data.profile.common.enums.ModelType;
-import com.data.profile.common.enums.TriggerMode;
 import com.data.profile.common.utils.IDGenerator;
-import com.data.profile.web.converter.TaskConverter;
+import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.converter.TaskInstanceConverter;
 import com.data.profile.web.dao.TaskInstanceMapper;
-import com.data.profile.web.dao.TaskMapper;
 import com.data.profile.web.dto.TaskDTO;
 import com.data.profile.web.dto.TaskInstanceDTO;
-import com.data.profile.web.model.Task;
 import com.data.profile.web.model.TaskInstance;
 import com.data.profile.web.security.UserContextHolder;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 功能：任务实例服务
@@ -37,19 +33,18 @@ public class TaskInstanceService {
     private UserService userService;
 
     /**
-     * 根据查询条件获取任务实例列表（返回 DTO，供 Controller 使用）
+     * 根据查询条件获取任务实例列表
+     * @param instance 实例信息
      */
     public List<TaskInstanceDTO> getList(TaskInstance instance) {
-        log.info("查询任务实例参数: status={}, taskId={}, startTimeBegin={}, startTimeEnd={}",
-                instance.getStatus(), instance.getTaskId(), instance.getStartTimeBegin(), instance.getStartTimeEnd());
         List<TaskInstance> taskInstances = instanceMapper.selectByParams(instance);
-        log.info("根据查询条件获取到 {} 个任务执行实例", taskInstances.size());
         List<TaskInstanceDTO> dtos = TaskInstanceConverter.do2dtoList(taskInstances);
         Map<String, String> userMap = userService.getUserNameMap();
         for (TaskInstanceDTO dto : dtos) {
             dto.setCreatorName(userMap.get(dto.getCreator()));
             dto.setModifierName(userMap.get(dto.getModifier()));
         }
+        log.info("根据查询条件获取到 {} 个任务执行实例：{}", dtos.size(), JSONUtils.toJsonString(dtos));
         return dtos;
     }
 
@@ -73,6 +68,22 @@ public class TaskInstanceService {
     }
 
     /**
+     * 创建任务实例
+     * @param instance 任务实例信息
+     */
+    public TaskInstance createInstance(TaskInstance instance) {
+        String instanceId = IDGenerator.getInstance().generate(ModelType.INSTANCE);
+        instance.setInstanceId(instanceId);
+        instance.setStatus(InstanceStatus.PENDING.getCode()); // 初始为 未运行
+        instance.setStartTime(System.currentTimeMillis());
+        instance.setCreator(UserContextHolder.currentUserId());
+        instance.setModifier(UserContextHolder.currentUserId());
+        instanceMapper.insertSelective(instance);
+        log.info("创建任务实例成功：{}", JSONUtils.toJsonString(instance));
+        return instance;
+    }
+
+    /**
      * 根据关联ID获取最新任务实例。
      * <p>用于查询业务实体（数据集/群组）的最新执行状态。</p>
      */
@@ -81,47 +92,7 @@ public class TaskInstanceService {
     }
 
     /**
-     * 创建任务实例。
-     *
-     * @param taskId            关联的任务ID
-     * @param instanceName      实例名称
-     * @param instanceRelatedId 实例关联ID（如 datasetId）
-     * @param initialStatus     初始状态（PENDING 或 RUNNING）
-     * @param triggerMode       触发模式
-     * @return 创建后的实例
-     */
-    public TaskInstance createInstance(String taskId, String instanceName, String instanceRelatedId, InstanceStatus initialStatus, TriggerMode triggerMode) {
-        String instanceId = IDGenerator.getInstance().generate(ModelType.INSTANCE);
-        long startTime = System.currentTimeMillis();
-
-        TaskInstance instance = new TaskInstance();
-        instance.setInstanceId(instanceId);
-        instance.setInstanceName(instanceName);
-        instance.setTaskId(taskId);
-        instance.setInstanceRelatedId(instanceRelatedId);
-        instance.setStatus(initialStatus.getCode());
-        instance.setTriggerMode(triggerMode != null ? triggerMode.getCode() : null);
-        instance.setStartTime(startTime);
-        instance.setEndTime(0L);
-        instance.setDuration(0L);
-        instance.setMessage("");
-        instance.setCreator(UserContextHolder.currentUserId());
-        instance.setModifier(UserContextHolder.currentUserId());
-
-        instanceMapper.insertSelective(instance);
-        log.info("创建任务实例: instanceId={}, taskId={}, relatedId={}, status={}, triggerMode={}", instanceId, taskId, instanceRelatedId, initialStatus, triggerMode);
-        return instance;
-    }
-
-    /**
-     * 创建任务实例（默认为 RUNNING 状态，向后兼容）。
-     */
-    public TaskInstance createInstance(String taskId, String instanceName, String instanceRelatedId) {
-        return createInstance(taskId, instanceName, instanceRelatedId, InstanceStatus.RUNNING, null);
-    }
-
-    /**
-     * 更新任务实例为运行中状态（被异步执行器调用）。
+     * 任务实例开始运行
      */
     public void markRunning(String instanceId) {
         TaskInstance instance = instanceMapper.selectByInstanceId(instanceId);
@@ -130,11 +101,11 @@ public class TaskInstanceService {
         }
         instance.setStatus(InstanceStatus.RUNNING.getCode());
         instanceMapper.updateByInstanceIdSelective(instance);
-        log.info("任务实例运行中: {}", instanceId);
+        log.info("更新任务实例 [{}] 为运行状态", instanceId);
     }
 
     /**
-     * 更新任务实例为成功状态。
+     * 任务实例运行成功
      */
     public void markSuccess(String instanceId, String message) {
         TaskInstance instance = instanceMapper.selectByInstanceId(instanceId);
@@ -151,7 +122,7 @@ public class TaskInstanceService {
     }
 
     /**
-     * 更新任务实例为失败状态。
+     * 任务实例运行失败
      */
     public void markFailed(String instanceId, String errorMsg) {
         TaskInstance instance = instanceMapper.selectByInstanceId(instanceId);
@@ -172,7 +143,7 @@ public class TaskInstanceService {
      */
     public int delete(String instanceId) {
         int count = instanceMapper.deleteByInstanceId(instanceId);
-        log.info("删除任务实例: instanceId={}, count={}", instanceId, count);
+        log.info("删除任务实例 [{}] 成功", instanceId);
         return count;
     }
 
