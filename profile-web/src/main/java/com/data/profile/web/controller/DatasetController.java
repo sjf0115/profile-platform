@@ -114,7 +114,6 @@ public class DatasetController {
     public Response<TaskInstance> execute(@PathVariable(value = "datasetId") String datasetId) {
         log.info("请求手动立即执行数据集 [{}] 同步", datasetId);
         try {
-            // TODO 需要根据数据集ID和任务类型
             TaskInstance instance = taskExecutionService.executeByRelatedId(datasetId, TriggerMode.MANUAL);
             return Response.success(instance);
         } catch (Exception e) {

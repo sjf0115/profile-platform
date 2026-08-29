@@ -1,10 +1,6 @@
 package com.data.profile.web.task;
 
-import com.data.profile.web.dto.ScheduleConfigRequest;
 import com.data.profile.web.engine.DiEngineService;
-import com.data.profile.web.engine.ScheduleEngineService;
-import com.data.profile.web.model.Task;
-import com.data.profile.web.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -22,10 +18,6 @@ import javax.annotation.Resource;
 public class DatasetTask {
     @Resource
     private DiEngineService diEngineService;
-    @Resource
-    private ScheduleEngineService scheduleEngineService;
-    @Resource
-    private TaskService taskService;
 
     /**
      * 执行数据集同步

@@ -159,8 +159,7 @@ public class DiEngineService {
         // 4. 执行同步任务
         DiEngineExecutor executor = factory.getExecutor();
         executor.init(execReq, log, null);
-        log.info("同步任务开始执行: jobId={}, datasetId={}, syncEngine={}",
-                jobId, dataset.getDatasetId(), diEngine.getEngineType());
+        log.info("同步任务开始执行: jobId={}, datasetId={}, syncEngine={}", jobId, dataset.getDatasetId(), diEngine.getEngineType());
         executor.execute();
 
         // 5. 检查执行结果
@@ -169,8 +168,7 @@ public class DiEngineService {
             String errMsg = result == null ? "无结果返回" : result.getErrorMsg();
             throw new RuntimeException("同步失败 [" + diEngine.getEngineType() + "]: " + errMsg);
         }
-        log.info("同步任务完成: jobId={}, recordCount={}, duration={}ms",
-                jobId, result.getRecordCount(), result.getDuration());
+        log.info("同步任务完成: jobId={}, recordCount={}, duration={}ms", jobId, result.getRecordCount(), result.getDuration());
     }
 
     // -------------------------------------------------------------------------
