@@ -22,7 +22,6 @@ import java.util.Map;
  */
 @SPI
 public interface DataXReaderBuilder {
-
     /**
      * 数据源 category，与 {@link DataXDataSource#getCategory()} 一致。
      */

@@ -37,8 +37,7 @@ public abstract class AbstractJdbcReaderBuilder implements DataXReaderBuilder {
 
         // column
         List<String> columns = ctx.getColumns();
-        params.put(DataXConstant.COLUMN, CollectionUtils.isEmpty(columns)
-                ? Collections.singletonList("*") : columns);
+        params.put(DataXConstant.COLUMN, CollectionUtils.isEmpty(columns) ? Collections.singletonList("*") : columns);
 
         // connection
         Map<String, Object> connection = new LinkedHashMap<>();

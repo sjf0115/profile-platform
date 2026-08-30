@@ -14,6 +14,7 @@ import com.data.engine.api.source.RowConsumer;
 import com.data.profile.common.enums.DataType;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.dto.DataSourceDTO;
+import com.data.profile.web.dto.DatasetDTO;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;

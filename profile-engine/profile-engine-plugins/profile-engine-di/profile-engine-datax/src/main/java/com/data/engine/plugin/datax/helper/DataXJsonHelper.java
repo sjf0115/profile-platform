@@ -10,6 +10,7 @@ import com.data.spi.PluginLoader;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -18,8 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * 构造 DataX 任务 JSON。结构参考 datax-web 的 DataxJsonHelper，但 Reader/Writer 走 SPI 一源一插件。
- *
+ * 构造 DataX 任务 JSON
  * <pre>
  *   {
  *     "job": {
@@ -34,19 +34,19 @@ import java.util.Objects;
  *   }
  * </pre>
  */
+@Slf4j
 public final class DataXJsonHelper {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    private static final ObjectMapper MAPPER = new ObjectMapper().configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
     private DataXJsonHelper() {
     }
 
     /**
-     * 构造 DataX JSON 字符串。
+     * 构建同步作业 Job JSON 字符串
      */
-    public static String buildJobJson(DataXJobBuildRequest req) {
-        Map<String, Object> job = buildJob(req);
+    public static String buildJobJson(DataXJobBuildRequest request) {
+        Map<String, Object> job = buildJob(request);
         Map<String, Object> root = new LinkedHashMap<>();
         root.put(DataXConstant.JOB, job);
         try {
@@ -56,59 +56,76 @@ public final class DataXJsonHelper {
         }
     }
 
-    static Map<String, Object> buildJob(DataXJobBuildRequest req) {
-        Objects.requireNonNull(req, "DataXJobBuildRequest == null");
+    /**
+     * 构建同步作业 Job
+     */
+    public static Map<String, Object> buildJob(DataXJobBuildRequest request) {
+        Objects.requireNonNull(request, "DataXJobBuildRequest == null");
         Map<String, Object> job = new LinkedHashMap<>();
-        job.put(DataXConstant.SETTING, buildSetting(req));
-        job.put(DataXConstant.CONTENT, buildContent(req));
+        // setting
+        job.put(DataXConstant.SETTING, buildSetting(request));
+        // Content
+        job.put(DataXConstant.CONTENT, buildContent(request));
         return job;
     }
 
-    static Map<String, Object> buildSetting(DataXJobBuildRequest req) {
+    /**
+     * 构建同步作业 setting 部分
+     */
+    public static Map<String, Object> buildSetting(DataXJobBuildRequest request) {
         Map<String, Object> setting = new LinkedHashMap<>();
-
+        // 同步速度
         Map<String, Object> speed = new LinkedHashMap<>();
-        if (req.getSettingSpeedChannel() != null) {
-            speed.put(DataXConstant.CHANNEL, req.getSettingSpeedChannel());
+        if (request.getSettingSpeedChannel() != null) {
+            speed.put(DataXConstant.CHANNEL, request.getSettingSpeedChannel());
         } else {
             speed.put(DataXConstant.CHANNEL, 1);
         }
-        if (req.getSettingSpeedByte() != null) {
-            speed.put(DataXConstant.BYTE, req.getSettingSpeedByte());
+        if (request.getSettingSpeedByte() != null) {
+            speed.put(DataXConstant.BYTE, request.getSettingSpeedByte());
         }
-        if (req.getSettingSpeedRecord() != null) {
-            speed.put(DataXConstant.RECORD, req.getSettingSpeedRecord());
+        if (request.getSettingSpeedRecord() != null) {
+            speed.put(DataXConstant.RECORD, request.getSettingSpeedRecord());
         }
         setting.put(DataXConstant.SPEED, speed);
 
+        // 脏数据阈值
         Map<String, Object> errorLimit = new LinkedHashMap<>();
-        errorLimit.put(DataXConstant.RECORD,
-                req.getSettingErrorRecord() != null ? req.getSettingErrorRecord() : 0);
-        if (req.getSettingErrorPercentage() != null) {
-            errorLimit.put(DataXConstant.PERCENTAGE, req.getSettingErrorPercentage());
+        if (request.getSettingErrorRecord() != null) {
+            errorLimit.put(DataXConstant.RECORD, request.getSettingErrorRecord());
+        } else {
+            errorLimit.put(DataXConstant.RECORD, 0);
+        }
+        if (request.getSettingErrorPercentage() != null) {
+            errorLimit.put(DataXConstant.PERCENTAGE, request.getSettingErrorPercentage());
         }
         setting.put(DataXConstant.ERROR_LIMIT, errorLimit);
 
         return setting;
     }
 
-    static List<Map<String, Object>> buildContent(DataXJobBuildRequest req) {
+    /**
+     * 构建同步作业 Content 部分
+     */
+    public static List<Map<String, Object>> buildContent(DataXJobBuildRequest request) {
         Map<String, Object> entry = new LinkedHashMap<>();
-        entry.put(DataXConstant.READER, buildReader(req.getReaderSource(), req.getReaderContext()));
-        entry.put(DataXConstant.WRITER, buildWriter(req.getWriterSource(), req.getWriterContext()));
+        entry.put(DataXConstant.READER, buildReader(request.getReaderSource(), request.getReaderContext()));
+        entry.put(DataXConstant.WRITER, buildWriter(request.getWriterSource(), request.getWriterContext()));
         List<Map<String, Object>> content = new ArrayList<>(1);
         content.add(entry);
         return content;
     }
 
-    static Map<String, Object> buildReader(DataXDataSource source, ReaderContext ctx) {
+    /**
+     * 构建同步作业 Content Reader 部分
+     */
+    public static Map<String, Object> buildReader(DataXDataSource source, ReaderContext ctx) {
         Objects.requireNonNull(source, "readerSource == null");
         Objects.requireNonNull(ctx, "readerContext == null");
-        DataXReaderBuilder builder = PluginLoader.getPluginLoader(DataXReaderBuilder.class)
-                .getOrCreatePlugin(source.getCategory());
+        DataXReaderBuilder builder = PluginLoader.getPluginLoader(DataXReaderBuilder.class).getOrCreatePlugin(source.getCategory());
         if (builder == null) {
-            throw new IllegalStateException("No DataXReaderBuilder for category=" + source.getCategory()
-                    + ", please register it in META-INF/plugins/com.data.engine.plugin.datax.plugin.DataXReaderBuilder");
+            log.info("没有 [{}] 类型的 DataXReader 构造器, 请先注册插件", source.getCategory());
+            throw new IllegalStateException("没有[ " + source.getCategory() + "] 类型的 DataXReader 构造器, 请先注册插件");
         }
         Map<String, Object> reader = new LinkedHashMap<>();
         reader.put(DataXConstant.NAME, builder.getPluginName());
@@ -116,14 +133,16 @@ public final class DataXJsonHelper {
         return reader;
     }
 
-    static Map<String, Object> buildWriter(DataXDataSource source, WriterContext ctx) {
+    /**
+     * 构建同步作业 Content Writer 部分
+     */
+    public static Map<String, Object> buildWriter(DataXDataSource source, WriterContext ctx) {
         Objects.requireNonNull(source, "writerSource == null");
         Objects.requireNonNull(ctx, "writerContext == null");
-        DataXWriterBuilder builder = PluginLoader.getPluginLoader(DataXWriterBuilder.class)
-                .getOrCreatePlugin(source.getCategory());
+        DataXWriterBuilder builder = PluginLoader.getPluginLoader(DataXWriterBuilder.class).getOrCreatePlugin(source.getCategory());
         if (builder == null) {
-            throw new IllegalStateException("No DataXWriterBuilder for category=" + source.getCategory()
-                    + ", please register it in META-INF/plugins/com.data.engine.plugin.datax.plugin.DataXWriterBuilder");
+            log.info("没有 [{}] 类型的 DataXWriter 构造器, 请先注册插件", source.getCategory());
+            throw new IllegalStateException("没有[ " + source.getCategory() + "] 类型的 DataXWriter 构造器, 请先注册插件");
         }
         Map<String, Object> writer = new LinkedHashMap<>();
         writer.put(DataXConstant.NAME, builder.getPluginName());
