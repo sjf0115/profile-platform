@@ -11,6 +11,7 @@ import com.data.engine.plugin.datax.plugin.bean.WriterContext;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,20 +38,39 @@ public class DataXRequestBuilder implements DiRequestBuilder {
             throw new IllegalArgumentException("SyncContext.target is null");
         }
 
-        // 1. Reader 侧
+        // 1. Reader 侧（表名从中性参数集 config 消费）
+        Map<String, Object> sourceCfg = safeConfig(source);
         JdbcDataXDataSource readerSource = buildJdbcSource(source);
         ReaderContext readerContext = ReaderContext.builder()
-                .table(source.getTableName())
+                .table(getString(sourceCfg, "tableName"))
                 .columns(source.getColumns())
                 .build();
 
-        // 2. Writer 侧
+        // 2. Writer 侧：写入参数（导入平台策略 / 导出投递参数）已并入中性参数集 config，统一消费；
+        //    writeMode/targetColumn 等语义 → DataX 方言由本插件转换（如 append→insert、upsert 生成 preSql 先删后写）
+        Map<String, Object> targetCfg = safeConfig(target);
+        String table = getString(targetCfg, "tableName");
+        String writeMode = StringUtils.defaultIfBlank(getString(targetCfg, "writeMode"), "insert");
+        if ("append".equalsIgnoreCase(writeMode)) {
+            // 投递语义 append → DataX 方言 insert（追加写）
+            writeMode = "insert";
+        }
+        List<String> preSql = target.getPreSql();
+        String targetColumn = getString(targetCfg, "targetColumn");
+        if ("upsert".equalsIgnoreCase(writeMode) && StringUtils.isNotBlank(targetColumn) && StringUtils.isNotBlank(table)) {
+            // DataX 方言：upsert = 先删后写（同库子查询，要求源表与目标表同实例可互访）
+            preSql = Collections.singletonList("DELETE FROM " + table
+                    + " WHERE " + targetColumn + " IN (SELECT " + targetColumn + " FROM " + getString(sourceCfg, "tableName") + ")");
+            writeMode = "insert";
+        }
+        Integer batchSize = getInteger(targetCfg, "batchSize");
         JdbcDataXDataSource writerSource = buildJdbcSource(target);
         WriterContext writerContext = WriterContext.builder()
-                .table(target.getTableName())
+                .table(table)
                 .columns(target.getColumns())
-                .writeMode(StringUtils.defaultIfBlank(target.getWriteMode(), "insert"))
-                .batchSize(target.getBatchSize() == null ? 1000 : target.getBatchSize())
+                .preSql(preSql)
+                .writeMode(writeMode)
+                .batchSize(batchSize == null ? 1000 : batchSize)
                 .build();
 
         // 3. 组装 DataXJobBuildRequest
@@ -74,24 +94,49 @@ public class DataXRequestBuilder implements DiRequestBuilder {
                 .build();
     }
 
-    /** 把 SyncContext.Endpoint 转为 DataX 的 JdbcDataXDataSource。 */
+    /** 把中性 Endpoint 转为 DataX 的 JdbcDataXDataSource（消费归一化后契约字段）。 */
     private JdbcDataXDataSource buildJdbcSource(DiContext.Endpoint ep) {
         String category = ep.getCategory();
         if (StringUtils.isBlank(category)) {
             throw new IllegalArgumentException("Endpoint.category is blank");
         }
-        String jdbcUrl = buildJdbcUrl(category, ep.getHost(), ep.getPort(),
-                ep.getDatabase(), ep.getProperties());
+        Map<String, Object> cfg = ep.getConfig() == null ? Collections.emptyMap() : ep.getConfig();
+        String jdbcUrl = buildJdbcUrl(category, getString(cfg, "host"), getString(cfg, "port"),
+                getString(cfg, "database"), getString(cfg, "properties"));
         String driverClass = resolveDriverClass(category);
 
         return JdbcDataXDataSource.builder()
                 .category(category)
                 .jdbcUrl(jdbcUrl)
                 .driverClass(driverClass)
-                .username(ep.getUsername())
-                .password(ep.getPassword())
+                .username(getString(cfg, "username"))
+                .password(getString(cfg, "password"))
                 .extraProps(Collections.emptyMap())
                 .build();
+    }
+
+    private String getString(Map<String, Object> config, String key) {
+        Object value = config.get(key);
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private Integer getInteger(Map<String, Object> config, String key) {
+        Object value = config.get(key);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        try {
+            return Integer.parseInt(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Map<String, Object> safeConfig(DiContext.Endpoint ep) {
+        return ep.getConfig() == null ? Collections.emptyMap() : ep.getConfig();
     }
 
     /** 按 category 拼接 JDBC URL（覆盖 mysql/oracle/postgresql/clickhouse）。 */
@@ -116,7 +161,7 @@ public class DataXRequestBuilder implements DiRequestBuilder {
                 return "jdbc:oracle:thin:@//" + host + ":"
                         + (StringUtils.isNotBlank(port) ? port : "1521") + dbPart;
             default:
-                throw new IllegalArgumentException("Unsupported category for DataX sync: " + category);
+                throw new IllegalArgumentException("DataX 不支持 [" + category + "] 作为同步端点");
         }
     }
 
@@ -132,7 +177,7 @@ public class DataXRequestBuilder implements DiRequestBuilder {
             case "oracle":
                 return "oracle.jdbc.OracleDriver";
             default:
-                throw new IllegalArgumentException("Unsupported category for DataX sync: " + category);
+                throw new IllegalArgumentException("DataX 不支持 [" + category + "] 作为同步端点");
         }
     }
 }

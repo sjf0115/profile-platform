@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 同步任务上下文
@@ -37,8 +38,11 @@ public class DiContext {
     /**
      * 端点描述（源/目标通用）。
      *
-     * <p>使用统一字段表达 JDBC/Hive/Hdfs 等数据源最常见的连接信息；
-     * 引擎插件按需消费。</p>
+     * <p>config 是端点的中性参数全集，对平台不透明、对引擎插件透明：
+     * 连接参数（数据源配置经归属插件翻译①归一化）与写入参数（导入场景平台策略 /
+     * 导出场景投递表单参数）在组装侧合并，引擎插件按方言整体消费（翻译②）。</p>
+     * <p>键约定：JDBC 系连接 host/port/database/username/password/properties；
+     * 写入 tableName/writeMode/batchSize/targetColumn；文件 objectPath/format；消息 topic/messageKey。</p>
      */
     @Data
     @Builder
@@ -46,30 +50,16 @@ public class DiContext {
     @NoArgsConstructor
     public static class Endpoint {
 
-        /** 数据源类别：mysql / postgresql / clickhouse / oracle / hive / hdfs / ... */
+        /** 数据源类别：mysql / postgresql / clickhouse / kafka / ... */
         private String category;
 
-        /** 主机 */
-        private String host;
-        /** 端口（字符串以容纳 "host:port" 等扩展） */
-        private String port;
-        /** 数据库 / schema */
-        private String database;
-        /** 用户名 */
-        private String username;
-        /** 密码 */
-        private String password;
-        /** JDBC 扩展属性，形如 "useSSL=false&amp;serverTimezone=UTC" */
-        private String properties;
+        /** 中性参数全集（连接参数 + 写入参数，对平台不透明） */
+        private Map<String, Object> config;
 
-        /** 表名 */
-        private String tableName;
         /** 列名列表 */
         private List<String> columns;
 
-        /** 写入模式（仅 target 使用）：insert / replace / update */
-        private String writeMode;
-        /** 单批写入条数（仅 target 使用） */
-        private Integer batchSize;
+        /** 写入前置 SQL 列表（仅 target 使用）：由引擎插件按方言生成/消费（如 upsert 先删后写） */
+        private List<String> preSql;
     }
 }

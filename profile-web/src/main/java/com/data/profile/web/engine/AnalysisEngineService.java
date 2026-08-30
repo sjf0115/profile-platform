@@ -9,17 +9,13 @@ import com.data.engine.api.schema.SchemaDiff;
 import com.data.engine.api.schema.EngineTableManager;
 import com.data.engine.api.schema.TableSchema;
 import com.data.engine.api.sink.EngineSink;
-import com.data.engine.api.source.EngineSource;
-import com.data.engine.api.source.RowConsumer;
 import com.data.profile.common.enums.DataType;
 import com.data.profile.common.utils.JSONUtils;
-import com.data.profile.web.dto.DataSourceDTO;
 import com.data.profile.web.dto.DatasetDTO;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;
 import com.data.profile.web.model.Engine;
-import com.data.profile.web.service.DataSourceService;
 import com.data.profile.web.service.EngineService;
 import com.data.spi.PluginLoader;
 import lombok.extern.slf4j.Slf4j;
@@ -54,9 +50,6 @@ public class AnalysisEngineService {
 
     @Resource
     private EngineService engineService;
-
-    @Resource
-    private DataSourceService dataSourceService;
 
     // -------------------------------------------------------------------------
     // SQL 执行能力（群组圈选、预估等场景使用）
@@ -214,6 +207,30 @@ public class AnalysisEngineService {
     }
 
     /**
+     * 反查默认库下引擎表的列名列表（TableManager schema 反查，导出场景组装同步契约用）。
+     */
+    public List<String> getEngineTableColumnNames(String tableName) {
+        try {
+            Engine analysisEngine = getDefaultAnalysisEngine();
+            String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(analysisEngine.getEngineType()));
+            AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class).getOrCreatePlugin(pluginName);
+            EngineTableManager tm = factory.getTableManager();
+            if (tm == null) {
+                throw new IllegalStateException("分析引擎 [" + analysisEngine.getEngineType() + "] 未实现 TableManager");
+            }
+            tm.init(parseConfig(analysisEngine.getConfig()));
+            TableSchema schema = tm.getTableSchema(getDatabase(), tableName);
+            if (schema == null) {
+                throw new IllegalStateException("引擎表不存在: " + tableName);
+            }
+            return schema.columnNames();
+        } catch (Exception e) {
+            log.error("引擎表列名反查失败: table={}", tableName, e);
+            throw new RuntimeException("引擎表列名反查失败: " + tableName, e);
+        }
+    }
+
+    /**
      * 删除指定引擎表（通过 EngineCatalog，非阻塞）。
      *
      * @param tableName 引擎表名
@@ -250,63 +267,6 @@ public class AnalysisEngineService {
             log.error("CSV 导入引擎表 {} 失败", tableName, e);
             dropTable(tableName);
             throw new RuntimeException("CSV 导入引擎表失败: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * 判定目标数据源是否即分析引擎本身（host/port 一致，同实例投递可用服务端写入）。
-     */
-    public boolean isSameAsAnalysisEngine(DataSourceDTO dataSource) {
-        if (dataSource == null || StringUtils.isBlank(dataSource.getConfig())) {
-            return false;
-        }
-        Map<String, Object> targetConfig = parseConfig(dataSource.getConfig());
-        Map<String, Object> engineConfig = parseConfig(getDefaultAnalysisEngine().getConfig());
-        boolean sameHost = Objects.equals(getString(targetConfig, "host"), getString(engineConfig, "host"));
-        boolean samePort = Objects.equals(asString(targetConfig.get("port")), asString(engineConfig.get("port")));
-        return sameHost && samePort;
-    }
-
-    /**
-     * 同实例表投递：EngineSink 服务端写入（零数据搬运）。
-     * <p>writeMode=upsert 且 targetColumn 非空时，先删除目标表中与源表重复的记录再写入。</p>
-     *
-     * @param targetDatabase 目标库名
-     * @param targetTable    目标表名（必须已存在）
-     * @param sourceTable    源引擎表名（可带库名前缀）
-     * @param writeMode      写入模式：append 追加 / upsert 覆盖
-     * @param targetColumn   upsert 匹配列
-     */
-    public void transferToEngineTable(String targetDatabase, String targetTable, String sourceTable,
-                                      String writeMode, String targetColumn) {
-        try {
-            EngineSink engineSink = getEngineSink();
-            // upsert：先删除目标表中已存在的记录，再追加写入
-            if ("upsert".equalsIgnoreCase(writeMode) && StringUtils.isNotBlank(targetColumn)) {
-                long deleted = engineSink.deleteFromSource(targetDatabase, targetTable, targetColumn, sourceTable);
-                log.info("同实例投递 upsert 前置删除完成: target={}, rows={}", targetTable, deleted);
-            }
-            long inserted = engineSink.writeFromQuery(targetDatabase, targetTable, sourceTable);
-            log.info("同实例表投递完成: target={}, rows={}", targetTable, inserted);
-        } catch (Exception e) {
-            log.error("同实例表投递失败: target={}", targetTable, e);
-            throw new RuntimeException("同实例表投递失败: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * 流式读取默认库下的引擎表，逐行回调消费方（跨数据源投递等数据管道场景）。
-     *
-     * @param tableName 引擎表名（如 profile_group_xxx）
-     * @param consumer  行消费回调（按批处理，避免全表驻留内存）
-     */
-    public void streamEngineTable(String tableName, RowConsumer consumer) {
-        try {
-            EngineSource engineSource = getEngineSource();
-            engineSource.streamRows(getDatabase(), tableName, consumer);
-        } catch (Exception e) {
-            log.error("流式读取引擎表 {} 失败", tableName, e);
-            throw new RuntimeException("流式读取引擎表失败: " + e.getMessage(), e);
         }
     }
 
@@ -356,28 +316,6 @@ public class AnalysisEngineService {
             throw new RuntimeException("分析引擎 [" + engineType + "] 初始化 EngineSink 失败，请联系管理员");
         }
         return sink;
-    }
-
-    /**
-     * 获取引擎 Source（数据流式读取），含 init 与 null 校验。
-     */
-    private EngineSource getEngineSource() {
-        Engine analysisEngine = getDefaultAnalysisEngine();
-        String engineType = analysisEngine.getEngineType();
-        String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(engineType));
-        AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class).getOrCreatePlugin(pluginName);
-        EngineSource source = factory.getEngineSource();
-        if (source == null) {
-            log.error("分析引擎 [{}] 未实现 EngineSource", engineType);
-            throw new RuntimeException("分析引擎 [" + engineType + "] 未实现 EngineSource，请联系管理员");
-        }
-        try {
-            source.init(parseConfig(analysisEngine.getConfig()));
-        } catch (Exception e) {
-            log.error("分析引擎 [{}] 初始化 EngineSource 失败: {}", engineType, e.getMessage());
-            throw new RuntimeException("分析引擎 [" + engineType + "] 初始化 EngineSource 失败，请联系管理员");
-        }
-        return source;
     }
 
     /**
@@ -546,13 +484,6 @@ public class AnalysisEngineService {
     private String getString(Map<String, Object> map, String key) {
         Object v = map.get(key);
         return v == null ? null : String.valueOf(v);
-    }
-
-    /**
-     * 配置值转字符串（null 保持 null），用于 host/port 等字段跨类型比较。
-     */
-    private String asString(Object value) {
-        return value == null ? null : String.valueOf(value);
     }
 
 }

@@ -3,6 +3,7 @@ package com.data.engine.plugin;
 import com.data.engine.api.DiEngineFactory;
 import com.data.engine.api.DiRequestBuilder;
 import com.data.engine.api.RuntimeEnvironment;
+import com.data.engine.plugin.builder.SeaTunnelRequestBuilder;
 import com.data.engine.plugin.executor.SeaTunnelDiEngineExecutor;
 import com.data.profile.common.config.CheckResult;
 import com.data.profile.common.config.Config;
@@ -47,6 +48,6 @@ public class SeaTunnelEngineFactory implements DiEngineFactory {
 
     @Override
     public DiRequestBuilder getRequestBuilder() {
-        return null;
+        return new SeaTunnelRequestBuilder();
     }
 }

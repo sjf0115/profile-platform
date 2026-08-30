@@ -13,18 +13,15 @@ import com.data.profile.web.engine.SyncEndpointResolver;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;
-import com.data.profile.web.model.Engine;
 import com.data.profile.web.service.DataSourceService;
 import com.data.profile.web.service.DatasetFieldService;
 import com.data.profile.web.service.DatasetService;
-import com.data.profile.web.service.EngineService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
 
-import static com.data.profile.common.domain.Constant.ENGINE_CATEGORY_ANALYSIS;
 import static com.data.profile.common.domain.Constant.ENGINE_DATASET_TABLE_PREFIX;
 
 /**
@@ -41,8 +38,6 @@ import static com.data.profile.common.domain.Constant.ENGINE_DATASET_TABLE_PREFI
 @Slf4j
 @Service
 public class DatasetTask {
-    @Resource
-    private EngineService engineService;
     @Resource
     private DiEngineService diEngineService;
     @Resource
@@ -67,48 +62,33 @@ public class DatasetTask {
         DatasetDTO datasetDTO = datasetService.getDetail(datasetId);
         Dataset dataset = DatasetConverter.dto2do(datasetDTO);
         DataSourceDTO dataSourceDTO = dataSourceService.getDetail(datasetDTO.getDatasourceId());
-        DataSource dataSource = DataSourceConverter.dto2do(dataSourceDTO);
         if (dataSourceDTO == null) {
             log.warn("数据源不存在");
             throw new IllegalStateException("数据源不存在: " + datasetDTO.getDatasourceId());
         }
+        DataSource dataSource = DataSourceConverter.dto2do(dataSourceDTO);
 
         // 1. 构建目标 Schema 用于创建分析引擎目标表
         List<DatasetField> fields = datasetFieldService.getListByDatasetId(datasetId);
         String tableName = ENGINE_DATASET_TABLE_PREFIX + datasetId;
         TableSchema tableSchema = analysisEngineService.buildAndUpsertTable(dataset, dataSource, tableName, fields);
 
-        // 2. 组装同步上下文用于提交任务到同步引擎同步数据
+        // 2. 组装同步上下文用于提交任务到同步引擎同步数据（中性契约）
         List<String> columns = tableSchema.columnNames();
         if (columns.isEmpty()) {
             log.warn("数据集 [{}] 无可同步字段", datasetId);
             throw new IllegalStateException("数据集无可同步字段");
         }
-        // TODO 上下文有端点问题 是否与插件体系保持一致
 
-        // Source: 三方数据源配置 + 来源表 + 来源列
-        // Target: 分析引擎配置 + 目标表 + 目标列
-
+        // Source: 三方数据源配置 + 来源表 + 来源列（connector 插件翻译）
+        // Target: 分析引擎配置 + 目标表 + 目标列（引擎门面解析 + connector 插件翻译）
         DiContext context = DiContext.builder()
                 .jobId("di_" + datasetId + "_" + System.currentTimeMillis())
                 .source(syncEndpointResolver.resolveSource(dataSource, dataset.getTableName(), columns))
-                .target(resolveAnalysisTarget(tableSchema.getTableName(), columns))
+                .target(diEngineService.resolveAnalysisTarget(tableSchema.getTableName(), columns))
                 .build();
         ProcessResult result = diEngineService.sync(context);
 
         log.info("数据集同步完成: datasetId={}, recordCount={}, duration={}ms", datasetId, result.getRecordCount(), result.getDuration());
-    }
-
-    /**
-     * 门面辅助：解析默认分析引擎并翻译为目标端点。
-     * <p>分析引擎的解析与 config 翻译属引擎层知识，不下放编排层。</p>
-     */
-    // TODO
-    public DiContext.Endpoint resolveAnalysisTarget(String tableName, List<String> columns) {
-        Engine analysisEngine = engineService.getDefaultEngineByCategory(ENGINE_CATEGORY_ANALYSIS);
-        if (analysisEngine == null) {
-            throw new IllegalStateException("未找到可用的分析引擎(analysis)，请在引擎管理中设置默认分析引擎");
-        }
-        return syncEndpointResolver.resolveTarget(analysisEngine, tableName, columns);
     }
 }

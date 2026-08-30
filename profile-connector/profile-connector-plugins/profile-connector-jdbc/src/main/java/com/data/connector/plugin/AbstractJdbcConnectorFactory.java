@@ -1,6 +1,7 @@
 package com.data.connector.plugin;
 
 import com.data.connector.api.*;
+import com.data.spi.DiConfigTranslator;
 
 public abstract class AbstractJdbcConnectorFactory implements ConnectorFactory {
 
@@ -47,5 +48,10 @@ public abstract class AbstractJdbcConnectorFactory implements ConnectorFactory {
     @Override
     public ExportConfigBuilder getExportConfigBuilder() {
         return new JdbcExportConfigBuilder();
+    }
+
+    @Override
+    public DiConfigTranslator getDiConfigTranslator() {
+        return new JdbcDiConfigTranslator();
     }
 }

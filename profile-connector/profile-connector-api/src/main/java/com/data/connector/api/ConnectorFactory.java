@@ -1,5 +1,6 @@
 package com.data.connector.api;
 
+import com.data.spi.DiConfigTranslator;
 import com.data.spi.SPI;
 
 @SPI
@@ -52,6 +53,14 @@ public interface ConnectorFactory {
     }
 
     default ExportConfigBuilder getExportConfigBuilder() {
+        return null;
+    }
+
+    /**
+     * 同步配置翻译器：把本数据源的原始 config 归一化为同步链路（DI）消费的连接配置。
+     * <p>字段名知识收敛在归属插件；返回 null 表示原样直通（如 Kafka/MinIO）。</p>
+     */
+    default DiConfigTranslator getDiConfigTranslator() {
         return null;
     }
 }

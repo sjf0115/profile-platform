@@ -44,6 +44,8 @@ public class DiEngineService {
     private EngineService engineService;
     @Resource
     private ProfileEngineConfig engineProperties;
+    @Resource
+    private SyncEndpointResolver syncEndpointResolver;
 
     /**
      * 同步桥梁：将同步意图提交到默认 DI 引擎，轮询至终态，返回执行结果。
@@ -95,6 +97,31 @@ public class DiEngineService {
             throw new RuntimeException("同步失败 [" + diEngine.getEngineType() + "]: " + result.getErrorMsg());
         }
         return result;
+    }
+
+    /**
+     * 门面辅助：解析默认分析引擎并翻译为 target 端点。
+     * <p>分析引擎本质也是一种数据源：按 engineType 走 connector 体系统一翻译，
+     * 引擎解析归门面，编排层不感知 {@link Engine} 与 SPI 细节。</p>
+     */
+    public DiContext.Endpoint resolveAnalysisTarget(String tableName, List<String> columns) {
+        Engine analysisEngine = engineService.getDefaultEngineByCategory(ENGINE_CATEGORY_ANALYSIS);
+        if (analysisEngine == null) {
+            throw new IllegalStateException("未找到可用的分析引擎(analysis)，请在引擎管理中设置默认分析引擎");
+        }
+        return syncEndpointResolver.resolveTarget(analysisEngine.getEngineType(), analysisEngine.getConfig(), tableName, columns);
+    }
+
+    /**
+     * 门面辅助：解析默认分析引擎并翻译为 source 端点（导出场景，与 {@link #resolveAnalysisTarget} 对称）。
+     * <p>分析引擎本质也是一种数据源：作源与作目标走同一套 connector 翻译体系。</p>
+     */
+    public DiContext.Endpoint resolveAnalysisSource(String tableName, List<String> columns) {
+        Engine analysisEngine = engineService.getDefaultEngineByCategory(ENGINE_CATEGORY_ANALYSIS);
+        if (analysisEngine == null) {
+            throw new IllegalStateException("未找到可用的分析引擎(analysis)，请在引擎管理中设置默认分析引擎");
+        }
+        return syncEndpointResolver.resolveSource(analysisEngine.getEngineType(), analysisEngine.getConfig(), tableName, columns);
     }
 
     /**
