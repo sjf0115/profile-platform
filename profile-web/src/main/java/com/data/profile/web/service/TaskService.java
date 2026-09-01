@@ -4,7 +4,6 @@ import com.data.profile.common.enums.ModelType;
 import com.data.profile.common.enums.SourceType;
 import com.data.profile.common.enums.Status;
 import com.data.profile.common.utils.IDGenerator;
-import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.converter.TaskConverter;
 import com.data.profile.web.dao.TaskMapper;
 import com.data.profile.web.dto.TaskDTO;

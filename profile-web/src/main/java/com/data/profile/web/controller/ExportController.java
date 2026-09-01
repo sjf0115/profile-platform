@@ -55,11 +55,11 @@ public class ExportController {
     @GetMapping(value = "/{exportId}/detail")
     public Response<ExportVO> getDetail(@PathVariable(value = "exportId") String exportId) {
         log.info("请求查询投递 {} 详细信息", exportId);
-        Optional<ExportDTO> opt = exportService.getDetail(exportId);
-        if (!opt.isPresent()) {
+        ExportDTO exportDTO = exportService.getDetail(exportId);
+        if (exportDTO == null) {
             return Response.error("投递不存在", ResponseCode.ERROR);
         }
-        return Response.success(ExportConverter.dto2vo(opt.get()));
+        return Response.success(ExportConverter.dto2vo(exportDTO));
     }
 
     /**
@@ -73,6 +73,7 @@ public class ExportController {
             ExportDTO dto = exportService.create(request);
             return Response.success(ExportConverter.dto2vo(dto));
         } catch (RuntimeException e) {
+            log.error("请求创建投递失败：{}", e.getMessage());
             return Response.error(e.getMessage(), ResponseCode.ERROR);
         }
     }
@@ -92,6 +93,7 @@ public class ExportController {
                 return Response.error("修改投递失败", ResponseCode.ERROR);
             }
         } catch (RuntimeException e) {
+            log.error("请求更新投递失败：{}", e.getMessage());
             return Response.error(e.getMessage(), ResponseCode.ERROR);
         }
     }
@@ -111,6 +113,7 @@ public class ExportController {
                 return Response.error("删除投递失败", ResponseCode.ERROR);
             }
         } catch (RuntimeException e) {
+            log.error("请求删除投递失败：{}", e.getMessage());
             return Response.error(e.getMessage(), ResponseCode.ERROR);
         }
     }
@@ -126,6 +129,7 @@ public class ExportController {
             int result = exportService.updateStatus(exportId, status);
             return Response.success(result);
         } catch (RuntimeException e) {
+            log.error("请求更新投递失败：{}", e.getMessage());
             return Response.error(e.getMessage(), ResponseCode.ERROR);
         }
     }

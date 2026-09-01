@@ -31,6 +31,6 @@ public class ExportTaskExecutor implements TaskExecutor {
     @Override
     public void execute(ExecutionContext context) throws Exception {
         // TODO ExecutionContext 只使用到了对象ID 是否优化
-        exportTask.executeExport(context.getRelatedId());
+        exportTask.execute(context.getRelatedId());
     }
 }

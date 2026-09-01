@@ -3,7 +3,9 @@ package com.data.profile.web.converter;
 import com.data.profile.web.dto.TaskDTO;
 import com.data.profile.web.dto.TaskParam;
 import com.data.profile.web.dto.TaskRequest;
+import com.data.profile.web.model.DatasetField;
 import com.data.profile.web.model.Task;
+import com.data.profile.web.vo.DatasetFieldVO;
 import com.data.profile.web.vo.TaskVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
@@ -41,6 +43,12 @@ public class TaskConverter {
     public static List<TaskVO> dto2voList(List<TaskDTO> dtos) {
         if (dtos == null || dtos.isEmpty()) return Collections.emptyList();
         return DTO2VoMapper.INSTANCE.convertList(dtos);
+    }
+
+    // DTO -> VO
+    public static TaskVO do2vo(Task task) {
+        if (task == null) return null;
+        return DO2VoMapper.INSTANCE.convert(task);
     }
 
     // DTO -> DO
@@ -96,5 +104,13 @@ public class TaskConverter {
         Param2DOMapper INSTANCE = Mappers.getMapper(Param2DOMapper.class);
         @Override
         Task convert(TaskParam param);
+    }
+
+    // DO -> VO
+    @Mapper
+    public interface DO2VoMapper extends BaseConverter<Task, TaskVO> {
+        DO2VoMapper INSTANCE = Mappers.getMapper(DO2VoMapper.class);
+        @Override
+        TaskVO convert(Task task);
     }
 }

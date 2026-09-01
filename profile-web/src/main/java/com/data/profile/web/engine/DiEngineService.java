@@ -45,7 +45,7 @@ public class DiEngineService {
     @Resource
     private ProfileEngineConfig engineProperties;
     @Resource
-    private SyncEndpointResolver syncEndpointResolver;
+    private DiEndpointResolver diEndpointResolver;
 
     /**
      * 同步桥梁：将同步意图提交到默认 DI 引擎，轮询至终态，返回执行结果。
@@ -109,7 +109,7 @@ public class DiEngineService {
         if (analysisEngine == null) {
             throw new IllegalStateException("未找到可用的分析引擎(analysis)，请在引擎管理中设置默认分析引擎");
         }
-        return syncEndpointResolver.resolveTarget(analysisEngine.getEngineType(), analysisEngine.getConfig(), tableName, columns);
+        return diEndpointResolver.resolveTarget(analysisEngine.getEngineType(), analysisEngine.getConfig(), tableName, columns);
     }
 
     /**
@@ -121,7 +121,7 @@ public class DiEngineService {
         if (analysisEngine == null) {
             throw new IllegalStateException("未找到可用的分析引擎(analysis)，请在引擎管理中设置默认分析引擎");
         }
-        return syncEndpointResolver.resolveSource(analysisEngine.getEngineType(), analysisEngine.getConfig(), tableName, columns);
+        return diEndpointResolver.resolveSource(analysisEngine.getEngineType(), analysisEngine.getConfig(), tableName, columns);
     }
 
     /**

@@ -15,6 +15,14 @@
         <div class="detail-section">
           <h3 class="section-title">基本信息</h3>
           <el-descriptions :column="2" border>
+            <el-descriptions-item label="投递ID">
+              {{ exportData.export_id || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="投递类型">
+              <el-tag :type="exportData.export_type === 2 ? 'warning' : 'primary'" size="small">
+                {{ getExportTypeText(exportData.export_type) }}
+              </el-tag>
+            </el-descriptions-item>
             <el-descriptions-item label="投递名称">
               {{ exportData.export_name }}
             </el-descriptions-item>
@@ -383,6 +391,14 @@ const getSchedulerTypeText = (type?: number): string => {
     case 2: return 'API 触发'
     case 3: return '日周期调度'
     case 4: return '小时周期调度'
+    default: return '-'
+  }
+}
+
+const getExportTypeText = (type?: number): string => {
+  switch (type) {
+    case 1: return '投递群组'
+    case 2: return '投递标签'
     default: return '-'
   }
 }

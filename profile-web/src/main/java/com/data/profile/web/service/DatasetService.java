@@ -342,8 +342,8 @@ public class DatasetService {
         // 4. 创建引擎表
         createEngineTable(dataset, fields);
 
-        // 5. 创建同步任务
-        createSyncTask(datasetId, dataset.getDatasetName());
+        // 5. 创建同步任务（负责人继承数据集实体）
+        createSyncTask(dataset);
 
         log.info("成功创建数据集: {}", gson.toJson(dataset));
         // 自动授权 MANAGE 给创建者
@@ -413,16 +413,17 @@ public class DatasetService {
     }
 
     /**
-     * 创建同步任务
+     * 创建同步任务（负责人继承数据集实体：前端选取或创建者）
      */
-    private void createSyncTask(String datasetId, String datasetName) {
+    private void createSyncTask(Dataset dataset) {
         Task task = new Task();
-        task.setTaskName(datasetName + "-同步任务");
-        task.setTaskDesc("数据集[" + datasetName + "]的同步任务");
+        task.setTaskName(dataset.getDatasetName() + "-同步任务");
+        task.setTaskDesc("数据集[" + dataset.getDatasetName() + "]的同步任务");
         task.setTaskType(TaskType.IMPORT.getCode());
-        task.setTaskRelatedId(datasetId);
+        task.setTaskRelatedId(dataset.getDatasetId());
+        task.setOwner(dataset.getOwner());
         task.setTriggerType(TriggerType.MANUAL.getCode()); // 默认无调度
         taskService.createTask(task);
-        log.info("为数据集 [{}] 创建同步任务", datasetId);
+        log.info("为数据集 [{}] 创建同步任务", dataset.getDatasetId());
     }
 }

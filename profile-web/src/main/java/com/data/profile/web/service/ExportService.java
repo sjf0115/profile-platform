@@ -59,15 +59,15 @@ public class ExportService {
     /**
      * 根据投递ID获取投递详细信息
      */
-    public Optional<ExportDTO> getDetail(String exportId) {
+    public ExportDTO getDetail(String exportId) {
         Export export = exportMapper.selectByExportId(exportId);
         if (export == null) {
-            return Optional.empty();
+            throw new RuntimeException("投递任务不存在");
         }
         ExportDTO dto = ExportConverter.do2dto(export);
         TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(exportId);
         dto.setLatestInstance(latestInstance);
-        return Optional.of(dto);
+        return dto;
     }
 
     /**
@@ -101,12 +101,13 @@ public class ExportService {
         resourceGrantService.grantOwner("10", exportId, userId);
         lineageService.refreshLineage(AssetType.EXPORT.getCode(), exportId);
 
-        // 创建投递任务
+        // 创建投递任务（负责人继承投递实体：前端选取或创建者）
         Task task = Task.builder()
                 .taskName(export.getExportName())
                 .taskType(TaskType.EXPORT.getCode())
                 .taskDesc(export.getExportName() + "投递任务")
                 .taskRelatedId(exportId)
+                .owner(export.getOwner())
                 .build();
         taskService.createTask(task);
         log.info("为投递 [{}] 创建投递任务", exportId);

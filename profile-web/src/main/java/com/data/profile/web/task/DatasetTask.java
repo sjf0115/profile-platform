@@ -9,7 +9,7 @@ import com.data.profile.web.dto.DataSourceDTO;
 import com.data.profile.web.dto.DatasetDTO;
 import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.engine.DiEngineService;
-import com.data.profile.web.engine.SyncEndpointResolver;
+import com.data.profile.web.engine.DiEndpointResolver;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;
@@ -43,7 +43,7 @@ public class DatasetTask {
     @Resource
     private AnalysisEngineService analysisEngineService;
     @Resource
-    private SyncEndpointResolver syncEndpointResolver;
+    private DiEndpointResolver diEndpointResolver;
     @Resource
     private DatasetService datasetService;
     @Resource
@@ -54,7 +54,6 @@ public class DatasetTask {
     /**
      * 执行数据集同步（完整流程）
      * <p>包含：查数据集 → 查数据源 → 建表/演进 → 同步数据。</p>
-     *
      * @param datasetId 数据集ID
      */
     public void execute(String datasetId) throws Exception {
@@ -84,7 +83,7 @@ public class DatasetTask {
         // Target: 分析引擎配置 + 目标表 + 目标列（引擎门面解析 + connector 插件翻译）
         DiContext context = DiContext.builder()
                 .jobId("di_" + datasetId + "_" + System.currentTimeMillis())
-                .source(syncEndpointResolver.resolveSource(dataSource, dataset.getTableName(), columns))
+                .source(diEndpointResolver.resolveSource(dataSource, dataset.getTableName(), columns))
                 .target(diEngineService.resolveAnalysisTarget(tableSchema.getTableName(), columns))
                 .build();
         ProcessResult result = diEngineService.sync(context);

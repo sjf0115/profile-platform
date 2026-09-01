@@ -30,6 +30,7 @@ import java.io.InputStreamReader;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.data.profile.common.domain.Constant.ENGINE_GROUP_TABLE_ENTITY;
 import static com.data.profile.common.domain.Constant.ENGINE_GROUP_TABLE_PREFIX;
 
 /**
@@ -549,11 +550,13 @@ public class GroupService {
      * <p>仅创建 Task 元数据，调度注册由 GroupController 调用 GroupTask.schedule() 完成。</p>
      */
     private void createGroupSelectionTask(Group group, String groupId) {
+        // 负责人继承群组实体（前端选取或创建者）
         Task task = Task.builder()
                 .taskName(group.getGroupName())
                 .taskType(TaskType.GROUP.getCode())
                 .taskDesc(group.getGroupName() + "群组圈选任务")
                 .taskRelatedId(groupId)
+                .owner(group.getOwner())
                 .build();
         taskService.createTask(task);
         log.info("为群组 [{}] 创建圈选任务", groupId);
@@ -564,14 +567,14 @@ public class GroupService {
      * <p>在分析引擎中创建群组结果表，用于存储圈选结果。</p>
      * <p>建表失败不阻塞群组创建流程。</p>
      */
-    // TOTO 有问题 不同引擎实现方式不同 需要沉淀到引擎层
+    // TODO 有问题 不同引擎实现方式不同 需要沉淀到引擎层
     private void createGroupEngineTable(Group group) {
         String tableName = ENGINE_GROUP_TABLE_PREFIX + group.getGroupId();
         String createSql = String.format(
                 "CREATE TABLE IF NOT EXISTS %s (" +
-                        "entity_id String COMMENT '实体ID', " +
+                        ENGINE_GROUP_TABLE_ENTITY +  " String COMMENT '实体ID', " +
                         "_created_time DateTime DEFAULT now() COMMENT '圈选时间'" +
-                        ") ENGINE = MergeTree() ORDER BY entity_id SETTINGS index_granularity = 8192",
+                        ") ENGINE = MergeTree() ORDER BY " + ENGINE_GROUP_TABLE_ENTITY + " SETTINGS index_granularity = 8192",
                 tableName);
         try {
             analysisEngineService.executeStatement(createSql);

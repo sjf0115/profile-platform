@@ -25,7 +25,7 @@ import java.util.Map;
  */
 @Slf4j
 @Component
-public class SyncEndpointResolver {
+public class DiEndpointResolver {
 
     @Resource
     private ProfileEngineConfig engineProperties;
@@ -39,6 +39,9 @@ public class SyncEndpointResolver {
     public DiContext.Endpoint resolveSource(String category, String configJson, String tableName, List<String> columns) {
         Map<String, Object> params = new HashMap<>();
         params.put("tableName", tableName);
+
+
+
         return DiContext.Endpoint.builder()
                 .category(category)
                 .config(merge(translate(category, parseConfig(configJson)), params))

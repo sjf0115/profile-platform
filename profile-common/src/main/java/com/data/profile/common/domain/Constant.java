@@ -25,6 +25,7 @@ public class Constant {
     public static final String ENGINE_LABEL_TABLE_PREFIX = "profile_label_";
     public static final String ENGINE_CATEGORY_DI = "di"; // 同步引擎
     public static final String ENGINE_CATEGORY_ANALYSIS = "analysis"; // 分析引擎
+    public static final String ENGINE_GROUP_TABLE_ENTITY = "entity_id"; // 分析引擎群组表实体ID字段名称
 
     // 默认角色ID
     public static final String DEFAULT_ADMIN_ROLE_ID = "1800000000000000";

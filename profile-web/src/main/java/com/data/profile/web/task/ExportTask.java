@@ -7,12 +7,13 @@ import com.data.profile.web.dto.DataSourceDTO;
 import com.data.profile.web.dto.ExportDTO;
 import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.engine.DiEngineService;
-import com.data.profile.web.engine.SyncEndpointResolver;
+import com.data.profile.web.engine.DiEndpointResolver;
 import com.data.profile.web.model.Application;
 import com.data.profile.web.model.ExportConfig;
 import com.data.profile.web.service.ApplicationService;
 import com.data.profile.web.service.DataSourceService;
 import com.data.profile.web.service.ExportService;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.data.profile.common.domain.Constant.ENGINE_GROUP_TABLE_ENTITY;
 import static com.data.profile.common.domain.Constant.ENGINE_GROUP_TABLE_PREFIX;
 
 /**
@@ -57,35 +59,32 @@ public class ExportTask {
     @Resource
     private DiEngineService diEngineService;
     @Resource
-    private SyncEndpointResolver syncEndpointResolver;
+    private DiEndpointResolver diEndpointResolver;
 
     /**
-     * 执行投递（提交同步任务）
+     * 执行投递
      * @param exportId 投递ID
      */
-    public void executeExport(String exportId) throws Exception {
+    public void execute(String exportId) throws Exception {
         log.info("投递任务 [{}] 开始执行投递", exportId);
 
         // 1. 加载投递配置
-        ExportDTO export = exportService.getDetail(exportId).orElse(null);
-        if (export == null) {
-            log.error("投递任务 [{}] 不存在", exportId);
-            throw new RuntimeException("投递不存在: " + exportId);
-        }
-
-        // 2. 解析投递配置（应用投递 / 数据源投递）
+        ExportDTO export = exportService.getDetail(exportId);
         ExportConfig targetConfig = resolveExportConfig(export);
         String groupId = targetConfig.getGroupId();
         DataSourceDTO ds = dataSourceService.getDetail(targetConfig.getDatasourceId());
 
-        // 3. 组装同步契约：source=分析引擎表，target=连接配置翻译 + 投递参数原样透传
+        // 2. 组装同步契约：source=分析引擎表，target=连接配置翻译 + 投递参数原样透传
         String sourceTable = ENGINE_GROUP_TABLE_PREFIX + groupId;
-        List<String> columns = analysisEngineService.getEngineTableColumnNames(sourceTable);
+        // List<String> columns = analysisEngineService.getEngineTableColumnNames(sourceTable);
+        // 群组投递目前只支持投递群组ID 后期扩展支持投递绑定标签
+        List<String> columns = Lists.newArrayList(ENGINE_GROUP_TABLE_ENTITY);
+
         DiContext.Endpoint source = diEngineService.resolveAnalysisSource(sourceTable, columns);
         Map<String, Object> delivery = renderDeliveryConfig(targetConfig, exportId, groupId);
-        DiContext.Endpoint target = syncEndpointResolver.resolveExportTarget(ds.getDatasourceType(), ds.getConfig(), delivery, columns);
+        DiContext.Endpoint target = diEndpointResolver.resolveExportTarget(ds.getDatasourceType(), ds.getConfig(), delivery, columns);
 
-        // 4. 提交 DI 引擎（提交 + 轮询至终态），与 DatasetTask 唯一出口一致
+        // 3. 提交 DI 引擎（提交 + 轮询至终态），与 DatasetTask 唯一出口一致
         DiContext context = DiContext.builder()
                 .jobId("export_" + exportId + "_" + System.currentTimeMillis())
                 .source(source)

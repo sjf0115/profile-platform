@@ -37,7 +37,7 @@ public class MinioConnectorFactory implements ConnectorFactory {
         return new MinioExportConfigBuilder();
     }
 
-    @Override
+    // TODO 是否有问题
     public String getExportTargetType() {
         // 对象存储：投递语义为文件写出（bucket + objectPath）
         return "file";

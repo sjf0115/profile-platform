@@ -81,8 +81,7 @@ public class TaskController {
      * 修改调度任务
      */
     @PutMapping("/{taskId}")
-    public Response<Integer> update(@PathVariable(value = "taskId") String taskId,
-                                    @RequestBody TaskRequest request) {
+    public Response<Integer> update(@PathVariable(value = "taskId") String taskId, @RequestBody TaskRequest request) {
         log.info("请求修改任务 {}: {}", taskId, JSONUtils.toJsonString(request));
         try {
             int result = taskService.update(taskId, request);
@@ -100,8 +99,7 @@ public class TaskController {
      * 更新任务状态（启用/停用）
      */
     @PutMapping("/{taskId}/status")
-    public Response<Integer> updateStatus(@PathVariable(value = "taskId") String taskId,
-                                          @RequestParam Integer status) {
+    public Response<Integer> updateStatus(@PathVariable(value = "taskId") String taskId, @RequestParam Integer status) {
         log.info("请求更新任务 {} 状态为: {}", taskId, status);
         try {
             int result = taskService.updateStatus(taskId, status);
@@ -124,6 +122,20 @@ public class TaskController {
             } else {
                 return Response.error("删除调度任务失败", ResponseCode.ERROR);
             }
+        } catch (RuntimeException e) {
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
+        }
+    }
+
+    /**
+     * 通过关联ID获取任务
+     */
+    @GetMapping(value = "/related/{relatedId}")
+    public Response<TaskVO> relatedTask(@PathVariable(name = "relatedId") String relatedId) {
+        log.info("请求根据关联ID [{}] 获取任务", relatedId);
+        try {
+            Task task = taskService.getDetailByRelatedId(relatedId);
+            return Response.success(TaskConverter.do2vo(task));
         } catch (RuntimeException e) {
             return Response.error(e.getMessage(), ResponseCode.ERROR);
         }
@@ -184,12 +196,13 @@ public class TaskController {
         }
     }
 
+
+
     /**
      * 配置任务上游依赖
      */
     @PutMapping(value = "/{taskId}/upstream")
-    public Response<String> configureUpstream(@PathVariable(value = "taskId") String taskId,
-                                              @RequestBody TaskRequest request) {
+    public Response<String> configureUpstream(@PathVariable(value = "taskId") String taskId, @RequestBody TaskRequest request) {
         log.info("配置任务上游依赖: taskId={}, upstreamTaskIds={}", taskId, request.getUpstreamTaskIds());
         try {
             Task task = taskService.getTaskOrThrow(taskId);

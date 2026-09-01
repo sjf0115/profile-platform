@@ -14,7 +14,7 @@ public class Export {
     private Integer status;
     // 投递ID
     private String exportId;
-    // 投递类型
+    // 投递类型：投递群组、投递标签
     private Integer exportType;
     // 投递名称
     private String exportName;
