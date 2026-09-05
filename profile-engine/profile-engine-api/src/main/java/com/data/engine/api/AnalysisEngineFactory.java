@@ -1,4 +1,4 @@
-package com.data.engine.api.factory;
+package com.data.engine.api;
 
 import com.data.engine.api.catalog.EngineCatalog;
 import com.data.engine.api.query.EngineQuery;

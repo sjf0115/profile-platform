@@ -5,12 +5,15 @@ import com.data.profile.web.vo.Response;
 import com.data.profile.common.enums.*;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.converter.LabelConverter;
+import com.data.profile.web.converter.LabelValueDistributionConverter;
 import com.data.profile.web.dto.LabelDTO;
 import com.data.profile.web.dto.LabelParam;
 import com.data.profile.web.dto.LabelRequest;
+import com.data.profile.web.dto.LabelValueDistributionDTO;
 import com.data.profile.web.model.FileImportLabelConfig;
 import com.data.profile.web.model.Label;
 import com.data.profile.web.vo.LabelVO;
+import com.data.profile.web.vo.LabelValueDistributionVO;
 import com.data.profile.web.service.LabelService;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,13 +55,30 @@ public class LabelController {
     // 标签详情
     @GetMapping(value = "/{labelId}/detail")
     public Response<LabelVO> getDetail(@PathVariable("labelId") String labelId) {
-        log.info("请求查询标签详情: labelId={}", labelId);
+        log.info("请求查询标签详情: {}", labelId);
         LabelDTO dto = labelService.getDetail(labelId);
         if (dto == null) {
             return Response.error("请求的标签不存在", ResponseCode.ERROR);
         }
         LabelVO vo = LabelConverter.dto2vo(dto);
         return Response.success(vo);
+    }
+
+    // 标签取值分布与覆盖量
+    @GetMapping(value = "/{labelId}/distribution")
+    public Response<LabelValueDistributionVO> getDistribution(@PathVariable("labelId") String labelId) {
+        log.info("请求查询标签取值分布: {}", labelId);
+        try {
+            LabelValueDistributionDTO dto = labelService.getLabelValueDistribution(labelId);
+            return Response.success(LabelValueDistributionConverter.dto2vo(dto));
+        } catch (Exception e) {
+            log.error("获取标签 {} 取值分布失败: {}", labelId, e.getMessage());
+            LabelValueDistributionVO empty = new LabelValueDistributionVO();
+            empty.setLabelId(labelId);
+            empty.setHasData(false);
+            empty.setValues(Collections.emptyList());
+            return Response.success(empty);
+        }
     }
 
     // 创建标签

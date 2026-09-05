@@ -2,9 +2,8 @@ package com.data.profile.web.converter;
 
 import com.data.profile.web.dto.GroupAnalysisDTO;
 import com.data.profile.web.model.GroupAnalysis;
-import com.data.profile.web.model.Label;
-import com.data.profile.web.vo.AnalysisLabelVO;
 import com.data.profile.web.vo.GroupAnalysisVO;
+import com.data.profile.common.utils.JSONUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
@@ -24,12 +23,15 @@ public class GroupAnalysisConverter {
         // 静态工具类
     }
 
-    // DO -> VO
+    // DO -> VO（含 JSON 数组字段解析：compareGroupIds/labelIds String -> List）
     public static GroupAnalysisVO do2vo(GroupAnalysis analysis) {
         if (analysis == null) {
             return null;
         }
-        return DO2AnalysisVOMapper.INSTANCE.convert(analysis);
+        GroupAnalysisVO vo = DO2AnalysisVOMapper.INSTANCE.convert(analysis);
+        vo.setCompareGroupIds(parseJsonArray(analysis.getCompareGroupIds()));
+        vo.setLabelIds(parseJsonArray(analysis.getLabelIds()));
+        return vo;
     }
 
     // List<DO> -> List<VO>
@@ -37,15 +39,18 @@ public class GroupAnalysisConverter {
         if (analyses == null || analyses.isEmpty()) {
             return Collections.emptyList();
         }
-        return DO2AnalysisVOMapper.INSTANCE.convertList(analyses);
+        return analyses.stream().map(GroupAnalysisConverter::do2vo).collect(java.util.stream.Collectors.toList());
     }
 
-    // DO -> DTO
+    // DO -> DTO（含 JSON 数组字段解析：compareGroupIds/labelIds String -> List）
     public static GroupAnalysisDTO do2dto(GroupAnalysis analysis) {
         if (analysis == null) {
             return null;
         }
-        return DO2DTOMapper.INSTANCE.convert(analysis);
+        GroupAnalysisDTO dto = DO2DTOMapper.INSTANCE.convert(analysis);
+        dto.setCompareGroupIds(parseJsonArray(analysis.getCompareGroupIds()));
+        dto.setLabelIds(parseJsonArray(analysis.getLabelIds()));
+        return dto;
     }
 
     // List<DO> -> List<DTO>
@@ -53,7 +58,7 @@ public class GroupAnalysisConverter {
         if (analyses == null || analyses.isEmpty()) {
             return Collections.emptyList();
         }
-        return DO2DTOMapper.INSTANCE.convertList(analyses);
+        return analyses.stream().map(GroupAnalysisConverter::do2dto).collect(java.util.stream.Collectors.toList());
     }
 
     // DTO -> DO
@@ -80,12 +85,9 @@ public class GroupAnalysisConverter {
         return DTO2VoMapper.INSTANCE.convertList(dtos);
     }
 
-    // Label DO -> AnalysisLabelVO
-    public static AnalysisLabelVO labelDo2vo(Label label) {
-        if (label == null) {
-            return null;
-        }
-        return DO2VOMapper.INSTANCE.convert(label);
+    // 解析 JSON 数组字符串为 List<String>（容错返回空列表）
+    private static List<String> parseJsonArray(String json) {
+        return JSONUtils.toList(json, String.class);
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -127,14 +129,5 @@ public class GroupAnalysisConverter {
         @Mapping(target = "compareGroupIds", ignore = true)
         @Mapping(target = "labelIds", ignore = true)
         GroupAnalysisVO convert(GroupAnalysis analysis);
-    }
-
-    // Label DO -> AnalysisLabelVO
-    @Mapper
-    public interface DO2VOMapper extends BaseConverter<Label, AnalysisLabelVO> {
-        DO2VOMapper INSTANCE = Mappers.getMapper(DO2VOMapper.class);
-
-        @Override
-        AnalysisLabelVO convert(Label label);
     }
 }

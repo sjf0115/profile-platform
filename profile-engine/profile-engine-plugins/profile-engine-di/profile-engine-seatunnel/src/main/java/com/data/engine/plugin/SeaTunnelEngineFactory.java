@@ -1,6 +1,6 @@
 package com.data.engine.plugin;
 
-import com.data.engine.api.factory.DiEngineFactory;
+import com.data.engine.api.DiEngineFactory;
 import com.data.engine.api.DiRequestBuilder;
 import com.data.engine.plugin.builder.SeaTunnelRequestBuilder;
 import com.data.engine.plugin.executor.SeaTunnelDiEngineExecutor;

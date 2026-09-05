@@ -23,6 +23,10 @@ public class Constant {
     public static final String ENGINE_DATASET_TABLE_PREFIX = "profile_dataset_";
     public static final String ENGINE_GROUP_TABLE_PREFIX = "profile_group_";
     public static final String ENGINE_LABEL_TABLE_PREFIX = "profile_label_";
+
+    public static final String ENGINE_LABEL_TABLE_ENTITY_COLUMN = "entity_id"; // 标签表主体列
+    public static final String ENGINE_LABEL_TABLE_VALUE_COLUMN = "label_value"; // 标签表标签值列
+
     public static final String ENGINE_CATEGORY_DI = "di"; // 同步引擎
     public static final String ENGINE_CATEGORY_ANALYSIS = "analysis"; // 分析引擎
     public static final String ENGINE_GROUP_TABLE_ENTITY = "entity_id"; // 分析引擎群组表实体ID字段名称

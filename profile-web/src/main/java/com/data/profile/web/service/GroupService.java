@@ -3,6 +3,7 @@ package com.data.profile.web.service;
 import com.beust.jcommander.internal.Lists;
 import com.data.engine.api.schema.Column;
 import com.data.profile.common.enums.*;
+import com.data.profile.web.converter.GroupConverter;
 import com.data.profile.web.converter.TaskInstanceConverter;
 import com.data.profile.web.dao.GroupMapper;
 import com.data.profile.web.enums.AssetType;
@@ -19,7 +20,6 @@ import com.data.profile.common.utils.IDGenerator;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -134,8 +134,7 @@ public class GroupService {
      * 将 Group Model 转换为 GroupDTO（填充实体关联信息）
      */
     private GroupDTO toDTO(Group group) {
-        GroupDTO dto = new GroupDTO();
-        BeanUtils.copyProperties(group, dto);
+        GroupDTO dto = GroupConverter.do2dto(group);
         // 获取群组实体信息
         String entityIdentifierId = group.getEntityIdentifierId();
         EntityIdentifierDTO identifierDTO = entityIdentifierService.getDetail(entityIdentifierId);

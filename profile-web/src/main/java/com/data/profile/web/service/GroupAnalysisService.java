@@ -4,6 +4,7 @@ import com.data.profile.web.dto.*;
 import com.data.profile.web.enums.AssetType;
 import com.data.profile.common.enums.*;
 import com.data.profile.common.utils.IDGenerator;
+import com.data.profile.web.converter.GroupAnalysisConverter;
 import com.data.profile.web.dao.GroupAnalysisMapper;
 import com.data.profile.web.dao.LabelMapper;
 import com.data.profile.web.engine.AnalysisEngineService;
@@ -73,23 +74,40 @@ public class GroupAnalysisService {
     // ========== 群组分析 CRUD ==========
 
     /**
-     * 获取群组分析列表（单表查询）
+     * 获取群组分析列表（单表查询 + 群组信息聚合）
      */
-    public List<GroupAnalysis> getAnalysisList(GroupAnalysis query) {
+    public List<GroupAnalysisDTO> getAnalysisList(GroupAnalysis query) {
         List<GroupAnalysis> list = groupAnalysisMapper.selectByParams(query);
         log.info("获取群组分析列表: {} 个", list.size());
-        return list;
+        return list.stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     /**
-     * 获取群组分析详情（单表查询）
+     * 获取群组分析详情（单表查询 + 群组信息聚合）
      */
-    public Optional<GroupAnalysis> getAnalysisDetail(String analysisId) {
+    public Optional<GroupAnalysisDTO> getAnalysisDetail(String analysisId) {
         GroupAnalysis analysis = groupAnalysisMapper.selectByAnalysisId(analysisId);
         if (analysis == null) {
             return Optional.empty();
         }
-        return Optional.of(analysis);
+        return Optional.of(toDTO(analysis));
+    }
+
+    /**
+     * 将 GroupAnalysis Model 转为 DTO（基础字段+JSON解析走 Converter，群组信息属跨实体聚合在此填充）
+     */
+    private GroupAnalysisDTO toDTO(GroupAnalysis analysis) {
+        GroupAnalysisDTO dto = GroupAnalysisConverter.do2dto(analysis);
+        GroupDTO group = groupService.getDetail(analysis.getGroupId());
+        if (group != null) {
+            dto.setGroupName(group.getGroupName());
+            dto.setGroupCount(group.getGroupCount());
+            dto.setGroupType(group.getGroupType());
+            dto.setGroupStatus(group.getGroupStatus());
+            dto.setEntityIdentifierName(group.getEntityIdentifierName());
+            dto.setEntityName(group.getEntityName());
+        }
+        return dto;
     }
 
     /**

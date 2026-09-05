@@ -17,6 +17,24 @@ export interface LabelConfigResponse {
   source_type: LabelConfig[]
 }
 
+// 标签取值分布项（详情页）
+export interface LabelDistributionItem {
+  value: string
+  count: number
+  percent: number
+}
+
+// 标签取值分布与覆盖量（详情页）
+export interface LabelValueDistribution {
+  label_id: string
+  cover_count?: number
+  total_count?: number
+  cover_rate?: number
+  sample_value?: string
+  has_data: boolean
+  values: LabelDistributionItem[]
+}
+
 export const labelApi = {
   // 获取标签列表
   getList: (params?: any) => {
@@ -26,6 +44,11 @@ export const labelApi = {
   // 获取标签详情
   getDetail: (labelId: string) => {
     return request.get<ApiResponse<Label>>(`/label/${labelId}/detail`)
+  },
+
+  // 获取标签取值分布与覆盖量（详情页）
+  getDistribution: (labelId: string) => {
+    return request.get<ApiResponse<LabelValueDistribution>>(`/label/${labelId}/distribution`)
   },
 
   // 创建标签

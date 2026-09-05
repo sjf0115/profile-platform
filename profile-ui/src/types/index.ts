@@ -112,7 +112,9 @@ export interface Label {
   gmt_modified?: string
   // 数据源导入相关字段
   entity_identifier_id?: string
+  entity_identifier_name?: string
   dataset_id?: string
+  dataset_name?: string
   dataset_field_name?: string
   // 自定义标签相关字段
   update_type?: number  // 1-手动更新, 2-周期更新

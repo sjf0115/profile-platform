@@ -1,7 +1,7 @@
 package com.data.engine.plugin.datax;
 
 import com.data.engine.api.DiEngineExecutor;
-import com.data.engine.api.factory.DiEngineFactory;
+import com.data.engine.api.DiEngineFactory;
 import com.data.engine.api.DiRequestBuilder;
 import com.data.engine.plugin.datax.builder.DataXRequestBuilder;
 import com.data.engine.plugin.datax.executor.DataXDiEngineExecutor;

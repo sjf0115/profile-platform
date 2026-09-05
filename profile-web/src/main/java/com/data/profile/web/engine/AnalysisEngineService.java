@@ -2,7 +2,7 @@ package com.data.profile.web.engine;
 
 import com.data.connector.api.ConnectorFactory;
 import com.data.connector.api.TypeConverter;
-import com.data.engine.api.factory.AnalysisEngineFactory;
+import com.data.engine.api.AnalysisEngineFactory;
 import com.data.engine.api.catalog.EngineCatalog;
 import com.data.engine.api.query.EngineQuery;
 import com.data.engine.api.schema.Column;
@@ -73,6 +73,14 @@ public class AnalysisEngineService {
      */
     public List<Map<String, Object>> executeQueryList(String sql) throws Exception {
         return getEngineQuery().executeQuery(sql);
+    }
+
+    /**
+     * 执行 SELECT 查询并返回结果。
+     * 单行数据以 Map 形式返回，key 为列名，value 为列值。
+     */
+    public Map<String, Object> executeQuery(String sql) throws Exception {
+        return getEngineQuery().executeQuery(sql).get(0);
     }
 
     /**

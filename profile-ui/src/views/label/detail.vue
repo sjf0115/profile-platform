@@ -22,8 +22,8 @@
                 <span class="meta-value">{{ labelData.label_id }}</span>
               </span>
               <span class="meta-item">
-                <span class="meta-label">标签英文名：</span>
-                <span class="meta-value">{{ labelData.label_name }}</span>
+                <span class="meta-label">状态：</span>
+                <el-tag :type="statusTagType(labelData.label_status)" size="small">{{ statusName(labelData.label_status) }}</el-tag>
               </span>
             </div>
             <div class="desc-info" v-if="labelData.label_desc">
@@ -38,7 +38,7 @@
             <div class="test-subtitle">TESTING</div>
             <div class="test-bottom">
               <span class="test-desc">使用个人数据开始测试</span>
-              <el-button type="primary" size="small">开始测试</el-button>
+              <el-button type="primary" size="small" @click="handleDeveloping">开始测试</el-button>
             </div>
           </div>
         </div>
@@ -49,7 +49,12 @@
         <div class="stats-left">
           <div class="stat-box">
             <div class="stat-label">覆盖量</div>
-            <div class="stat-value large">{{ formatNumber(labelData.cover_count) || '大于10亿' }}</div>
+            <div class="stat-value large">{{ distribution.has_data ? (formatNumber(distribution.cover_count) || '-') : '-' }}</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-box">
+            <div class="stat-label">覆盖率</div>
+            <div class="stat-value large">{{ distribution.has_data && distribution.cover_rate != null ? distribution.cover_rate + '%' : '-' }}</div>
           </div>
           <div class="stat-divider"></div>
           <div class="stat-box">
@@ -57,24 +62,16 @@
             <div class="stat-value">{{ getTimeTypeName(labelData.label_time_type) }}</div>
           </div>
           <div class="stat-divider"></div>
-          <div class="stat-box">
+          <div class="stat-box health-box" @click="handleDeveloping">
             <div class="stat-label">
               健康度
               <el-icon class="arrow-icon"><ArrowRight /></el-icon>
             </div>
-            <div class="health-value">
-              <span class="health-text">高</span>
-              <div class="health-bars">
-                <div class="bar active"></div>
-                <div class="bar active"></div>
-                <div class="bar active"></div>
-                <div class="bar"></div>
-              </div>
-            </div>
+            <div class="stat-value">-</div>
           </div>
         </div>
         <div class="stats-action">
-          <el-button type="primary" :icon="ShoppingCart">加入申请篮</el-button>
+          <el-button type="primary" :icon="ShoppingCart" @click="handleDeveloping">加入申请篮</el-button>
         </div>
       </div>
     </div>
@@ -116,6 +113,20 @@
                 <span class="info-label">加工方式</span>
                 <span class="info-value">{{ getProduceTypeName(labelData.label_produce_type) }}</span>
               </div>
+              <div class="info-item">
+                <span class="info-label">关联实体</span>
+                <span class="info-value">{{ labelData.entity_identifier_name || '-' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">绑定数据集</span>
+                <span class="info-value">
+                  <template v-if="labelData.dataset_id">
+                    <el-link type="primary" :underline="false" @click="goDatasetDetail">{{ labelData.dataset_name || labelData.dataset_id }}</el-link>
+                    <span v-if="labelData.dataset_field_name" class="field-suffix">（{{ labelData.dataset_field_name }}）</span>
+                  </template>
+                  <template v-else>-</template>
+                </span>
+              </div>
             </div>
           </div>
 
@@ -132,35 +143,11 @@
               </div>
               <div class="info-item">
                 <span class="info-label">接入来源</span>
-                <span class="info-value">odps表接入</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">存储方式</span>
-                <span class="info-value">odps</span>
+                <span class="info-value">{{ getAccessSource() }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label">标签更新类型</span>
                 <span class="info-value">{{ getTimeTypeName(labelData.label_time_type) }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">执行状态</span>
-                <span class="info-value">{{ labelData.exec_status || '正常' }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">热度评分</span>
-                <span class="info-value">{{ labelData.heat_score || 0 }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">透视次数</span>
-                <span class="info-value">{{ labelData.view_count || 0 }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">覆盖率</span>
-                <span class="info-value">{{ labelData.cover_rate || '-' }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">标签值</span>
-                <span class="info-value">{{ labelData.label_value || '-' }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label">创建人</span>
@@ -178,10 +165,6 @@
                 <span class="info-label">修改时间</span>
                 <span class="info-value">{{ formatDateTime(labelData.gmt_modified) }}</span>
               </div>
-              <div class="info-item">
-                <span class="info-label">首次上架时间</span>
-                <span class="info-value">{{ formatDate(labelData.gmt_create) }}</span>
-              </div>
             </div>
           </div>
         </div>
@@ -192,25 +175,26 @@
             <el-tab-pane label="取值分布" name="distribution">
               <div class="distribution-header">
                 <span class="title">取值分布 Top10</span>
-                <span class="update-time">(数据更新时间：{{ formatDateTime(new Date().toISOString()) }})</span>
+                <span class="update-time" v-if="labelData.gmt_modified">(数据更新时间：{{ formatDateTime(labelData.gmt_modified) }})</span>
               </div>
-              <div class="sample-value">
+              <div class="sample-value" v-if="distribution.sample_value">
                 <span class="label">标签样例：</span>
-                <el-tag size="small">温州市</el-tag>
+                <el-tag size="small">{{ distribution.sample_value }}</el-tag>
               </div>
-              <el-table :data="distributionData" style="width: 100%">
+              <el-table v-if="distribution.has_data && distribution.values.length > 0" :data="distribution.values" v-loading="distLoading" style="width: 100%">
                 <el-table-column type="index" label="序号" width="60" align="center" />
                 <el-table-column prop="value" label="取值范围" min-width="150" />
-                <el-table-column prop="desc" label="值描述" min-width="150" />
+                <el-table-column prop="count" label="计数" min-width="120" />
                 <el-table-column prop="percent" label="人次占比" width="200">
                   <template #default="{ row }">
                     <div class="percent-cell">
                       <span>{{ row.percent }}%</span>
-                      <el-progress :percentage="row.percent" :show-text="false" :stroke-width="8" />
+                      <el-progress :percentage="Math.min(row.percent, 100)" :show-text="false" :stroke-width="8" />
                     </div>
                   </template>
                 </el-table-column>
               </el-table>
+              <el-empty v-else :description="distLoading ? '加载中...' : '暂无分布数据（标签未绑定或引擎表未就绪）'" />
             </el-tab-pane>
             <el-tab-pane label="覆盖量信息" name="coverage">
               <div class="placeholder-content">覆盖量信息开发中</div>
@@ -230,7 +214,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, ArrowRight, CollectionTag, ShoppingCart } from '@element-plus/icons-vue'
-import { labelApi, type LabelConfigResponse } from '@/api/label'
+import { labelApi, type LabelConfigResponse, type LabelValueDistribution } from '@/api/label'
 import { labelCategoryApi, type LabelCategory } from '@/api/labelCategory'
 import type { Label } from '@/types'
 
@@ -258,16 +242,28 @@ const labelConfig = reactive<LabelConfigResponse>({
   source_type: []
 })
 
-// 分布数据（模拟数据）
-const distributionData = ref([
-  { value: '广州市', desc: '广州市', percent: 15.2 },
-  { value: '北京市', desc: '北京市', percent: 12.8 },
-  { value: '上海市', desc: '上海市', percent: 11.5 },
-  { value: '深圳市', desc: '深圳市', percent: 9.3 },
-  { value: '杭州市', desc: '杭州市', percent: 7.6 },
-  { value: '成都市', desc: '成都市', percent: 6.2 },
-  { value: '武汉市', desc: '武汉市', percent: 5.8 },
-])
+// 分布数据
+const distLoading = ref(false)
+const distribution = ref<LabelValueDistribution>({
+  label_id: '',
+  has_data: false,
+  values: []
+})
+
+// 获取标签取值分布与覆盖量
+const fetchDistribution = async () => {
+  distLoading.value = true
+  try {
+    const res = await labelApi.getDistribution(labelId)
+    if (res.data.data) {
+      distribution.value = res.data.data
+    }
+  } catch (error) {
+    console.error('获取标签分布失败:', error)
+  } finally {
+    distLoading.value = false
+  }
+}
 
 // 获取标签详情
 const fetchLabelDetail = async () => {
@@ -368,17 +364,37 @@ const getTimeTypeName = (type?: number) => {
   return item?.name || '-'
 }
 
-// 获取健康度评分
-const getHealthScore = () => {
-  // 模拟健康度评分
-  return 4
+// 获取接入来源（由创建方式推导）
+const getAccessSource = () => {
+  const sourceType = labelData.value.source_type
+  if (sourceType === 2) {
+    return labelData.value.dataset_name ? `数据集导入 · ${labelData.value.dataset_name}` : '数据集导入'
+  }
+  return getSourceTypeName(sourceType)
 }
 
-// 格式化日期
-const formatDate = (dateStr?: string) => {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  return date.toLocaleDateString()
+// 标签状态名称
+const statusName = (status?: number) => {
+  const map: Record<number, string> = { 0: '未绑定', 1: '已启用', 2: '已停用' }
+  return status != null ? (map[status] || '-') : '-'
+}
+
+// 标签状态标签颜色
+const statusTagType = (status?: number) => {
+  const map: Record<number, string> = { 0: 'info', 1: 'success', 2: 'danger' }
+  return (status != null ? map[status] : 'info') as 'info' | 'success' | 'danger'
+}
+
+// 暂不实现的功能统一提示
+const handleDeveloping = () => {
+  ElMessage.info('功能开发中')
+}
+
+// 跳转绑定数据集详情
+const goDatasetDetail = () => {
+  if (labelData.value.dataset_id) {
+    router.push(`/dataset/detail/${labelData.value.dataset_id}`)
+  }
 }
 
 // 格式化日期时间
@@ -390,7 +406,7 @@ const formatDateTime = (dateStr?: string) => {
 
 // 格式化数字
 const formatNumber = (num?: number) => {
-  if (!num) return ''
+  if (num == null) return ''
   if (num >= 100000000) {
     return (num / 100000000).toFixed(1) + '亿'
   }
@@ -407,6 +423,7 @@ const goBack = () => {
 
 onMounted(() => {
   fetchLabelDetail()
+  fetchDistribution()
   fetchCategoryList()
   fetchLabelConfig()
 })
@@ -422,7 +439,7 @@ onMounted(() => {
 }
 
 // 顶部详情头部
-detail-header {
+.detail-header {
   background-color: #fff;
   border-radius: 8px;
   padding: 24px;
@@ -587,35 +604,10 @@ detail-header {
         font-weight: 600;
       }
     }
-    
-    .health-value {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      
-      .health-text {
-        font-size: 16px;
-        font-weight: 500;
-        color: #67c23a;
-      }
-      
-      .health-bars {
-        display: flex;
-        gap: 3px;
-        
-        .bar {
-          width: 4px;
-          height: 16px;
-          background-color: #e4e7ed;
-          border-radius: 2px;
-          
-          &.active {
-            background-color: #67c23a;
-          }
-        }
-      }
-    }
+  }
+  
+  .health-box {
+    cursor: pointer;
   }
   
   .stat-divider {
@@ -704,6 +696,13 @@ detail-header {
             font-size: 14px;
             color: #303133;
             font-weight: 500;
+            text-align: right;
+            
+            .field-suffix {
+              font-size: 12px;
+              color: #909399;
+              font-weight: 400;
+            }
           }
         }
       }

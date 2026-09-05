@@ -1,6 +1,6 @@
 package com.data.engine.plugin.schedule.dolphinscheduler;
 
-import com.data.engine.api.factory.ScheduleEngineFactory;
+import com.data.engine.api.ScheduleEngineFactory;
 import com.data.engine.api.ScheduleExecutor;
 import com.data.engine.api.ScheduleTaskRegistrar;
 import com.data.profile.common.config.Config;

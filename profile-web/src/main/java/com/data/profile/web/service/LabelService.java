@@ -2,11 +2,16 @@ package com.data.profile.web.service;
 
 import com.data.engine.api.schema.Column;
 import com.data.profile.common.enums.*;
+import com.data.profile.common.utils.CommonUtil;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.converter.LabelConverter;
 import com.data.profile.web.dao.LabelMapper;
+import com.data.profile.web.dto.DatasetDTO;
+import com.data.profile.web.dto.EntityIdentifierDTO;
 import com.data.profile.web.dto.LabelDTO;
+import com.data.profile.web.dto.LabelValueDistributionDTO;
 import com.data.profile.web.engine.AnalysisEngineService;
+import com.data.profile.web.engine.SqlTemplateEngine;
 import com.data.profile.web.model.DatasetField;
 import com.data.profile.web.model.FileImportLabelConfig;
 import com.data.profile.web.model.Label;
@@ -28,7 +33,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.data.profile.common.domain.Constant.ENGINE_LABEL_TABLE_PREFIX;
+import static com.data.profile.common.domain.Constant.*;
 
 /**
  * 功能：标签服务
@@ -56,6 +61,12 @@ public class LabelService {
     private MinioService minioService;
     @Autowired
     private AnalysisEngineService analysisEngineService;
+    @Autowired
+    private DatasetService datasetService;
+    @Autowired
+    private EntityIdentifierService entityIdentifierService;
+    @Autowired
+    private SqlTemplateEngine sqlTemplateEngine;
 
     /**
      * 根据查询条件获取标签列表
@@ -108,8 +119,112 @@ public class LabelService {
         if (datasetField != null) {
             dto.setDatasetId(datasetField.getDatasetId());
             dto.setDatasetFieldName(datasetField.getFieldName());
+            DatasetDTO datasetDTO = datasetService.getDetail(datasetField.getDatasetId());
+            if (datasetDTO != null) {
+                dto.setDatasetName(datasetDTO.getDatasetName());
+            }
+        }
+        // 填充实体标识信息
+        if (StringUtils.isNotBlank(label.getEntityIdentifierId())) {
+            EntityIdentifierDTO identifier = entityIdentifierService.getDetail(label.getEntityIdentifierId());
+            if (identifier != null) {
+                dto.setEntityIdentifierName(identifier.getEntityIdentifierName());
+                dto.setEntityId(identifier.getEntityId());
+                dto.setEntityName(identifier.getEntityName());
+            }
         }
         return dto;
+    }
+
+    /**
+     * 获取标签取值分布与覆盖量（标签详情页维度，全量数据 Top10）。
+     *
+     * <p>标签不存在/未绑定/引擎表未就绪时返回 hasData=false 的空结果，不抛异常。</p>
+     */
+    // TODO
+    public LabelValueDistributionDTO getLabelValueDistribution(String labelId) throws Exception {
+        if (StringUtils.isEmpty(labelId)) {
+            log.error("标签 {} 不存在", labelId);
+            throw new RuntimeException("标签不存在,请联系管理员");
+        }
+
+        Label label = getLabel(labelId);
+        Integer labelStatus = label.getLabelStatus();
+        Integer sourceType = label.getSourceType();
+
+        LabelValueDistributionDTO result = new LabelValueDistributionDTO();
+        result.setLabelId(labelId);
+        result.setHasData(false);
+        result.setValues(Collections.emptyList());
+        if (!Objects.equals(labelStatus, LabelStatus.ENABLED.getCode())) {
+            log.info("标签 {} 未启用，返回空分布", labelId);
+            return result;
+        }
+
+        // 标签存储引擎表 - 表名与标签列名
+        String tableName;
+        String fieldName;
+        if (Objects.equals(sourceType, LabelSourceType.DATASET.getCode())) {
+            // 数据集导入方式
+            DatasetField field = datasetFieldService.getDetailByRelatedId(labelId);
+            if (field == null) {
+                log.warn("标签 {} 未关联数据集字段，返回空分布", labelId);
+                return result;
+            }
+            fieldName = field.getFieldName();
+            tableName = ENGINE_DATASET_TABLE_PREFIX + field.getDatasetId();
+            if (!analysisEngineService.tableExists(tableName)) {
+                log.warn("标签 {} 对应引擎表 {} 不存在，返回空分布", labelId, tableName);
+                return result;
+            }
+        } else if (Objects.equals(sourceType, LabelSourceType.FILE.getCode())) {
+            // 文件上传方式
+            tableName = ENGINE_LABEL_TABLE_PREFIX + labelId;
+            fieldName = ENGINE_LABEL_TABLE_VALUE_COLUMN;
+        } else {
+            log.warn("标签 {} 创建方式未实现，返回空分布", labelId);
+            return result;
+        }
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("tableName", tableName);
+        params.put("fieldName", fieldName);
+        params.put("limit", 10);
+
+        // 覆盖量统计
+        String coverageSql = sqlTemplateEngine.render("label_coverage.ftl", params);
+        Map<String, Object> coverageRows = analysisEngineService.executeQuery(coverageSql);
+        long totalCount = 0L;
+        long coverCount = 0L;
+        if (!coverageRows.isEmpty()) {
+            totalCount = CommonUtil.toLong(coverageRows.get("total_count"));
+            coverCount = CommonUtil.toLong(coverageRows.get("cover_count"));
+        }
+        result.setTotalCount(totalCount);
+        result.setCoverCount(coverCount);
+        // TODO 覆盖率计算公式优化
+        result.setCoverRate(totalCount > 0 ? CommonUtil.round1(coverCount * 100.0 / totalCount) : 0.0);
+
+        // 取值分布 Top10
+        String distributionSql = sqlTemplateEngine.render("label_value_distribution.ftl", params);
+        List<Map<String, Object>> rows = analysisEngineService.executeQueryList(distributionSql);
+        long distributionTotal = rows.stream().mapToLong(row -> CommonUtil.toLong(row.get("cnt"))).sum();
+        List<LabelValueDistributionDTO.Item> items = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            LabelValueDistributionDTO.Item item = new LabelValueDistributionDTO.Item();
+            Object value = row.get("label_value");
+            item.setValue(value == null ? "-" : String.valueOf(value));
+            long count = CommonUtil.toLong(row.get("cnt"));
+            item.setCount(count);
+            item.setPercent(distributionTotal > 0 ? CommonUtil.round1(count * 100.0 / distributionTotal) : 0.0);
+            items.add(item);
+        }
+        result.setValues(items);
+        if (!items.isEmpty()) {
+            result.setSampleValue(items.get(0).getValue());
+        }
+        result.setHasData(true);
+        return result;
     }
 
     /**
@@ -171,6 +286,7 @@ public class LabelService {
         try {
             result = labelMapper.insertSelective(label);
         } catch (Exception e) {
+            // 文件上传方式需要创建标签引擎表
             if (Objects.equals(label.getSourceType(), LabelSourceType.FILE.getCode())) {
                 analysisEngineService.dropTable(ENGINE_LABEL_TABLE_PREFIX + labelId);
             }
@@ -438,12 +554,12 @@ public class LabelService {
         String tableName = ENGINE_LABEL_TABLE_PREFIX + labelId;
         analysisEngineService.dropTable(tableName);
         List<Column> columns = Arrays.asList(
-                Column.builder().name("entity_id").dataType(DataType.STRING_TYPE).comment("实体ID").build(),
-                Column.builder().name("label_value").dataType(DataType.STRING_TYPE).comment("标签值").build()
+                Column.builder().name(ENGINE_LABEL_TABLE_ENTITY_COLUMN).dataType(DataType.STRING_TYPE).comment("实体ID").build(),
+                Column.builder().name(ENGINE_LABEL_TABLE_VALUE_COLUMN).dataType(DataType.STRING_TYPE).comment("标签值").build()
         );
         try (InputStream is = minioService.getFileAsStream(physicalPath)) {
             analysisEngineService.importCsvToTable(tableName, is, columns,
-                    Collections.singletonList("entity_id"));
+                    Collections.singletonList(ENGINE_LABEL_TABLE_ENTITY_COLUMN));
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {

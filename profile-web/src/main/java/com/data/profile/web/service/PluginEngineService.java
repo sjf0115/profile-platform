@@ -1,7 +1,7 @@
 package com.data.profile.web.service;
 
 import com.data.engine.api.DiEngineExecutor;
-import com.data.engine.api.factory.DiEngineFactory;
+import com.data.engine.api.DiEngineFactory;
 import com.data.engine.common.ExecutorRequest;
 import com.data.engine.plugin.bean.JobTask;
 import com.data.engine.plugin.core.SeaTunnelEngineProxy;

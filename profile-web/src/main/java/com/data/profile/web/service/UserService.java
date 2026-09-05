@@ -23,7 +23,6 @@ import com.data.profile.common.utils.UserUtil;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -91,8 +90,7 @@ public class UserService {
         Map<String, List<Role>> roleMap = getRolesByUserIds(userIds);
         // 组装 DTO
         return users.stream().map(u -> {
-            UserDTO dto = new UserDTO();
-            BeanUtils.copyProperties(u, dto);
+            UserDTO dto = UserConverter.do2dto(u);
             dto.setRoles(roleMap.getOrDefault(u.getUserId(), Collections.emptyList()));
             return dto;
         }).collect(Collectors.toList());
@@ -124,8 +122,7 @@ public class UserService {
         if (user == null) {
             return Optional.empty();
         }
-        UserDTO dto = new UserDTO();
-        BeanUtils.copyProperties(user, dto);
+        UserDTO dto = UserConverter.do2dto(user);
         dto.setRoles(userMapper.selectRolesByUserId(userId));
         log.info("根据用户ID {} 获取用户详细信息", userId);
         return Optional.of(dto);

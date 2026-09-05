@@ -4,6 +4,7 @@ import com.data.profile.common.exception.ProfileException;
 import com.data.profile.web.dao.*;
 import com.data.profile.web.dto.ApplicationDTO;
 import com.data.profile.web.dto.ExportDTO;
+import com.data.profile.web.dto.GroupAnalysisDTO;
 import com.data.profile.web.dto.GroupDTO;
 import com.data.profile.web.enums.AssetType;
 import com.data.profile.web.enums.RelationType;
@@ -305,7 +306,7 @@ public class LineageService {
                         result.add(new NodeRef(nodeType, g.getGroupId(), g.getGroupName()));
                     break;
                 case ANALYSIS:
-                    for (GroupAnalysis a : groupAnalysisService.getAnalysisList(new GroupAnalysis()))
+                    for (GroupAnalysisDTO a : groupAnalysisService.getAnalysisList(new GroupAnalysis()))
                         result.add(new NodeRef(nodeType, a.getAnalysisId(), a.getAnalysisName()));
                     break;
                 case EXPORT:

@@ -10,6 +10,7 @@ import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.web.vo.UserLoginVO;
 import com.data.profile.web.vo.UserVO;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
 import java.util.Collections;
@@ -105,6 +106,14 @@ public class UserConverter {
         return Param2DOMapper.INSTANCE.convert(param);
     }
 
+    // DO -> DTO（roles 无对应源字段，由服务层聚合填充）
+    public static UserDTO do2dto(User user) {
+        if (user == null) {
+            return null;
+        }
+        return DO2DTOMapper.INSTANCE.convert(user);
+    }
+
     //------------------------------------------------------------------------------------------------------------------
 
     // DTO -> VO
@@ -145,5 +154,14 @@ public class UserConverter {
         Param2DOMapper INSTANCE = Mappers.getMapper(Param2DOMapper.class);
         @Override
         User convert(UserParam param);
+    }
+
+    // DO -> DTO
+    @Mapper
+    public interface DO2DTOMapper extends BaseConverter<User, UserDTO> {
+        DO2DTOMapper INSTANCE = Mappers.getMapper(DO2DTOMapper.class);
+        @Override
+        @Mapping(target = "roles", ignore = true)
+        UserDTO convert(User user);
     }
 }

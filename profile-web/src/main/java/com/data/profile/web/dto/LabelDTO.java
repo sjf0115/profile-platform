@@ -40,5 +40,6 @@ public class LabelDTO {
     private String entityId;
     private String entityName;
     private String datasetId;
+    private String datasetName;
     private String datasetFieldName;
 }

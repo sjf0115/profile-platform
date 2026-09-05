@@ -1,6 +1,6 @@
 package com.data.engine.plugin.clickhouse;
 
-import com.data.engine.api.factory.AnalysisEngineFactory;
+import com.data.engine.api.AnalysisEngineFactory;
 import com.data.engine.api.catalog.EngineCatalog;
 import com.data.engine.api.query.EngineQuery;
 import com.data.engine.api.sink.EngineSink;

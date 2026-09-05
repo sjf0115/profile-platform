@@ -67,6 +67,8 @@ public class LabelVO {
     private String entityName;
     // 绑定的数据集ID
     private String datasetId;
+    // 绑定的数据集名称
+    private String datasetName;
     // 绑定的数据集字段名称
     private String datasetFieldName;
 }
