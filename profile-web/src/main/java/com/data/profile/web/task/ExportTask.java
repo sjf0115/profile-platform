@@ -3,6 +3,7 @@ package com.data.profile.web.task;
 import com.data.engine.api.DiContext;
 import com.data.profile.common.domain.engine.ProcessResult;
 import com.data.profile.common.enums.ExportMode;
+import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.dto.DataSourceDTO;
 import com.data.profile.web.dto.ExportDTO;
 import com.data.profile.web.engine.AnalysisEngineService;
@@ -137,7 +138,7 @@ public class ExportTask {
      * @param export 投递信息
      */
     private ExportConfig resolveExportConfig(ExportDTO export) {
-        ExportConfig exportConfig = gson.fromJson(export.getExportConfig(), ExportConfig.class);
+        ExportConfig exportConfig = JSONUtils.parseObject(export.getExportConfig(), ExportConfig.class);
         if (exportConfig == null) {
             log.error("获取 [{}] 投递任务投递配置失败", export.getExportId());
             throw new RuntimeException("投递配置获取失败");
@@ -152,11 +153,13 @@ public class ExportTask {
                 log.error("应用投递 [{}] 未找到到对应应用", applicationId);
                 throw new RuntimeException("应用不存在");
             }
-            ExportConfig appConfig = gson.fromJson(app.getTargetConfig(), ExportConfig.class);
+            ExportConfig appConfig = JSONUtils.parseObject(app.getTargetConfig(), ExportConfig.class);
             if (appConfig == null) {
                 log.error("获取 [{}] 应用投递配置失败", applicationId);
                 throw new RuntimeException("投递配置获取失败");
             }
+            appConfig.setApplicationId(exportConfig.getApplicationId());
+            appConfig.setGroupId(exportConfig.getGroupId());
             return appConfig;
         } else {
             // 数据源投递直接返回

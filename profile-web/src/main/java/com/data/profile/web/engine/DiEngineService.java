@@ -88,7 +88,6 @@ public class DiEngineService {
         DiEngineExecutor executor = diEngineFactory.getExecutor();
         executor.init(executorRequest, new Configurations());
         String engineJobId = executor.submit();
-        log.info("提交同步任务成功: jobId={}, engineJobId={}, syncEngine={}", context.getJobId(), engineJobId, diEngine.getEngineType());
         // 轮询作业状态至终态
         ProcessResult result = awaitTerminal(executor, context.getJobId());
 
@@ -96,6 +95,7 @@ public class DiEngineService {
         if (!result.isSuccess()) {
             throw new RuntimeException("同步失败 [" + diEngine.getEngineType() + "]: " + result.getErrorMsg());
         }
+        log.info("提交同步任务成功: jobId={}, engineJobId={}, syncEngine={}", context.getJobId(), engineJobId, diEngine.getEngineType());
         return result;
     }
 

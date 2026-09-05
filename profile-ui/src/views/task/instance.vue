@@ -84,6 +84,13 @@
             </div>
           </template>
         </el-table-column>
+        <el-table-column label="任务类型" width="120" align="center">
+          <template #default="{ row }">
+            <el-tag size="small" :type="getTaskTypeType(getTaskType(row))">
+              {{ getTaskTypeLabel(getTaskType(row)) }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="实例状态" width="110" align="center">
           <template #default="{ row }">
             <el-tag
@@ -182,7 +189,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, ArrowLeft, More, CircleCheck, CircleClose, Loading, Timer } from '@element-plus/icons-vue'
-import type { TaskInstance, TaskInstanceQueryParams } from '@/types'
+import type { Task, TaskInstance, TaskInstanceQueryParams } from '@/types'
 import { taskInstanceApi } from '@/api/taskInstance'
 import { taskApi } from '@/api/task'
 
@@ -225,6 +232,9 @@ const loading = ref(false)
 // 表格数据
 const tableData = ref<TaskInstance[]>([])
 const total = ref(0)
+
+// 任务ID -> 任务信息映射（实例列表接口未填充嵌套 task，由前端拉取任务列表本地关联）
+const taskMap = ref<Record<string, Task>>({})
 
 // 查询参数
 const queryParams = reactive<TaskInstanceQueryParams>({
@@ -272,6 +282,20 @@ const formatDuration = (ms?: number) => {
   return `${seconds}s`
 }
 
+// 获取实例的任务类型（优先嵌套 task，其次本地映射）
+const getTaskType = (row: TaskInstance) => row.task?.task_type ?? taskMap.value[row.task_id]?.task_type
+
+// 获取任务类型标签（与任务列表页保持一致）
+const getTaskTypeLabel = (type?: number) => {
+  const map: Record<number, string> = { 1: '群组计算', 2: '群组投递', 3: '数据集同步' }
+  return map[type || 0] || '未知'
+}
+
+const getTaskTypeType = (type?: number) => {
+  const map: Record<number, any> = { 1: 'success', 2: 'warning', 3: 'primary' }
+  return map[type || 0] || 'info'
+}
+
 // 获取实例列表
 const fetchData = async () => {
   loading.value = true
@@ -286,9 +310,16 @@ const fetchData = async () => {
       start_time_begin: dateRange.value?.[0] ?? undefined,
       start_time_end: dateRange.value?.[1] ?? undefined,
     }
-    const res = await taskInstanceApi.getList(params)
+    // 并行拉取实例列表与任务列表（构建 task_id -> Task 映射，用于展示任务类型）
+    const [res, taskRes] = await Promise.all([
+      taskInstanceApi.getList(params),
+      taskApi.getList(),
+    ])
     tableData.value = res.data.data || []
     total.value = res.data.data?.length || 0
+    const map: Record<string, Task> = {}
+    ;(taskRes.data.data || []).forEach((t) => { map[t.task_id] = t })
+    taskMap.value = map
   } catch (error) {
     console.error('获取实例列表失败:', error)
   } finally {

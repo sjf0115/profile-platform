@@ -53,9 +53,16 @@
           <el-descriptions-item label="任务ID">{{ instanceInfo.task.task_id }}</el-descriptions-item>
           <el-descriptions-item label="任务名称">{{ instanceInfo.task.task_name || '-' }}</el-descriptions-item>
           <el-descriptions-item label="任务类型">
-            <el-tag size="small" type="info">{{ getTaskTypeLabel(instanceInfo.task.task_type) }}</el-tag>
+            <el-tag size="small" :type="getTaskTypeType(instanceInfo.task.task_type)">
+              {{ getTaskTypeLabel(instanceInfo.task.task_type) }}
+            </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="任务描述">{{ instanceInfo.task.task_desc || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="关联业务ID">{{ instanceInfo.task.task_related_id || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="调度类型">
+            <el-tag size="small" type="info">{{ getTriggerTypeLabel(instanceInfo.task.trigger_type) }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="cron 表达式">{{ instanceInfo.task.trigger_cron || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="任务描述" :span="2">{{ instanceInfo.task.task_desc || '-' }}</el-descriptions-item>
         </el-descriptions>
       </el-card>
 
@@ -154,10 +161,21 @@ const getTriggerModeType = (mode?: number) => {
   return map[mode || 0] || 'info'
 }
 
-// 获取任务类型
+// 获取任务类型（与任务列表页保持一致）
 const getTaskTypeLabel = (taskType?: number) => {
-  const map: Record<number, string> = { 1: '群组圈选', 2: '群组投递', 3: '数据集同步' }
+  const map: Record<number, string> = { 1: '群组计算', 2: '群组投递', 3: '数据集同步' }
   return map[taskType || 0] || '未知'
+}
+
+const getTaskTypeType = (taskType?: number) => {
+  const map: Record<number, any> = { 1: 'success', 2: 'warning', 3: 'primary' }
+  return map[taskType || 0] || 'info'
+}
+
+// 获取调度类型（与任务列表页保持一致）
+const getTriggerTypeLabel = (type?: number) => {
+  const map: Record<number, string> = { 1: '手动触发', 2: '每日重复', 3: '小时重复' }
+  return map[type || 0] || '未知'
 }
 
 // 格式化耗时（毫秒 → 秒）
