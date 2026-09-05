@@ -3,9 +3,9 @@ package com.data.engine.api.schema;
 import java.util.Map;
 
 /**
- * 表管理 SPI（分析引擎 Sink 侧）。
+ * 表管理 SPI（分析引擎 DDL 基础契约）。
  *
- * <p>作为 {@code AnalysisEngineFactory} 的子产物（参考 SeaTunnel Catalog+SaveMode、
+ * <p>作为 {@link com.data.engine.api.catalog.EngineCatalog} 的父契约（参考 SeaTunnel Catalog、
  * Linkis EngineConnPlugin 多产物模式），承担：</p>
  * <ul>
  *   <li>Schema 反查：{@link #tableExists}、{@link #getTableSchema}</li>
@@ -14,12 +14,12 @@ import java.util.Map;
  *   <li>Schema 销毁：{@link #dropTable}</li>
  * </ul>
  *
- * <p>实现类内部完成"中性 DataType → 引擎私有类型"映射，业务层零感知。</p>
+ * <p>实现类内部完成“中性 DataType → 引擎私有类型”映射，业务层零感知。</p>
  */
 public interface EngineTableManager {
 
     /**
-     * 初始化连接配置（与 AnalysisEngineExecutor 同源 config Map，含 host/port/database/...）。
+     * 初始化连接配置（config Map，含 host/port/database/...）。
      */
     void init(Map<String, Object> engineConfig) throws Exception;
 

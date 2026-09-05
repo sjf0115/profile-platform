@@ -57,9 +57,9 @@ public class GroupController {
     @GetMapping(value = "/{groupId}/detail")
     public Response<GroupVO> getDetail(@PathVariable(name = "groupId") String groupId) {
         log.info("根据群组ID请求查询群组信息: {}", groupId);
-        Optional<GroupDTO> optional = groupService.getDetail(groupId);
-        if (optional.isPresent()) {
-            return Response.success(GroupConverter.dto2vo(optional.get()));
+        GroupDTO groupDTO = groupService.getDetail(groupId);
+        if (groupDTO != null) {
+            return Response.success(GroupConverter.dto2vo(groupDTO));
         } else {
             return Response.error("请求的群组不存在", ResponseCode.ERROR);
         }

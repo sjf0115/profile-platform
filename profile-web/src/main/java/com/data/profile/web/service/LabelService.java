@@ -2,6 +2,7 @@ package com.data.profile.web.service;
 
 import com.data.engine.api.schema.Column;
 import com.data.profile.common.enums.*;
+import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.converter.LabelConverter;
 import com.data.profile.web.dao.LabelMapper;
 import com.data.profile.web.dto.LabelDTO;
@@ -57,21 +58,21 @@ public class LabelService {
     private AnalysisEngineService analysisEngineService;
 
     /**
-     * 根据查询条件获取标签列表（返回 DO，供内部 Service 使用）
+     * 根据查询条件获取标签列表
      */
-    public List<Label> getList(Label label) {
+    public List<Label> getLabels(Label label) {
         List<Label> labels = labelMapper.selectByParams(label);
-        log.info("根据查询条件获取 {} 个标签", labels.size());
+        log.info("根据查询条件获取标签列表：{}", JSONUtils.toJsonString(labels));
         return labels;
     }
 
     /**
-     * 根据查询条件获取标签列表（返回 DTO，供 Controller 使用）
+     * 根据查询条件获取标签列表
      */
-    public List<LabelDTO> getListDTO(Label label) {
-        List<Label> labels = labelMapper.selectByParams(label);
-        log.info("根据查询条件获取 {} 个标签", labels.size());
+    public List<LabelDTO> getList(Label label) {
+        List<Label> labels = getLabels(label);
         List<LabelDTO> dtos = LabelConverter.do2dtoList(labels);
+        // 补充用户信息
         Map<String, String> userMap = userService.getUserNameMap();
         for (LabelDTO dto : dtos) {
             dto.setOwnerName(userMap.get(dto.getOwner()));
@@ -82,10 +83,17 @@ public class LabelService {
     }
 
     /**
+     * 返回标签
+     */
+    public Label getLabel(String labelId) {
+        return labelMapper.selectByLabelId(labelId);
+    }
+
+    /**
      * 根据标签ID获取标签详细信息（返回 DTO，供 Controller 使用）
      */
     public LabelDTO getDetail(String labelId) {
-        Label label = labelMapper.selectByLabelId(labelId);
+        Label label = getLabel(labelId);
         if (label == null) {
             return null;
         }
@@ -95,7 +103,6 @@ public class LabelService {
         dto.setOwnerName(userMap.get(dto.getOwner()));
         dto.setCreatorName(userMap.get(dto.getCreator()));
         dto.setModifierName(userMap.get(dto.getModifier()));
-        // entity info 已由 MyBatis JOIN 查出，无需二次查询
         // 填充数据集&字段
         DatasetField datasetField = datasetFieldService.getDetailByRelatedId(labelId);
         if (datasetField != null) {
@@ -103,13 +110,6 @@ public class LabelService {
             dto.setDatasetFieldName(datasetField.getFieldName());
         }
         return dto;
-    }
-
-    /**
-     * 返回标签 DO（供内部 Service 使用）
-     */
-    public Label getDetailDO(String labelId) {
-        return labelMapper.selectByLabelId(labelId);
     }
 
     /**
@@ -274,7 +274,7 @@ public class LabelService {
      */
     @Transactional
     public int delete(String labelId) {
-        // 删除标签
+        // 1. 删除基本检查
         Label label = labelMapper.selectByLabelId(labelId);
         if (Objects.equals(label, null)) {
             log.error("标签 {} 不存在，无法删除", labelId);
@@ -285,21 +285,26 @@ public class LabelService {
             throw new RuntimeException("内置标签不允许删除");
         }
 
-        // 删除保护：检查下游依赖
+        // 2. 删除下游依赖检查
         lineageService.checkDeletable(AssetType.LABEL.getCode(), labelId);
 
-        // 数据集导入方式：标签解除绑定数据集
-        DatasetField boundField = datasetFieldService.getDetailByRelatedId(labelId);
-        if (boundField != null && Objects.equals(label.getSourceType(), LabelSourceType.DATASET.getCode())) {
-            datasetFieldService.deleteByDatasetIdAndFieldName(boundField.getDatasetId(), boundField.getFieldName());
-        }
-
-        // 文件上传方式：清理引擎表
-        if (Objects.equals(label.getSourceType(), LabelSourceType.FILE.getCode())) {
+        // 3. 删除后续逻辑
+        Integer sourceType = label.getSourceType();
+        if (Objects.equals(sourceType, LabelSourceType.DATASET.getCode())) {
+            // 数据集导入方式：标签解除绑定数据集
+            DatasetField boundField = datasetFieldService.getDetailByRelatedId(labelId);
+            if (boundField != null) {
+                datasetFieldService.deleteByDatasetIdAndFieldName(boundField.getDatasetId(), boundField.getFieldName());
+            }
+        } else if (Objects.equals(label.getSourceType(), LabelSourceType.FILE.getCode())) {
+            // 文件上传方式：清理引擎表
             analysisEngineService.dropTable(ENGINE_LABEL_TABLE_PREFIX + labelId);
         }
 
+        // 4. 删除标签
         log.info("删除标签：{}({})", label.getLabelName(), labelId);
+
+        // 5. 更新血缘
         lineageService.removeLineage(AssetType.LABEL.getCode(), labelId);
         return labelMapper.deleteByLabelId(labelId);
     }
@@ -420,6 +425,8 @@ public class LabelService {
         reimportFileTable(labelId, labelConfig.getPhysicalPath());
         log.info("文件上传标签刷新成功: labelId={}", labelId);
     }
+
+    //------------------------------------------------------------------------------------------------------------------
 
     /**
      * 重建文件上传标签的引擎表：删除旧表 → 解析指定 CSV 文件重新导入

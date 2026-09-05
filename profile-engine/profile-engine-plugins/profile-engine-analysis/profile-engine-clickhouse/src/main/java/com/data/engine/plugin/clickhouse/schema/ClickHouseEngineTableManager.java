@@ -33,7 +33,7 @@ public class ClickHouseEngineTableManager implements EngineTableManager {
     /** 系统列名集合（diff 时排除） */
     private static final Set<String> SYSTEM_COLUMNS = new HashSet<>(Arrays.asList(SYS_SYNC_TIME, SYS_VERSION));
 
-    private Map<String, Object> engineConfig;
+    protected Map<String, Object> engineConfig;
 
     @Override
     public void init(Map<String, Object> engineConfig) {
@@ -337,7 +337,7 @@ public class ClickHouseEngineTableManager implements EngineTableManager {
     // 连接 / 工具
     // ---------------------------------------------------------------------------------------------
 
-    private Connection getConnection() throws SQLException {
+    protected Connection getConnection() throws SQLException {
         if (engineConfig == null) {
             throw new SQLException("ClickHouseTableManager not initialized");
         }
@@ -353,7 +353,7 @@ public class ClickHouseEngineTableManager implements EngineTableManager {
         return DriverManager.getConnection(url, user, password);
     }
 
-    private String resolveDatabase(String database) {
+    protected String resolveDatabase(String database) {
         if (StringUtils.isNotBlank(database)) {
             return database;
         }
@@ -366,7 +366,7 @@ public class ClickHouseEngineTableManager implements EngineTableManager {
         return "default";
     }
 
-    private String qualified(String database, String tableName) {
+    protected String qualified(String database, String tableName) {
         if (StringUtils.isBlank(database)) {
             return "`" + tableName + "`";
         }

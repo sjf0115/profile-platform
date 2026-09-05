@@ -1,6 +1,6 @@
 package com.data.profile.web.service;
 
-import com.data.engine.api.ScheduleContext;
+import com.data.engine.api.context.ScheduleContext;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.converter.DataSourceConverter;
 import com.data.profile.web.converter.DatasetConverter;
@@ -14,7 +14,6 @@ import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.engine.ScheduleEngineService;
 import com.data.profile.web.model.*;
 import com.data.profile.web.enums.AssetType;
-import com.data.profile.web.vo.DatasetFieldVO;
 import com.data.profile.web.dto.DatasetDTO;
 import com.data.profile.web.security.UserContextHolder;
 import com.data.profile.common.enums.*;
@@ -23,7 +22,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

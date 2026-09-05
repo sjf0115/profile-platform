@@ -176,15 +176,11 @@ public class UserProfileService {
     }
 
     /**
-     * 执行随机用户查询
+     * 执行随机用户查询（抽样 SQL 由门面按引擎模板渲染，服务层零方言感知）
      */
     private List<UserProfileRowVO> executeRandomUserQuery(String tableName, int limit) {
-        String sql = String.format(
-                "SELECT * FROM %s ORDER BY rand() LIMIT %d",
-                tableName, limit
-        );
         try {
-            List<Map<String, Object>> rows = analysisEngineService.executeQueryList(sql);
+            List<Map<String, Object>> rows = analysisEngineService.getRandomRows(tableName, limit);
             return rows.stream()
                     .map(this::mapToUserProfileRowVO)
                     .collect(Collectors.toList());

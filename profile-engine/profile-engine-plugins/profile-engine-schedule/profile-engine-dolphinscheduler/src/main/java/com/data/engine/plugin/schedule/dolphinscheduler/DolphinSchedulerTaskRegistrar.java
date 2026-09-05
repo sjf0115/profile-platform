@@ -1,6 +1,6 @@
 package com.data.engine.plugin.schedule.dolphinscheduler;
 
-import com.data.engine.api.ScheduleContext;
+import com.data.engine.api.context.ScheduleContext;
 import com.data.engine.api.ScheduleTaskRegistrar;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

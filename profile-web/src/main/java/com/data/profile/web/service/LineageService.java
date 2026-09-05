@@ -293,7 +293,7 @@ public class LineageService {
                         result.add(new NodeRef(nodeType, ds.getDatasetId(), ds.getDatasetName()));
                     break;
                 case LABEL:
-                    for (Label l : labelService.getList(new Label()))
+                    for (Label l : labelService.getLabels(new Label()))
                         result.add(new NodeRef(nodeType, l.getLabelId(), l.getLabelName()));
                     break;
                 case EVENT:

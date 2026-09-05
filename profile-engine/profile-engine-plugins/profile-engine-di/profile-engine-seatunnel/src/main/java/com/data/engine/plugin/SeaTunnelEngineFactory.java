@@ -1,8 +1,7 @@
 package com.data.engine.plugin;
 
-import com.data.engine.api.DiEngineFactory;
+import com.data.engine.api.factory.DiEngineFactory;
 import com.data.engine.api.DiRequestBuilder;
-import com.data.engine.api.RuntimeEnvironment;
 import com.data.engine.plugin.builder.SeaTunnelRequestBuilder;
 import com.data.engine.plugin.executor.SeaTunnelDiEngineExecutor;
 import com.data.profile.common.config.CheckResult;
@@ -16,11 +15,6 @@ import com.data.profile.common.config.Config;
  * 日期：2026/4/12 13:05
  */
 public class SeaTunnelEngineFactory implements DiEngineFactory {
-    @Override
-    public void prepare(RuntimeEnvironment env) throws Exception {
-
-    }
-
     @Override
     public void setConfig(Config config) {
 

@@ -1,7 +1,7 @@
 package com.data.profile.web.engine;
 
 import com.data.connector.api.ConnectorFactory;
-import com.data.engine.api.DiContext;
+import com.data.engine.api.context.DiContext;
 import com.data.profile.common.utils.JSONUtils;
 import com.data.profile.web.config.ProfileEngineConfig;
 import com.data.profile.web.model.DataSource;

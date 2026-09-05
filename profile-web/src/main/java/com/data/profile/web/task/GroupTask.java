@@ -45,7 +45,7 @@ public class GroupTask {
 
     /**
      * 执行群组圈选（Task dispatch 调用）。
-     * 翻译规则 → 写临时表 → EXCHANGE TABLES 原子交换 → 更新 groupCount。
+     * 翻译规则 → 写临时表 → 原子交换（swapTables） → 更新 groupCount。
      *
      * @param groupId 群组ID
      */
@@ -77,13 +77,11 @@ public class GroupTask {
                 throw new IllegalStateException("群组 " + groupId + " 存在自引用，无法执行圈选");
             }
 
-            // 验证被引用群组的结果表存在（前置防御）
+            // 验证被引用群组的结果表存在（前置防御，门面 tableExists 走 EngineCatalog 元数据反查）
             for (String refGroupId : referencedGroupIds) {
                 String refTable = ENGINE_GROUP_TABLE_PREFIX + refGroupId;
-                String checkSql = "EXISTS TABLE " + refTable;
                 try {
-                    long exists = analysisEngineService.executeCountQuery(checkSql);
-                    if (exists == 0) {
+                    if (!analysisEngineService.tableExists(refTable)) {
                         throw new IllegalStateException(
                                 "被引用群组 " + refGroupId + " 尚未执行圈选，请先执行该群组");
                     }
@@ -113,9 +111,9 @@ public class GroupTask {
         String tmpTable = resultTable + "_tmp";
 
         try {
-            // 6. 建临时表（先 DROP 再 CREATE，确保干净）
-            analysisEngineService.executeStatement("DROP TABLE IF EXISTS " + tmpTable);
-            analysisEngineService.executeStatement(buildCreateTableSql(tmpTable));
+            // 6. 建临时表（先 DROP 再 CREATE，DDL 由引擎插件生成，结构由 GroupService 统一定义）
+            analysisEngineService.dropTable(tmpTable);
+            groupService.createGroupResultTable(tmpTable);
 
             // 7. 写入圈选结果到临时表
             String insertSql = String.format(
@@ -124,13 +122,12 @@ public class GroupTask {
             analysisEngineService.executeStatement(insertSql);
             log.info("群组圈选 - 数据写入临时表完成: {}", tmpTable);
 
-            // 8. 原子交换（ClickHouse EXCHANGE TABLES 原子操作，其他读者无感知）
-            String exchangeSql = String.format("EXCHANGE TABLES %s AND %s", resultTable, tmpTable);
-            analysisEngineService.executeStatement(exchangeSql);
+            // 8. 原子交换（门面 swapTables → EngineCatalog.atomicSwap，其他读者无感知）
+            analysisEngineService.swapTables(resultTable, tmpTable);
             log.info("群组圈选 - 原子交换完成: {} <-> {}", resultTable, tmpTable);
 
-            // 9. 清理旧临时表（交换后里面是旧数据）
-            analysisEngineService.executeStatement("DROP TABLE IF EXISTS " + tmpTable);
+            // 9. 清理旧临时表（交换后里面是旧数据；门面 dropTable 非阻塞）
+            analysisEngineService.dropTable(tmpTable);
 
             // 10. 查询结果数量
             String countSql = "SELECT COUNT(*) FROM " + resultTable;
@@ -180,18 +177,6 @@ public class GroupTask {
     }
 
     //------------------------------------------------------------------------------------------------------------------
-
-    /**
-     * 构建结果表 CREATE TABLE 语句。
-     */
-    private String buildCreateTableSql(String tableName) {
-        return String.format(
-                "CREATE TABLE IF NOT EXISTS %s (" +
-                        "entity_id String COMMENT '实体ID', " +
-                        "_created_time DateTime DEFAULT now() COMMENT '圈选时间'" +
-                        ") ENGINE = MergeTree() ORDER BY entity_id SETTINGS index_granularity = 8192",
-                tableName);
-    }
 
     /**
      * 收集 RuleExpression 中所有被引用的群组 ID（type=2 的 filter）。

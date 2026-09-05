@@ -1,9 +1,8 @@
 package com.data.engine.plugin.datax;
 
 import com.data.engine.api.DiEngineExecutor;
-import com.data.engine.api.DiEngineFactory;
+import com.data.engine.api.factory.DiEngineFactory;
 import com.data.engine.api.DiRequestBuilder;
-import com.data.engine.api.RuntimeEnvironment;
 import com.data.engine.plugin.datax.builder.DataXRequestBuilder;
 import com.data.engine.plugin.datax.executor.DataXDiEngineExecutor;
 import com.data.profile.common.config.CheckResult;
@@ -18,11 +17,6 @@ public class DataXEngineFactory implements DiEngineFactory {
 
     private final DiRequestBuilder requestBuilder = new DataXRequestBuilder();
     private Config config;
-
-    @Override
-    public void prepare(RuntimeEnvironment env) throws Exception {
-        // 嵌入式 DataX 无需提前 prepare 集群，留空
-    }
 
     @Override
     public void setConfig(Config config) {

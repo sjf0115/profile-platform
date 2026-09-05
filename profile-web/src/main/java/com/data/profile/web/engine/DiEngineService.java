@@ -1,11 +1,11 @@
 package com.data.profile.web.engine;
 
 import com.data.engine.api.DiEngineExecutor;
-import com.data.engine.api.DiEngineFactory;
+import com.data.engine.api.factory.DiEngineFactory;
 import com.data.engine.api.DiRequestBuilder;
 import com.data.engine.api.EngineJobState;
 import com.data.engine.api.EngineJobStatus;
-import com.data.engine.api.DiContext;
+import com.data.engine.api.context.DiContext;
 import com.data.engine.common.ExecutorRequest;
 import com.data.profile.common.config.Configurations;
 import com.data.profile.common.domain.engine.ProcessResult;

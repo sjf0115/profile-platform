@@ -41,9 +41,9 @@ public class LabelController {
     // 标签列表
     @PostMapping(value = "/list")
     public Response<List<LabelVO>> getList(@RequestBody LabelParam param) {
-        log.info("查询标签列表: {}", JSONUtils.toJsonString(param));
+        log.info("请求查询标签列表: {}", JSONUtils.toJsonString(param));
         Label label = LabelConverter.param2do(param);
-        List<LabelDTO> dtos = labelService.getListDTO(label);
+        List<LabelDTO> dtos = labelService.getList(label);
         List<LabelVO> voList = LabelConverter.dto2voList(dtos);
         return Response.success(voList);
     }
@@ -51,7 +51,7 @@ public class LabelController {
     // 标签详情
     @GetMapping(value = "/{labelId}/detail")
     public Response<LabelVO> getDetail(@PathVariable("labelId") String labelId) {
-        log.info("查询标签详情: labelId={}", labelId);
+        log.info("请求查询标签详情: labelId={}", labelId);
         LabelDTO dto = labelService.getDetail(labelId);
         if (dto == null) {
             return Response.error("请求的标签不存在", ResponseCode.ERROR);
@@ -64,7 +64,7 @@ public class LabelController {
     @RequiresPermission(code = "label:edit", name = "标签-编辑")
     @PostMapping
     public Response<Integer> create(@RequestBody LabelRequest request) {
-        log.info("创建标签: {}", JSONUtils.toJsonString(request));
+        log.info("请求创建标签: {}", JSONUtils.toJsonString(request));
         Label label = LabelConverter.request2do(request);
         int result = labelService.create(label, request.getDatasetId(), request.getDatasetFieldName());
         if (result > 0) {
@@ -78,7 +78,7 @@ public class LabelController {
     @RequiresPermission(code = "label:edit", name = "标签-编辑")
     @PutMapping(value = "/{labelId}")
     public Response<Integer> update(@PathVariable("labelId") String labelId, @RequestBody LabelRequest request) {
-        log.info("更新标签: labelId={}, {}", labelId, JSONUtils.toJsonString(request));
+        log.info("请求更新标签: labelId={}, {}", labelId, JSONUtils.toJsonString(request));
         Label label = LabelConverter.request2do(request);
         int result = labelService.update(labelId, label, request.getDatasetId(), request.getDatasetFieldName());
         if (result > 0) {
@@ -92,7 +92,7 @@ public class LabelController {
     @RequiresPermission(code = "label:delete", name = "标签-删除")
     @DeleteMapping(value = "/{labelId}")
     public Response<Integer> delete(@PathVariable("labelId") String labelId) {
-        log.info("删除标签: labelId={}", labelId);
+        log.info("请求删除标签: {}", labelId);
         int result = labelService.delete(labelId);
         if (result > 0) {
             return Response.success(result);
@@ -113,7 +113,7 @@ public class LabelController {
     // 线上可用标签（群组规则/分析场景）
     @GetMapping(value = "/online")
     public Response<List<LabelVO>> getOnlineLabels(@RequestParam(name = "entity_identifier_id") String entityIdentifierId) {
-        log.info("获取实体 {} 所有在线标签", entityIdentifierId);
+        log.info("请求获取实体 {} 所有在线标签", entityIdentifierId);
         List<Label> labels = labelService.getOnlineLabels(entityIdentifierId);
         return Response.success(LabelConverter.do2voList(labels));
     }
@@ -149,7 +149,7 @@ public class LabelController {
     // 上传 CSV 文件到 MinIO
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Response<FileImportLabelConfig> upload(@RequestPart("file") MultipartFile file) {
-        log.info("上传标签文件: {}", file.getOriginalFilename());
+        log.info("请求上传标签文件: {}", file.getOriginalFilename());
         FileImportLabelConfig config = labelService.upload(file);
         if (config != null) {
             return Response.success(config);
@@ -161,7 +161,7 @@ public class LabelController {
     // 取消上传（删除 MinIO 文件）
     @DeleteMapping(value = "/cancel-upload")
     public Response<Void> cancelUploaded(@RequestParam(name = "file_key") String fileKey) {
-        log.info("取消标签文件上传: {}", fileKey);
+        log.info("请求取消标签文件上传: {}", fileKey);
         labelService.cancelUpload(fileKey);
         return Response.success(null);
     }
@@ -184,7 +184,7 @@ public class LabelController {
     @RequiresPermission(code = "label:edit", name = "标签-编辑")
     @PostMapping(value = "/{labelId}/refresh")
     public Response<Void> refreshFileUpload(@PathVariable("labelId") String labelId) {
-        log.info("刷新文件上传标签: labelId={}", labelId);
+        log.info("请求刷新文件上传标签: labelId={}", labelId);
         labelService.refreshFileUpload(labelId);
         return Response.success(null);
     }

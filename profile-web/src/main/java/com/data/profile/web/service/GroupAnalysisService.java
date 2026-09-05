@@ -18,7 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -304,7 +303,7 @@ public class GroupAnalysisService {
      * 解析标签元数据: labelId -> DatasetField -> Dataset
      */
     private LabelMeta resolveLabelMeta(String labelId) {
-        Label label = labelService.getDetailDO(labelId);
+        Label label = labelService.getLabel(labelId);
         if (label == null) {
             log.warn("标签 {} 不存在", labelId);
             return null;

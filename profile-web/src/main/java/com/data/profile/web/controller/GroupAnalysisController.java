@@ -187,9 +187,8 @@ public class GroupAnalysisController {
         vo.setCompareGroupIds(parseJsonArray(analysis.getCompareGroupIds()));
         vo.setLabelIds(parseJsonArray(analysis.getLabelIds()));
         // 填充群组信息
-        Optional<GroupDTO> groupOpt = groupService.getDetail(analysis.getGroupId());
-        if (groupOpt.isPresent()) {
-            GroupDTO group = groupOpt.get();
+        GroupDTO group = groupService.getDetail(analysis.getGroupId());
+        if (group != null) {
             vo.setGroupName(group.getGroupName());
             vo.setGroupCount(group.getGroupCount());
             vo.setGroupType(group.getGroupType());

@@ -1,6 +1,6 @@
 package com.data.profile.web.task;
 
-import com.data.engine.api.DiContext;
+import com.data.engine.api.context.DiContext;
 import com.data.engine.api.schema.TableSchema;
 import com.data.profile.common.domain.engine.ProcessResult;
 import com.data.profile.web.converter.DataSourceConverter;

@@ -1,7 +1,7 @@
 package com.data.engine.plugin.datax.builder;
 
 import com.data.engine.api.DiRequestBuilder;
-import com.data.engine.api.DiContext;
+import com.data.engine.api.context.DiContext;
 import com.data.engine.common.ExecutorRequest;
 import com.data.engine.plugin.datax.datasource.JdbcDataXDataSource;
 import com.data.engine.plugin.datax.helper.DataXJobBuildRequest;

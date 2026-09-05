@@ -1,6 +1,7 @@
 package com.data.profile.web.service;
 
 import com.beust.jcommander.internal.Lists;
+import com.data.engine.api.schema.Column;
 import com.data.profile.common.enums.*;
 import com.data.profile.web.converter.TaskInstanceConverter;
 import com.data.profile.web.dao.GroupMapper;
@@ -94,10 +95,10 @@ public class GroupService {
      * @param groupId 群组ID
      * @return 群组 DTO
      */
-    public Optional<GroupDTO> getDetail(String groupId) {
+    public GroupDTO getDetail(String groupId) {
         Group group = groupMapper.selectByGroupId(groupId);
         if (group == null) {
-            return Optional.empty();
+            return null;
         }
         GroupDTO dto = toDTO(group);
         // 获取群组调度配置
@@ -113,7 +114,7 @@ public class GroupService {
         TaskInstance latestInstance = taskInstanceService.getLatestByRelatedId(groupId);
         dto.setTaskInstance(TaskInstanceConverter.do2vo(latestInstance));
         log.info("根据群组ID获取群组详细信息: {}", gson.toJson(dto));
-        return Optional.of(dto);
+        return dto;
     }
 
     /**
@@ -213,8 +214,6 @@ public class GroupService {
             }
             log.info("SQL创建类型群组，SQL: {}", sqlText);
         }
-
-
 
         int result = groupMapper.insertSelective(group);
         log.info("新增群组: {}", gson.toJson(group));
@@ -380,21 +379,6 @@ public class GroupService {
             throw new IllegalArgumentException("仅支持规则创建、SQL创建和文件上传创建的群组进行预估");
         }
     }
-
-    /**
-     * 手动立即执行圈选任务
-     * @param groupId 群组ID
-     * @return 执行实例
-     */
-    /*public TaskInstance execute(String groupId) {
-        // 获取关联任务
-        // TODO 需要根据群组ID和任务类型
-        Task task = taskService.getDetailByRelatedId(groupId);
-        if (task == null) {
-            throw new RuntimeException("关联ID " + groupId + " 对应的任务不存在");
-        }
-        return taskExecutionService.executeTask(task.getTaskId(), TriggerMode.MANUAL);
-    }*/
 
     //------------------------------------------------------------------------------------------------------------------
     /**
@@ -567,17 +551,10 @@ public class GroupService {
      * <p>在分析引擎中创建群组结果表，用于存储圈选结果。</p>
      * <p>建表失败不阻塞群组创建流程。</p>
      */
-    // TODO 有问题 不同引擎实现方式不同 需要沉淀到引擎层
     private void createGroupEngineTable(Group group) {
         String tableName = ENGINE_GROUP_TABLE_PREFIX + group.getGroupId();
-        String createSql = String.format(
-                "CREATE TABLE IF NOT EXISTS %s (" +
-                        ENGINE_GROUP_TABLE_ENTITY +  " String COMMENT '实体ID', " +
-                        "_created_time DateTime DEFAULT now() COMMENT '圈选时间'" +
-                        ") ENGINE = MergeTree() ORDER BY " + ENGINE_GROUP_TABLE_ENTITY + " SETTINGS index_granularity = 8192",
-                tableName);
         try {
-            analysisEngineService.executeStatement(createSql);
+            createGroupResultTable(tableName);
             log.info("群组引擎表创建成功: {}", tableName);
         } catch (Exception e) {
             log.warn("群组引擎表创建失败（非阻塞）: table={}, reason={}", tableName, e.getMessage());
@@ -585,17 +562,30 @@ public class GroupService {
     }
 
     /**
+     * 按指定表名创建群组结果表结构（结果表 / 圈选临时表共用）。
+     * <p>结构：entity_id 业务列 + 引擎系统列（由插件自动附加），
+     * 中性 Column 定义，DDL 方言由引擎插件生成，服务层零 SQL。</p>
+     *
+     * @param tableName 引擎表名（如 profile_group_xxx / profile_group_xxx_tmp）
+     */
+    public void createGroupResultTable(String tableName) {
+        List<Column> columns = Collections.singletonList(Column.builder()
+                .name(ENGINE_GROUP_TABLE_ENTITY)
+                .dataType(DataType.STRING_TYPE)
+                .comment("实体ID")
+                .build());
+        analysisEngineService.createTable(tableName, null, columns,
+                Collections.singletonList(ENGINE_GROUP_TABLE_ENTITY));
+    }
+
+    /**
      * 删除群组引擎表
-     * <p>从分析引擎中删除群组结果表。</p>
+     * <p>从分析引擎中删除群组结果表（门面 dropTable 非阻塞，失败仅记录日志）。</p>
      */
     private void dropGroupEngineTable(String groupId) {
         String tableName = ENGINE_GROUP_TABLE_PREFIX + groupId;
-        try {
-            analysisEngineService.executeStatement("DROP TABLE IF EXISTS " + tableName);
-            log.info("群组引擎表删除成功: {}", tableName);
-        } catch (Exception e) {
-            log.warn("群组引擎表删除失败（非阻塞）: table={}, reason={}", tableName, e.getMessage());
-        }
+        analysisEngineService.dropTable(tableName);
+        log.info("群组引擎表删除完成: {}", tableName);
     }
 
     /**

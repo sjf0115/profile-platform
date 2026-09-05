@@ -1,7 +1,7 @@
 package com.data.profile.web.service;
 
 import com.data.engine.api.DiEngineExecutor;
-import com.data.engine.api.DiEngineFactory;
+import com.data.engine.api.factory.DiEngineFactory;
 import com.data.engine.common.ExecutorRequest;
 import com.data.engine.plugin.bean.JobTask;
 import com.data.engine.plugin.core.SeaTunnelEngineProxy;
@@ -12,7 +12,6 @@ import com.data.profile.common.utils.FileUtil;
 import com.data.profile.web.dto.DataSourceDTO;
 import com.data.profile.web.engine.AnalysisEngineService;
 import com.data.profile.web.engine.DiEngineService;
-import com.data.profile.web.model.DataSource;
 import com.data.spi.PluginLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

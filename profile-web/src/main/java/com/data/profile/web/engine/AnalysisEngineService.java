@@ -2,16 +2,15 @@ package com.data.profile.web.engine;
 
 import com.data.connector.api.ConnectorFactory;
 import com.data.connector.api.TypeConverter;
-import com.data.engine.api.AnalysisEngineFactory;
+import com.data.engine.api.factory.AnalysisEngineFactory;
 import com.data.engine.api.catalog.EngineCatalog;
+import com.data.engine.api.query.EngineQuery;
 import com.data.engine.api.schema.Column;
 import com.data.engine.api.schema.SchemaDiff;
-import com.data.engine.api.schema.EngineTableManager;
 import com.data.engine.api.schema.TableSchema;
 import com.data.engine.api.sink.EngineSink;
 import com.data.profile.common.enums.DataType;
 import com.data.profile.common.utils.JSONUtils;
-import com.data.profile.web.dto.DatasetDTO;
 import com.data.profile.web.model.DataSource;
 import com.data.profile.web.model.Dataset;
 import com.data.profile.web.model.DatasetField;
@@ -24,10 +23,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,6 +46,9 @@ public class AnalysisEngineService {
     @Resource
     private EngineService engineService;
 
+    @Resource
+    private SqlTemplateEngine sqlTemplateEngine;
+
     // -------------------------------------------------------------------------
     // SQL 执行能力（群组圈选、预估等场景使用）
     // -------------------------------------------------------------------------
@@ -59,28 +57,14 @@ public class AnalysisEngineService {
      * 执行 COUNT 查询并返回结果数。
      */
     public long executeCountQuery(String sql) throws Exception {
-        Engine analysisEngine = getDefaultAnalysisEngine();
-        Map<String, Object> config = parseConfig(analysisEngine.getConfig());
-        try (Connection conn = getAnalysisConnection(config);
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            if (rs.next()) {
-                return rs.getLong(1);
-            }
-            return 0L;
-        }
+        return getEngineQuery().executeCount(sql);
     }
 
     /**
      * 执行 DDL/DML（建表、TRUNCATE、INSERT INTO ... SELECT 等）。
      */
     public void executeStatement(String sql) throws Exception {
-        Engine analysisEngine = getDefaultAnalysisEngine();
-        Map<String, Object> config = parseConfig(analysisEngine.getConfig());
-        try (Connection conn = getAnalysisConnection(config);
-             Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-        }
+        getEngineQuery().executeStatement(sql);
     }
 
     /**
@@ -88,39 +72,25 @@ public class AnalysisEngineService {
      * 每行数据以 Map 形式返回，key 为列名，value 为列值。
      */
     public List<Map<String, Object>> executeQueryList(String sql) throws Exception {
-        Engine analysisEngine = getDefaultAnalysisEngine();
-        Map<String, Object> config = parseConfig(analysisEngine.getConfig());
-        List<Map<String, Object>> results = new ArrayList<>();
-        try (Connection conn = getAnalysisConnection(config);
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            java.sql.ResultSetMetaData metaData = rs.getMetaData();
-            int columnCount = metaData.getColumnCount();
-            while (rs.next()) {
-                Map<String, Object> row = new LinkedHashMap<>();
-                for (int i = 1; i <= columnCount; i++) {
-                    String columnName = metaData.getColumnLabel(i);
-                    Object value = rs.getObject(i);
-                    row.put(columnName, value);
-                }
-                results.add(row);
-            }
-        }
-        return results;
+        return getEngineQuery().executeQuery(sql);
     }
 
     /**
-     * 通过分析引擎配置建立 JDBC 连接。
+     * 随机抽样返回指定表的行（画像展示随机用户等场景）。
+     *
+     * <p>方言隔离：抽样 SQL 由引擎模板渲染（sql-templates/{engineType}/random_sample.ftl），
+     * 服务层零 rand()/random() 方言感知。</p>
+     *
+     * @param tableName 表名
+     * @param limit     抽样行数
+     * @return 抽样行列表（key 为列名）
      */
-    private Connection getAnalysisConnection(Map<String, Object> config) throws Exception {
-        String host = getString(config, "host");
-        Object portObj = config.get("port");
-        int port = portObj instanceof Number ? ((Number) portObj).intValue() : Integer.parseInt(String.valueOf(portObj));
-        String database = getString(config, "database");
-        String username = getString(config, "username");
-        String password = getString(config, "password");
-        String url = String.format("jdbc:clickhouse://%s:%d/%s", host, port, database);
-        return DriverManager.getConnection(url, username, password);
+    public List<Map<String, Object>> getRandomRows(String tableName, int limit) throws Exception {
+        Map<String, Object> params = new HashMap<>();
+        params.put("tableName", tableName);
+        params.put("limit", limit);
+        String sql = sqlTemplateEngine.render("random_sample.ftl", params);
+        return executeQueryList(sql);
     }
 
     /**
@@ -148,16 +118,16 @@ public class AnalysisEngineService {
         //
         String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(analysisEngine.getEngineType()));
         AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class).getOrCreatePlugin(pluginName);
-        EngineTableManager tm = factory.getTableManager();
-        if (tm == null) {
-            log.error("分析引擎 [{}] 未实现 TableManager，跳过删除引擎表", analysisEngine.getEngineType());
+        EngineCatalog catalog = factory.getEngineCatalog();
+        if (catalog == null) {
+            log.error("分析引擎 [{}] 未实现 EngineCatalog，跳过删除引擎表", analysisEngine.getEngineType());
             return;
         }
 
         Map<String, Object> engineConfig = parseConfig(analysisEngine.getConfig());
         try {
-            tm.init(engineConfig);
-            tm.dropTable(database, tableName);
+            catalog.init(engineConfig);
+            catalog.dropTable(database, tableName);
             log.info("成功删除引擎表: {}.{}", database, tableName);
         } catch (Exception e) {
             log.error("删除引擎表 [{}.{}] 失败：{}", database, tableName, e.getMessage());
@@ -207,6 +177,24 @@ public class AnalysisEngineService {
     }
 
     /**
+     * 原子交换两张引擎表（通过 EngineCatalog.atomicSwap，如群组结果表新旧无空窗切换）。
+     *
+     * <p>引擎不支持时抛异常（如非 ClickHouse Atomic 库），由调用方决定降级策略。</p>
+     *
+     * @param tableA 表 A
+     * @param tableB 表 B
+     */
+    public void swapTables(String tableA, String tableB) {
+        try {
+            getEngineCatalog().atomicSwap(getDatabase(), tableA, tableB);
+            log.info("引擎表原子交换成功: {} <-> {}", tableA, tableB);
+        } catch (Exception e) {
+            log.error("引擎表原子交换失败: {} <-> {}", tableA, tableB, e);
+            throw new RuntimeException("引擎表原子交换失败: " + tableA + " <-> " + tableB, e);
+        }
+    }
+
+    /**
      * 反查默认库下引擎表的列名列表（TableManager schema 反查，导出场景组装同步契约用）。
      */
     public List<String> getEngineTableColumnNames(String tableName) {
@@ -214,12 +202,12 @@ public class AnalysisEngineService {
             Engine analysisEngine = getDefaultAnalysisEngine();
             String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(analysisEngine.getEngineType()));
             AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class).getOrCreatePlugin(pluginName);
-            EngineTableManager tm = factory.getTableManager();
-            if (tm == null) {
-                throw new IllegalStateException("分析引擎 [" + analysisEngine.getEngineType() + "] 未实现 TableManager");
+            EngineCatalog catalog = factory.getEngineCatalog();
+            if (catalog == null) {
+                throw new IllegalStateException("分析引擎 [" + analysisEngine.getEngineType() + "] 未实现 EngineCatalog");
             }
-            tm.init(parseConfig(analysisEngine.getConfig()));
-            TableSchema schema = tm.getTableSchema(getDatabase(), tableName);
+            catalog.init(parseConfig(analysisEngine.getConfig()));
+            TableSchema schema = catalog.getTableSchema(getDatabase(), tableName);
             if (schema == null) {
                 throw new IllegalStateException("引擎表不存在: " + tableName);
             }
@@ -319,6 +307,28 @@ public class AnalysisEngineService {
     }
 
     /**
+     * 获取引擎 Query（交互式 SQL 执行通道），含 init 与 null 校验。
+     */
+    private EngineQuery getEngineQuery() {
+        Engine analysisEngine = getDefaultAnalysisEngine();
+        String engineType = analysisEngine.getEngineType();
+        String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(engineType));
+        AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class).getOrCreatePlugin(pluginName);
+        EngineQuery query = factory.getEngineQuery();
+        if (query == null) {
+            log.error("分析引擎 [{}] 未实现 EngineQuery", engineType);
+            throw new RuntimeException("分析引擎 [" + engineType + "] 未实现 EngineQuery，请联系管理员");
+        }
+        try {
+            query.init(parseConfig(analysisEngine.getConfig()));
+        } catch (Exception e) {
+            log.error("分析引擎 [{}] 初始化 EngineQuery 失败: {}", engineType, e.getMessage());
+            throw new RuntimeException("分析引擎 [" + engineType + "] 初始化 EngineQuery 失败，请联系管理员");
+        }
+        return query;
+    }
+
+    /**
      * 获取默认分析引擎的数据库名。
      */
     private String getDatabase() {
@@ -387,21 +397,21 @@ public class AnalysisEngineService {
     public void upsertAnalysisEngineTable(Engine analysisEngine, TableSchema target) throws Exception {
         String pluginName = StringUtils.lowerCase(StringUtils.trimToEmpty(analysisEngine.getEngineType()));
         AnalysisEngineFactory factory = PluginLoader.getPluginLoader(AnalysisEngineFactory.class).getOrCreatePlugin(pluginName);
-        EngineTableManager tm = factory.getTableManager();
-        if (tm == null) {
+        EngineCatalog catalog = factory.getEngineCatalog();
+        if (catalog == null) {
             throw new IllegalStateException("分析引擎 [" + analysisEngine.getEngineType()
-                    + "] 未实现 TableManager，无法自动建表 / Schema 演进");
+                    + "] 未实现 EngineCatalog，无法自动建表 / Schema 演进");
         }
         Map<String, Object> engineConfig = parseConfig(analysisEngine.getConfig());
-        tm.init(engineConfig);
+        catalog.init(engineConfig);
 
-        if (!tm.tableExists(target.getDatabase(), target.getTableName())) {
+        if (!catalog.tableExists(target.getDatabase(), target.getTableName())) {
             log.info("引擎表不存在，自动创建: {}", target.getTableName());
-            tm.createTable(target);
+            catalog.createTable(target);
             return;
         }
-        TableSchema current = tm.getTableSchema(target.getDatabase(), target.getTableName());
-        SchemaDiff diff = tm.diff(current, target);
+        TableSchema current = catalog.getTableSchema(target.getDatabase(), target.getTableName());
+        SchemaDiff diff = catalog.diff(current, target);
         if (diff.isEmpty()) {
             log.info("引擎表 schema 无变更: {}", target.getTableName());
             return;
@@ -409,7 +419,7 @@ public class AnalysisEngineService {
         log.info("引擎表 schema 演进: table={}, add={}, drop={}, modify={}",
                 target.getTableName(),
                 diff.getAddColumns().size(), diff.getDropColumns().size(), diff.getModifyColumns().size());
-        tm.alterTable(target, diff);
+        catalog.alterTable(target, diff);
     }
 
     // -------------------------------------------------------------------------
