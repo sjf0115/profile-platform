@@ -61,6 +61,13 @@ export const labelApi = {
     return request.put<ApiResponse<number>>(`/label/${labelId}`, data)
   },
 
+  // 更新标签状态（启用/停用）
+  updateStatus: (labelId: string, status: number) => {
+    return request.put<ApiResponse<number>>(`/label/${labelId}/status`, null, {
+      params: { status }
+    })
+  },
+
   // 删除标签
   delete: (labelId: string) => {
     return request.delete<ApiResponse<number>>(`/label/${labelId}`)

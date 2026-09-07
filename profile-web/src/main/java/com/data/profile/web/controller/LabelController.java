@@ -109,6 +109,20 @@ public class LabelController {
         }
     }
 
+    // 更新标签状态（启用/停用）
+    @RequiresPermission(code = "label:edit", name = "标签-编辑")
+    @PutMapping(value = "/{labelId}/status")
+    public Response<Integer> updateStatus(@PathVariable("labelId") String labelId, @RequestParam("status") Integer status) {
+        log.info("请求更新标签 {} 状态为：{}", labelId, status);
+        try {
+            int result = labelService.updateStatus(labelId, status);
+            return Response.success(result);
+        } catch (RuntimeException e) {
+            log.error("更新标签状态失败: labelId={}, {}", labelId, e.getMessage());
+            return Response.error(e.getMessage(), ResponseCode.ERROR);
+        }
+    }
+
     // 删除标签
     @RequiresPermission(code = "label:delete", name = "标签-删除")
     @DeleteMapping(value = "/{labelId}")

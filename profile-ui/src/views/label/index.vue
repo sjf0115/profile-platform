@@ -706,18 +706,14 @@ const handleConfig = (row: Label) => {
 const handleToggleStatus = async (row: Label) => {
   const newStatus = row.label_status === 1 ? 2 : 1
   const actionText = newStatus === 1 ? "启用" : "停用"
-  
+
   try {
-    await labelApi.update(row.label_id, {
-      label_name: row.label_name,
-      label_status: newStatus,
-      source_type: row.source_type,
-      owner: row.owner,
-    })
+    await labelApi.updateStatus(row.label_id, newStatus)
     ElMessage.success(`${actionText}成功`)
     fetchLabelList()
   } catch (error) {
     console.error(`${actionText}失败:`, error)
+    ElMessage.error(`${actionText}失败`)
   }
 }
 

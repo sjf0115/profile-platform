@@ -385,6 +385,38 @@ public class LabelService {
     }
 
     /**
+     * 手动变更标签状态（启用/停用），与内容编辑解耦。
+     * 业务约束：仅已绑定数据集字段（当前状态 >= 已启用）的标签可在 已启用(1) <-> 已停用(2) 间切换。
+     * @param labelId 标签ID
+     * @param status 目标状态：1-启用，2-停用
+     */
+    @Transactional
+    public int updateStatus(String labelId, Integer status) {
+        Label existing = labelMapper.selectByLabelId(labelId);
+        if (existing == null) {
+            log.error("标签 {} 不存在，无法变更状态", labelId);
+            throw new RuntimeException("标签不存在，无法变更状态");
+        }
+        // 目标状态仅允许 启用/停用
+        if (!Objects.equals(status, LabelStatus.ENABLED.getCode())
+                && !Objects.equals(status, LabelStatus.DISABLED.getCode())) {
+            throw new RuntimeException("非法的标签状态，仅支持启用或停用");
+        }
+        // 仅已绑定（状态 >= 已启用）的标签可手动启用/停用；未绑定(0)不允许
+        Integer current = existing.getLabelStatus();
+        if (current == null || current < LabelStatus.ENABLED.getCode()) {
+            throw new RuntimeException("标签未绑定数据集，无法启用或停用");
+        }
+        Label label = new Label();
+        label.setLabelId(labelId);
+        label.setLabelStatus(status);
+        label.setModifier(UserContextHolder.currentUserId());
+        int result = labelMapper.updateByLabelIdSelective(label);
+        log.info("变更标签状态成功: labelId={}, status={}", labelId, status);
+        return result;
+    }
+
+    /**
      * 删除标签
      * @param labelId 标签ID
      */
